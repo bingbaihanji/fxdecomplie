@@ -22,6 +22,7 @@ import java.util.ArrayList;
         runBefore = CodeShrinkVisitor.class
 )
 public class MoveInlineVisitor extends AbstractVisitor {
+
     public static void moveInline(MethodNode mth) {
         InsnRemover remover = new InsnRemover(mth);
         for (BlockNode block : mth.getBasicBlocks()) {

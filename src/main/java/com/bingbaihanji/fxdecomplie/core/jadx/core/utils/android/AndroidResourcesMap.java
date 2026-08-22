@@ -10,6 +10,7 @@ import java.util.Map;
  * Store resources id to name mapping
  */
 public class AndroidResourcesMap {
+
     private static final Map<Integer, String> RES_MAP = loadBundled();
 
     public static @Nullable String getResName(int resId) {

@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class BoxedDoubleValueImpl extends ObjectValueBoxImpl<Double> {
+
     private static final Type TYPE = Type.getType(Double.class);
 
     /**

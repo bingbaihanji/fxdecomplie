@@ -13,12 +13,15 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 public class AttributesReader {
+
     private static final Logger LOG = LoggerFactory.getLogger(AttributesReader.class);
 
     private static final Predicate<JavaAttrType<?>> LOAD_ALL = type -> true;
 
     private final JavaClassData clsData;
+
     private final ConstPoolReader constPool;
+
     private final Map<Integer, JavaAttrType<?>> attrCache = new HashMap<>(JavaAttrType.size());
 
     public AttributesReader(JavaClassData clsData, ConstPoolReader constPoolReader) {

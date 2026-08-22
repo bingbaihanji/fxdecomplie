@@ -17,7 +17,7 @@ import java.util.Objects;
 /**
  * 主工具栏组件,位于菜单栏下方,提供常用操作快捷按钮
  *
- * <p>按钮：打开文件 / 重新加载 / 导出当前文件 / 定位文件 / 搜索</p>
+ * <p>按钮:打开文件 / 重新加载 / 导出当前文件 / 定位文件 / 搜索</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -28,25 +28,32 @@ public class MainToolBar extends ToolBar {
 
     /** 图标基础路径 */
     private static final String ICON_BASE = "/icon/tool/";
+
     /** 按钮图标尺寸 */
     private static final int ICON_SIZE = 16;
 
     private final FileActions fileActions;
+
     private final EditActions editActions;
 
     /** 打开文件按钮 */
     private final Button openBtn;
+
     /** 重新反编译按钮 */
     private final Button reloadBtn;
+
     /** 保存当前文件按钮 */
     private final Button saveBtn;
+
     /** 在文件树中定位按钮 */
     private final Button localizerBtn;
+
     /** 搜索按钮 */
     private final Button searchBtn;
 
     /** 当前是否有打开的工作区 */
     private boolean hasWorkspace;
+
     /** 当前是否有代码标签打开 */
     private boolean hasCodeTab;
 

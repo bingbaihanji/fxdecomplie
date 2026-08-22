@@ -28,12 +28,19 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TraverserActivePathState {
 
     private final AtomicReference<TraverserState> finallyStateRef;
+
     private final AtomicReference<TraverserState> candidateStateRef;
+
     private final GlobalTraverserSourceState finallyGlobalState;
+
     private final GlobalTraverserSourceState candidateGlobalState;
+
     private final TraverserGlobalCommonState commonGlobalState;
+
     private final Set<Pair<InsnNode, InsnNode>> matchedInsns;
+
     private final BlockCompletionMonitorMap finallyCompletionMonitor;
+
     private final BlockCompletionMonitorMap candidateCompletionMonitor;
 
     /**
@@ -224,7 +231,9 @@ public class TraverserActivePathState {
      * i.e. how many of the instructions have been compared in the Traversal.
      */
     private static final class BlockCompletionMonitor {
+
         private final BlockNode block;
+
         private final Set<Integer> matchedIndices;
 
         private BlockCompletionMonitor(BlockNode block) {

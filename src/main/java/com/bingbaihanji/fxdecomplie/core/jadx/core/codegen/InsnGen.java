@@ -10,16 +10,32 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodeGenUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.FieldInitInsnAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.FieldReplaceAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.GenericInfoAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LoopLabelAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.MethodReplaceAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.SkipMethodArgsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.CodeVar;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.Named;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.java.JsrNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.ConstructorInsn;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.TernaryInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.RegionUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.CodegenException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
@@ -37,21 +53,29 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidR
 /**
  * 指令代码生成器
  * <p>
- * 负责将单条 {@link InsnNode} 指令生成为 Java 源码表达式或语句，是代码生成的核心
+ * 负责将单条 {@link InsnNode} 指令生成为 Java 源码表达式或语句,是代码生成的核心
  * 覆盖字段访问 方法调用 构造器 算术/三元/类型转换 数组操作 Lambda/方法引用 
  * varargs 展开等各种指令类型 对无法在正常模式生成的指令仅在回退 (fallback)模式下输出
  */
 public class InsnGen {
+
     private static final Logger LOG = LoggerFactory.getLogger(InsnGen.class);
+
     private static final Set<Flags> EMPTY_FLAGS = EnumSet.noneOf(Flags.class);
+
     private static final Set<Flags> BODY_ONLY_FLAG = EnumSet.of(Flags.BODY_ONLY);
+
     private static final Set<Flags> BODY_ONLY_NOWRAP_FLAGS = EnumSet.of(Flags.BODY_ONLY_NOWRAP);
+
     /** 所属方法的代码生成器 */
     protected final MethodGen mgen;
+
     /** 当前方法节点 */
     protected final MethodNode mth;
+
     /** 根节点 */
     protected final RootNode root;
+
     /** 是否为回退 (fallback)模式 */
     protected final boolean fallback;
 
@@ -94,7 +118,7 @@ public class InsnGen {
     }
 
     /**
-     * 将参数写入代码，若确实写出了内容则在其后追加一个点号 ({@code .})，用于字段/方法访问链
+     * 将参数写入代码,若确实写出了内容则在其后追加一个点号 ({@code .}),用于字段/方法访问链
      *
      * @param code 代码写入器
      * @param arg  参数
@@ -132,7 +156,7 @@ public class InsnGen {
     }
 
     /**
-     * 将参数写入代码，根据参数类型 (寄存器/字面量/内联指令/具名)分派处理
+     * 将参数写入代码,根据参数类型 (寄存器/字面量/内联指令/具名)分派处理
      *
      * @param code  代码写入器
      * @param arg   参数
@@ -200,7 +224,7 @@ public class InsnGen {
     }
 
     /**
-     * 变量定义 (不含类型)，仅输出变量名
+     * 变量定义 (不含类型),仅输出变量名
      */
     private void defVar(ICodeWriter code, CodeVar codeVar) {
         String varName = mgen.getNameGen().assignArg(codeVar);
@@ -660,7 +684,7 @@ public class InsnGen {
     /**
      * 逐个填充数组元素
      * <p>
-     * 大多数情况下需与 new-array 指令配合使用，采用逐元素赋值的方式填充
+     * 大多数情况下需与 new-array 指令配合使用,采用逐元素赋值的方式填充
      *  (可用 System.arraycopy 替代)
      */
     private void fillArray(ICodeWriter code, FillArrayInsn arrayNode) throws CodegenException {
@@ -808,7 +832,7 @@ public class InsnGen {
             return false;
         }
         addArgDot(code, instArg);
-        // 无法再使用一个点号，强制使用类的短名
+        // 无法再使用一个点号,强制使用类的短名
         return true;
     }
 
@@ -1075,7 +1099,8 @@ public class InsnGen {
                 RegisterArg callRegArg = callArgs.get(callArg++);
                 callRegArg.getSVar().setCodeVar(extArg.getSVar().getCodeVar());
             } else {
-                throw new JadxRuntimeException("Unexpected argument type in lambda call: " + arg.getClass().getSimpleName());
+                throw new JadxRuntimeException("Unexpected argument type in lambda call: " + arg.getClass()
+                        .getSimpleName());
             }
         }
         code.add(" -> {");
@@ -1089,7 +1114,7 @@ public class InsnGen {
     private void callSuper(ICodeWriter code, MethodInfo callMth) {
         ClassInfo superCallCls = getClassForSuperCall(callMth);
         if (superCallCls == null) {
-            // 未知类，添加注释以保留该信息
+            // 未知类,添加注释以保留该信息
             code.add("super/*").add(callMth.getDeclClass().getFullName()).add("*/");
             return;
         }
@@ -1118,7 +1143,7 @@ public class InsnGen {
             }
             ClassNode nextParent = parentNode.getParentClass();
             if (nextParent == parentNode) {
-                // 无父类，未找到目标类
+                // 无父类,未找到目标类
                 return null;
             }
             parentNode = nextParent;
@@ -1128,7 +1153,7 @@ public class InsnGen {
     /**
      * 生成方法调用的参数列表 (含括号)
      * <p>
-     * 处理 SKIP_FIRST_ARG SKIP_MTH_ARGS 等跳过标记，以及 varargs 展开
+     * 处理 SKIP_FIRST_ARG SKIP_MTH_ARGS 等跳过标记,以及 varargs 展开
      *
      * @param code        代码写入器
      * @param insn        调用指令

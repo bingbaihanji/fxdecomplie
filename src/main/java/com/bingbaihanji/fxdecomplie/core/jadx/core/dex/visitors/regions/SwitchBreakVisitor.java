@@ -5,7 +5,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.CodeFeaturesAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.RegionRefAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBranchRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
@@ -56,6 +61,7 @@ public class SwitchBreakVisitor extends AbstractVisitor {
      * Remove exist common break if all branches contain exit insn.
      */
     private static final class ExtractCommonBreak extends BaseSwitchRegionVisitor {
+
         @Override
         public void processRegion(MethodNode mth, IRegion region) {
             if (region instanceof IBranchRegion && !(region instanceof SwitchRegion)) {
@@ -123,6 +129,7 @@ public class SwitchBreakVisitor extends AbstractVisitor {
     }
 
     private static final class RemoveUnreachableBreak extends BaseSwitchRegionVisitor {
+
         @Override
         public void processRegion(MethodNode mth, IRegion region) {
             List<IContainer> subBlocks = region.getSubBlocks();
@@ -157,6 +164,7 @@ public class SwitchBreakVisitor extends AbstractVisitor {
      * If rerun requested, run traverse for that visitor again.
      */
     private static final class IterativeSwitchRegionVisitor extends AbstractRegionVisitor {
+
         private final Supplier<BaseSwitchRegionVisitor> builder;
 
         public IterativeSwitchRegionVisitor(Supplier<BaseSwitchRegionVisitor> builder) {
@@ -189,9 +197,13 @@ public class SwitchBreakVisitor extends AbstractVisitor {
     }
 
     private abstract static class BaseSwitchRegionVisitor extends AbstractRegionVisitor {
+
         protected final Set<IRegion> addBreakRegion = new ArraySet<>();
+
         protected final Set<IContainer> cleanupSet = new ArraySet<>();
+
         protected SwitchRegion currentSwitch;
+
         private boolean reRunRequested = false;
 
         public abstract void processRegion(MethodNode mth, IRegion region);

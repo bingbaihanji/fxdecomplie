@@ -1,7 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.utils;
 
 public class FileSignature {
+
     private final byte[] signatureBytes;
+
     private final String fileType;
 
     public FileSignature(String fileType, String signatureHex) {

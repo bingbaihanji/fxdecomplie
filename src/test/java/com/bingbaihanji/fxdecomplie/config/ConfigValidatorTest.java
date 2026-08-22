@@ -24,7 +24,7 @@ class ConfigValidatorTest {
     @DisplayName("默认配置应为合法")
     void shouldValidateDefaultConfig() {
         List<String> errors = ConfigValidator.validate(config);
-        assertTrue(errors.isEmpty(), "默认配置应合法，但发现: " + errors);
+        assertTrue(errors.isEmpty(), "默认配置应合法,但发现: " + errors);
     }
 
     @Test

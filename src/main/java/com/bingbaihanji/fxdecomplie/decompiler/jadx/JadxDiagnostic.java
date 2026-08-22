@@ -17,6 +17,7 @@ public record JadxDiagnostic(
         @Nullable String className,
         long elapsedMs
 ) {
+
     public JadxDiagnostic {
         message = message == null ? "" : message;
     }

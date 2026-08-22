@@ -12,7 +12,7 @@ import java.lang.reflect.Array;
  * 这里直接使用普通 {@code new} 分配)
  *
  * <p>
- * 约定：{@code array} 的前 {@code currentSize} 个槽位为有效数据,其余为预留容量当有效数据填满整个数组时才触发扩容,
+ * 约定:{@code array} 的前 {@code currentSize} 个槽位为有效数据,其余为预留容量当有效数据填满整个数组时才触发扩容,
  * 扩容倍率见 {@link #growSize(int)}
  *
  * <p>
@@ -34,7 +34,7 @@ final class GrowingArrayUtils {
      * 计算扩容后的目标容量
      *
      * <p>
-     * 增长策略与 Android 原版一致：容量不超过 4 时扩到 8,否则翻倍
+     * 增长策略与 Android 原版一致:容量不超过 4 时扩到 8,否则翻倍
      *
      * @param currentSize 当前有效元素数量
      * @return 扩容后的新容量

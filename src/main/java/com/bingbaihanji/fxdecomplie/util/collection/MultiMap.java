@@ -15,7 +15,9 @@ import java.util.stream.Stream;
  * @author xDark
  */
 public final class MultiMap<K, V, C extends Collection<V>> {
+
     private final Map<K, C> backing;
+
     private final Function<K, ? extends C> collectionFunction;
 
     /**

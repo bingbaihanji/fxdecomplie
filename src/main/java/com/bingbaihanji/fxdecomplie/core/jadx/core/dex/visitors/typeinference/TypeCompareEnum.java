@@ -4,30 +4,30 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference;
  * 类型比较结果枚举
  * <p>
  * 用于描述两个类型在类型推断过程中的比较关系
- * 当类型推断展开泛型类型时，基本类型相同但泛型参数不同会产生对应的比较结果
+ * 当类型推断展开泛型类型时,基本类型相同但泛型参数不同会产生对应的比较结果
  */
 public enum TypeCompareEnum {
     /** 类型完全相同 */
     EQUAL,
     /** 当前类型更窄 (更具体) */
     NARROW,
-    /** 相同的基本类型，但带泛型，因此更窄 */
-    NARROW_BY_GENERIC, // 相同的基础类型，带泛型
+    /** 相同的基本类型,但带泛型,因此更窄 */
+    NARROW_BY_GENERIC, // 相同的基础类型,带泛型
     /** 当前类型更宽 (更通用) */
     WIDER,
-    /** 相同的基本类型，但不带泛型，因此更宽 */
-    WIDER_BY_GENERIC, // 相同的基础类型，不带泛型
+    /** 相同的基本类型,但不带泛型,因此更宽 */
+    WIDER_BY_GENERIC, // 相同的基础类型,不带泛型
     /** 类型冲突 (不兼容) */
     CONFLICT,
-    /** 相同的基本类型，但泛型存在冲突 */
-    CONFLICT_BY_GENERIC, // 相同的基础类型，泛型冲突
+    /** 相同的基本类型,但泛型存在冲突 */
+    CONFLICT_BY_GENERIC, // 相同的基础类型,泛型冲突
     /** 类型关系未知 */
     UNKNOWN;
 
     /**
      * 反转比较结果
      * <p>
-     * 如果当前结果是 NARROW，则返回 WIDER 反之亦然
+     * 如果当前结果是 NARROW,则返回 WIDER 反之亦然
      * EQUAL CONFLICT 和 UNKNOWN 保持不变
      *
      * @return 反转后的比较结果

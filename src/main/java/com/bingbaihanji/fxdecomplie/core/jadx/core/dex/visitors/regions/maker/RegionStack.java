@@ -15,7 +15,9 @@ import java.util.Deque;
 import java.util.Set;
 
 final class RegionStack {
+
     private static final Logger LOG = LoggerFactory.getLogger(RegionStack.class);
+
     private static final boolean DEBUG = false;
 
     private static final int REGIONS_STACK_LIMIT = 1000;
@@ -27,6 +29,7 @@ final class RegionStack {
     }
 
     private final Deque<State> stack;
+
     private State curState;
 
     public RegionStack(MethodNode mth) {
@@ -106,7 +109,9 @@ final class RegionStack {
     }
 
     private static final class State {
+
         final Set<BlockNode> exits;
+
         IRegion region;
 
         public State() {

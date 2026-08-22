@@ -3,14 +3,22 @@ package com.bingbaihanji.fxdecomplie.service.reference;
 import com.bingbaihanji.fxdecomplie.service.classscan.ClassMetadata;
 import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class InheritanceReferenceIndex {
 
     private final ClassScanResult scanResult;
+
     private final Map<String, String> internalNameToFullPath;
+
     private final Map<String, List<String>> interfaceToImplementations;
+
     private final Map<String, List<String>> superclassToSubclasses;
+
     private final Map<String, List<String>> annotationToAnnotatedClasses;
 
     public InheritanceReferenceIndex(ClassScanResult scanResult,

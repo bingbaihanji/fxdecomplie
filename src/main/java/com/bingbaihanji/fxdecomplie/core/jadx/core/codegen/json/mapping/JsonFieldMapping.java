@@ -1,7 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.mapping;
 
 public class JsonFieldMapping {
+
     private String name;
+
     private String alias;
 
     public String getName() {

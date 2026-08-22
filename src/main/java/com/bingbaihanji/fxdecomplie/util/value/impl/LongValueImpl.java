@@ -16,6 +16,7 @@ import java.util.OptionalLong;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class LongValueImpl implements LongValue {
+
     private final OptionalLong value;
 
     /**

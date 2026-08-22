@@ -1,4 +1,3 @@
-
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -10,12 +9,17 @@ import com.bingbaihanji.classgraph.util.LogNode;
 import java.io.IOError;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 从 Quarkus ClassLoader 提取类路径条目
  */
 class QuarkusClassLoaderHandler implements ClassLoaderHandler {
+
     // Quarkus 1.2 之前的类加载器
     private static final String RUNTIME_CLASSLOADER = "io.quarkus.runner.RuntimeClassLoader";
 
@@ -124,7 +128,7 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
      *            类加载器类
      * @param log
      *            日志
-     * @return 如果 classLoaderClass 是 Quarkus RuntimeClassloader 或 QuarkusClassloader，则返回 true
+     * @return 如果 classLoaderClass 是 Quarkus RuntimeClassloader 或 QuarkusClassloader,则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {

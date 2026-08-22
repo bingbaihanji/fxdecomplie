@@ -1,7 +1,11 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.deobf;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.impl.CombineDeobfConditions;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 
 /**
  * Utility interface to simplify merging several rename conditions to build {@link IRenameCondition}

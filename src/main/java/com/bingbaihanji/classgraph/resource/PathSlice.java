@@ -42,15 +42,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** {@link Path} 切片 */
 public class PathSlice extends Slice {
+
     /** {@link Path} 路径 */
     public final Path path;
 
     /** 文件长度 */
     private final long fileLength;
+
     /** 如果这是顶级文件切片则为 true */
     private final boolean isTopLevelFileSlice;
+
     /** 如果已调用 {@link #close} 则为 true */
     private final AtomicBoolean isClosed = new AtomicBoolean();
+
     /** 在 {@link Path} 上打开的 {@link FileChannel} */
     private volatile FileChannel fileChannel;
 
@@ -66,7 +70,7 @@ public class PathSlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      */
@@ -80,8 +84,8 @@ public class PathSlice extends Slice {
         this.fileLength = parentSlice.fileLength;
         this.isTopLevelFileSlice = false;
 
-        // 仅将顶级文件切片标记为打开状态(子切片不需要标记为打开状态，因为
-        // 它们不需要被关闭，它们只是复制顶级切片的资源引用)
+        // 仅将顶级文件切片标记为打开状态(子切片不需要标记为打开状态,因为
+        // 它们不需要被关闭,它们只是复制顶级切片的资源引用)
     }
 
     /**
@@ -92,7 +96,7 @@ public class PathSlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      * @throws IOException
@@ -111,7 +115,7 @@ public class PathSlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      * @param checkAccess
@@ -133,7 +137,7 @@ public class PathSlice extends Slice {
         this.fileLength = fileChannel.size();
         this.isTopLevelFileSlice = true;
 
-        // 调用 super 时不得不使用 0L 作为 sliceLength，因为那时 FileChannel 尚未打开
+        // 调用 super 时不得不使用 0L 作为 sliceLength,因为那时 FileChannel 尚未打开
         // => 现在更新 sliceLength
         this.sliceLength = fileLength;
 
@@ -165,7 +169,7 @@ public class PathSlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @return 切片
      */
     @Override
@@ -178,7 +182,7 @@ public class PathSlice extends Slice {
     }
 
     /**
-     * 直接从 FileChannel 读取(慢速路径，但可以处理大于 2GB 的文件)
+     * 直接从 FileChannel 读取(慢速路径,但可以处理大于 2GB 的文件)
      *
      * @return 随机访问读取器
      */
@@ -198,7 +202,7 @@ public class PathSlice extends Slice {
     @Override
     public byte[] load() throws IOException {
         if (isDeflatedZipEntry) {
-            // 如果已压缩，则解压到内存中
+            // 如果已压缩,则解压到内存中
             if (inflatedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
@@ -221,7 +225,7 @@ public class PathSlice extends Slice {
     }
 
     /**
-     * 将切片读入 {@link ByteBuffer}(或者，如果调用了 {@link ClassGraph#withMemoryMapping()}，
+     * 将切片读入 {@link ByteBuffer}(或者,如果调用了 {@link ClassGraph#withMemoryMapping()},
      * 则将切片内存映射到 {@link MappedByteBuffer})
      *
      * @return 字节缓冲区
@@ -231,14 +235,14 @@ public class PathSlice extends Slice {
     @Override
     public ByteBuffer read() throws IOException {
         if (isDeflatedZipEntry) {
-            // 如果已压缩，则解压到内存中(遗憾的是，没有可以按需解压部分流的懒加载
-            // ByteBuffer，因此我们不得不解压整个 zip 条目)
+            // 如果已压缩,则解压到内存中(遗憾的是,没有可以按需解压部分流的懒加载
+            // ByteBuffer,因此我们不得不解压整个 zip 条目)
             if (inflatedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
             return ByteBuffer.wrap(load());
         }
-        // 从 FileChannel 复制到字节数组，然后包装成 ByteBuffer
+        // 从 FileChannel 复制到字节数组,然后包装成 ByteBuffer
         if (sliceLength > FileUtils.MAX_BUFFER_SIZE) {
             throw new IOException("File is larger than 2GB");
         }
@@ -260,7 +264,7 @@ public class PathSlice extends Slice {
     public void close() {
         if (!isClosed.getAndSet(true)) {
             if (isTopLevelFileSlice && fileChannel != null) {
-                // 仅在顶级文件切片中关闭 FileChannel，这样它只关闭一次
+                // 仅在顶级文件切片中关闭 FileChannel,这样它只关闭一次
                 try {
                     // 关闭 raf 也会关闭关联的 FileChannel
                     fileChannel.close();

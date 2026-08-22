@@ -20,9 +20,13 @@ import java.util.Objects;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.safeParseInteger;
 
 public class AndroidManifestParser {
+
     private final Document androidManifest;
+
     private final @Nullable Document appStrings;
+
     private final EnumSet<AppAttribute> parseAttrs;
+
     private final IJadxSecurity security;
 
     public AndroidManifestParser(ResourceFile androidManifestRes, EnumSet<AppAttribute> parseAttrs, IJadxSecurity security) {

@@ -14,7 +14,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldData;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodData;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.AnnotationDefaultAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.AnnotationDefaultClassAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.InnerClassesAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.InnerClsInfo;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.SourceFileAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.impl.ListConsumer;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.usage.IUsageInfoData;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -38,7 +42,13 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -46,66 +56,91 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState.NOT_LOADED;
 
 /**
- * 类节点，表示 DEX 文件中的一个类
+ * 类节点,表示 DEX 文件中的一个类
  * 负责管理类的字段 方法 内部类 泛型信息以及反编译缓存等
  * 实现了加载/卸载生命周期 代码生成 依赖管理和包更新通知等功能
  */
 public class ClassNode extends NotificationAttrNode
         implements ILoadable, ICodeNode, IPackageUpdate, Comparable<ClassNode> {
+
     private static final Logger LOG = LoggerFactory.getLogger(ClassNode.class);
+
     private static final Object DECOMPILE_WITH_MODE_SYNC = new Object();
+
     /** 根节点引用 */
     private final RootNode root;
+
     /** 原始类数据 */
     private final IClassData clsData;
+
     /** 类的元信息 (包名 类名等) */
     private final ClassInfo clsInfo;
+
     /** 所属包节点 */
     private PackageNode packageNode;
+
     /** 访问标志 */
     private AccessInfo accessFlags;
+
     /** 父类类型 */
     private ArgType superClass;
+
     /** 实现的接口列表 */
     private List<ArgType> interfaces;
+
     /** 泛型参数列表 */
     private List<ArgType> generics = Collections.emptyList();
+
     /** 输入文件名 */
     private String inputFileName;
+
     /** 方法列表 */
     private List<MethodNode> methods;
+
     /** 字段列表 */
     private List<FieldNode> fields;
+
     /** 内部类列表 */
     private List<ClassNode> innerClasses = Collections.emptyList();
+
     /** 被内联的类列表 */
     private List<ClassNode> inlinedClasses = Collections.emptyList();
+
     /** 缓存的 smali 反汇编代码 */
     private String smali;
-    /** 内部类存储其外部类引用，非内部类存储自身引用 */
+
+    /** 内部类存储其外部类引用,非内部类存储自身引用 */
     private ClassNode parentClass = this;
+
     /** 处理状态 (volatile 保证多线程可见性) */
     private volatile ProcessState state = ProcessState.NOT_LOADED;
+
     /** 加载阶段 */
     private LoadStage loadStage = LoadStage.NONE;
+
     /**
-     * 本类依赖的顶级类列表 (仅对顶级类有效，内部类为空)
+     * 本类依赖的顶级类列表 (仅对顶级类有效,内部类为空)
      */
     private List<ClassNode> dependencies = Collections.emptyList();
+
     /**
      * 代码生成阶段所需的顶级类列表
      */
     private List<ClassNode> codegenDeps = Collections.emptyList();
+
     /**
      * 使用了本类的类列表
      */
     private List<ClassNode> useIn = Collections.emptyList();
+
     /**
-     * 使用了本类的方法列表 (仅包含指令引用，不包含定义)
+     * 使用了本类的方法列表 (仅包含指令引用,不包含定义)
      */
     private List<MethodNode> useInMth = Collections.emptyList();
+
     /** 方法信息到方法节点的缓存映射 */
     private Map<MethodInfo, MethodNode> mthInfoMap = Collections.emptyMap();
+
     private JavaClass javaNode;
 
     /**
@@ -123,7 +158,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 创建空类 (私有构造，仅供合成类使用)
+     * 创建空类 (私有构造,仅供合成类使用)
      */
     private ClassNode(RootNode root, ClassInfo clsInfo, int accessFlags) {
         this.root = root;
@@ -137,7 +172,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 处理特殊类，如 package-info 类 (标记为不重命名)
+     * 处理特殊类,如 package-info 类 (标记为不重命名)
      */
     private static void processSpecialClasses(ClassNode cls) {
         if ("package-info".equals(cls.getName()) && cls.getFields().isEmpty() && cls.getMethods().isEmpty()) {
@@ -147,7 +182,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 处理类的特殊属性，将 AnnotationDefault 从类级别移动到方法级别，并检查源文件属性
+     * 处理类的特殊属性,将 AnnotationDefault 从类级别移动到方法级别,并检查源文件属性
      */
     private static void processAttributes(ClassNode cls) {
         // 将 AnnotationDefault 从类移动到方法 (DEX 特有)
@@ -171,7 +206,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 添加一个合成类 (由 jadx 内部生成，非原始输入中的类)
+     * 添加一个合成类 (由 jadx 内部生成,非原始输入中的类)
      *
      * @param root        根节点
      * @param name        类全名
@@ -197,7 +232,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 将代码中找到的节点定义位置保存到对应节点，并校验变量引用的有效性
+     * 将代码中找到的节点定义位置保存到对应节点,并校验变量引用的有效性
      */
     private static void processDefinitionAnnotations(ICodeInfo codeInfo) {
         Map<Integer, ICodeAnnotation> annotations = codeInfo.getCodeMetadata().getAsMap();
@@ -230,7 +265,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 从类数据加载类信息，包括访问标志 父类 接口 字段和方法等
+     * 从类数据加载类信息,包括访问标志 父类 接口 字段和方法等
      *
      * @param cls       类数据
      * @param reloading 是否为重新加载 (重新加载时会恢复使用信息)
@@ -307,7 +342,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 获取类的访问标志，优先使用内部类属性中定义的标志
+     * 获取类的访问标志,优先使用内部类属性中定义的标志
      */
     private int getAccessFlags(IClassData cls) {
         InnerClassesAttr innerClassesAttr = get(JadxAttrType.INNER_CLASSES);
@@ -322,8 +357,8 @@ public class ClassNode extends NotificationAttrNode
 
     /**
      * 初始化静态字段的默认值
-     * 字节码可能省略对 0 值的字段初始化，此处为所有静态 final 字段添加显式初始化
-     * 如果在类初始化方法中找到赋值语句，错误的初始化将被移除
+     * 字节码可能省略对 0 值的字段初始化,此处为所有静态 final 字段添加显式初始化
+     * 如果在类初始化方法中找到赋值语句,错误的初始化将被移除
      */
     private void initStaticValues(List<FieldNode> fields) {
         if (fields.isEmpty()) {
@@ -340,7 +375,7 @@ public class ClassNode extends NotificationAttrNode
     /**
      * 检查源文件名属性是否有效无效的源文件名 (如默认名 与类名重复等)将被移除
      *
-     * @return true 如果源文件名有效，false 如果应该被移除
+     * @return true 如果源文件名有效,false 如果应该被移除
      */
     private boolean checkSourceFilenameAttr() {
         SourceFileAttr sourceFileAttr = get(JadxAttrType.SOURCE_FILE);
@@ -385,7 +420,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 确保类已处理完成，否则抛出异常
+     * 确保类已处理完成,否则抛出异常
      */
     public void ensureProcessed() {
         if (!checkProcessed()) {
@@ -396,7 +431,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 反编译本类，优先从缓存获取结果
+     * 反编译本类,优先从缓存获取结果
      */
     public ICodeInfo decompile() {
         return decompile(true);
@@ -404,7 +439,7 @@ public class ClassNode extends NotificationAttrNode
 
     /**
      * 使用指定的反编译模式反编译本类
-     * 警告：慢速操作！请谨慎使用！
+     * 警告:慢速操作!请谨慎使用!
      *
      * @param mode 反编译模式
      * @return 反编译生成的代码信息
@@ -440,7 +475,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 强制重新反编译本类 (深度重载，不使用缓存)
+     * 强制重新反编译本类 (深度重载,不使用缓存)
      */
     public ICodeInfo reloadCode() {
         add(AFlag.CLASS_DEEP_RELOAD);
@@ -448,7 +483,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 卸载本类的代码，从缓存中移除并释放已加载的数据
+     * 卸载本类的代码,从缓存中移除并释放已加载的数据
      */
     public void unloadCode() {
         if (state == NOT_LOADED) {
@@ -460,11 +495,11 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 深度卸载本类及其所有内部类，清除属性并从原始类数据重新加载
+     * 深度卸载本类及其所有内部类,清除属性并从原始类数据重新加载
      */
     public void deepUnload() {
         if (clsData == null) {
-            // 手动添加的类 (无原始数据)，无需处理
+            // 手动添加的类 (无原始数据),无需处理
             return;
         }
         clearAttributes();
@@ -519,7 +554,7 @@ public class ClassNode extends NotificationAttrNode
     /**
      * 从代码缓存中获取本类的反编译结果
      *
-     * @return 缓存的代码信息，若缓存为空则返回 null
+     * @return 缓存的代码信息,若缓存为空则返回 null
      */
     @Nullable
     public ICodeInfo getCodeFromCache() {
@@ -533,7 +568,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 加载本类：依次加载所有方法和内部类，并将状态设置为已加载
+     * 加载本类:依次加载所有方法和内部类,并将状态设置为已加载
      */
     @Override
     public void load() {
@@ -551,7 +586,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 卸载本类：卸载所有方法 内部类 字段及属性，并重置状态为未加载
+     * 卸载本类:卸载所有方法 内部类 字段及属性,并重置状态为未加载
      */
     @Override
     public void unload() {
@@ -590,7 +625,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 获取类的类型，若存在泛型参数则返回带泛型的类型
+     * 获取类的类型,若存在泛型参数则返回带泛型的类型
      */
     public ArgType getType() {
         ArgType clsType = clsInfo.getType();
@@ -678,7 +713,7 @@ public class ClassNode extends NotificationAttrNode
 
     /**
      * 按原始短名称返回第一个匹配的方法
-     * 注意：方法名不是唯一的 (同一个类可能有多个同名但签名不同的方法)
+     * 注意:方法名不是唯一的 (同一个类可能有多个同名但签名不同的方法)
      */
     @Nullable
     public MethodNode searchMethodByShortName(String name) {

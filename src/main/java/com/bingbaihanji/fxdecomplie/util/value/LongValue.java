@@ -13,11 +13,17 @@ import java.util.OptionalLong;
  * @author Matt Coley
  */
 public non-sealed interface LongValue extends ReValue {
+
     LongValue UNKNOWN = new LongValueImpl();
+
     LongValue VAL_MAX = new LongValueImpl(Long.MAX_VALUE);
+
     LongValue VAL_MIN = new LongValueImpl(Long.MIN_VALUE);
+
     LongValue VAL_M1 = new LongValueImpl(-1);
+
     LongValue VAL_0 = new LongValueImpl(0);
+
     LongValue VAL_1 = new LongValueImpl(1);
 
     /**
@@ -119,7 +125,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之和；若任一值未知则为 {@link #UNKNOWN}
+     * @return 两值之和;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue add(LongValue other) {
         OptionalLong value = value();
@@ -135,7 +141,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之差；若任一值未知则为 {@link #UNKNOWN}
+     * @return 两值之差;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue sub(LongValue other) {
         OptionalLong value = value();
@@ -151,7 +157,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
+     * @return 两值之积;若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
      */
     default LongValue mul(LongValue other) {
         OptionalLong value = value();
@@ -170,7 +176,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之商；若任一值未知或除数为 0 则为 {@link #UNKNOWN}
+     * @return 两值之商;若任一值未知或除数为 0 则为 {@link #UNKNOWN}
      */
     default LongValue div(LongValue other) {
         OptionalLong value = value();
@@ -190,7 +196,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值按位与的结果；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
+     * @return 两值按位与的结果;若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
      */
     default LongValue and(LongValue other) {
         OptionalLong value = value();
@@ -209,7 +215,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值按位或的结果；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 -1 时结果为 -1)
+     * @return 两值按位或的结果;若任一值未知则为 {@link #UNKNOWN}(任一操作数为 -1 时结果为 -1)
      */
     default LongValue or(LongValue other) {
         OptionalLong value = value();
@@ -228,7 +234,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值按位异或的结果；若任一值未知则为 {@link #UNKNOWN}
+     * @return 两值按位异或的结果;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue xor(LongValue other) {
         OptionalLong value = value();
@@ -244,7 +250,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果(对应 {@code lcmp} 指令)；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code lcmp} 指令);若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmp(LongValue other) {
         OptionalLong value = value();
@@ -260,7 +266,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值取余的结果；若任一值未知或除数为 0 则为 {@link #UNKNOWN}
+     * @return 两值取余的结果;若任一值未知或除数为 0 则为 {@link #UNKNOWN}
      */
     default LongValue rem(LongValue other) {
         OptionalLong value = value();
@@ -283,7 +289,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 左移后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 左移后的值;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue shl(LongValue other) {
         OptionalLong value = value();
@@ -299,7 +305,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 左移后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 左移后的值;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue shl(IntValue other) {
         OptionalLong value = value();
@@ -315,7 +321,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 算术右移后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 算术右移后的值;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue shr(LongValue other) {
         OptionalLong value = value();
@@ -331,7 +337,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 算术右移后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 算术右移后的值;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue shr(IntValue other) {
         OptionalLong value = value();
@@ -347,7 +353,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 逻辑右移(无符号右移)后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 逻辑右移(无符号右移)后的值;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue ushr(LongValue other) {
         OptionalLong value = value();
@@ -363,7 +369,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 逻辑右移(无符号右移)后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 逻辑右移(无符号右移)后的值;若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue ushr(IntValue other) {
         OptionalLong value = value();
@@ -376,7 +382,7 @@ public non-sealed interface LongValue extends ReValue {
 
 
     /**
-     * @return 取负后的值；若值未知则为 {@link #UNKNOWN}
+     * @return 取负后的值;若值未知则为 {@link #UNKNOWN}
      */
     default LongValue negate() {
         OptionalLong value = value();
@@ -391,7 +397,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param incr
      * 		要加上的增量
      *
-     * @return 加上增量后的值；若值未知则为 {@link #UNKNOWN}
+     * @return 加上增量后的值;若值未知则为 {@link #UNKNOWN}
      */
     default LongValue add(long incr) {
         OptionalLong value = value();
@@ -403,7 +409,7 @@ public non-sealed interface LongValue extends ReValue {
 
 
     /**
-     * @return 转换为 int 后的值；若值未知则为 {@link IntValue#UNKNOWN}
+     * @return 转换为 int 后的值;若值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue castInt() {
         OptionalLong value = value();
@@ -415,7 +421,7 @@ public non-sealed interface LongValue extends ReValue {
 
 
     /**
-     * @return 转换为 float 后的值；若值未知则为 {@link FloatValue#UNKNOWN}
+     * @return 转换为 float 后的值;若值未知则为 {@link FloatValue#UNKNOWN}
      */
     default FloatValue castFloat() {
         OptionalLong value = value();
@@ -427,7 +433,7 @@ public non-sealed interface LongValue extends ReValue {
 
 
     /**
-     * @return 转换为 double 后的值；若值未知则为 {@link DoubleValue#UNKNOWN}
+     * @return 转换为 double 后的值;若值未知则为 {@link DoubleValue#UNKNOWN}
      */
     default DoubleValue castDouble() {
         OptionalLong value = value();

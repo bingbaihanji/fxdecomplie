@@ -12,7 +12,13 @@ import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -48,7 +54,7 @@ public final class SearchDialog {
         throw new AssertionError("utility class");
     }
 
-    /** 简单调用：使用默认参数打开搜索对话框 */
+    /** 简单调用:使用默认参数打开搜索对话框 */
     public static void show(javafx.stage.Window owner, SearchService searchService,
                             Map<String, String> sourceCache, JumpCallback onJump) {
         show(owner, searchService, sourceCache, null, false, DEFAULT_MAX_RESULTS, onJump);
@@ -140,6 +146,7 @@ public final class SearchDialog {
         VBox.setVgrow(resultTree, Priority.ALWAYS);
 
         resultTree.setCellFactory(tv -> new TreeCell<SearchResult>() {
+
             @Override
             protected void updateItem(SearchResult result, boolean empty) {
                 super.updateItem(result, empty);
@@ -166,14 +173,14 @@ public final class SearchDialog {
         rootPane.setPadding(new Insets(8));
         rootPane.setStyle("-fx-background-color: #2d2d2d;");
 
-        // 搜索代数计数器：每次输入变化递增,用于丢弃过时的搜索结果
+        // 搜索代数计数器:每次输入变化递增,用于丢弃过时的搜索结果
         AtomicInteger searchGen = new AtomicInteger(0);
         // 当前正在执行的搜索任务引用,用于取消旧任务
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
         // 对话框关闭标志,防止重复清理
         AtomicBoolean closed = new AtomicBoolean(false);
 
-        // 200ms 输入防抖：用户在输入框中快速打字时,每次变化等待 200ms 无新输入后再触发搜索
+        // 200ms 输入防抖:用户在输入框中快速打字时,每次变化等待 200ms 无新输入后再触发搜索
         PauseTransition debounce = new PauseTransition(Duration.millis(200));
         Runnable scheduleSearch = () -> {
             String text = input.getText();
@@ -191,13 +198,13 @@ public final class SearchDialog {
                     statusLabel.setText("");
                     return;
                 }
-                // 解析搜索范围：根据下拉框选择的类型确定 SearchScope
+                // 解析搜索范围:根据下拉框选择的类型确定 SearchScope
                 SearchScope scope = scopeFromLabel(searchTypeCombo.getValue());
                 // 全量源码搜索仅在范围与源码相关时启用
                 boolean includeFullSource = fullSourceLoader != null
                         && fullSourceSearch.isSelected()
                         && scope.sourceCacheRelevant();
-                // 构建搜索选项：正则 大小写 全词匹配
+                // 构建搜索选项:正则 大小写 全词匹配
                 SearchOptions options = new SearchOptions(
                         regexToggle.isSelected(),
                         caseToggle.isSelected(),
@@ -293,7 +300,7 @@ public final class SearchDialog {
         scene.getStylesheets().add(
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
-        // 对话框关闭时清理：递增代数使进行中的任务结果被丢弃,停止防抖定时器,取消后台任务
+        // 对话框关闭时清理:递增代数使进行中的任务结果被丢弃,停止防抖定时器,取消后台任务
         dialog.setOnCloseRequest(event -> {
             if (closed.compareAndSet(false, true)) {
                 searchGen.incrementAndGet();
@@ -344,7 +351,7 @@ public final class SearchDialog {
     }
 
     /**
-     * 构建搜索结果树：按匹配类型(类名/方法/代码/资源/注释/字节码)分组,
+     * 构建搜索结果树:按匹配类型(类名/方法/代码/资源/注释/字节码)分组,
      * 每组显示为可展开的 TreeItem,限制总叶子节点不超过 maxResults
      *
      * @param results    扁平搜索结果列表
@@ -420,15 +427,17 @@ public final class SearchDialog {
         return count;
     }
 
-    /** 搜索结果双击跳转回调：传入文件全路径和行号 */
+    /** 搜索结果双击跳转回调:传入文件全路径和行号 */
     @FunctionalInterface
     public interface JumpCallback {
+
         void jump(String fullPath, int lineNumber);
     }
 
-    /** 全量源码缓存加载器：供后台线程调用以获取完整反编译源码 */
+    /** 全量源码缓存加载器:供后台线程调用以获取完整反编译源码 */
     @FunctionalInterface
     public interface SourceCacheLoader {
+
         Map<String, String> load();
     }
 }

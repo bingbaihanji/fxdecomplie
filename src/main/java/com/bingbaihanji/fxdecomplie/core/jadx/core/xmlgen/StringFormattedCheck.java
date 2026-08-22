@@ -70,7 +70,9 @@ public class StringFormattedCheck {
 
     @SuppressWarnings("checkstyle:ClassTypeParameterName")
     private static class Duo<T1, T2> {
+
         public final T1 m1;
+
         public final T2 m2;
 
         public Duo(T1 t1, T2 t2) {

@@ -1,7 +1,10 @@
- 
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.StringUtils;
+import com.bingbaihanji.classgraph.util.VersionFinder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -9,42 +12,62 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 逻辑 ZIP 文件，表示包含在 PhysicalZipFile 的 ZipFileSlice 中的 ZIP 文件
+ * 逻辑 ZIP 文件,表示包含在 PhysicalZipFile 的 ZipFileSlice 中的 ZIP 文件
  */
 public class LogicalZipFile extends ZipFileSlice {
+
     /** {@code "META_INF/"} */
     static final String META_INF_PATH_PREFIX = "META-INF/";
+
     /** {@code "META-INF/versions/"} */
     public static final String MULTI_RELEASE_PATH_PREFIX = META_INF_PATH_PREFIX + "versions/";
+
     /** {@code "META-INF/MANIFEST.MF"} */
     private static final String MANIFEST_PATH = META_INF_PATH_PREFIX + "MANIFEST.MF";
+
     /** {@code "Implementation-Title"} 清单键 */
     private static final byte[] IMPLEMENTATION_TITLE_KEY = manifestKeyToBytes("Implementation-Title");
+
     /** {@code "Specification-Title"} 清单键 */
     private static final byte[] SPECIFICATION_TITLE_KEY = manifestKeyToBytes("Specification-Title");
+
     /** {@code "Class-Path"} 清单键 */
     private static final byte[] CLASS_PATH_KEY = manifestKeyToBytes("Class-Path");
+
     /** {@code "Bundle-ClassPath"} 清单键 */
     private static final byte[] BUNDLE_CLASSPATH_KEY = manifestKeyToBytes("Bundle-ClassPath");
+
     /** {@code "Spring-Boot-Classes"} 清单键 */
     private static final byte[] SPRING_BOOT_CLASSES_KEY = manifestKeyToBytes("Spring-Boot-Classes");
+
     /** {@code "Spring-Boot-Lib"} 清单键 */
     private static final byte[] SPRING_BOOT_LIB_KEY = manifestKeyToBytes("Spring-Boot-Lib");
+
     /** {@code "Multi-Release"} 清单键 */
     private static final byte[] MULTI_RELEASE_KEY = manifestKeyToBytes("Multi-Release");
 
     // -------------------------------------------------------------------------------------------------------------
+
     /** {@code "Add-Exports"} 清单键 */
     private static final byte[] ADD_EXPORTS_KEY = manifestKeyToBytes("Add-Exports");
+
     /** {@code "Add-Opens"} 清单键 */
     private static final byte[] ADD_OPENS_KEY = manifestKeyToBytes("Add-Opens");
+
     /** {@code "Automatic-Module-Name"} 清单键 */
     private static final byte[] AUTOMATIC_MODULE_NAME_KEY = manifestKeyToBytes("Automatic-Module-Name");
+
     /** 用于快速将 ASCII 字符转换为小写 */
     private static byte[] toLowerCase = new byte[256];
 
@@ -54,25 +77,34 @@ public class LogicalZipFile extends ZipFileSlice {
         }
     }
 
-    /** 如果为 true，则不应在资源名称中去除多版本信息 */
+    /** 如果为 true,则不应在资源名称中去除多版本信息 */
     private final boolean enableMultiReleaseVersions;
+
     /** ZIP 文件条目列表 */
     public List<FastZipEntry> entries;
-    /** "Class-Path" 清单条目的值(如果清单中存在)，否则为 null */
+
+    /** "Class-Path" 清单条目的值(如果清单中存在),否则为 null */
     public String classPathManifestEntryValue;
-    /** "Bundle-ClassPath" 清单条目的值(如果清单中存在)，否则为 null */
+
+    /** "Bundle-ClassPath" 清单条目的值(如果清单中存在),否则为 null */
     public String bundleClassPathManifestEntryValue;
-    /** "Add-Exports" 清单条目的值(如果清单中存在)，否则为 null */
+
+    /** "Add-Exports" 清单条目的值(如果清单中存在),否则为 null */
     public String addExportsManifestEntryValue;
-    /** "Add-Opens" 清单条目的值(如果清单中存在)，否则为 null */
+
+    /** "Add-Opens" 清单条目的值(如果清单中存在),否则为 null */
     public String addOpensManifestEntryValue;
-    /** "Automatic-Module-Name" 清单条目的值(如果清单中存在)，否则为 null */
+
+    /** "Automatic-Module-Name" 清单条目的值(如果清单中存在),否则为 null */
     public String automaticModuleNameManifestEntryValue;
-    /** 如果为 true，则这是一个 JRE JAR */
+
+    /** 如果为 true,则这是一个 JRE JAR */
     public boolean isJREJar;
+
     /** 在此 ZIP 文件的 classpath 中找到的 classpath 根集合 */
     Set<String> classpathRoots = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    /** 如果为 true，则这是一个多版本 JAR */
+
+    /** 如果为 true,则这是一个多版本 JAR */
     private boolean isMultiReleaseJar;
 
     // -------------------------------------------------------------------------------------------------------------
@@ -101,8 +133,8 @@ public class LogicalZipFile extends ZipFileSlice {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 从清单中提取值，并以字符串形式返回该值以及终止换行符之后的索引
-     * 清单文件支持三种不同的行终止符类型，条目可以使用行终止符后跟空格的方式跨行拆分
+     * 从清单中提取值,并以字符串形式返回该值以及终止换行符之后的索引
+     * 清单文件支持三种不同的行终止符类型,条目可以使用行终止符后跟空格的方式跨行拆分
      *
      * @param manifest
      *            清单字节数组
@@ -158,10 +190,10 @@ public class LogicalZipFile extends ZipFileSlice {
                     isLineEnd = false;
                 }
                 if (isLineEnd && curr < len && manifest[curr] != (byte) ' ') {
-                    // 如果换行后没有跟空格，则值结束
+                    // 如果换行后没有跟空格,则值结束
                     break;
                 }
-                // 如果换行后跟有空格，则 for 循环头部的 curr++ 将跳过该空格
+                // 如果换行后跟有空格,则 for 循环头部的 curr++ 将跳过该空格
             }
             try {
                 val = buf.toString("UTF-8");
@@ -231,7 +263,7 @@ public class LogicalZipFile extends ZipFileSlice {
 
         // 查找字段键(由换行符分隔)
         for (int i = 0; i < manifest.length; ) {
-            // 换行后清单键之前不能有任何空格，因此键立即开始
+            // 换行后清单键之前不能有任何空格,因此键立即开始
             boolean skip = false;
             if (manifest[i] == (byte) '\n' || manifest[i] == (byte) '\r') {
                 // 跳过空行
@@ -343,7 +375,7 @@ public class LogicalZipFile extends ZipFileSlice {
             }
 
             if (skip) {
-                // 字段键不匹配 -- 跳到下一个键(在下一个换行符之后，且该换行符后不跟空格)
+                // 字段键不匹配 -- 跳到下一个键(在下一个换行符之后,且该换行符后不跟空格)
                 for (; i < manifest.length - 2; i++) {
                     if (manifest[i] == (byte) '\r' && manifest[i + 1] == (byte) '\n'
                             && manifest[i + 2] != (byte) ' ') {
@@ -385,8 +417,8 @@ public class LogicalZipFile extends ZipFileSlice {
 
         final RandomAccessReader reader = slice.randomAccessReader();
 
-        // 扫描中央目录结束(EOCD)签名尾部注释最大可达 64kB，
-        // 因此需要回溯扫描那么多字节以确定这是否是有效的 ZIP 文件但为了速度，
+        // 扫描中央目录结束(EOCD)签名尾部注释最大可达 64kB,
+        // 因此需要回溯扫描那么多字节以确定这是否是有效的 ZIP 文件但为了速度,
         // 最初只尝试最多回溯读取 32 个字符
         long eocdPos = -1;
         for (long i = slice.sliceLength - 22, iMin = slice.sliceLength - 22 - 32; i >= iMin && i >= 0L; --i) {
@@ -396,7 +428,7 @@ public class LogicalZipFile extends ZipFileSlice {
             }
         }
         if (eocdPos < 0 && slice.sliceLength > 22 + 32) {
-            // 如果未找到 EOCD 签名，将文件最后 64kB 作为一个整体块读入 RAM，
+            // 如果未找到 EOCD 签名,将文件最后 64kB 作为一个整体块读入 RAM,
             // 以便以更高速度回溯扫描以定位 EOCD 签名
             final int bytesToRead = (int) Math.min(slice.sliceLength, 65536);
             final byte[] eocdBytes = new byte[bytesToRead];
@@ -406,7 +438,8 @@ public class LogicalZipFile extends ZipFileSlice {
                 throw new IOException("Zipfile is truncated");
             }
             try (final ArraySlice arraySlice = new ArraySlice(eocdBytes, /* isDeflatedZipEntry = */ false,
-                    /* inflatedLengthHint = */ 0L, JarReader)) {
+                    /* inflatedLengthHint = */ 0L, JarReader)
+            ) {
                 final RandomAccessReader eocdReader = arraySlice.randomAccessReader();
                 for (long i = eocdBytes.length - 22L; i >= 0L; --i) {
                     if (eocdReader.readUnsignedInt(i) == 0x06054b50L) {
@@ -482,17 +515,17 @@ public class LogicalZipFile extends ZipFileSlice {
             throw new IOException("Local file header offset out of range: " + locPos + ": " + getPath());
         }
 
-        // 如果中央目录小于 2GB，将其读入字节数组如果中央目录大于 2GB，
+        // 如果中央目录小于 2GB,将其读入字节数组如果中央目录大于 2GB,
         // 需要使用 ZipFileSliceReader 直接从文件中读取每个条目字段
         RandomAccessReader cenReader;
         if (cenSize > FileUtils.MAX_BUFFER_SIZE) {
-            // 创建一个覆盖中央目录的切片(这允许使用较慢的 FileSlice API 访问大于 2GB 的中央目录，
-            // 该 API 直接读取文件，但同时可以在每次读取偏移量时无需加上 cenPos，
+            // 创建一个覆盖中央目录的切片(这允许使用较慢的 FileSlice API 访问大于 2GB 的中央目录,
+            // 该 API 直接读取文件,但同时可以在每次读取偏移量时无需加上 cenPos,
             // 从而使此切片或下面 "else" 子句中的切片可以使用相同的索引(即从中央目录起始位置算起的偏移量)来访问)
             cenReader = slice.slice(cenPos, cenSize, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L)
                     .randomAccessReader();
         } else {
-            // 为了速度将中央目录读入 RAM，然后将其包装在 ArraySlice 中
+            // 为了速度将中央目录读入 RAM,然后将其包装在 ArraySlice 中
             // (ArraySlice 的随机访问速度比 FileSlice 更快)
             final byte[] entryBytes = new byte[(int) cenSize];
             if (reader.read(cenPos, entryBytes, 0, (int) cenSize) < cenSize) {
@@ -520,9 +553,9 @@ public class LogicalZipFile extends ZipFileSlice {
             }
         }
 
-        // 不能有超过 (Integer.MAX_VALUE - 8) 个条目，因为它们存储在 ArrayList 中
+        // 不能有超过 (Integer.MAX_VALUE - 8) 个条目,因为它们存储在 ArrayList 中
         if (numEnt > FileUtils.MAX_BUFFER_SIZE) {
-            // 在这种(几乎不可能发生的)情况下，一种替代方案是仅返回前 2B 个条目
+            // 在这种(几乎不可能发生的)情况下,一种替代方案是仅返回前 2B 个条目
             throw new IOException("Too many zipfile entries: " + numEnt);
         }
 
@@ -596,7 +629,7 @@ public class LogicalZipFile extends ZipFileSlice {
                 long pos = cenReader.readUnsignedInt(entOff + 42);
 
                 // 检查扩展字段中的 Zip64 头部
-                // 参见：
+                // 参见:
                 // https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
                 // https://github.com/LuaDist/zip/blob/master/proginfo/extrafld.txt
                 long lastModifiedMillis = 0L;
@@ -678,7 +711,7 @@ public class LogicalZipFile extends ZipFileSlice {
                 int lastModifiedTimeMSDOS = 0;
                 int lastModifiedDateMSDOS = 0;
                 if (lastModifiedMillis == 0L) {
-                    // 如果未提供 Unix 时间戳，则从 MS-DOS 格式转换 ZIP 条目时间戳
+                    // 如果未提供 Unix 时间戳,则从 MS-DOS 格式转换 ZIP 条目时间戳
                     lastModifiedTimeMSDOS = cenReader.readUnsignedShort(entOff + 12);
                     lastModifiedDateMSDOS = cenReader.readUnsignedShort(entOff + 14);
                 }
@@ -731,7 +764,7 @@ public class LogicalZipFile extends ZipFileSlice {
                 }
             }
         } catch (EOFException | IndexOutOfBoundsException e) {
-            // 如果任何条目不在文件范围内，则停止读取条目
+            // 如果任何条目不在文件范围内,则停止读取条目
             if (log != null) {
                 log.log("Reached premature EOF"
                         + (entries.isEmpty() ? "" : " after reading zip entry " + entries.get(entries.size() - 1)));
@@ -743,7 +776,7 @@ public class LogicalZipFile extends ZipFileSlice {
             parseManifest(manifestZipEntry, log);
         }
 
-        // 对于多版本 JAR，丢弃那些被最新版本特定条目覆盖的旧条目或非版本化条目
+        // 对于多版本 JAR,丢弃那些被最新版本特定条目覆盖的旧条目或非版本化条目
         if (isMultiReleaseJar) {
             if (VersionFinder.JAVA_MAJOR_VERSION < 9) {
                 if (log != null) {
@@ -765,10 +798,10 @@ public class LogicalZipFile extends ZipFileSlice {
                             + StringUtils.join(", ", versionsFoundSorted));
                 }
 
-                // 按版本号降序排序，为版本覆盖做准备
+                // 按版本号降序排序,为版本覆盖做准备
                 CollectionUtils.sortIfNotEmpty(entries);
 
-                // 覆盖出现在多个版本部分中的文件，使得每个未版本化路径只有一个条目，
+                // 覆盖出现在多个版本部分中的文件,使得每个未版本化路径只有一个条目,
                 // 即具有最高版本号的版本化路径
                 final List<FastZipEntry> unversionedZipEntriesMasked = new ArrayList<>(entries.size());
                 final Map<String, String> unversionedPathToVersionedPath = new HashMap<>();

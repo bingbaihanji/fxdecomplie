@@ -3,7 +3,14 @@ package com.bingbaihanji.fxdecomplie.controller;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.CommentData;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.ExportConfig;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.service.CommentManager;
@@ -12,7 +19,12 @@ import com.bingbaihanji.fxdecomplie.service.reference.InheritanceReferenceIndexS
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
+import com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
+import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentDialog;
 import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
@@ -54,46 +66,67 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 应用全局配置(窗口 主题 引擎偏好等) */
     private final AppConfig config;
+
     /** 是否使用自定义标题栏(Windows 原生窗口控制) */
     private final boolean useHeaderBar;
+
     /** HostServices,用于打开外部浏览器链接 */
     private final HostServices hostServices;
+
     /** 编辑器动作控制器 (剪贴板/缩放/行号/工具窗口) */
     private final EditorActionsController editorActions = new EditorActionsController(this);
+
     /** 代码导航控制器 (Ctrl+Click 跳转/引用解析/类节点查找) */
     private final NavigationController navigationController = new NavigationController(this);
+
     /** 重命名与反混淆控制器 (重命名/ProGuard 映射/反混淆预览/快照恢复) */
     private final RenameController renameController = new RenameController(this);
+
     /** 反混淆与 ProGuard 映射控制器 (自动反混淆/映射导入导出/快照恢复) */
     private final DeobfuscationController deobfuscationController = new DeobfuscationController(this);
+
     /** 搜索与用法查找控制器 (搜索对话框/Find Usages/包搜索/全文缓存/索引等待) */
     private final SearchController searchController = new SearchController(this);
+
     /** 引擎切换与图形展示控制器 (引擎切换/标签页刷新/继承图/CFG/方法图/引擎对比) */
     private final EngineController engineController = new EngineController(this);
+
     /** 设置控制器 (设置对话框/配置应用) */
     private final SettingsController settingsController = new SettingsController(this);
+
     /** 导出控制器 (批量导出/子树导出/导出配置持久化/导出结果对话框) */
     private final ExportController exportController = new ExportController(this);
+
     /** 工作区控制器 (打开文件/目录/项目 保存项目 关闭工作区 快速打开 最近文件 工作区加载) */
     private final WorkspaceController workspaceController = new WorkspaceController(this);
+
     /** 编辑器当前主题数据(语法高亮颜色等) */
     private VsCodeThemeLoader.ThemeData editorTheme;
+
     /** 主窗口 Stage 引用 */
     private Stage stage;
+
     /** 底部状态栏 */
     private StatusBar statusBar;
+
     /** 外层 TabPane(JAR/ZIP/目录级别标签页) */
     private TabPane outerTabPane;
+
     /** 工作区标签页管理器 */
     private WorkspaceTabManager tabManager;
+
     /** 类文件反编译及标签页打开器(含 L2 缓存) */
     private ClassTabOpener classTabOpener;
+
     /** 当前选择的反编译引擎 */
     private DecompilerTypeEnum currentEngine = DecompilerTypeEnum.JADX;
+
     /** 是否显示行号 */
     private boolean lineNumbersEnabled;
+
     /** 顶部工具栏 */
     private MainToolBar toolBar;
+
     /** 主菜单栏 */
     private MainMenuBar menuBar;
 
@@ -286,7 +319,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         scene.setFill(Color.web("#1e1e1e"));
         scene.getStylesheets().add(AppTheme.darkStylesheet());
 
-        // 全局快捷键(场景级，补充菜单 accelerator)
+        // 全局快捷键(场景级,补充菜单 accelerator)
         scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
             // Alt+← 后退
             if (e.getCode() == javafx.scene.input.KeyCode.LEFT && e.isAltDown()) {
@@ -867,7 +900,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     /**
-     * 弹出带操作按钮的错误对话框：重试 / 取消 / 查看日志
+     * 弹出带操作按钮的错误对话框:重试 / 取消 / 查看日志
      *
      * @param title   对话框标题
      * @param message 错误信息

@@ -1,8 +1,14 @@
- 
 package com.bingbaihanji.classgraph.util;
 
 import java.util.Collection;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -12,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *            工作单元类型
  */
 public class WorkQueue<T> implements AutoCloseable {
+
     /** 工作单元处理器 */
     private final WorkUnitProcessor<T> workUnitProcessor;
 
@@ -22,15 +29,15 @@ public class WorkQueue<T> implements AutoCloseable {
     private final int numWorkers;
 
     /**
-     * 剩余待处理的工作单元数量，加上当前正在处理工作单元的运行中线程数量
+     * 剩余待处理的工作单元数量,加上当前正在处理工作单元的运行中线程数量
      */
     private final AtomicInteger numIncompleteWorkUnits = new AtomicInteger();
 
-    /** 为每个工作线程添加的 Future 对象，用于检测工作线程是否完成 */
+    /** 为每个工作线程添加的 Future 对象,用于检测工作线程是否完成 */
     private final ConcurrentLinkedQueue<Future<?>> workerFutures = new ConcurrentLinkedQueue<>();
 
     /**
-     * 共享的 InterruptionChecker，用于检测线程中断和执行异常，并在发生任一情况时关闭所有线程
+     * 共享的 InterruptionChecker,用于检测线程中断和执行异常,并在发生任一情况时关闭所有线程
      */
     private final InterruptionChecker interruptionChecker;
 
@@ -61,7 +68,7 @@ public class WorkQueue<T> implements AutoCloseable {
     }
 
     /**
-     * 对提供的集合中的元素启动工作队列，阻塞直到所有工作单元完成处理
+     * 对提供的集合中的元素启动工作队列,阻塞直到所有工作单元完成处理
      *
      * @param <U>
      *            工作队列单元的类型
@@ -89,12 +96,13 @@ public class WorkQueue<T> implements AutoCloseable {
             // 无需处理
             return;
         }
-        // 当此 try-with-resources 块终止时，调用 WorkQueue#close()，在所有工作线程完成后启动屏障等待
+        // 当此 try-with-resources 块终止时,调用 WorkQueue#close(),在所有工作线程完成后启动屏障等待
         try (WorkQueue<U> workQueue = new WorkQueue<>(elements, workUnitProcessor, numParallelTasks,
-                interruptionChecker, log)) {
-            // 启动 (numParallelTasks - 1) 个工作线程(如果 numParallelTasks == 1，则可能启动零个线程)
+                interruptionChecker, log)
+        ) {
+            // 启动 (numParallelTasks - 1) 个工作线程(如果 numParallelTasks == 1,则可能启动零个线程)
             workQueue.startWorkers(executorService, numParallelTasks - 1);
-            // 同样使用当前线程来完成部分工作，以防止 ExecutorService 中只有一个可用线程，
+            // 同样使用当前线程来完成部分工作,以防止 ExecutorService 中只有一个可用线程,
             // 或者 numParallelTasks 大于 ExecutorService 中可用线程数的情况
             workQueue.runWorkLoop();
         }
@@ -111,6 +119,7 @@ public class WorkQueue<T> implements AutoCloseable {
     private void startWorkers(final ExecutorService executorService, final int numTasks) {
         for (int i = 0; i < numTasks; i++) {
             workerFutures.add(executorService.submit(new Callable<Void>() {
+
                 @Override
                 public Void call() throws Exception {
                     runWorkLoop();
@@ -131,9 +140,9 @@ public class WorkQueue<T> implements AutoCloseable {
     }
 
     /**
-     * 启动一个工作线程由 startWorkers() 调用，但也应由主线程调用以在该线程上完成部分工作，
-     * 防止在 ExecutorService 没有 numParallelTasks 那么多可用线程时发生死锁当此方法返回时，
-     * 要么所有工作已经完成，要么此线程或其他某个线程已被中断如果抛出 InterruptedException，
+     * 启动一个工作线程由 startWorkers() 调用,但也应由主线程调用以在该线程上完成部分工作,
+     * 防止在 ExecutorService 没有 numParallelTasks 那么多可用线程时发生死锁当此方法返回时,
+     * 要么所有工作已经完成,要么此线程或其他某个线程已被中断如果抛出 InterruptedException,
      * 则表示此线程或其他线程被中断了
      *
      * @throws InterruptedException
@@ -161,14 +170,14 @@ public class WorkQueue<T> implements AutoCloseable {
                 workUnitProcessor.processWorkUnit(workUnitWrapper.workUnit, this, log);
 
             } catch (InterruptedException | Error e) {
-                // 当发生 InterruptedException 或 OutOfMemoryError 时，清空工作队列，发送毒丸信号，并重新抛出
+                // 当发生 InterruptedException 或 OutOfMemoryError 时,清空工作队列,发送毒丸信号,并重新抛出
                 workUnits.clear();
                 numIncompleteWorkUnits.set(0);
                 sendPoisonPills();
                 throw e;
 
             } catch (final RuntimeException e) {
-                // 当发生未检查异常时，清空工作队列，发送毒丸信号，并抛出 ExecutionException
+                // 当发生未检查异常时,清空工作队列,发送毒丸信号,并抛出 ExecutionException
                 workUnits.clear();
                 numIncompleteWorkUnits.set(0);
                 sendPoisonPills();
@@ -183,7 +192,7 @@ public class WorkQueue<T> implements AutoCloseable {
     }
 
     /**
-     * 添加一个工作单元可由工作线程调用，以将更多工作单元添加到队列尾部
+     * 添加一个工作单元可由工作线程调用,以将更多工作单元添加到队列尾部
      *
      * @param workUnit
      *            工作单元
@@ -199,7 +208,7 @@ public class WorkQueue<T> implements AutoCloseable {
     }
 
     /**
-     * 添加多个工作单元可由工作线程调用，以将更多工作单元添加到队列尾部
+     * 添加多个工作单元可由工作线程调用,以将更多工作单元添加到队列尾部
      *
      * @param workUnits
      *            要添加到队列尾部的工作单元
@@ -222,7 +231,7 @@ public class WorkQueue<T> implements AutoCloseable {
     public void close() throws ExecutionException {
         for (Future<?> future; (future = workerFutures.poll()) != null; ) {
             try {
-                // 通过 future.get() 阻塞等待完成，可能会抛出以下异常之一
+                // 通过 future.get() 阻塞等待完成,可能会抛出以下异常之一
                 future.get();
             } catch (final CancellationException e) {
                 if (log != null) {
@@ -248,6 +257,7 @@ public class WorkQueue<T> implements AutoCloseable {
      *            要处理的工作单元类型
      */
     public interface WorkUnitProcessor<T> {
+
         /**
          * 处理一个工作单元
          *
@@ -264,12 +274,13 @@ public class WorkQueue<T> implements AutoCloseable {
     }
 
     /**
-     * 工作单元的包装器(由于 BlockingQueue 不接受 null 值，需要用包装器将 null 值作为毒丸信号发送)
+     * 工作单元的包装器(由于 BlockingQueue 不接受 null 值,需要用包装器将 null 值作为毒丸信号发送)
      *
      * @param <T>
      *            泛型类型
      */
     private static class WorkUnitWrapper<T> {
+
         /** 工作单元 */
         final T workUnit;
 
@@ -277,7 +288,7 @@ public class WorkQueue<T> implements AutoCloseable {
          * 构造函数
          *
          * @param workUnit
-         *            工作单元，或 null 表示毒丸信号
+         *            工作单元,或 null 表示毒丸信号
          */
         public WorkUnitWrapper(final T workUnit) {
             this.workUnit = workUnit;

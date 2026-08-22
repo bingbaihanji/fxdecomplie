@@ -19,10 +19,10 @@ import java.util.List;
 /**
  * 表示 SSA (静态单赋值)形式中的 Phi 函数指令节点
  * <p>
- * Phi 指令用于在控制流汇合点合并来自不同前驱基本块的多个变量定义，
+ * Phi 指令用于在控制流汇合点合并来自不同前驱基本块的多个变量定义,
  * 每个参数都与其来源的前驱块一一绑定该节点被标记为不可内联 不生成源码
  * <p>
- * 注意：不允许通过 {@link #addArg} / {@link #setArg} 直接操作参数，
+ * 注意:不允许通过 {@link #addArg} / {@link #setArg} 直接操作参数,
  * 必须使用 {@link #bindArg} 系列方法以保证参数与前驱块的绑定关系一致
  */
 public final class PhiInsn extends InsnNode {
@@ -44,7 +44,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 内部构造方法，初始化指令类型和前驱块绑定列表
+     * 内部构造方法,初始化指令类型和前驱块绑定列表
      *
      * @param argsCount 参数数量 (预分配容量)
      */
@@ -87,7 +87,7 @@ public final class PhiInsn extends InsnNode {
      * 根据参数查找其绑定的前驱块
      *
      * @param arg 寄存器参数
-     * @return 绑定的前驱块，未找到时返回 null
+     * @return 绑定的前驱块,未找到时返回 null
      */
     @Nullable
     public BlockNode getBlockByArg(RegisterArg arg) {
@@ -124,7 +124,7 @@ public final class PhiInsn extends InsnNode {
      * 根据前驱块查找其绑定的参数
      *
      * @param block 前驱基本块
-     * @return 绑定的寄存器参数，未找到时返回 null
+     * @return 绑定的寄存器参数,未找到时返回 null
      */
     public @Nullable RegisterArg getArgByBlock(BlockNode block) {
         for (int i = 0; i < blockBinds.size(); i++) {
@@ -136,7 +136,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 移除指定参数，同时移除其绑定的前驱块
+     * 移除指定参数,同时移除其绑定的前驱块
      *
      * @param arg 待移除的参数
      * @return true 如果成功移除
@@ -152,7 +152,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 移除指定索引处的参数，同步移除其前驱块绑定，并刷新 SSA 变量的 Phi 使用列表
+     * 移除指定索引处的参数,同步移除其前驱块绑定,并刷新 SSA 变量的 Phi 使用列表
      *
      * @param index 参数索引
      * @return 被移除的寄存器参数
@@ -169,7 +169,7 @@ public final class PhiInsn extends InsnNode {
      * 根据 SSA 变量查找对应的参数
      *
      * @param ssaVar SSA 变量
-     * @return 使用该 SSA 变量的寄存器参数，未找到时返回 null
+     * @return 使用该 SSA 变量的寄存器参数,未找到时返回 null
      */
     @Nullable
     public RegisterArg getArgBySsaVar(SSAVar ssaVar) {
@@ -189,7 +189,7 @@ public final class PhiInsn extends InsnNode {
      * 根据块 (IBlock)查找绑定的参数
      *
      * @param block 基本块
-     * @return 绑定的寄存器参数，未找到时返回 null
+     * @return 绑定的寄存器参数,未找到时返回 null
      */
     @Nullable
     public RegisterArg getArgByBlock(IBlock block) {
@@ -204,7 +204,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 将参数 from 替换为 to，并同步维护相关 SSA 变量的 Phi 使用关系
+     * 将参数 from 替换为 to,并同步维护相关 SSA 变量的 Phi 使用关系
      * 仅支持寄存器参数之间的替换
      *
      * @param from 原参数
@@ -230,7 +230,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 禁止直接添加参数，必须使用 {@link #bindArg} 以维护参数与前驱块的绑定关系
+     * 禁止直接添加参数,必须使用 {@link #bindArg} 以维护参数与前驱块的绑定关系
      *
      * @throws JadxRuntimeException 始终抛出
      */
@@ -240,7 +240,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 禁止直接设置参数，必须使用 {@link #bindArg} 以维护参数与前驱块的绑定关系
+     * 禁止直接设置参数,必须使用 {@link #bindArg} 以维护参数与前驱块的绑定关系
      *
      * @throws JadxRuntimeException 始终抛出
      */

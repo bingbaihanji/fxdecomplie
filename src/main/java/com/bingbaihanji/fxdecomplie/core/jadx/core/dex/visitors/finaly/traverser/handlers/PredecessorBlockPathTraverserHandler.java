@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class PredecessorBlockPathTraverserHandler<T extends TraverserState & ISourceBlockState>
         extends AbstractBlockPathTraverserHandler {
+
     private final ISourceBlockState sourceBlockState;
 
     public PredecessorBlockPathTraverserHandler(T initialState) {

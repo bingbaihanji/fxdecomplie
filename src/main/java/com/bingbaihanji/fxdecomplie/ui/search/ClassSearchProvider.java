@@ -23,10 +23,11 @@ public class ClassSearchProvider implements SearchProvider {
 
     /** 所有已知类名列表(fullPath 格式) */
     private final List<String> classNames;
+
     /** 原始 fullPath → 显示名(含 .class 后缀),用于搜索反混淆/重命名后的名称 */
     private final Map<String, String> displayNamesByPath;
 
-    /** 无参构造：使用空列表,仅从 sourceCache 中搜索 */
+    /** 无参构造:使用空列表,仅从 sourceCache 中搜索 */
     public ClassSearchProvider() {
         this.classNames = List.of();
         this.displayNamesByPath = Map.of();
@@ -51,7 +52,7 @@ public class ClassSearchProvider implements SearchProvider {
                 ? Map.copyOf(displayNamesByPath) : Map.of();
     }
 
-    /** 基本搜索：同时匹配原始类名和显示名(不区分大小写) */
+    /** 基本搜索:同时匹配原始类名和显示名(不区分大小写) */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
@@ -95,7 +96,7 @@ public class ClassSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.CLASS;
     }
 
-    /** 高级搜索：支持正则 大小写 全词匹配等选项的类名搜索 */
+    /** 高级搜索:支持正则 大小写 全词匹配等选项的类名搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

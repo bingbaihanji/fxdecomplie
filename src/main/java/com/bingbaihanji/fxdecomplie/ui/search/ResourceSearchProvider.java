@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 public class ResourceSearchProvider implements SearchProvider {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceSearchProvider.class);
+
     /** 结果上限,防止搜索耗时过长和内存溢出 */
     private static final int MAX_RESULTS = 500;
 
@@ -39,7 +40,7 @@ public class ResourceSearchProvider implements SearchProvider {
     }
 
     /**
-     * 基本搜索：将资源字节以 UTF-8 解码为文本,逐行匹配关键字(不区分大小写)
+     * 基本搜索:将资源字节以 UTF-8 解码为文本,逐行匹配关键字(不区分大小写)
      * 不可解码的资源跳过并记录 debug 日志
      */
     @Override
@@ -76,7 +77,7 @@ public class ResourceSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.RESOURCE;
     }
 
-    /** 高级搜索：支持正则 大小写 全词匹配等选项的资源文件搜索 */
+    /** 高级搜索:支持正则 大小写 全词匹配等选项的资源文件搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

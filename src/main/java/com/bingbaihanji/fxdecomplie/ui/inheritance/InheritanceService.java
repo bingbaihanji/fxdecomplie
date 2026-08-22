@@ -34,8 +34,10 @@ public final class InheritanceService {
 
     /** 父类链追溯最大深度,防止无限循环 */
     private static final int MAX_DEPTH = 20;
+
     /** 子类树展示最大数量上限 */
     private static final int MAX_SUBCLASSES = 200;
+
     /** 子类索引构建超时时间(毫秒) */
     private static final long SUBCLASS_TIMEOUT_MS = 3000;
 
@@ -233,13 +235,14 @@ public final class InheritanceService {
     }
 
     /**
-     * 子类反向索引：parent → children 的映射,O(1) 查询子类
+     * 子类反向索引:parent → children 的映射,O(1) 查询子类
      *
      * <p>构建时遍历 workspace 中所有 class,提取每个 class 的父类和接口,
-     * 建立反向引用注意：同一 child 可能多次出现(实现多接口的类),
+     * 建立反向引用注意:同一 child 可能多次出现(实现多接口的类),
      * 但每个 parent→child 对只记录一次</p>
      */
     private static final class SubclassIndex {
+
         /** 父类/接口名 → 子类/实现类名列表 */
         private final Map<String, List<String>> childrenByParent;
 
@@ -265,6 +268,7 @@ public final class InheritanceService {
 
     /** 可变计数器,用于在递归过程中跨调用栈共享计数(避免装箱开销) */
     private static final class Counter {
+
         int value;
     }
 }

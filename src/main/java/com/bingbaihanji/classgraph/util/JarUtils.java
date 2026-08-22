@@ -15,8 +15,9 @@ import java.util.regex.Pattern;
  * Jar 文件工具类
  */
 public final class JarUtils {
+
     /**
-     * 检查路径开头是否具有 URL 方案要求 URL 方案至少包含 2 个字符，
+     * 检查路径开头是否具有 URL 方案要求 URL 方案至少包含 2 个字符,
      * 以防止 Windows 驱动器标识被误认为是 URL 方案
      */
     public static final Pattern URL_SCHEME_PATTERN = Pattern.compile("[a-zA-Z][a-zA-Z0-9+-.]+[:].*");
@@ -40,13 +41,13 @@ public final class JarUtils {
     private static final Pattern DOUBLE_BACKSHLASH_WITH_COLON = Pattern.compile("\\\\:");
 
     /**
-     * 在路径分隔符为 ':' 的非 Windows 系统上，
-     * 当以下子字符串出现在字符串开头或跟随 ':' 时，需要将其中的冒号视为非分隔符
+     * 在路径分隔符为 ':' 的非 Windows 系统上,
+     * 当以下子字符串出现在字符串开头或跟随 ':' 时,需要将其中的冒号视为非分隔符
      */
     private static final String[] UNIX_NON_PATH_SEPARATORS = { //
             "jar:", "file:", "http://", "https://", //
-            // 允许在路径中转义 ':' 字符，这可能超出规范允许的范围，
-            // 但这样做是合理的，因为当 File.pathSeparatorChar 为 ':' 时，
+            // 允许在路径中转义 ':' 字符,这可能超出规范允许的范围,
+            // 但这样做是合理的,因为当 File.pathSeparatorChar 为 ':' 时,
             // File.separatorChar 永远不会是 '\\'
             "\\:" //
     };
@@ -74,8 +75,8 @@ public final class JarUtils {
     }
 
     /**
-     * 按 File.pathSeparator(Linux 上为 ':'，Windows 上为 ';')拆分路径，
-     * 但同时允许使用带协议说明符的 URL，例如 "http://domain/jar1.jar:http://domain/jar2.jar"
+     * 按 File.pathSeparator(Linux 上为 ':',Windows 上为 ';')拆分路径,
+     * 但同时允许使用带协议说明符的 URL,例如 "http://domain/jar1.jar:http://domain/jar2.jar"
      *
      * @param pathStr
      *            要拆分的路径
@@ -88,8 +89,8 @@ public final class JarUtils {
     }
 
     /**
-     * 按给定的分隔符字符拆分路径如果分隔符字符是 ':'，
-     * 则同时允许使用带协议说明符的 URL，例如 "http://domain/jar1.jar:http://domain/jar2.jar"
+     * 按给定的分隔符字符拆分路径如果分隔符字符是 ':',
+     * 则同时允许使用带协议说明符的 URL,例如 "http://domain/jar1.jar:http://domain/jar2.jar"
      *
      * @param pathStr
      *            要拆分的路径
@@ -114,9 +115,9 @@ public final class JarUtils {
             }
             return partsFiltered.toArray(new String[0]);
         } else {
-            // 如果分隔符字符是 ':'，不要在 URL 协议边界处拆分
+            // 如果分隔符字符是 ':',不要在 URL 协议边界处拆分
             // 这将允许 HTTP(S) JAR 在 java.class.path 中使用
-            // (JRE 甚至可能不支持它们，但我们不妨支持一下)
+            // (JRE 甚至可能不支持它们,但我们不妨支持一下)
             final Set<Integer> splitPoints = new HashSet<>();
             for (int i = -1; ; ) {
                 boolean foundNonPathSeparator = false;
@@ -133,7 +134,7 @@ public final class JarUtils {
                 }
                 if (!foundNonPathSeparator && ScanConfig != null && ScanConfig.allowedURLSchemes != null
                         && !ScanConfig.allowedURLSchemes.isEmpty()) {
-                    // 如果注册了自定义 URL 方案，也将其用作分隔符
+                    // 如果注册了自定义 URL 方案,也将其用作分隔符
                     for (final String scheme : ScanConfig.allowedURLSchemes) {
                         // 跳过上方更快匹配代码中已处理的方案
                         if (!"http".equals(scheme) && !"https".equals(scheme) && !"jar".equals(scheme)
@@ -166,7 +167,7 @@ public final class JarUtils {
             for (int i = 1; i < splitPointsSorted.size(); i++) {
                 final int idx0 = splitPointsSorted.get(i - 1);
                 final int idx1 = splitPointsSorted.get(i);
-                // 去空格，并反转义 "\\:"
+                // 去空格,并反转义 "\\:"
                 String part = pathStr.substring(idx0 + 1, idx1).trim();
                 part = DOUBLE_BACKSHLASH_WITH_COLON.matcher(part).replaceAll(":");
                 // 移除空路径组件
@@ -192,16 +193,16 @@ public final class JarUtils {
         if (buf.length() > 0) {
             buf.append(File.pathSeparatorChar);
         }
-        // 转义任何异常路径分隔符，只要文件分隔符不是 '\\'(在 Windows 上，
-        // 如果路径元素中有任何额外的 ';' 字符，我们无法将它们转义为 "\\;")
+        // 转义任何异常路径分隔符,只要文件分隔符不是 '\\'(在 Windows 上,
+        // 如果路径元素中有任何额外的 ';' 字符,我们无法将它们转义为 "\\;")
         final String path = File.separatorChar == '\\' ? pathElt.toString()
                 : pathElt.toString().replaceAll(File.pathSeparator, "\\" + File.pathSeparator);
         buf.append(path);
     }
 
     /**
-     * 从对象数组(例如 String、File 或 URL 类型，将调用其 toString() 方法以获取路径组件)
-     * 获取一组路径元素的字符串表示，并将路径作为以标准路径分隔符字符分隔的单个字符串返回
+     * 从对象数组(例如 String,File 或 URL 类型,将调用其 toString() 方法以获取路径组件)
+     * 获取一组路径元素的字符串表示,并将路径作为以标准路径分隔符字符分隔的单个字符串返回
      *
      * @param pathElts
      *            路径元素
@@ -216,12 +217,12 @@ public final class JarUtils {
     }
 
     /**
-     * 从对象数组(例如 String、File 或 URL 类型，将调用其 toString() 方法以获取路径组件)
-     * 获取一组路径元素的字符串表示，并将路径作为以标准路径分隔符字符分隔的单个字符串返回
+     * 从对象数组(例如 String,File 或 URL 类型,将调用其 toString() 方法以获取路径组件)
+     * 获取一组路径元素的字符串表示,并将路径作为以标准路径分隔符字符分隔的单个字符串返回
      *
      * @param pathElts
      *            路径元素
-     * @return 调用每个对象的 toString() 方法后，由路径元素组成的带分隔符的路径
+     * @return 调用每个对象的 toString() 方法后,由路径元素组成的带分隔符的路径
      */
     public static String pathElementsToPathStr(final Iterable<?> pathElts) {
         final StringBuilder buf = new StringBuilder();
@@ -234,7 +235,7 @@ public final class JarUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 返回路径的叶子名称，首先剥离第一个 '!' 之后的所有内容(如果存在)
+     * 返回路径的叶子名称,首先剥离第一个 '!' 之后的所有内容(如果存在)
      *
      * @param path
      *            文件路径
@@ -245,7 +246,7 @@ public final class JarUtils {
         final int endIdx = bangIdx >= 0 ? bangIdx : path.length();
         int leafStartIdx = 1 + (File.separatorChar == '/' ? path.lastIndexOf('/', endIdx)
                 : Math.max(path.lastIndexOf('/', endIdx), path.lastIndexOf(File.separatorChar, endIdx)));
-        // 对于临时文件(从 JAR 中提取的 JAR)，移除临时文件名前缀 -- 参见
+        // 对于临时文件(从 JAR 中提取的 JAR),移除临时文件名前缀 -- 参见
         // JarReader.unzipToTempFile()
         int sepIdx = path.indexOf(JarReader.TEMP_FILENAME_LEAF_SEPARATOR);
         if (sepIdx >= 0) {
@@ -286,7 +287,7 @@ public final class JarUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 根据 JAR 名称推导自动模块名称，使用 <a href=
+     * 根据 JAR 名称推导自动模块名称,使用 <a href=
      * "https://docs.oracle.com/javase/9/docs/api/java/lang/module/ModuleFinder.html#of-java.nio.file.Path...-">此算法</a>
      *
      * @param jarPath
@@ -294,8 +295,8 @@ public final class JarUtils {
      * @return 自动模块名称
      */
     public static String derivedAutomaticModuleName(final String jarPath) {
-        // 如果 JAR 路径不以文件扩展名结尾(最可能是 ".jar")，
-        // 则剥离最后一个 '!' 之后的所有内容，以便移除包根目录
+        // 如果 JAR 路径不以文件扩展名结尾(最可能是 ".jar"),
+        // 则剥离最后一个 '!' 之后的所有内容,以便移除包根目录
         int endIdx = jarPath.length();
         final int lastPlingIdx = jarPath.lastIndexOf('!');
         if (lastPlingIdx > 0
@@ -304,7 +305,7 @@ public final class JarUtils {
             // 则在最后一个 '!' 处截断
             endIdx = lastPlingIdx;
         }
-        // 找到倒数第二个 '!'(或 -1，如果没有)
+        // 找到倒数第二个 '!'(或 -1,如果没有)
         final int secondToLastPlingIdx = endIdx == 0 ? -1 : jarPath.lastIndexOf("!", endIdx - 1);
         // 找到倒数第二个到最后一个 '!' 之间的最后一个 '/'
         final int startIdx = Math.max(secondToLastPlingIdx, jarPath.lastIndexOf('/', endIdx - 1)) + 1;

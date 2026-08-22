@@ -67,8 +67,8 @@ class AccessClassLoader extends ClassLoader {
     /**
      * 获取指定类对应的 AccessClassLoader 实例
      * <ul>
-     * <li>快速路径：如果目标类与本类在同一个 ClassLoader,直接返回缓存实例</li>
-     * <li>普通查找：从 WeakHashMap 中查找或创建新的 AccessClassLoader</li>
+     * <li>快速路径:如果目标类与本类在同一个 ClassLoader,直接返回缓存实例</li>
+     * <li>普通查找:从 WeakHashMap 中查找或创建新的 AccessClassLoader</li>
      * </ul>
      */
     static AccessClassLoader get(Class type) {

@@ -14,25 +14,38 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 
 /**
- * Java 类的表示，封装了反编译后的类信息
+ * Java 类的表示,封装了反编译后的类信息
  * <p>
- * 提供对类的源码 字段 方法 内部类 依赖关系等的访问，
+ * 提供对类的源码 字段 方法 内部类 依赖关系等的访问,
  * 是 jadx 反编译引擎 API 的核心类之一
  * </p>
  */
 public final class JavaClass implements JavaNode {
+
     private final @Nullable JadxDecompiler decompiler;
+
     private final ClassNode cls;
+
     private final @Nullable JavaClass parent;
 
     private List<JavaClass> innerClasses = Collections.emptyList();
+
     private List<JavaClass> inlinedClasses = Collections.emptyList();
+
     private List<JavaField> fields = Collections.emptyList();
+
     private List<JavaMethod> methods = Collections.emptyList();
+
     private boolean listsLoaded;
 
     JavaClass(ClassNode classNode, @NotNull JadxDecompiler decompiler) {
@@ -60,9 +73,9 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的代码信息对象，包含反编译后的源码及元数据
+     * 获取该类的代码信息对象,包含反编译后的源码及元数据
      *
-     * @return 代码信息对象，不会返回 null
+     * @return 代码信息对象,不会返回 null
      */
     public @NotNull ICodeInfo getCodeInfo() {
         ICodeInfo code = load();
@@ -74,7 +87,7 @@ public final class JavaClass implements JavaNode {
 
     /**
      * 触发该类的反编译操作并加载内部列表 (字段 方法等)
-     * 如果已经加载过，则不会重复执行
+     * 如果已经加载过,则不会重复执行
      */
     public void decompile() {
         load();
@@ -83,11 +96,11 @@ public final class JavaClass implements JavaNode {
     /**
      * 检测调用 load() 是否会触发耗时的反编译操作
      *
-     * @return 如果需要执行反编译则返回 true，否则返回 false
+     * @return 如果需要执行反编译则返回 true,否则返回 false
      */
     public boolean loadingWouldRequireDecompilation() {
         if (listsLoaded) {
-            // 列表已加载完毕，无论类本身状态如何都无需反编译
+            // 列表已加载完毕,无论类本身状态如何都无需反编译
             return false;
         }
         if (cls.getState().isProcessComplete()) {
@@ -98,7 +111,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 重新加载该类，清除缓存并重新反编译
+     * 重新加载该类,清除缓存并重新反编译
      *
      * @return 重新反编译后的代码信息
      */
@@ -108,7 +121,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 卸载该类，清除已加载的列表和反编译代码，释放内存
+     * 卸载该类,清除已加载的列表和反编译代码,释放内存
      */
     public void unload() {
         listsLoaded = false;
@@ -156,9 +169,9 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 内部 API，不稳定！
+     * 内部 API,不稳定!
      * <p>
-     * 返回底层的 {@link ClassNode} 节点，供引擎内部使用，外部调用者不应依赖此方法
+     * 返回底层的 {@link ClassNode} 节点,供引擎内部使用,外部调用者不应依赖此方法
      * </p>
      *
      * @return 底层类节点
@@ -170,9 +183,9 @@ public final class JavaClass implements JavaNode {
 
     /**
      * 反编译该类并加载其内部的字段 方法等列表
-     * 如果已经加载过，则不执行任何操作
+     * 如果已经加载过,则不执行任何操作
      *
-     * @return 如果执行了反编译则返回代码信息，否则返回 null
+     * @return 如果执行了反编译则返回代码信息,否则返回 null
      */
     private synchronized @Nullable ICodeInfo load() {
         if (listsLoaded) {
@@ -250,7 +263,7 @@ public final class JavaClass implements JavaNode {
      * 获取指定位置处的代码注解
      *
      * @param pos 代码中的位置
-     * @return 该位置的代码注解，如果没有则返回 null
+     * @return 该位置的代码注解,如果没有则返回 null
      */
     public @Nullable ICodeAnnotation getAnnotationAt(int pos) {
         return getCodeInfo().getCodeMetadata().getAt(pos);
@@ -259,10 +272,10 @@ public final class JavaClass implements JavaNode {
     /**
      * 获取该类代码中位置到引用节点的映射
      * <p>
-     * 键为代码位置，值为对应的 {@link JavaNode} 引用，用于代码导航等功能
+     * 键为代码位置,值为对应的 {@link JavaNode} 引用,用于代码导航等功能
      * </p>
      *
-     * @return 位置到引用节点的映射，若无元数据则返回空映射
+     * @return 位置到引用节点的映射,若无元数据则返回空映射
      */
     public Map<Integer, JavaNode> getUsageMap() {
         Map<Integer, ICodeAnnotation> map = getCodeInfo().getCodeMetadata().getAsMap();
@@ -288,7 +301,7 @@ public final class JavaClass implements JavaNode {
      *
      * @param codeInfo 待搜索的代码信息
      * @param javaNode 目标节点
-     * @return 该节点被引用的所有代码位置列表，若无元数据则返回空列表
+     * @return 该节点被引用的所有代码位置列表,若无元数据则返回空列表
      */
     public List<Integer> getUsePlacesFor(ICodeInfo codeInfo, JavaNode javaNode) {
         if (!codeInfo.hasMetadata()) {
@@ -318,7 +331,7 @@ public final class JavaClass implements JavaNode {
      * 根据反编译后的行号获取对应的源码行号
      *
      * @param decompiledLine 反编译后代码的行号
-     * @return 对应的源码行号，若无映射则返回 null
+     * @return 对应的源码行号,若无映射则返回 null
      */
     public Integer getSourceLine(int decompiledLine) {
         return getCodeInfo().getCodeMetadata().getLineMapping().get(decompiledLine);
@@ -374,7 +387,7 @@ public final class JavaClass implements JavaNode {
     /**
      * 获取声明该类的外层类
      *
-     * @return 声明该类的外层类，如果是顶层类则返回 null
+     * @return 声明该类的外层类,如果是顶层类则返回 null
      */
     @Override
     public @Nullable JavaClass getDeclaringClass() {
@@ -382,9 +395,9 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取原始的顶层父类 (基于声明结构，不考虑代码移动或内联)
+     * 获取原始的顶层父类 (基于声明结构,不考虑代码移动或内联)
      *
-     * @return 原始顶层父类，如果自身已是顶层类则返回自身
+     * @return 原始顶层父类,如果自身已是顶层类则返回自身
      */
     public JavaClass getOriginalTopParentClass() {
         return parent == null ? this : parent.getOriginalTopParentClass();
@@ -393,11 +406,11 @@ public final class JavaClass implements JavaNode {
     /**
      * 返回包含该类代码的顶层父类
      * <p>
-     * 由于代码可能被移动 (move)或内联 (inline)，
+     * 由于代码可能被移动 (move)或内联 (inline),
      * 代码父类可能与原始父类不同
      * </p>
      *
-     * @return 如果自身已是顶层类则返回自身，否则返回顶层父类
+     * @return 如果自身已是顶层类则返回自身,否则返回顶层父类
      */
     @Override
     public JavaClass getTopParentClass() {
@@ -408,11 +421,11 @@ public final class JavaClass implements JavaNode {
     /**
      * 返回包含该类代码的父类
      * <p>
-     * 由于代码可能被移动 (move)或内联 (inline)，
+     * 由于代码可能被移动 (move)或内联 (inline),
      * 代码父类可能与原始父类不同
      * </p>
      *
-     * @return 代码父类，如果没有则返回 null
+     * @return 代码父类,如果没有则返回 null
      */
     public @Nullable JavaClass getCodeParent() {
         AnonymousClassAttr anonymousClsAttr = cls.get(AType.ANONYMOUS_CLASS);
@@ -480,7 +493,7 @@ public final class JavaClass implements JavaNode {
      * 根据方法的短标识 (shortId)查找方法
      *
      * @param shortId 方法短标识
-     * @return 匹配的方法，未找到则返回 null
+     * @return 匹配的方法,未找到则返回 null
      */
     @Nullable
     public JavaMethod searchMethodByShortId(String shortId) {
@@ -511,7 +524,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 移除该类的别名，恢复使用原始名称
+     * 移除该类的别名,恢复使用原始名称
      */
     @Override
     public void removeAlias() {

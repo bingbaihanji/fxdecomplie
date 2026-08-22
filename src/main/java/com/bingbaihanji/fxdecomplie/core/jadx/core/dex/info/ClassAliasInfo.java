@@ -4,9 +4,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUt
 import org.jetbrains.annotations.Nullable;
 
 class ClassAliasInfo {
+
     private final String shortName;
+
     @Nullable
     private final String pkg;
+
     @Nullable
     private String fullName;
 

@@ -6,8 +6,8 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 指令代码偏移量注解，用于将生成的代码行与原始字节码指令位置关联起来
- * 实现 {@link ICodeAnnotation} 接口，注解类型为 {@link AnnType#OFFSET}
+ * 指令代码偏移量注解,用于将生成的代码行与原始字节码指令位置关联起来
+ * 实现 {@link ICodeAnnotation} 接口,注解类型为 {@link AnnType#OFFSET}
  */
 public class InsnCodeOffset implements ICodeAnnotation {
 
@@ -24,7 +24,7 @@ public class InsnCodeOffset implements ICodeAnnotation {
 
     /**
      * 将指令节点的字节码偏移量作为行注解附加到代码写入器中
-     * 如果指令为 null 或代码写入器不支持元数据，则不执行任何操作
+     * 如果指令为 null 或代码写入器不支持元数据,则不执行任何操作
      *
      * @param code 代码写入器
      * @param insn 指令节点

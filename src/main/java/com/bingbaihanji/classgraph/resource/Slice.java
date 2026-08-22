@@ -40,22 +40,29 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * {@link File}、{@link ByteBuffer} 或 {@link InputStream} 的切片单个 {@link Slice} 实例应仅由
+ * {@link File},{@link ByteBuffer} 或 {@link InputStream} 的切片单个 {@link Slice} 实例应仅由
  * 单个线程使用
  */
 public abstract class Slice implements Closeable {
+
     /** 切片的起始位置 */
     public final long sliceStartPos;
-    /** 如果为 true，则切片是压缩的 zip 条目，需要解压才能访问内容 */
+
+    /** 如果为 true,则切片是压缩的 zip 条目,需要解压才能访问内容 */
     public final boolean isDeflatedZipEntry;
-    /** 如果切片是压缩的 zip 条目，则这是预期的未压缩长度，未知则为 -1L */
+
+    /** 如果切片是压缩的 zip 条目,则这是预期的未压缩长度,未知则为 -1L */
     public final long inflatedLengthHint;
+
     /** {@link JarReader} */
     protected final JarReader JarReader;
+
     /** 父切片 */
     protected final Slice parentSlice;
-    /** 切片的长度，如果未知(对于 {@link InputStream})则为 -1L */
+
+    /** 切片的长度,如果未知(对于 {@link InputStream})则为 -1L */
     public long sliceLength;
+
     /** 缓存的 hashCode */
     private int hashCode;
 
@@ -71,7 +78,7 @@ public abstract class Slice implements Closeable {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      */
@@ -105,7 +112,7 @@ public abstract class Slice implements Closeable {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      */
@@ -115,7 +122,7 @@ public abstract class Slice implements Closeable {
     }
 
     /**
-     * 从此父 {@link Slice} 获取子 {@link Slice}子切片必须小于父切片，
+     * 从此父 {@link Slice} 获取子 {@link Slice}子切片必须小于父切片,
      * 并且完全包含在父切片中
      *
      * @param offset
@@ -125,7 +132,7 @@ public abstract class Slice implements Closeable {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @return 子切片
      */
     public abstract Slice slice(long offset, long length, boolean isDeflatedZipEntry,
@@ -146,17 +153,22 @@ public abstract class Slice implements Closeable {
      * 将此 {@link Slice} 作为 {@link InputStream} 打开
      *
      * @param resourceToClose
-     *            当返回的 {@code InputStream} 关闭时需要关闭的 {@link Resource}，如果没有则为 null
+     *            当返回的 {@code InputStream} 关闭时需要关闭的 {@link Resource},如果没有则为 null
      * @return 输入流
      * @throws IOException
      *             如果无法为此 {@link Slice} 创建解压器
      */
     public InputStream open(final Resource resourceToClose) throws IOException {
         final InputStream rawInputStream = new InputStream() {
+
             private final byte[] byteBuf = new byte[1];
+
             private final AtomicBoolean closed = new AtomicBoolean();
+
             RandomAccessReader randomAccessReader = randomAccessReader();
+
             private long currOff;
+
             private long markOff;
 
             @Override

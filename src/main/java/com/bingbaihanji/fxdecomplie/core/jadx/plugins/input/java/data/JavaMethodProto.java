@@ -8,6 +8,7 @@ import java.util.List;
 public class JavaMethodProto implements IMethodProto {
 
     private String returnType;
+
     private List<String> argTypes;
 
     @Override

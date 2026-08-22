@@ -73,7 +73,7 @@ class DecompileOutcomeTest {
         @DisplayName("反编译器正忙应分类为 BUSY")
         void shouldClassifyBusyAsBusy() {
             DecompileOutcome outcome = DecompileOutcome.classify(
-                    "反编译器正忙，请稍后重试",
+                    "反编译器正忙,请稍后重试",
                     DecompilerTypeEnum.JADX);
             assertTrue(outcome.isFailure());
             DecompileOutcome.Failure f = (DecompileOutcome.Failure) outcome;

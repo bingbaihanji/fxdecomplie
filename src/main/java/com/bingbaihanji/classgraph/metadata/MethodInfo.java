@@ -1,11 +1,16 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.MethodTypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.metadata.ClassHierarchy.RelType;
 import com.bingbaihanji.classgraph.scan.ScanResult;
-import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.type.ArrayType;
+import com.bingbaihanji.classgraph.type.MethodType;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParam;
+import com.bingbaihanji.classgraph.type.TypeSignature;
+import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.type.TypeVar;
 import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.LogNode;
 
@@ -14,36 +19,46 @@ import java.lang.annotation.Repeatable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 保存扫描过程中遇到的类的方法元数据所有值均直接取自类的 ClassParser
  */
 public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo> {
+
     /** 未对齐的参数注解 */
     public AnnotationInfo[][] parameterAnnotationInfo;
+
     /** 解析后的类型描述符 */
     private transient MethodType typeDescriptor;
+
     /** 解析后的类型签名(如果没有则为 null)方法参数类型未对齐 */
     private transient MethodType typeSignature;
+
     /**
-     * 未对齐的参数名称仅在 JDK8+ 中产生，且仅当编译时提供命令行开关 `-parameters`
+     * 未对齐的参数名称仅在 JDK8+ 中产生,且仅当编译时提供命令行开关 `-parameters`
      */
     private String[] parameterNames;
+
     /**
-     * 未对齐的参数修饰符仅在 JDK8+ 中产生，且仅当编译时提供命令行开关 `-parameters`
+     * 未对齐的参数修饰符仅在 JDK8+ 中产生,且仅当编译时提供命令行开关 `-parameters`
      */
     private int[] parameterModifiers;
+
     /** 对齐后的方法参数信息 */
     private transient MethodParam[] parameterInfo;
 
     /** 如果此方法有方法体则为 true */
     private boolean hasBody;
 
-    /** 此方法体的最小行号，如果未知则为 0 */
+    /** 此方法体的最小行号,如果未知则为 0 */
     private int minLineNum;
 
-    /** 此方法体的最大行号，如果未知则为 0 */
+    /** 此方法体的最大行号,如果未知则为 0 */
     private int maxLineNum;
 
     /** {@link MethodType} 实例的类型注解装饰器 */
@@ -74,7 +89,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @param typeDescriptorStr
      *            内部方法类型描述符字符串
      * @param typeSignatureStr
-     *            内部方法类型签名字符串，如果没有则为 null
+     *            内部方法类型签名字符串,如果没有则为 null
      * @param parameterNames
      *            参数名称
      * @param parameterModifiers
@@ -84,9 +99,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @param hasBody
      *            如果此方法有方法体则为 true
      * @param minLineNum
-     *            此方法体的最小行号，如果未知则为 0
+     *            此方法体的最小行号,如果未知则为 0
      * @param maxLineNum
-     *            此方法体的最大行号，如果未知则为 0
+     *            此方法体的最大行号,如果未知则为 0
      * @param methodTypeAnnotationDecorators
      *            方法类型注解的装饰器 lambda
      * @param thrownExceptionNames
@@ -112,7 +127,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 返回方法名称注意，构造函数的名称为 {@code "<init>"}，私有静态类初始化块的名称为
+     * 返回方法名称注意,构造函数的名称为 {@code "<init>"},私有静态类初始化块的名称为
      * {@code "<clinit>"}
      *
      * @return 方法名称
@@ -123,7 +138,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 以字符串形式获取方法修饰符，例如 "public static final"要获取修饰符位，请调用
+     * 以字符串形式获取方法修饰符,例如 "public static final"要获取修饰符位,请调用
      * {@link #getModifiers()}
      *
      * @return 方法的修饰符(字符串形式)
@@ -136,7 +151,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 返回方法的解析后类型描述符，不包含类型参数如果需要泛型类型参数，请改用
+     * 返回方法的解析后类型描述符,不包含类型参数如果需要泛型类型参数,请改用
      * {@link #getTypeSignature()}
      *
      * @return 方法的解析后类型描述符
@@ -150,25 +165,25 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     typeDescriptor.setScanResult(scanResult);
                     if (typeAnnotationDecorators != null) {
                         // 类型注解从源代码中声明的第一个参数开始对形参进行索引
-                        // 然而，方法类型描述符可能以额外的隐式(编译器合成的)参数开头，
-                        // 这些参数不计入 formal_parameter_index —— 例如，非静态内部类构造函数的
-                        // 前导封闭实例参数，或枚举构造函数的 (String name, int ordinal) 前导参数
-                        // 确定存在多少个这样的隐式前缀参数，在运行装饰器时将它们从描述符中剥离，
-                        // 以使 formal_parameter_index 对齐，然后再恢复它们另见 getParameterInfo()，
+                        // 然而,方法类型描述符可能以额外的隐式(编译器合成的)参数开头,
+                        // 这些参数不计入 formal_parameter_index —— 例如,非静态内部类构造函数的
+                        // 前导封闭实例参数,或枚举构造函数的 (String name, int ordinal) 前导参数
+                        // 确定存在多少个这样的隐式前缀参数,在运行装饰器时将它们从描述符中剥离,
+                        // 以使 formal_parameter_index 对齐,然后再恢复它们另见 getParameterInfo(),
                         // 出于同样的原因对参数元数据进行"右对齐"(#897)
                         final int descNumParam = typeDescriptor.getParameterTypeSignatures().size();
                         int numImplicitPrefixParams;
                         final MethodType sig = getTypeSignature();
                         if (sig != null) {
-                            // 泛型类型签名省略了隐式前缀参数，因此参数数量的差异揭示了多少个
+                            // 泛型类型签名省略了隐式前缀参数,因此参数数量的差异揭示了多少个
                             // (规范认可的关系)
                             numImplicitPrefixParams = descNumParam - sig.getParameterTypeSignatures().size();
                         } else {
-                            // 没有泛型类型签名(例如非泛型内部类或枚举构造函数)，
+                            // 没有泛型类型签名(例如非泛型内部类或枚举构造函数),
                             // 因此从结构上确定隐式前缀参数的数量
                             numImplicitPrefixParams = getNumImplicitPrefixParams();
                         }
-                        // 限制在合理范围内，以防编译器错误或格式错误的 ClassParser
+                        // 限制在合理范围内,以防编译器错误或格式错误的 ClassParser
                         if (numImplicitPrefixParams < 0) {
                             numImplicitPrefixParams = 0;
                         } else if (numImplicitPrefixParams > descNumParam) {
@@ -187,8 +202,8 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     /**
      * 确定此方法参数列表开头处不被类型注解的 {@code formal_parameter_index} 计数的隐式
      * (编译器合成的)参数的数量这仅在无法与泛型类型签名对比时使用目前处理两种标准
-     * Java 情况：非静态内部类构造函数的前导封闭实例参数，以及枚举构造函数的前导
-     * {@code (String name, int ordinal)} 参数(局部类和匿名类可能添加不同数量的合成参数，
+     * Java 情况:非静态内部类构造函数的前导封闭实例参数,以及枚举构造函数的前导
+     * {@code (String name, int ordinal)} 参数(局部类和匿名类可能添加不同数量的合成参数,
      * 此处有意不进行特殊处理 —— 任何由此导致的不匹配都会被 {@link #decorateMethodType} 优雅处理)
      * (#897)
      *
@@ -199,7 +214,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             final ClassInfo declaringClassInfo = getClassInfo();
             if (declaringClassInfo != null) {
                 if (declaringClassInfo.isEnum()) {
-                    // 枚举构造函数有两个前导合成参数：(String name, int ordinal)
+                    // 枚举构造函数有两个前导合成参数:(String name, int ordinal)
                     return 2;
                 } else if (declaringClassInfo.isInnerClass() && !declaringClassInfo.isStatic()) {
                     // 非静态内部类构造函数有一个前导封闭实例参数
@@ -211,10 +226,10 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 在给定的解析后方法类型上运行方法类型注解装饰器，暂时剥离给定数量的隐式前缀参数，
+     * 在给定的解析后方法类型上运行方法类型注解装饰器,暂时剥离给定数量的隐式前缀参数,
      * 以使 {@code formal_parameter_index} 值与源代码声明的参数对齐任何无法与参数类型
-     * 匹配的单个类型注解(例如由于编译器特定的参数索引方式，如 Kotlin、局部或匿名类，
-     * 或编译器错误)将被跳过，而不是导致整个方法类型解析中止(#897)
+     * 匹配的单个类型注解(例如由于编译器特定的参数索引方式,如 Kotlin,局部或匿名类,
+     * 或编译器错误)将被跳过,而不是导致整个方法类型解析中止(#897)
      *
      * @param methodType
      *            要装饰的解析后方法类型签名或描述符
@@ -223,7 +238,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      */
     private void decorateMethodType(final MethodType methodType, final int numImplicitPrefixParams) {
         final List<TypeSignature> paramSigs = methodType.getParameterTypeSignatures();
-        // 在移除隐式前缀参数之前先复制它们 —— 不要使用 List.subList() 返回的实时视图，
+        // 在移除隐式前缀参数之前先复制它们 —— 不要使用 List.subList() 返回的实时视图,
         // 因为下面的 paramSigs 结构修改会使其失效
         final List<TypeSignature> implicitPrefixParams = numImplicitPrefixParams <= 0 ? null
                 : new ArrayList<>(paramSigs.subList(0, numImplicitPrefixParams));
@@ -234,7 +249,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             try {
                 decorator.decorate(methodType);
             } catch (final IllegalArgumentException e) {
-                // 跳过无法与参数类型匹配的类型注解，而不是无法产生整个方法类型(尽最大努力)(#897)
+                // 跳过无法与参数类型匹配的类型注解,而不是无法产生整个方法类型(尽最大努力)(#897)
             }
         }
         if (implicitPrefixParams != null) {
@@ -245,10 +260,10 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 返回方法的解析后类型签名，可能包含类型参数如果返回 null，表示此方法没有类型签名
-     * 信息可用，请改用 {@link #getTypeDescriptor()}
+     * 返回方法的解析后类型签名,可能包含类型参数如果返回 null,表示此方法没有类型签名
+     * 信息可用,请改用 {@link #getTypeDescriptor()}
      *
-     * @return 方法的解析后类型签名，如果不可用则为 null
+     * @return 方法的解析后类型签名,如果不可用则为 null
      * @throws IllegalArgumentException
      *             如果方法类型签名无法解析(这应仅在 ClassParser 损坏或编译器错误导致无效的类型签名
      *             被写入 ClassParser 时抛出)
@@ -261,7 +276,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     typeSignature = MethodType.parse(typeSignatureStr, declaringClassName);
                     typeSignature.setScanResult(scanResult);
                     if (typeAnnotationDecorators != null) {
-                        // 泛型类型签名已经省略了所有隐式前缀参数，因此
+                        // 泛型类型签名已经省略了所有隐式前缀参数,因此
                         // formal_parameter_index 直接与其对齐(剥离 0 个)(#897)
                         decorateMethodType(typeSignature, 0);
                     }
@@ -269,7 +284,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     throw new IllegalArgumentException(
                             "方法 " + getClassName() + "." + getName() + " 的类型签名无效"
                                     + (getClassInfo() != null
-                                    ? "，位于类路径元素 " + getClassInfo().getClasspathURI()
+                                    ? ",位于类路径元素 " + getClassInfo().getClasspathURI()
                                     : "")
                                     + " : " + typeSignatureStr,
                             e);
@@ -280,10 +295,10 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 返回方法的解析后类型签名，可能包含类型参数如果类型签名字符串为 null(表示此方法
-     * 没有类型签名信息可用)，则返回解析后的类型描述符
+     * 返回方法的解析后类型签名,可能包含类型参数如果类型签名字符串为 null(表示此方法
+     * 没有类型签名信息可用),则返回解析后的类型描述符
      *
-     * @return 方法的解析后类型签名，如果不可用，则返回方法的解析后类型描述符
+     * @return 方法的解析后类型签名,如果不可用,则返回方法的解析后类型描述符
      */
     @Override
     public MethodType getTypeSignatureOrTypeDescriptor() {
@@ -300,9 +315,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 返回方法抛出的异常列表，作为 {@link ClassInfoList}
+     * 返回方法抛出的异常列表,作为 {@link ClassInfoList}
      *
-     * @return 方法抛出的异常列表，作为 {@link ClassInfoList}(列表可能为空)
+     * @return 方法抛出的异常列表,作为 {@link ClassInfoList}(列表可能为空)
      */
     public ClassInfoList getThrownExceptions() {
         synchronized (this) {
@@ -321,9 +336,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 返回方法抛出的异常，作为数组
+     * 返回方法抛出的异常,作为数组
      *
-     * @return 方法抛出的异常，作为数组(数组可能为空)
+     * @return 方法抛出的异常,作为数组(数组可能为空)
      */
     public String[] getThrownExceptionNames() {
         return thrownExceptionNames == null ? new String[0] : thrownExceptionNames;
@@ -333,7 +348,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
 
     /**
      * 如果此方法是构造函数则返回 true构造函数的方法名为 {@code "<init>"}
-     * 对于命名为 {@code "<clinit>"} 的私有静态类初始化块，此方法返回 false
+     * 对于命名为 {@code "<clinit>"} 的私有静态类初始化块,此方法返回 false
      *
      * @return 如果此方法是构造函数则返回 true
      */
@@ -405,18 +420,18 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 此方法体中第一个非空行的行号，如果未知则为 0
+     * 此方法体中第一个非空行的行号,如果未知则为 0
      *
-     * @return 此方法体中第一个非空行的行号，如果未知则为 0
+     * @return 此方法体中第一个非空行的行号,如果未知则为 0
      */
     public int getMinLineNum() {
         return minLineNum;
     }
 
     /**
-     * 此方法体中最后一个非空行的行号，如果未知则为 0
+     * 此方法体中最后一个非空行的行号,如果未知则为 0
      *
-     * @return 此方法体中最后一个非空行的行号，如果未知则为 0
+     * @return 此方法体中最后一个非空行的行号,如果未知则为 0
      */
     public int getMaxLineNum() {
         return maxLineNum;
@@ -437,19 +452,19 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     /**
      * 获取方法参数的可用信息
      *
-     * @return 方法参数的 {@link MethodParam} 对象，每个参数一个
+     * @return 方法参数的 {@link MethodParam} 对象,每个参数一个
      */
     public MethodParam[] getParameterInfo() {
-        // Kotlin 对各种参数元数据类型的元数处理非常不一致，参见：
+        // Kotlin 对各种参数元数据类型的元数处理非常不一致,参见:
         // https://github.com/classgraph/classgraph/issues/175#issuecomment-363031510
-        // 作为变通方案，我们假设任何合成/强制参数必须在参数列表的开头出现(当元数不匹配时)，
-        // 并将元数据字段右对齐这在跨 JVM 语言中可能是最安全的假设，尽管此约定绝
-        // 不是唯一的可能性(不幸的是，我们不能仅依赖修饰符位来查找合成/强制参数，
-        // 因为这些位并不总是可用的，即使可用，它们也不总是给出正确的对齐方式，
+        // 作为变通方案,我们假设任何合成/强制参数必须在参数列表的开头出现(当元数不匹配时),
+        // 并将元数据字段右对齐这在跨 JVM 语言中可能是最安全的假设,尽管此约定绝
+        // 不是唯一的可能性(不幸的是,我们不能仅依赖修饰符位来查找合成/强制参数,
+        // 因为这些位并不总是可用的,即使可用,它们也不总是给出正确的对齐方式,
         // 至少对于 Kotlin 生成的代码来说是这样)
 
-        // 实际上，Java 规范明确指出："给定方法或构造函数的签名和描述符可能由于
-        // 编译器生成的工件而不完全对应特别是，MethodType 中编码形参的
+        // 实际上,Java 规范明确指出:"给定方法或构造函数的签名和描述符可能由于
+        // 编译器生成的工件而不完全对应特别是,MethodType 中编码形参的
         // TypeSignatures 数量可能少于 MethodDescriptor 中的 ParameterDescriptors 数量"
 
         // 这也曾被 Guava 28.2 中的一个隐式参数触发 (#660)
@@ -463,9 +478,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     paramTypeSignatures = typeSig.getParameterTypeSignatures();
                 }
 
-                // 如果没有类型签名(即如果这不是泛型方法)，则回退到类型描述符
-                // (注意：类型描述符基本上没什么用，因为编译器可能会自动添加 `synthetic`
-                // 和/或 `bridge` 参数，而不提供方法的任何修饰符，因此无法知道在前面添加了
+                // 如果没有类型签名(即如果这不是泛型方法),则回退到类型描述符
+                // (注意:类型描述符基本上没什么用,因为编译器可能会自动添加 `synthetic`
+                // 和/或 `bridge` 参数,而不提供方法的任何修饰符,因此无法知道在前面添加了
                 // 多少参数 —— 参见 #660)
                 List<TypeSignature> paramTypeDescriptors = null;
                 try {
@@ -474,7 +489,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                         paramTypeDescriptors = typeDesc.getParameterTypeSignatures();
                     }
                 } catch (final Exception e) {
-                    // 忽略当 `synthetic`、`bridge` 或 `mandated` 参数被添加到第一个参数位置时，
+                    // 忽略当 `synthetic`,`bridge` 或 `mandated` 参数被添加到第一个参数位置时,
                     // 类型注解无法与参数对齐而触发的任何 IllegalArgumentException
                 }
 
@@ -493,8 +508,8 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     numParams = parameterAnnotationInfo.length;
                 }
 
-                // "右对齐"所有参数信息，即假设任何自动添加的隐式参数都是在参数列表开头
-                // 添加的，而不是在末尾
+                // "右对齐"所有参数信息,即假设任何自动添加的隐式参数都是在参数列表开头
+                // 添加的,而不是在末尾
 
                 String[] paramNamesAligned = null;
                 if (parameterNames != null && parameterNames.length > 0) {
@@ -632,15 +647,15 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                 final TypeVar tvs = (TypeVar) parameterType;
                 final TypeParam t = tvs.resolve();
                 if (t.classBound != null) {
-                    // 如果可用，使用类型变量的类边界作为具体类型，
-                    // 优先于使用第一个接口边界(忽略接口边界，如果存在的话)
+                    // 如果可用,使用类型变量的类边界作为具体类型,
+                    // 优先于使用第一个接口边界(忽略接口边界,如果存在的话)
                     actualParameterType = t.classBound;
                 } else if (t.interfaceBounds != null && !t.interfaceBounds.isEmpty()) {
                     // 使用类型变量的第一个接口边界作为具体类型
-                    // (忽略第二个及后续的接口边界，如果存在的话)
+                    // (忽略第二个及后续的接口边界,如果存在的话)
                     actualParameterType = t.interfaceBounds.get(0);
                 } else {
-                    // 健全性检查，不应发生
+                    // 健全性检查,不应发生
                     throw new IllegalArgumentException("TypeVar 没有边界");
                 }
             } else {
@@ -652,9 +667,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 加载此方法关联的类，并获取此方法的 {@link Method} 引用仅当 {@link #isConstructor()}
-     * 返回 false 时调用此方法，否则将抛出 {@link IllegalArgumentException}
-     * 对于构造函数，应调用 {@link #loadClassAndGetConstructor()}
+     * 加载此方法关联的类,并获取此方法的 {@link Method} 引用仅当 {@link #isConstructor()}
+     * 返回 false 时调用此方法,否则将抛出 {@link IllegalArgumentException}
+     * 对于构造函数,应调用 {@link #loadClassAndGetConstructor()}
      *
      * @return 此方法的 {@link Method} 引用
      * @throws IllegalArgumentException
@@ -669,7 +684,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     public Method loadClassAndGetMethod() throws IllegalArgumentException {
         if (isConstructor()) {
             throw new IllegalArgumentException(
-                    "构造函数需要调用 loadClassAndGetConstructor()，而不是 loadClassAndGetMethod()");
+                    "构造函数需要调用 loadClassAndGetConstructor(),而不是 loadClassAndGetMethod()");
         }
         final Class<?>[] parameterClassesArr = loadParameterClasses();
         try {
@@ -687,9 +702,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 加载此构造函数关联的类，并获取此构造函数的 {@link Constructor} 引用仅当
-     * {@link #isConstructor()} 返回 true 时调用此方法，否则将抛出
-     * {@link IllegalArgumentException}对于非构造函数方法，应调用
+     * 加载此构造函数关联的类,并获取此构造函数的 {@link Constructor} 引用仅当
+     * {@link #isConstructor()} 返回 true 时调用此方法,否则将抛出
+     * {@link IllegalArgumentException}对于非构造函数方法,应调用
      * {@link #loadClassAndGetMethod()}
      *
      * @return 此构造函数的 {@link Constructor} 引用
@@ -704,7 +719,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     public Constructor<?> loadClassAndGetConstructor() throws IllegalArgumentException {
         if (!isConstructor()) {
             throw new IllegalArgumentException(
-                    "非构造函数方法需要调用 loadClassAndGetMethod()，而不是 loadClassAndGetConstructor()");
+                    "非构造函数方法需要调用 loadClassAndGetMethod(),而不是 loadClassAndGetConstructor()");
         }
         final Class<?>[] parameterClassesArr = loadParameterClasses();
         try {
@@ -858,7 +873,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 使用类名、方法名和类型描述符进行 equals() 比较
+     * 使用类名,方法名和类型描述符进行 equals() 比较
      *
      * @param obj
      *            要比较相等的对象
@@ -877,7 +892,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 使用类名、方法名和类型描述符的哈希码
+     * 使用类名,方法名和类型描述符的哈希码
      *
      * @return 哈希码
      */
@@ -887,7 +902,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     }
 
     /**
-     * 按类名、方法名、然后类型描述符的顺序排序
+     * 按类名,方法名,然后类型描述符的顺序排序
      *
      * @param other
      *            要比较的另一个 {@link MethodInfo}
@@ -909,7 +924,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取方法的字符串表示注意，构造函数的名称为 {@code "<init>"}，私有静态类初始化块的
+     * 获取方法的字符串表示注意,构造函数的名称为 {@code "<init>"},私有静态类初始化块的
      * 名称为 {@code "<clinit>"}
      *
      * @param useSimpleNames
@@ -967,7 +982,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             buf.append(useSimpleNames ? ClassInfo.getSimpleName(name) : name);
         }
 
-        // 如果至少有一个参数被命名，则为未命名的参数使用占位符名称，
+        // 如果至少有一个参数被命名,则为未命名的参数使用占位符名称,
         // 否则不为任何参数显示名称
         final MethodParam[] allParamInfo = getParameterInfo();
         boolean hasParamNames = false;
@@ -978,8 +993,8 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             }
         }
 
-        // 查找可变参数索引(如果存在)—— 对于可变参数方法，这是最后一个不是合成参数
-        // 或强制参数的参数(事实证明，对于匿名内部类的变量捕获，Java 编译器可以在
+        // 查找可变参数索引(如果存在)—— 对于可变参数方法,这是最后一个不是合成参数
+        // 或强制参数的参数(事实证明,对于匿名内部类的变量捕获,Java 编译器可以在
         // 可变参数*之后*添加参数 —— 参见 #260)
         int varArgsParamIndex = -1;
         if (isVarArgs()) {
@@ -1012,7 +1027,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             MethodParam.modifiersToString(paramInfo.getModifiers(), buf);
 
             final TypeSignature paramTypeSignature = paramInfo.getTypeSignatureOrTypeDescriptor();
-            // 在隐式添加到非泛型方法的 `synthetic`、`bridge` 或 `mandated` 参数的情况下，
+            // 在隐式添加到非泛型方法的 `synthetic`,`bridge` 或 `mandated` 参数的情况下,
             // 参数类型签名可能为 null
             if (paramTypeSignature != null) {
                 if (i == varArgsParamIndex) {
@@ -1032,7 +1047,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     }
                     buf.append("...");
                 } else {
-                    // 从类型签名顶层的类型注解中排除参数注解，使注解不会被列出两次
+                    // 从类型签名顶层的类型注解中排除参数注解,使注解不会被列出两次
                     final AnnotationInfoList annotationsToExclude;
                     if (paramInfo.annotationInfo == null || paramInfo.annotationInfo.length == 0) {
                         annotationsToExclude = null;
@@ -1056,7 +1071,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
         }
         buf.append(')');
 
-        // 当 throws 签名存在时，它包括泛型类型变量和类名
+        // 当 throws 签名存在时,它包括泛型类型变量和类名
         if (!methodType.getThrowsSignatures().isEmpty()) {
             buf.append(" throws ");
             for (int i = 0; i < methodType.getThrowsSignatures().size(); i++) {

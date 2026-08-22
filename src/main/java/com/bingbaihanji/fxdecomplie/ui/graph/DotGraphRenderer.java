@@ -16,12 +16,19 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 用 JavaFX 原生控件渲染 {@link DotGraphParser} 解析后的图形
  *
- * <p>布局算法：</p>
+ * <p>布局算法:</p>
  * <ol>
  *   <li>拓扑排序计算节点层级(BFS 入度归零)</li>
  *   <li>按层级和 rankdir 方向分配坐标</li>
@@ -29,7 +36,7 @@ import java.util.*;
  *   <li>箭头使用小三角形 Polygon</li>
  * </ol>
  *
- * <p>交互：Ctrl+滚轮缩放(0.35x–2.5x),ScrollPane 原生拖拽平移</p>
+ * <p>交互:Ctrl+滚轮缩放(0.35x–2.5x),ScrollPane 原生拖拽平移</p>
  *
  * @author bingbaihanji
  * @date 2026-06-22
@@ -37,32 +44,45 @@ import java.util.*;
 final class DotGraphRenderer {
 
     // ---- 布局常量 ----
+
     /** 画布四周留白 */
     private static final double MARGIN = 48;
+
     /** 相邻层级之间的水平间距(rankdir=LR 时) */
     private static final double LEVEL_GAP = 110;
+
     /** 同层级相邻节点之间的垂直间距 */
     private static final double ROW_GAP = 34;
 
     // ---- 节点尺寸估算常量 ----
+
     /** 节点最小宽度(保证短标签可读) */
     private static final double MIN_NODE_W = 120;
+
     /** 节点最大宽度(超过则换行) */
     private static final double MAX_NODE_W = 280;
+
     /** 节点最小高度 */
     private static final double MIN_NODE_H = 42;
+
     /** 节点最大高度(避免超高) */
     private static final double MAX_NODE_H = 120;
+
     /** 单字符近似宽度(px),用于根据标签长度估算节点宽 */
     private static final double CHAR_W = 7.0;
+
     /** 节点内边距 + 边框宽度(宽度方向) */
     private static final double NODE_PAD_W = 34;
+
     /** 每行标签高度(px) */
     private static final double LINE_H = 18.0;
+
     /** 节点内边距 + 边框宽度(高度方向) */
     private static final double NODE_PAD_H = 20;
+
     /** 标签换行阈值(字符数),超过则节点内折行 */
     private static final int WRAP_THRESHOLD = 30;
+
     /**
      * 拓扑排序后未分层节点(环内节点)按声明顺序补层级时,每组的节点数
      * 将相邻未分层节点分成小组,避免全部挤在同一层级造成重叠
@@ -70,31 +90,41 @@ final class DotGraphRenderer {
     private static final int FALLBACK_PER_LEVEL = 8;
 
     // ---- 连线常量 ----
+
     /** 箭头三角形边长(px) */
     private static final double EDGE_ARROW = 9;
+
     /** 连线颜色 */
     private static final String EDGE_COLOR = "#808080";
 
     // ---- 缩放常量 ----
+
     /** 最小缩放倍数 */
     private static final double MIN_ZOOM = 0.35;
+
     /** 最大缩放倍数 */
     private static final double MAX_ZOOM = 2.5;
+
     /** 每档滚轮缩放步长 */
     private static final double ZOOM_STEP = 0.1;
 
     // ---- 文本颜色常量 ----
+
     /**
      * 相对亮度阈值(BT.601 公式)
      * 背景亮度 > 阈值时用深色文字,否则用浅色文字
      */
     private static final double LUMINANCE_THRESHOLD = 0.58;
+
     /** 深色文字(用于浅色背景) */
     private static final String DARK_TEXT = "#1e1e1e";
+
     /** 浅色文字(用于深色背景,缺省) */
     private static final String LIGHT_TEXT = "#e0e0e0";
+
     /** 缺省填充色 */
     private static final String DEFAULT_FILL = "#3c3c3c";
+
     /** 画布背景色 */
     private static final String BG_COLOR = "#1e1e1e";
 
@@ -174,7 +204,7 @@ final class DotGraphRenderer {
     /**
      * 计算每个节点的屏幕坐标
      *
-     * <p>步骤：</p>
+     * <p>步骤:</p>
      * <ol>
      *   <li>{@link #computeLevels} — 拓扑排序确定各节点层级</li>
      *   <li>按层级分组,同层级节点纵向排列</li>
@@ -215,7 +245,7 @@ final class DotGraphRenderer {
                     x = MARGIN + level * levelStep;
                     y = MARGIN + i * rowStep;
                 } else {
-                    // BT 模式：层级倒序(高层在上),节点水平排列
+                    // BT 模式:层级倒序(高层在上),节点水平排列
                     x = MARGIN + i * (maxWidth + ROW_GAP);
                     y = MARGIN + (maxLevel - level) * (maxHeight + LEVEL_GAP);
                 }
@@ -262,7 +292,7 @@ final class DotGraphRenderer {
                 levels.put(node.id(), 0);
             }
         }
-        // 纯环图场景：取第一个节点作为起点
+        // 纯环图场景:取第一个节点作为起点
         if (queue.isEmpty() && !graph.nodes().isEmpty()) {
             String first = graph.nodes().getFirst().id();
             queue.add(first);
@@ -293,7 +323,7 @@ final class DotGraphRenderer {
             }
         }
 
-        // 因环而未分配层级的节点：按声明顺序补层级,每 FALLBACK_PER_LEVEL 个一组
+        // 因环而未分配层级的节点:按声明顺序补层级,每 FALLBACK_PER_LEVEL 个一组
         int fallback = 0;
         for (DotGraphParser.DotNode node : graph.nodes()) {
             levels.putIfAbsent(node.id(), fallback++ / FALLBACK_PER_LEVEL);
@@ -303,7 +333,7 @@ final class DotGraphRenderer {
 
     // ======================== 节点渲染 ========================
 
-    /** 创建节点视图：带背景色的 StackPane + 居中 Label */
+    /** 创建节点视图:带背景色的 StackPane + 居中 Label */
     private static StackPane createNodeView(LayoutNode layout) {
         DotGraphParser.DotNode dn = layout.node();
         Label label = new Label(dn.label());
@@ -330,7 +360,7 @@ final class DotGraphRenderer {
     // ======================== 连线渲染 ========================
 
     /**
-     * 绘制从 from 到 to 的有向边：直线 + 终点箭头三角形
+     * 绘制从 from 到 to 的有向边:直线 + 终点箭头三角形
      * 两端点自动截断到节点矩形边框上,避免线条穿过节点内部
      *
      * @param label 边标签文本,可为空字符串
@@ -384,7 +414,7 @@ final class DotGraphRenderer {
     /**
      * 计算从 node 中心到 target 的连线与 node 矩形边框的交点
      *
-     * <p>原理：以 node 中心为原点,向 target 方向做射线,取射线与矩形
+     * <p>原理:以 node 中心为原点,向 target 方向做射线,取射线与矩形
      * 的交点中距离中心最近的那个(即先碰到哪条边就在哪里截断)</p>
      */
     private static Point2D borderPoint(LayoutNode node, Point2D target) {
@@ -473,14 +503,14 @@ final class DotGraphRenderer {
      * 根据背景色智能选择文字颜色
      *
      * <p>若用户指定了 fontColor 且为合法 CSS 颜色,直接使用 否则根据填充色的
-     * BT.601 相对亮度自动选择：亮底黑字 / 暗底白字</p>
+     * BT.601 相对亮度自动选择:亮底黑字 / 暗底白字</p>
      */
     private static String chooseTextColor(String fill, String configured) {
         if (configured != null && !configured.isBlank()) {
             return isValidColor(configured) ? configured : LIGHT_TEXT;
         }
         Color color = parseColor(fill, Color.web(DEFAULT_FILL));
-        // BT.601 相对亮度公式：Y = 0.2126R + 0.7152G + 0.0722B
+        // BT.601 相对亮度公式:Y = 0.2126R + 0.7152G + 0.0722B
         double luminance = 0.2126 * color.getRed()
                 + 0.7152 * color.getGreen()
                 + 0.0722 * color.getBlue();
@@ -560,6 +590,7 @@ final class DotGraphRenderer {
      */
     private record LayoutNode(DotGraphParser.DotNode node, double x, double y,
                               double width, double height) {
+
         /** 节点矩形中心坐标,用于连线端点计算 */
         Point2D center() {
             return new Point2D(x + width / 2.0, y + height / 2.0);

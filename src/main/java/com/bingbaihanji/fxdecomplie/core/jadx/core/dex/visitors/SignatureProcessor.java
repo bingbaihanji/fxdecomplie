@@ -14,9 +14,15 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 public class SignatureProcessor extends AbstractVisitor {
+
     private RootNode root;
 
     /**

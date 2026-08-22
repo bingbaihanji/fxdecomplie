@@ -4,17 +4,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * {@link TaskExecutorService} 的默认实现 — 管理 4 个独立线程池。
+ * {@link TaskExecutorService} 的默认实现 — 管理 4 个独立线程池.
  *
  * <ul>
- *   <li>INTERACTIVE: 4-8 核，队列 200 — 搜索/打开类/UI 交互</li>
- *   <li>IO: 2 核，无界队列 — 磁盘缓存写入/索引构建</li>
- *   <li>EXPORT: 2-4 核，队列 50 — 导出任务</li>
- *   <li>DECOMPILE: C/2 核，队列 4 — 反编译（隔离，避免阻塞短任务）</li>
+ *   <li>INTERACTIVE: 4-8 核,队列 200 — 搜索/打开类/UI 交互</li>
+ *   <li>IO: 2 核,无界队列 — 磁盘缓存写入/索引构建</li>
+ *   <li>EXPORT: 2-4 核,队列 50 — 导出任务</li>
+ *   <li>DECOMPILE: C/2 核,队列 4 — 反编译(隔离,避免阻塞短任务)</li>
  * </ul>
  *
  * @author bingbaihanji
@@ -23,6 +28,7 @@ import java.util.function.Consumer;
 public final class ThreadPoolTaskExecutor implements TaskExecutorService {
 
     private static final Logger log = LoggerFactory.getLogger(ThreadPoolTaskExecutor.class);
+
     private final Map<TaskKind, ThreadPoolExecutor> pools;
 
     public ThreadPoolTaskExecutor() {
@@ -43,7 +49,7 @@ public final class ThreadPoolTaskExecutor implements TaskExecutorService {
     }
 
     private static ThreadPoolExecutor createPool(int threads, int queueSize,
-                                                  String prefix) {
+                                                 String prefix) {
         ThreadPoolExecutor ex = new ThreadPoolExecutor(
                 threads, threads,
                 60L, TimeUnit.SECONDS,
@@ -110,7 +116,9 @@ public final class ThreadPoolTaskExecutor implements TaskExecutorService {
     @Override
     public TaskSnapshot snapshot(TaskKind kind) {
         ThreadPoolExecutor pool = pools.get(kind);
-        if (pool == null) return TaskSnapshot.EMPTY;
+        if (pool == null) {
+            return TaskSnapshot.EMPTY;
+        }
         return new TaskSnapshot(pool.getActiveCount(),
                 pool.getQueue().size(), pool.getPoolSize());
     }

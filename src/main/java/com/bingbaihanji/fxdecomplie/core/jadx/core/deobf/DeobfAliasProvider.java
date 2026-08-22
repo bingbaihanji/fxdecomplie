@@ -4,13 +4,20 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IAliasProvider;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 
 public class DeobfAliasProvider implements IAliasProvider {
 
     private int pkgIndex = 0;
+
     private int clsIndex = 0;
+
     private int fldIndex = 0;
+
     private int mthIndex = 0;
 
     private int maxLength;

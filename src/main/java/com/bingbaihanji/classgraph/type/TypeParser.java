@@ -7,16 +7,22 @@ import com.bingbaihanji.classgraph.util.Strings;
  * 通用 PEG 解析器
  */
 public class TypeParser {
+
     /** 当前位置之前显示的上下文字符数 */
     private static final int SHOW_BEFORE = 80;
+
     /** 当前位置之后显示的上下文字符数 */
     private static final int SHOW_AFTER = 80;
+
     /** 正在解析的字符串 */
     private final String string;
+
     /** Token 缓冲区 */
     private final StringBuilder token = new StringBuilder();
+
     /** 当前位置 */
     private int position;
+
     /** 额外的解析状态 */
     private Object state;
 
@@ -36,9 +42,9 @@ public class TypeParser {
     }
 
     /**
-     * 获取解析上下文字符串，用于调试
+     * 获取解析上下文字符串,用于调试
      *
-     * @return 显示解析上下文的字符串，用于调试
+     * @return 显示解析上下文的字符串,用于调试
      */
     public String getPositionInfo() {
         final int showStart = Math.max(0, position - SHOW_BEFORE);
@@ -102,14 +108,14 @@ public class TypeParser {
     /**
      * 查看下一个字符但不读取它
      *
-     * @return 下一个字符，如果已到字符串末尾则返回 '\0'
+     * @return 下一个字符,如果已到字符串末尾则返回 '\0'
      */
     public char peek() {
         return position == string.length() ? '\0' : string.charAt(position);
     }
 
     /**
-     * 查看下一个字符，如果下一个字符不是期望的字符则抛出{@link ParseException}
+     * 查看下一个字符,如果下一个字符不是期望的字符则抛出{@link ParseException}
      *
      * @param expectedChar
      *            期望的下一个字符
@@ -127,18 +133,18 @@ public class TypeParser {
     }
 
     /**
-     * 向前查看操作符，可以向前查看多个字符
+     * 向前查看操作符,可以向前查看多个字符
      *
      * @param strMatch
-     *            要比较的字符串，从当前位置开始，作为"向前查看"操作
-     * @return 如果 strMatch 与从当前位置开始的剩余字符串的子串匹配，则返回 true
+     *            要比较的字符串,从当前位置开始,作为"向前查看"操作
+     * @return 如果 strMatch 与从当前位置开始的剩余字符串的子串匹配,则返回 true
      */
     public boolean peekMatches(final String strMatch) {
         return string.regionMatches(position, strMatch, 0, strMatch.length());
     }
 
     /**
-     * 前进一个字符，不返回该字符的值
+     * 前进一个字符,不返回该字符的值
      */
     public void next() {
         position++;
@@ -253,7 +259,7 @@ public class TypeParser {
     }
 
     /**
-     * 获取当前 token，并将 token 重置为空
+     * 获取当前 token,并将 token 重置为空
      *
      * @return 当前 token将当前 token 重置为空
      */

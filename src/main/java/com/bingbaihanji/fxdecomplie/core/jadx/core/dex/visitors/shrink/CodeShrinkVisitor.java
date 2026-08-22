@@ -4,7 +4,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeCustomNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.Named;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
@@ -17,7 +21,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.RegionUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @JadxVisitor(
         name = "CodeShrinkVisitor",

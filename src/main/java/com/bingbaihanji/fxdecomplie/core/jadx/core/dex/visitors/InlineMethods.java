@@ -11,7 +11,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IMethodDetails;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeInferenceVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
@@ -33,15 +38,16 @@ import java.util.List;
 /**
  * 方法内联访问器
  * <p>
- * 将此前在 {@link MarkMethodsForInline} 中标记为可内联的方法调用替换为方法体本身，
+ * 将此前在 {@link MarkMethodsForInline} 中标记为可内联的方法调用替换为方法体本身,
  * 从而在反编译结果中消除多余的间接调用 (如简单的 getter/setter 访问器)
- * 内联过程中会完成寄存器重映射 结果值处理，并同步更新方法/字段/类的使用 (usage)信息
+ * 内联过程中会完成寄存器重映射 结果值处理,并同步更新方法/字段/类的使用 (usage)信息
  */
 public class InlineMethods extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(InlineMethods.class);
 
     /**
-     * 遍历方法的所有基本块，处理其中的 INVOKE 指令，尝试对其进行内联
+     * 遍历方法的所有基本块,处理其中的 INVOKE 指令,尝试对其进行内联
      *
      * @param mth 待处理的方法节点
      */
@@ -91,7 +97,7 @@ public class InlineMethods extends AbstractVisitor {
         InsnNode inlCopy = mia.getInsn().copyWithoutResult();
         if (replaceRegs(mth, callMth, mia, insn, inlCopy)) {
             IMethodDetails methodDetailsAttr = inlCopy.get(AType.METHOD_DETAILS);
-            // replaceInsn 会一并替换属性，因此需要保留 METHOD_DETAILS
+            // replaceInsn 会一并替换属性,因此需要保留 METHOD_DETAILS
             if (BlockUtils.replaceInsn(mth, block, insn, inlCopy)) {
                 if (methodDetailsAttr != null) {
                     inlCopy.addAttr(methodDetailsAttr);

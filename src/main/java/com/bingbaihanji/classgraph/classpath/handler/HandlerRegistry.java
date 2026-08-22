@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
@@ -12,8 +11,9 @@ import java.util.List;
 
 /** ClassLoaderHandler 类的注册表 */
 public class HandlerRegistry {
+
     /**
-     * 默认的 ClassLoaderHandler 列表如果向 ClassGraph 添加了 ClassLoaderHandler，则应将其添加到此列表中
+     * 默认的 ClassLoaderHandler 列表如果向 ClassGraph 添加了 ClassLoaderHandler,则应将其添加到此列表中
      */
     public static final List<HandlerRegistryEntry> CLASS_LOADER_HANDLERS = //
             Collections.unmodifiableList(Arrays.asList(
@@ -37,10 +37,10 @@ public class HandlerRegistry {
                     // 用于 PARENT_LAST 委托顺序的单元测试
                     new HandlerRegistryEntry(new ParentLastDelegationOrderTestClassLoaderHandler()),
 
-                    // JPMS 支持(此处理器不执行任何操作，因为模块是单独处理的)
+                    // JPMS 支持(此处理器不执行任何操作,因为模块是单独处理的)
                     new HandlerRegistryEntry(new JPMSClassLoaderHandler()),
 
-                    // Java 7/8 URLClassLoader 支持(应位于倒数第二位，以便 URLClassLoader 的子类由上面更具体的处理器处理)
+                    // Java 7/8 URLClassLoader 支持(应位于倒数第二位,以便 URLClassLoader 的子类由上面更具体的处理器处理)
                     new HandlerRegistryEntry(new URLClassLoaderHandler()),
 
                     // 用于从外部嵌套扫描委托给 ScanClassLoader 实例的占位符
@@ -78,7 +78,7 @@ public class HandlerRegistry {
      * 自动类文件前缀(用于补偿某些类加载器未将这些前缀显式列为类路径元素 URL 或路径的情况)
      */
     public static final String[] AUTOMATIC_PACKAGE_ROOT_PREFIXES = {
-            // Ant、Tomcat 及其他
+            // Ant,Tomcat 及其他
             "classes/",
             // Ant
             "test-classes/",
@@ -100,6 +100,7 @@ public class HandlerRegistry {
      * 完全限定类加载器类名与可处理它们的 ClassLoaderHandler 的配对列表
      */
     public static class HandlerRegistryEntry {
+
         /** ClassLoaderHandler 实例 */
         public final ClassLoaderHandler classLoaderHandler;
 
@@ -118,7 +119,7 @@ public class HandlerRegistry {
          *
          * @param classLoader {@link ClassLoader}
          * @param log  日志
-         * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+         * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
          */
         public boolean canHandle(final Class<?> classLoader, final LogNode log) {
             return classLoaderHandler.canHandle(classLoader, log);

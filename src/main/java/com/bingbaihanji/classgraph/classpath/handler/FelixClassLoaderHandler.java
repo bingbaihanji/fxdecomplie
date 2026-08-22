@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -22,6 +21,7 @@ import java.util.Set;
  * @author elrufaie
  */
 class FelixClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public FelixClassLoaderHandler() {
     }
@@ -94,7 +94,7 @@ class FelixClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -141,7 +141,7 @@ class FelixClassLoaderHandler implements ClassLoaderHandler {
         final Object bundleWiring = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "m_wiring");
         addBundle(bundleWiring, classLoader, classpathOrder, bundles, ScanConfig, log);
 
-        // 处理我们可能连接到的任何其他包TODO：使用 ScanConfig 缩小我们跟踪的连接列表
+        // 处理我们可能连接到的任何其他包TODO:使用 ScanConfig 缩小我们跟踪的连接列表
 
         final List<?> requiredWires = (List<?>) classpathOrder.reflectionUtils.invokeMethod(false, bundleWiring,
                 "getRequiredWires", String.class, null);

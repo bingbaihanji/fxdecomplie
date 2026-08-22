@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
 public class JumpInfo {
 
     private final int src;
+
     private final int dest;
 
     public JumpInfo(int src, int dest) {

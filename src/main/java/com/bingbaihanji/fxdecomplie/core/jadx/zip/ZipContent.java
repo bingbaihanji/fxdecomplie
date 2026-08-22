@@ -11,10 +11,13 @@ import java.util.List;
 import java.util.Map;
 
 public class ZipContent implements Closeable {
+
     private static final Logger LOG = LoggerFactory.getLogger(ZipContent.class);
 
     private final IZipParser zipParser;
+
     private final List<IZipEntry> entries;
+
     private final Map<String, IZipEntry> entriesMap;
 
     public ZipContent(IZipParser zipParser, List<IZipEntry> entries) {

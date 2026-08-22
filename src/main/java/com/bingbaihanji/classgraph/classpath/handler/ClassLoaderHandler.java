@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
@@ -10,7 +9,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
  * ClassLoader 处理器
  *
  * <p>
- * 如果您创建了自定义的 ClassLoaderHandler，请考虑将其提交到 ClassGraph 开源项目
+ * 如果您创建了自定义的 ClassLoaderHandler,请考虑将其提交到 ClassGraph 开源项目
  */
 public interface ClassLoaderHandler {
 
@@ -21,7 +20,7 @@ public interface ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类之一
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     default boolean canHandle(Class<?> classLoaderClass, LogNode log) {
         return false;

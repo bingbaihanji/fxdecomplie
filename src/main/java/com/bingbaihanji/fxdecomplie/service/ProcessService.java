@@ -21,7 +21,7 @@ public final class ProcessService {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessService.class);
 
-    /** 已启动的子进程映射，防止同一文件重复启动实例 */
+    /** 已启动的子进程映射,防止同一文件重复启动实例 */
     private static final Map<String, Process> runningProcesses = new ConcurrentHashMap<>();
 
     private ProcessService() {
@@ -40,7 +40,7 @@ public final class ProcessService {
         if (filePath != null) {
             Process existing = runningProcesses.get(filePath);
             if (existing != null && existing.isAlive()) {
-                log.debug("已有实例运行中，忽略重复启动: {}", filePath);
+                log.debug("已有实例运行中,忽略重复启动: {}", filePath);
                 return;
             }
         }

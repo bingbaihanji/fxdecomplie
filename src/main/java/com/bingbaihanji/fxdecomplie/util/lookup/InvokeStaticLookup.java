@@ -12,6 +12,7 @@ import java.util.List;
  * @author Matt Coley
  */
 public interface InvokeStaticLookup {
+
     /**
      * @param method
      * 		方法引用

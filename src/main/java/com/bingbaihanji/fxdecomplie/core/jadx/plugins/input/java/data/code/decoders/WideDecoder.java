@@ -7,6 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.JavaI
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.utils.JavaClassParseException;
 
 public class WideDecoder implements IJavaInsnDecoder {
+
     private static final int IINC = 0x84;
 
     @Override

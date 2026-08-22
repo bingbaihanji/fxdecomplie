@@ -9,6 +9,9 @@ public interface IJavaNodeRef extends Comparable<IJavaNodeRef> {
     String getShortId();
 
     enum RefType {
-        CLASS, FIELD, METHOD, PKG
+        CLASS,
+        FIELD,
+        METHOD,
+        PKG
     }
 }

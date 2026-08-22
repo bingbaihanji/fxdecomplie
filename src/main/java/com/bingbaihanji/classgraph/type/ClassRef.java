@@ -7,10 +7,15 @@ import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
 import com.bingbaihanji.classgraph.metadata.ClassInfo;
 import com.bingbaihanji.classgraph.scan.ScanResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /** 类引用类型签名(在 ClassParser 文档中称为"ClassType") */
 public final class ClassRef extends TypeRef {
+
     /** 类名 */
     final String className;
 
@@ -87,7 +92,7 @@ public final class ClassRef extends TypeRef {
                     TypeParser.advance(1);
                     if (!TypeUtils.getIdentifierToken(TypeParser, /* stopAtDollarSign = */ true,
                             /* stopAtDot = */ true)) {
-                        // 获取到了 '$' 之后的下一个 token 为空字符串，即找到了一个空后缀
+                        // 获取到了 '$' 之后的下一个 token 为空字符串,即找到了一个空后缀
                         suffixes.add("");
                         suffixTypeArgs.add(Collections.<TypeArg>emptyList());
                         dropSuffixes = true;
@@ -97,9 +102,10 @@ public final class ClassRef extends TypeRef {
                     }
                 }
                 if (dropSuffixes) {
-                    // 获取到了空后缀 -- 要么是 "$$"，要么是类名以 '$' 结尾(Scala 会这样用)
-                    // 在这种情况下，将整个类引用作为不带后缀的单个类名处理
-                    className = TypeParser.getSubstring(startParserPosition, TypeParser.getPosition()).replace('/', '.');
+                    // 获取到了空后缀 -- 要么是 "$$",要么是类名以 '$' 结尾(Scala 会这样用)
+                    // 在这种情况下,将整个类引用作为不带后缀的单个类名处理
+                    className = TypeParser.getSubstring(startParserPosition, TypeParser.getPosition())
+                            .replace('/', '.');
                     suffixes = Collections.emptyList();
                     suffixTypeArgs = Collections.emptyList();
                 }
@@ -115,7 +121,7 @@ public final class ClassRef extends TypeRef {
     }
 
     /**
-     * 获取类名，不带任何后缀
+     * 获取类名,不带任何后缀
      *
      * @see #getFullyQualifiedClassName()
      * @return 类名
@@ -125,14 +131,14 @@ public final class ClassRef extends TypeRef {
     }
 
     /**
-     * 获取类名，由基名和后缀组成(后缀用于内部类嵌套，以 '$' 分隔)，但不包含任何类型参数
-     * 例如，{@code "xyz.Cls<String>.InnerCls<Integer>"} 返回 {@code "xyz.Cls$InnerCls"}
-     * 此方法的意图是：如果将 '.' 替换为 '/'，然后加上后缀 ".class"，就能得到相对于包根目录的 ClassParser 路径
+     * 获取类名,由基名和后缀组成(后缀用于内部类嵌套,以 '$' 分隔),但不包含任何类型参数
+     * 例如,{@code "xyz.Cls<String>.InnerCls<Integer>"} 返回 {@code "xyz.Cls$InnerCls"}
+     * 此方法的意图是:如果将 '.' 替换为 '/',然后加上后缀 ".class",就能得到相对于包根目录的 ClassParser 路径
      *
      * <p>
-     * 对比而言，{@link #toString()} 使用 '.' 分隔后缀，并包含类型参数；而此方法使用 '$' 分隔后缀，不包含类型参数
+     * 对比而言,{@link #toString()} 使用 '.' 分隔后缀,并包含类型参数;而此方法使用 '$' 分隔后缀,不包含类型参数
      *
-     * @return 类的完全限定名，包含后缀但不含类型参数
+     * @return 类的完全限定名,包含后缀但不含类型参数
      */
     public String getFullyQualifiedClassName() {
         if (suffixes.isEmpty()) {
@@ -160,25 +166,25 @@ public final class ClassRef extends TypeRef {
     /**
      * 获取类的所有嵌套后缀(通常为嵌套内部类名称)
      *
-     * @return 类后缀(用于内部类)，如果无则返回空列表
+     * @return 类后缀(用于内部类),如果无则返回空列表
      */
     public List<String> getSuffixes() {
         return suffixes;
     }
 
     /**
-     * 获取类所有嵌套后缀的类型参数列表，每个后缀对应一个列表
+     * 获取类所有嵌套后缀的类型参数列表,每个后缀对应一个列表
      *
-     * @return 后缀(嵌套内部类)的类型参数列表，每个后缀一个列表，如果无则返回空列表
+     * @return 后缀(嵌套内部类)的类型参数列表,每个后缀一个列表,如果无则返回空列表
      */
     public List<List<TypeArg>> getSuffixTypeArgs() {
         return suffixTypeArgs;
     }
 
     /**
-     * 获取类所有嵌套后缀的类型注解列表的列表，每个后缀对应一个列表
+     * 获取类所有嵌套后缀的类型注解列表的列表,每个后缀对应一个列表
      *
-     * @return 后缀(嵌套内部类)的类型注解列表的列表，每个后缀一个列表，如果无则返回 null
+     * @return 后缀(嵌套内部类)的类型注解列表的列表,每个后缀一个列表,如果无则返回 null
      */
     public List<AnnotationInfoList> getSuffixTypeAnnotationInfo() {
         return suffixTypeAnnotations;
@@ -212,14 +218,14 @@ public final class ClassRef extends TypeRef {
                 nextTypeArgIdx = typePathNode.TypeArgIdx;
                 break;
             } else {
-                // 这里无效：
+                // 这里无效:
                 // 0 => 注解在更深层的数组类型中
                 // 2 => 注解在参数化类型的通配符类型参数边界上
                 throw new IllegalArgumentException("Bad typePathKind: " + typePathNode.typePathKind);
             }
         }
 
-        // 确定是索引基类型还是后缀，跳过非嵌套的类对
+        // 确定是索引基类型还是后缀,跳过非嵌套的类对
         int suffixIdx = -1;
         int nestingLevel = -1;
         String typePrefix = className;
@@ -228,10 +234,10 @@ public final class ClassRef extends TypeRef {
             if (suffixIdx >= suffixes.size()) {
                 throw new IllegalArgumentException("Ran out of nested types while trying to add type annotation");
             } else if (suffixIdx == suffixes.size() - 1) {
-                // 右侧没有后缀，因此右侧后缀不可能是静态的，无需跳过此后缀
+                // 右侧没有后缀,因此右侧后缀不可能是静态的,无需跳过此后缀
                 skipSuffix = false;
             } else {
-                // 对于后缀路径 X.Y，如果 Y 是静态的，则类不是嵌套的
+                // 对于后缀路径 X.Y,如果 Y 是静态的,则类不是嵌套的
                 final ClassInfo outerClassInfo = scanResult.classes().getClassInfo(typePrefix);
                 typePrefix = typePrefix + '$' + suffixes.get(suffixIdx + 1);
                 final ClassInfo innerClassInfo = scanResult.classes().getClassInfo(typePrefix);
@@ -263,9 +269,9 @@ public final class ClassRef extends TypeRef {
         } else {
             final List<TypeArg> TypeArgList = suffixIdx == -1 ? TypeArgs
                     : suffixTypeArgs.get(suffixIdx);
-            // 对于类型描述符(而非类型签名)，TypeArgs 是空列表，因此需要对 nextTypeArgIdx 进行边界检查
+            // 对于类型描述符(而非类型签名),TypeArgs 是空列表,因此需要对 nextTypeArgIdx 进行边界检查
             if (nextTypeArgIdx < TypeArgList.size()) {
-                // type_path_kind == 3 可以被 type_path_kind == 2 跟随，用于嵌套类型边界上的注解，
+                // type_path_kind == 3 可以被 type_path_kind == 2 跟随,用于嵌套类型边界上的注解,
                 // 这需要对类型路径的剩余部分进行递归处理
                 final List<TypePathNode> remainingTypePath = typePath.subList(numDeeperNestedLevels + 1,
                         typePath.size());
@@ -278,11 +284,11 @@ public final class ClassRef extends TypeRef {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 如果尚未加载，则加载引用的类，返回被引用类的 {@code Class<?>} 引用
+     * 如果尚未加载,则加载引用的类,返回被引用类的 {@code Class<?>} 引用
      * (由 {@link AnnotationClassRef#loadClass()} 调用)
      *
      * @param ignoreExceptions
-     *            如果为 true，则忽略异常，在无法加载类时返回 null
+     *            如果为 true,则忽略异常,在无法加载类时返回 null
      * @return 被引用类的 {@code Class<?>} 引用
      * @throws IllegalArgumentException
      *             如果类无法加载且 ignoreExceptions 为 false
@@ -293,7 +299,7 @@ public final class ClassRef extends TypeRef {
     }
 
     /**
-     * 如果尚未加载，则加载引用的类，返回被引用类的 {@code Class<?>} 引用
+     * 如果尚未加载,则加载引用的类,返回被引用类的 {@code Class<?>} 引用
      * (由 {@link AnnotationClassRef#loadClass()} 调用)
      *
      * @return 被引用类的 {@code Class<?>} 引用
@@ -314,8 +320,8 @@ public final class ClassRef extends TypeRef {
     /**
      * 获取被引用类的 {@link ClassInfo} 对象
      *
-     * @return 被引用类的 {@link ClassInfo} 对象，如果在扫描期间未遇到被引用类(即扫描期间未为该类创建 ClassInfo 对象)则返回 null
-     *         注意：即使此方法返回 null，{@link #loadClass()} 仍可能通过名称加载被引用类
+     * @return 被引用类的 {@link ClassInfo} 对象,如果在扫描期间未遇到被引用类(即扫描期间未为该类创建 ClassInfo 对象)则返回 null
+     *         注意:即使此方法返回 null,{@link #loadClass()} 仍可能通过名称加载被引用类
      */
     @Override
     public ClassInfo getClassInfo() {
@@ -392,7 +398,7 @@ public final class ClassRef extends TypeRef {
     @Override
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
         if (other instanceof TypeVar) {
-            // 将类类型签名与类型变量进行比较 -- 此逻辑在 TypeVar 中实现，此处不重复
+            // 将类类型签名与类型变量进行比较 -- 此逻辑在 TypeVar 中实现,此处不重复
             return other.equalsIgnoringTypeParams(this);
         }
         if (!(other instanceof ClassRef)) {
@@ -438,7 +444,7 @@ public final class ClassRef extends TypeRef {
         if (!suffixes.isEmpty()) {
             for (int i = useSimpleNames ? suffixes.size() - 1 : 0; i < suffixes.size(); i++) {
                 if (!useSimpleNames) {
-                    // 使用 '$' 而非 '.' 作为后缀分隔符，因为这是 Class.getName() 的行为
+                    // 使用 '$' 而非 '.' 作为后缀分隔符,因为这是 Class.getName() 的行为
                     buf.append('$');
                 }
                 final AnnotationInfoList typeAnnotations = suffixTypeAnnotations == null ? null

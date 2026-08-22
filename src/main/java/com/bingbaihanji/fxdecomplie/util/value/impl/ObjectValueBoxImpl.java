@@ -19,6 +19,7 @@ import java.util.Optional;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
+
     private final Optional<T> value;
 
     /**

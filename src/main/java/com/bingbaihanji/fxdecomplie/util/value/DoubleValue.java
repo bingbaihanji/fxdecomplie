@@ -12,11 +12,17 @@ import java.util.OptionalDouble;
  * @author Matt Coley
  */
 public non-sealed interface DoubleValue extends ReValue {
+
     DoubleValue UNKNOWN = new DoubleValueImpl();
+
     DoubleValue VAL_MAX = new DoubleValueImpl(Double.MAX_VALUE);
+
     DoubleValue VAL_MIN = new DoubleValueImpl(Double.MIN_VALUE);
+
     DoubleValue VAL_M1 = new DoubleValueImpl(-1);
+
     DoubleValue VAL_0 = new DoubleValueImpl(0);
+
     DoubleValue VAL_1 = new DoubleValueImpl(1);
 
     /**
@@ -118,7 +124,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之和；若任一值未知则为 {@link #UNKNOWN}
+     * @return 两值之和;若任一值未知则为 {@link #UNKNOWN}
      */
     default DoubleValue add(DoubleValue other) {
         OptionalDouble value = value();
@@ -134,7 +140,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之差；若任一值未知则为 {@link #UNKNOWN}
+     * @return 两值之差;若任一值未知则为 {@link #UNKNOWN}
      */
     default DoubleValue sub(DoubleValue other) {
         OptionalDouble value = value();
@@ -150,7 +156,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
+     * @return 两值之积;若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
      */
     default DoubleValue mul(DoubleValue other) {
         OptionalDouble value = value();
@@ -169,7 +175,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之商；若任一值未知或除数为 0 则为 {@link #UNKNOWN}
+     * @return 两值之商;若任一值未知或除数为 0 则为 {@link #UNKNOWN}
      */
     default DoubleValue div(DoubleValue other) {
         OptionalDouble value = value();
@@ -189,7 +195,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果(对应 {@code dcmpg} 指令，NaN 视为大于)；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code dcmpg} 指令,NaN 视为大于);若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpg(DoubleValue other) {
         OptionalDouble value = value();
@@ -210,7 +216,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果(对应 {@code dcmpl} 指令，NaN 视为小于)；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code dcmpl} 指令,NaN 视为小于);若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpl(DoubleValue other) {
         OptionalDouble value = value();
@@ -231,7 +237,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值取余的结果；若任一值未知则为 {@link #UNKNOWN}
+     * @return 两值取余的结果;若任一值未知则为 {@link #UNKNOWN}
      */
     default DoubleValue rem(DoubleValue other) {
         OptionalDouble value = value();
@@ -244,7 +250,7 @@ public non-sealed interface DoubleValue extends ReValue {
 
 
     /**
-     * @return 取负后的值；若值未知则为 {@link #UNKNOWN}
+     * @return 取负后的值;若值未知则为 {@link #UNKNOWN}
      */
     default DoubleValue negate() {
         OptionalDouble value = value();
@@ -256,7 +262,7 @@ public non-sealed interface DoubleValue extends ReValue {
 
 
     /**
-     * @return 转换为 int 后的值；若值未知则为 {@link IntValue#UNKNOWN}
+     * @return 转换为 int 后的值;若值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue castInt() {
         OptionalDouble value = value();
@@ -268,7 +274,7 @@ public non-sealed interface DoubleValue extends ReValue {
 
 
     /**
-     * @return 转换为 float 后的值；若值未知则为 {@link FloatValue#UNKNOWN}
+     * @return 转换为 float 后的值;若值未知则为 {@link FloatValue#UNKNOWN}
      */
     default FloatValue castFloat() {
         OptionalDouble value = value();
@@ -280,7 +286,7 @@ public non-sealed interface DoubleValue extends ReValue {
 
 
     /**
-     * @return 转换为 long 后的值；若值未知则为 {@link LongValue#UNKNOWN}
+     * @return 转换为 long 后的值;若值未知则为 {@link LongValue#UNKNOWN}
      */
     default LongValue castLong() {
         OptionalDouble value = value();

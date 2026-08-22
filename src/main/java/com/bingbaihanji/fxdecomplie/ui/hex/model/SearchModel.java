@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 搜索模型,用于在二进制数据中执行字节序列搜索(支持十六进制和文本模式) 
  * <p>
- * 该类维护搜索状态,包括上次查询字符串、查询类型(十六进制/文本)、匹配地址列表
+ * 该类维护搜索状态,包括上次查询字符串,查询类型(十六进制/文本),匹配地址列表
  * 以及当前匹配索引,并支持遍历匹配结果(下一个/上一个) 
  * 搜索算法采用滑动窗口,分块读取数据以提高大文件搜索效率 
  * </p>
@@ -37,7 +37,7 @@ public class SearchModel {
      * 会去除所有非十六进制字符(0-9a-fA-F),若处理后长度为奇数则返回空数组 
      * </p>
      *
-     * @param query 十六进制查询字符串(可包含空格、下划线等分隔符)
+     * @param query 十六进制查询字符串(可包含空格,下划线等分隔符)
      * @return 解析后的字节数组,若无效则返回空数组
      */
     private static byte[] parseHexQuery(String query) {
@@ -102,7 +102,7 @@ public class SearchModel {
                     matchAddresses.add(bufAddr + i);
                 }
             }
-            // 滑动窗口：保留末尾 overlap 字节用于下一轮跨块匹配
+            // 滑动窗口:保留末尾 overlap 字节用于下一轮跨块匹配
             if (n > needle.length) {
                 bufAddr += n - needle.length + 1;
                 if (bufAddr < size) {
@@ -148,7 +148,7 @@ public class SearchModel {
     // ---------- 属性访问 ----------
 
     /**
-     * 获取所有匹配起始地址的列表(不可修改视图？实际返回内部列表,但建议只读) 
+     * 获取所有匹配起始地址的列表(不可修改视图?实际返回内部列表,但建议只读) 
      *
      * @return 匹配地址列表
      */

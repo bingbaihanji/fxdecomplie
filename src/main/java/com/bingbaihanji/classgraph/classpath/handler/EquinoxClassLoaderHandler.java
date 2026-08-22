@@ -14,10 +14,12 @@ import java.util.Set;
  * 从 Eclipse Equinox ClassLoader 提取类路径条目
  */
 class EquinoxClassLoaderHandler implements ClassLoaderHandler {
+
     /** 字段名 */
     private static final String[] FIELD_NAMES = {"cp", "nestedDirName"};
+
     /**
-     * 如果已读取系统包则为 true我们假设类路径上只有一个系统包，因此这是静态的
+     * 如果已读取系统包则为 true我们假设类路径上只有一个系统包,因此这是静态的
      */
     private boolean alreadyReadSystemBundles;
 
@@ -55,7 +57,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                             fieldName);
                     if (fieldVal != null) {
                         foundClassPathElement = true;
-                        // 找到了基文件和类路径元素，例如 "bin/"
+                        // 找到了基文件和类路径元素,例如 "bin/"
                         Object base = baseFile;
                         String sep = "/";
                         if ("org.eclipse.osgi.storage.bundlefile.NestedDirBundleFile"
@@ -75,7 +77,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                     }
                 }
                 if (!foundClassPathElement) {
-                    // 未找到类路径元素，直接使用基文件
+                    // 未找到类路径元素,直接使用基文件
                     classpathOrderOut.addClasspathEntry(baseFile.toString(), classLoader, ScanConfig, log);
                 }
 
@@ -123,7 +125,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {

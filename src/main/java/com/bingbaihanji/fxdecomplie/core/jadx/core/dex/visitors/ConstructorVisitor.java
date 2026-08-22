@@ -33,6 +33,7 @@ import java.util.List;
         runBefore = TypeInferenceVisitor.class
 )
 public class ConstructorVisitor extends AbstractVisitor {
+
     private static boolean replaceInvoke(MethodNode mth) {
         boolean replaced = false;
         InsnRemover remover = new InsnRemover(mth);

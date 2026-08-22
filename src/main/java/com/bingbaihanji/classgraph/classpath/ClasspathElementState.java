@@ -1,12 +1,12 @@
 package com.bingbaihanji.classgraph.classpath;
 
 /**
- * 类路径元素状态 — 表示类路径元素在其生命周期中所处的阶段。
+ * 类路径元素状态 — 表示类路径元素在其生命周期中所处的阶段.
  *
- * <p>用于替代 {@code Classpath} 中分散的 boolean 标志，
- * 提供明确的类型化状态机。</p>
+ * <p>用于替代 {@code Classpath} 中分散的 boolean 标志,
+ * 提供明确的类型化状态机.</p>
  *
- * <p>状态转换：
+ * <p>状态转换:
  * <pre>
  *   CREATED → INITIALIZED → PATHS_SCANNED → CLASSES_LINKED → CLOSED
  *                        ↘            ↘
@@ -18,10 +18,10 @@ public enum ClasspathElementState {
     /** 已创建但尚未初始化 */
     CREATED,
 
-    /** 已初始化，可以扫描路径 */
+    /** 已初始化,可以扫描路径 */
     INITIALIZED,
 
-    /** 路径已扫描，class 文件已发现 */
+    /** 路径已扫描,class 文件已发现 */
     PATHS_SCANNED,
 
     /** 类文件已链接到类图中 */
@@ -38,7 +38,7 @@ public enum ClasspathElementState {
         return this.ordinal() >= other.ordinal();
     }
 
-    /** 是否为终止状态（不可再转换） */
+    /** 是否为终止状态(不可再转换) */
     public boolean isTerminal() {
         return this == FAILED || this == CLOSED;
     }

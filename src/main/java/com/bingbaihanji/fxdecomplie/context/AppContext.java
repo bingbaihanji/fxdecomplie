@@ -21,11 +21,15 @@ import org.slf4j.LoggerFactory;
 public final class AppContext {
 
     private static final Logger log = LoggerFactory.getLogger(AppContext.class);
+
     private static final AppContext INSTANCE = new AppContext();
 
     private final Object lifecycleLock = new Object();
+
     private volatile boolean started;
+
     private volatile boolean shutdown;
+
     private AppConfig config;
 
     private AppContext() {

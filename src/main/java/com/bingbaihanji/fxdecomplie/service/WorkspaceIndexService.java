@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class WorkspaceIndexService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkspaceIndexService.class);
+
     private static final AtomicReference<IndexProgressSnapshot> PROGRESS = new AtomicReference<>();
 
     private WorkspaceIndexService() {

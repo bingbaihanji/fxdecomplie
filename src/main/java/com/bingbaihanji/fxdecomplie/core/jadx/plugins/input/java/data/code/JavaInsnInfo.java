@@ -5,12 +5,19 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.Opcode;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.IJavaInsnDecoder;
 
 public class JavaInsnInfo {
+
     private final int opcode;
+
     private final String name;
+
     private final int payloadSize;
+
     private final int regsCount;
+
     private final Opcode apiOpcode;
+
     private final InsnIndexType indexType;
+
     private final IJavaInsnDecoder decoder;
 
     public JavaInsnInfo(int opcode, String name, int payloadSize, int regsCount, Opcode apiOpcode,

@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.classpath.Classpath;
@@ -17,10 +16,15 @@ import java.util.regex.Pattern;
  * Facade for resource queries on a ScanResult.
  */
 public class ResourceQuery {
+
     private final List<Classpath> classpathOrder;
+
     private final AtomicInteger getResourcesWithPathCallCount;
+
     private final AtomicBoolean closed;
+
     private ResourceList allAcceptedResourcesCached;
+
     private Map<String, ResourceList> pathToAcceptedResourcesCached;
 
     ResourceQuery(final List<Classpath> classpathOrder,
@@ -58,9 +62,9 @@ public class ResourceQuery {
     }
 
     /**
-     * 获取从资源路径到 {@link Resource} 的映射，包含在被接受的包中找到的所有资源(包括类文件和非类文件)
+     * 获取从资源路径到 {@link Resource} 的映射,包含在被接受的包中找到的所有资源(包括类文件和非类文件)
      *
-     * @return 从资源路径到 {@link Resource} 的映射，包含在被接受的包中找到的所有资源(包括类文件和非类文件)
+     * @return 从资源路径到 {@link Resource} 的映射,包含在被接受的包中找到的所有资源(包括类文件和非类文件)
      */
     public Map<String, ResourceList> getAllResourcesAsMap() {
         if (closed.get()) {
@@ -85,12 +89,12 @@ public class ResourceQuery {
 
     /**
      * 获取在被接受的包中找到的具有给定路径(相对于类路径元素的包根)的所有资源的列表
-     * 可能匹配多个资源，每个类路径元素最多一个
+     * 可能匹配多个资源,每个类路径元素最多一个
      *
      * @param resourcePath
-     *            完整的资源路径，相对于类路径条目的包根
+     *            完整的资源路径,相对于类路径条目的包根
      * @return 在被接受的包中找到的具有给定路径(相对于类路径元素的包根)的所有资源的列表
-     *         可能匹配多个资源，每个类路径元素最多一个
+     *         可能匹配多个资源,每个类路径元素最多一个
      */
     public ResourceList getResourcesWithPath(final String resourcePath) {
         if (closed.get()) {
@@ -100,10 +104,10 @@ public class ResourceQuery {
                 /* removeFinalSlash = */ true);
         ResourceList matchingResources = null;
         if (getResourcesWithPathCallCount.incrementAndGet() > 3) {
-            // 如果进行了多次调用，则生成并缓存一个 HashMap 以实现 O(1) 访问时间
+            // 如果进行了多次调用,则生成并缓存一个 HashMap 以实现 O(1) 访问时间
             matchingResources = getAllResourcesAsMap().get(path);
         } else {
-            // 如果只进行了少量调用，则直接搜索具有请求路径的资源
+            // 如果只进行了少量调用,则直接搜索具有请求路径的资源
             for (final Classpath classpathElt : classpathOrder) {
                 for (final Resource res : classpathElt.acceptedResources) {
                     if (res.getPath().equals(path)) {
@@ -119,17 +123,17 @@ public class ResourceQuery {
     }
 
     /**
-     * 获取在任何类路径元素中找到的具有给定路径(相对于类路径元素的包根)的所有资源的列表，
+     * 获取在任何类路径元素中找到的具有给定路径(相对于类路径元素的包根)的所有资源的列表,
      * <i>无论是否在被接受的包中(只要资源未被拒绝)</i>
-     * 可能匹配多个资源，每个类路径元素最多一个注意，这可能不会返回未被接受的资源，
-     * 特别是在扫描目录类路径元素时，因为一旦给定目录下不再可能有被接受的资源，递归扫描就会终止
-     * 但是，可以使用此方法找到被接受目录的祖先目录中的资源
+     * 可能匹配多个资源,每个类路径元素最多一个注意,这可能不会返回未被接受的资源,
+     * 特别是在扫描目录类路径元素时,因为一旦给定目录下不再可能有被接受的资源,递归扫描就会终止
+     * 但是,可以使用此方法找到被接受目录的祖先目录中的资源
      *
      * @param resourcePath
-     *            完整的资源路径，相对于类路径条目的包根
-     * @return 在任何类路径元素中找到的具有给定路径的所有资源的列表，
-     *         <i>无论是否在被接受的包中(只要资源未被拒绝)</i>，
-     *         相对于类路径元素的包根可能匹配多个资源，每个类路径元素最多一个
+     *            完整的资源路径,相对于类路径条目的包根
+     * @return 在任何类路径元素中找到的具有给定路径的所有资源的列表,
+     *         <i>无论是否在被接受的包中(只要资源未被拒绝)</i>,
+     *         相对于类路径元素的包根可能匹配多个资源,每个类路径元素最多一个
      */
     public ResourceList getResourcesWithPathIgnoringAccept(final String resourcePath) {
         if (closed.get()) {
@@ -151,10 +155,10 @@ public class ResourceQuery {
      * 请改用 {@link #getResourcesWithPathIgnoringAccept(String)}
      *
      * @param resourcePath
-     *            完整的资源路径，相对于类路径条目的包根
-     * @return 在任何类路径元素中找到的具有给定路径的所有资源的列表，
-     *         <i>无论是否在被接受的包中(只要资源未被拒绝)</i>，
-     *         相对于类路径元素的包根可能匹配多个资源，每个类路径元素最多一个
+     *            完整的资源路径,相对于类路径条目的包根
+     * @return 在任何类路径元素中找到的具有给定路径的所有资源的列表,
+     *         <i>无论是否在被接受的包中(只要资源未被拒绝)</i>,
+     *         相对于类路径元素的包根可能匹配多个资源,每个类路径元素最多一个
      * @deprecated 请改用 {@link #getResourcesWithPathIgnoringAccept(String)}
      */
     @Deprecated
@@ -193,7 +197,7 @@ public class ResourceQuery {
      * 获取在被接受的包中找到的具有请求的文件扩展名的所有资源的列表
      *
      * @param extension
-     *            文件扩展名，例如 "xml" 可匹配所有以 ".xml" 结尾的资源
+     *            文件扩展名,例如 "xml" 可匹配所有以 ".xml" 结尾的资源
      * @return 在被接受的包中找到的具有请求的文件扩展名的所有资源的列表
      */
     public ResourceList getResourcesWithExtension(final String extension) {
@@ -253,17 +257,17 @@ public class ResourceQuery {
      * 获取在被接受的包中找到的路径与请求的通配符字符串匹配的所有资源的列表
      *
      * <p>
-     * 通配符字符串可以包含：
+     * 通配符字符串可以包含:
      * <ul>
-     * <li>单个星号，匹配零个或多个非 '/' 字符</li>
-     * <li>双星号，匹配零个或多个任意字符</li>
-     * <li>问号，匹配一个字符</li>
-     * <li>任何其他正则表达式风格的语法，例如字符集(用方括号表示)——表达式的其余部分
+     * <li>单个星号,匹配零个或多个非 '/' 字符</li>
+     * <li>双星号,匹配零个或多个任意字符</li>
+     * <li>问号,匹配一个字符</li>
+     * <li>任何其他正则表达式风格的语法,例如字符集(用方括号表示)——表达式的其余部分
      * 在转义点字符后传递给 Java 正则表达式解析器</li>
      * </ul>
      *
      * <p>
-     * 通配符字符串以简化的方式转换为正则表达式如果你需要更复杂的模式匹配，
+     * 通配符字符串以简化的方式转换为正则表达式如果你需要更复杂的模式匹配,
      * 请直接通过 {@link #getResourcesMatchingPattern(Pattern)} 使用正则表达式
      *
      * @param wildcardString

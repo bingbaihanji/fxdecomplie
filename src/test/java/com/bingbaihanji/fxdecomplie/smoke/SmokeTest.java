@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 核心路径冒烟测试 — 不启动 JavaFX,只验证关键对象的创建、使用和销毁。
+ * 核心路径冒烟测试 — 不启动 JavaFX,只验证关键对象的创建,使用和销毁.
  *
- * <p>这些测试是 CI 的第一道防线 — 如果某个冒烟测试失败,说明基础设施出了问题。</p>
+ * <p>这些测试是 CI 的第一道防线 — 如果某个冒烟测试失败,说明基础设施出了问题.</p>
  */
 @DisplayName("应用冒烟测试")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

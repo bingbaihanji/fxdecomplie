@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 
 /**
  * 代码视图上下文,聚合 CodeViewPanel 所需的所有数据,不依赖 MainWindow
@@ -30,7 +34,8 @@ public record CodeViewContext(
         String sourceHash,
         String optionsHash
 ) {
-    /** 规约构造器：防御性拷贝 classBytes,防止外部修改原始字节码 */
+
+    /** 规约构造器:防御性拷贝 classBytes,防止外部修改原始字节码 */
     public CodeViewContext {
         if (classBytes != null) {
             classBytes = classBytes.clone();

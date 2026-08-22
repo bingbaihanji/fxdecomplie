@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.decompiler.jadx;
 /**
  * jadx 引擎不可变配置
  * <p>
- * 只包含用户可配置的选项，不包含内核内部字段(如 codeCache pluginLoader 等)
+ * 只包含用户可配置的选项,不包含内核内部字段(如 codeCache pluginLoader 等)
  * 通过 {@link JadxOptionSchema#fromOptionsMap} 从 Map 构建实例
  *
  * @author bingbaihanji
@@ -38,6 +38,7 @@ public record JadxEngineOptions(
         boolean skipSources,
         boolean skipXmlPrettyPrint
 ) {
+
     public static final JadxEngineOptions DEFAULTS = new JadxEngineOptions(
             true,  // useImports
             true,  // debugInfo

@@ -24,12 +24,13 @@ import java.util.List;
 /**
  * 方法工具类
  * <p>
- * 提供与方法相关的辅助能力，包括解析方法详情与方法节点 判断被跳过的参数 
+ * 提供与方法相关的辅助能力,包括解析方法详情与方法节点 判断被跳过的参数 
  * 在类继承体系中查找重载方法 获取方法的重写基方法及原始声明类等
  * 主要服务于反编译过程中的方法调用解析与类型推断
  * </p>
  */
 public class MethodUtils {
+
     private final RootNode root;
 
     public MethodUtils(RootNode rootNode) {
@@ -38,7 +39,7 @@ public class MethodUtils {
 
     /**
      * 获取方法调用指令对应的方法详情
-     * 优先读取指令上已附加的 {@link AType#METHOD_DETAILS} 属性，否则回退到被调用方法的解析
+     * 优先读取指令上已附加的 {@link AType#METHOD_DETAILS} 属性,否则回退到被调用方法的解析
      *
      * @param invokeNode 方法调用指令
      * @return 方法详情 无法解析时返回 {@code null}
@@ -54,7 +55,7 @@ public class MethodUtils {
 
     /**
      * 根据方法信息获取方法详情
-     * 优先解析为工程内的 {@link MethodNode}，否则回退到类路径信息中的方法详情
+     * 优先解析为工程内的 {@link MethodNode},否则回退到类路径信息中的方法详情
      *
      * @param callMth 被调用方法的信息
      * @return 方法详情 无法解析时返回 {@code null}
@@ -104,8 +105,8 @@ public class MethodUtils {
     }
 
     /**
-     * 从 {@code startCls} 开始，在类继承体系中查找同名且参数个数相同的方法 (即是否存在重载)
-     * 注意：{@code startCls} 可能与 {@code mthInfo.getDeclClass()} 不同
+     * 从 {@code startCls} 开始,在类继承体系中查找同名且参数个数相同的方法 (即是否存在重载)
+     * 注意:{@code startCls} 可能与 {@code mthInfo.getDeclClass()} 不同
      *
      * @param startCls 查找的起始类类型
      * @param mthInfo  待检查的方法信息
@@ -116,7 +117,7 @@ public class MethodUtils {
     }
 
     /**
-     * 从 {@code startCls} 开始，在类继承体系中收集所有与给定方法构成重载的方法详情
+     * 从 {@code startCls} 开始,在类继承体系中收集所有与给定方法构成重载的方法详情
      *
      * @param startCls 查找的起始类类型
      * @param mthInfo  待检查的方法信息

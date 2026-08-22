@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
 public final class DuplicatedTraverserStateFactory<T extends TraverserState> extends TraverserStateFactory<T> {
+
     private final T baseState;
 
     public DuplicatedTraverserStateFactory(T baseState) {

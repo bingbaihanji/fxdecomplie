@@ -9,6 +9,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class NumberUtil {
+
     /**
      * @param number
      * 		要转换为字符串的数值

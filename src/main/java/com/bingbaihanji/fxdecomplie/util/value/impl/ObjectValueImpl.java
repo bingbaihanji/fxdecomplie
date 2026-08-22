@@ -15,7 +15,9 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class ObjectValueImpl implements ObjectValue {
+
     private final Type type;
+
     private final Nullness nullness;
 
     /**

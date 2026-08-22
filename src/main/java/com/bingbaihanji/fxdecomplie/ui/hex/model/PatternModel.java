@@ -10,8 +10,8 @@ import java.util.TreeMap;
 /**
  * 模式模型,用于存储和管理十六进制视图中结构化区域(Region)的层级信息 
  * <p>
- * 区域代表数据文件中的逻辑结构片段(如 Java 类文件的常量池、字段、方法等),
- * 每个区域包含地址范围、名称、描述、颜色和父区域名称 
+ * 区域代表数据文件中的逻辑结构片段(如 Java 类文件的常量池,字段,方法等),
+ * 每个区域包含地址范围,名称,描述,颜色和父区域名称 
  * 支持按地址快速查询所有包含该地址的区域,并提供颜色和层级路径获取功能 
  * 通常由 {@link com.bingbaihanji.fxdecomplie.ui.hex.highlight.BuiltinHighlighter}
  * 填充,用于在 HexView 中展示结构化的颜色标记和工具提示 
@@ -99,7 +99,7 @@ public class PatternModel {
      * 用 " > " 分隔 若该地址无任何区域,则返回 {@code null}
      * </p>
      * <p>
-     * 例如：对于 Java 类文件中的字段区域,路径可能为
+     * 例如:对于 Java 类文件中的字段区域,路径可能为
      * {@code "constant_pool > cp[5] > field[0] > attribute[2]"}
      * </p>
      *
@@ -112,7 +112,7 @@ public class PatternModel {
             return null;
         }
         StringBuilder sb = new StringBuilder();
-        // regions 已按 size 升序,即最内层在前；反向遍历可得到从外到内
+        // regions 已按 size 升序,即最内层在前;反向遍历可得到从外到内
         for (int i = regions.size() - 1; i >= 0; i--) {
             if (!sb.isEmpty()) {
                 sb.append(" > ");
@@ -132,7 +132,7 @@ public class PatternModel {
     }
 
     /**
-     * 表示一个结构化的区域,包含地址范围、名称、描述、颜色和父区域名称 
+     * 表示一个结构化的区域,包含地址范围,名称,描述,颜色和父区域名称 
      * <p>
      * 区域用于标记数据文件中的逻辑片段,通常在 {@link com.bingbaihanji.fxdecomplie.ui.hex.highlight.BuiltinHighlighter}
      * 解析数据时创建 
@@ -146,6 +146,7 @@ public class PatternModel {
      * @param parentName   父区域名称(可为 {@code null},用于表示层级关系)
      */
     public record Region(long address, long size, String name, String description, Color color, String parentName) {
+
         /**
          * 判断指定地址是否位于该区域内 
          *

@@ -7,7 +7,9 @@ package com.bingbaihanji.fxdecomplie.model;
  * @author Matt Coley
  */
 public enum Nullness {
-    UNKNOWN, NULL, NOT_NULL;
+    UNKNOWN,
+    NULL,
+    NOT_NULL;
 
     /**
      * @param other

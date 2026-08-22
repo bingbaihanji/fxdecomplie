@@ -15,12 +15,14 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * {@link GetStaticLookup} 的基础实现，用于处理常见的静态字段
+ * {@link GetStaticLookup} 的基础实现,用于处理常见的静态字段
  *
  * @author Matt Coley
  */
 public class BasicGetStaticLookup implements GetStaticLookup {
+
     private static final Map<String, ReValue> CONST_FIELDS = new HashMap<>();
+
     private static final Logger logger = LoggerFactory.getLogger(BasicGetStaticLookup.class);
 
     static {

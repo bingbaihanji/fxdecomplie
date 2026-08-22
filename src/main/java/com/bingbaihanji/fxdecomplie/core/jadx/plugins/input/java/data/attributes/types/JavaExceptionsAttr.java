@@ -7,6 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes
 import java.util.List;
 
 public class JavaExceptionsAttr extends ExceptionsAttr implements IJavaAttribute {
+
     public JavaExceptionsAttr(List<String> list) {
         super(list);
     }

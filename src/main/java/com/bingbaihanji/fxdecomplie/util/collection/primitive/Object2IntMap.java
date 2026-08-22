@@ -11,6 +11,7 @@ package com.bingbaihanji.fxdecomplie.util.collection.primitive;
 public class Object2IntMap<K> extends AbstractObjectKeyMap<K> {
 
     // ---------- 字段 ----------
+
     /** 存储值(与键数组一一对应) */
     private int[] values;
 
@@ -199,7 +200,7 @@ public class Object2IntMap<K> extends AbstractObjectKeyMap<K> {
      */
     public void clear() {
         clearKeys();
-        // 注意：clearKeys 已将键数组置 null,但 values 数组未被清空,
+        // 注意:clearKeys 已将键数组置 null,但 values 数组未被清空,
         // 但 size 已重置,旧值不会被访问,无需显式填充 0 
     }
 
@@ -283,6 +284,7 @@ public class Object2IntMap<K> extends AbstractObjectKeyMap<K> {
      */
     @FunctionalInterface
     public interface ObjectIntConsumer<K> {
+
         /**
          * 处理一对键值 
          *
@@ -299,6 +301,7 @@ public class Object2IntMap<K> extends AbstractObjectKeyMap<K> {
      */
     @FunctionalInterface
     public interface ObjectIntFunction<K> {
+
         /**
          * 根据键计算新值 
          *

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 方法数据接口
  * <p>
- * 表示从输入源解析出的单个方法的信息，包括方法引用 访问标志 字节码读取器及属性等
+ * 表示从输入源解析出的单个方法的信息,包括方法引用 访问标志 字节码读取器及属性等
  * 用于在反编译流程中承载方法级别的元数据
  */
 public interface IMethodData {
@@ -28,7 +28,7 @@ public interface IMethodData {
     int getAccessFlags();
 
     /**
-     * 获取该方法的字节码读取器，用于读取方法体的指令数据
+     * 获取该方法的字节码读取器,用于读取方法体的指令数据
      *
      * @return 字节码读取器 {@link ICodeReader} 若方法无代码体 (如抽象方法或本地方法)则返回 {@code null}
      */
@@ -36,7 +36,7 @@ public interface IMethodData {
     ICodeReader getCodeReader();
 
     /**
-     * 对该方法进行反汇编，返回其反汇编代码文本
+     * 对该方法进行反汇编,返回其反汇编代码文本
      *
      * @return 反汇编后的方法代码字符串
      */

@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Objects;
 
 public final class FillArrayInsn extends InsnNode {
+
     private final int target;
+
     private FillArrayData arrayData;
 
     public FillArrayInsn(InsnArg arg, int target) {

@@ -18,9 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 重命名数据持久化 — 负责文件路径解析、JSON 序列化和原子写入。
+ * 重命名数据持久化 — 负责文件路径解析,JSON 序列化和原子写入.
  *
- * <p>从 {@link RenameService} 中提取出的纯 I/O 层，不包含缓存和业务逻辑。</p>
+ * <p>从 {@link RenameService} 中提取出的纯 I/O 层,不包含缓存和业务逻辑.</p>
  *
  * @author bingbaihanji
  * @date 2026-07-26
@@ -28,8 +28,11 @@ import java.util.List;
 final class RenameStore {
 
     private static final Logger log = LoggerFactory.getLogger(RenameStore.class);
+
     private static final ObjectMapper MAPPER = createMapper();
+
     private static final TypeReference<List<RenameEntry>> LIST_TYPE = new TypeReference<>() {};
+
     private static volatile Path rootDir;
 
     private RenameStore() {
@@ -79,7 +82,7 @@ final class RenameStore {
     // ─── 读取 ───
 
     /**
-     * 从磁盘读取原始重命名条目列表（不包含缓存和标准化）。
+     * 从磁盘读取原始重命名条目列表(不包含缓存和标准化).
      */
     static List<RenameEntry> readRaw(String workspaceHash) {
         Path file = resolveFile(workspaceHash);
@@ -103,8 +106,8 @@ final class RenameStore {
     // ─── 写入 ───
 
     /**
-     * 原子写入重命名条目列表到磁盘。
-     * 写入前自动创建快照备份。
+     * 原子写入重命名条目列表到磁盘.
+     * 写入前自动创建快照备份.
      */
     static boolean writeFile(String workspaceHash, List<RenameEntry> list) {
         Path file = resolveFile(workspaceHash);
@@ -127,7 +130,9 @@ final class RenameStore {
     }
 
     private static void snapshotRenameFile(Path file) {
-        if (!Files.isRegularFile(file)) return;
+        if (!Files.isRegularFile(file)) {
+            return;
+        }
         Path backup = file.resolveSibling(
                 file.getFileName() + ".bak." + System.currentTimeMillis());
         try {
@@ -154,7 +159,9 @@ final class RenameStore {
     static Path findLatestBackup(String workspaceHash) {
         Path file = resolveFile(workspaceHash);
         Path parent = file.getParent();
-        if (parent == null || !Files.isDirectory(parent)) return null;
+        if (parent == null || !Files.isDirectory(parent)) {
+            return null;
+        }
         String prefix = file.getFileName() + ".bak.";
         try (var stream = Files.list(parent)) {
             return stream

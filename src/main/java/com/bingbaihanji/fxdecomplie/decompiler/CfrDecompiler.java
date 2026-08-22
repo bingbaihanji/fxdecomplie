@@ -10,7 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * CFR 反编译引擎适配器
@@ -104,7 +108,7 @@ public class CfrDecompiler implements Decompiler {
     /**
      * 使用 CFR 引擎反编译指定类
      *
-     * <p>核心流程：通过匿名 {@link ClassFileSource} 为主类和依赖类提供字节码,
+     * <p>核心流程:通过匿名 {@link ClassFileSource} 为主类和依赖类提供字节码,
      * 匿名 {@link OutputSinkFactory} 收集反编译输出到 StringBuilder,
      * 最终调用 {@link CfrDriver#analyse} 执行反编译</p>
      *
@@ -119,8 +123,9 @@ public class CfrDecompiler implements Decompiler {
         final StringBuilder result = new StringBuilder();
         DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
 
-        // 为 CFR 提供字节码来源：主类直接用传入的 bytes,依赖类通过上下文解析
+        // 为 CFR 提供字节码来源:主类直接用传入的 bytes,依赖类通过上下文解析
         ClassFileSource classFileSource = new ClassFileSource() {
+
             @Override
             public void informAnalysisRelativePathDetail(String usePath, String specPath) {
             }
@@ -148,7 +153,7 @@ public class CfrDecompiler implements Decompiler {
                     return Pair.make(classBytes, normalizedPath);
                 }
 
-                // 非主类：从上下文解析依赖类字节码
+                // 非主类:从上下文解析依赖类字节码
                 String internalName = removeClassSuffix(normalizedPath);
                 byte[] otherBytes = effectiveContext.resolveClassBytes(internalName);
                 if (otherBytes != null) {
@@ -161,6 +166,7 @@ public class CfrDecompiler implements Decompiler {
 
         // 收集 CFR 反编译输出到 StringBuilder
         OutputSinkFactory outputSinkFactory = new OutputSinkFactory() {
+
             @Override
             public List<SinkClass> getSupportedSinks(SinkType sinkType, Collection<SinkClass> available) {
                 if (sinkType == SinkType.JAVA) {

@@ -28,15 +28,21 @@ import java.util.EnumSet;
 import java.util.List;
 
 public class AndroidGradleGenerator implements IExportGradleGenerator {
+
     private static final Logger LOG = LoggerFactory.getLogger(AndroidGradleGenerator.class);
 
     private final RootNode root;
+
     private final File projectDir;
+
     private final List<ResourceFile> resources;
+
     private final boolean exportApp;
 
     private OutDirs outDirs;
+
     private File baseDir;
+
     private ApplicationParams applicationParams;
 
     public AndroidGradleGenerator(RootNode root, File projectDir, List<ResourceFile> resources, ExportGradleType exportType) {

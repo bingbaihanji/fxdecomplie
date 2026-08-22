@@ -29,7 +29,12 @@
  */
 package com.bingbaihanji.classgraph.bytecode;
 
-import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.resource.ArraySlice;
+import com.bingbaihanji.classgraph.resource.FileSlice;
+import com.bingbaihanji.classgraph.resource.RandomAccessReader;
+import com.bingbaihanji.classgraph.resource.Resource;
+import com.bingbaihanji.classgraph.resource.SequentialReader;
+import com.bingbaihanji.classgraph.resource.Slice;
 import com.bingbaihanji.classgraph.util.FileUtils;
 import com.bingbaihanji.classgraph.util.StringUtils;
 
@@ -43,38 +48,47 @@ import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
 
 /**
- * 一种 {@link Slice} 读取器，既可作为 {@link RandomAccessReader} 也可作为 {@link SequentialReader} 使用
+ * 一种 {@link Slice} 读取器,既可作为 {@link RandomAccessReader} 也可作为 {@link SequentialReader} 使用
  * 文件缓冲到目前已读取的位置按 ClassParser 格式所需的<b>大端序</b>读取
  */
 public class ClassFileReader implements RandomAccessReader, SequentialReader, Closeable {
+
     /**
-     * 初始缓冲区大小对于大多数 ClassParser，只需要读取前 16-64kb(我们不读取字节码)
+     * 初始缓冲区大小对于大多数 ClassParser,只需要读取前 16-64kb(我们不读取字节码)
      */
     private static final int INITIAL_BUF_SIZE = 16384;
+
     /**
-     * 每次发生缓冲区不足时读取的字节数比 8k 小 8 字节，以防止当最后一个块不能完全容纳在
-     * INITIAL_BUF_SIZE 的 16kb 内时数组大小翻倍，因为最多可以请求读取 8 字节(用于 long 类型)
-     * 否则我们可能需要读取到 (8kb * 2 + 8)，这会将缓冲区大小翻倍到 32kb，但如果我们只需要读取
-     * 8kb 到 16kb 之间，则我们就不必要地多复制了一次缓冲区内容
+     * 每次发生缓冲区不足时读取的字节数比 8k 小 8 字节,以防止当最后一个块不能完全容纳在
+     * INITIAL_BUF_SIZE 的 16kb 内时数组大小翻倍,因为最多可以请求读取 8 字节(用于 long 类型)
+     * 否则我们可能需要读取到 (8kb * 2 + 8),这会将缓冲区大小翻倍到 32kb,但如果我们只需要读取
+     * 8kb 到 16kb 之间,则我们就不必要地多复制了一次缓冲区内容
      */
     private static final int BUF_CHUNK_SIZE = 8192 - 8;
+
     /** 调用 {@link ClassFileReader#close()} 时要关闭的底层资源 */
     private Resource resourceToClose;
-    /** 如果切片是压缩的，则是 InflateInputStream 的包装器 */
+
+    /** 如果切片是压缩的,则是 InflateInputStream 的包装器 */
     private InputStream inflaterInputStream;
+
     /**
-     * 如果切片未压缩，则是 {@link ArraySlice} 或 {@link FileSlice} 具体子类的
+     * 如果切片未压缩,则是 {@link ArraySlice} 或 {@link FileSlice} 具体子类的
      * {@link RandomAccessReader}
      */
     private RandomAccessReader randomAccessReader;
+
     /** 缓冲区 */
     private byte[] arr;
+
     /** arr 中已使用的字节数 */
     private int arrUsed;
+
     /** 切片内的当前读取索引 */
     private int currIdx;
+
     /**
-     * 如果已知 ClassParser 长度(因为未压缩)则为该长度，如果未知(因为已压缩)则为 -1
+     * 如果已知 ClassParser 长度(因为未压缩)则为该长度,如果未知(因为已压缩)则为 -1
      */
     private int classfileLengthHint = -1;
 
@@ -84,7 +98,7 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
      * @param slice
      *            要读取的 {@link Slice}
      * @param resourceToClose
-     *            调用 {@link ClassFileReader#close()} 时要关闭的资源，或 null
+     *            调用 {@link ClassFileReader#close()} 时要关闭的资源,或 null
      * @throws IOException
      *             如果无法在 {@link Slice} 上打开解压器
      */
@@ -92,20 +106,20 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
         this.classfileLengthHint = (int) slice.sliceLength;
         this.resourceToClose = resourceToClose;
         if (slice.isDeflatedZipEntry) {
-            // 如果这是压缩的切片，需要从 InflaterInputStream 读取来填充缓冲区
+            // 如果这是压缩的切片,需要从 InflaterInputStream 读取来填充缓冲区
             inflaterInputStream = slice.open();
             arr = new byte[INITIAL_BUF_SIZE];
             classfileLengthHint = (int) Math.min(slice.inflatedLengthHint, FileUtils.MAX_BUFFER_SIZE);
         } else {
             if (slice instanceof ArraySlice) {
-                // 如果切片是 ArraySlice，通过直接重用包装的字节数组代替缓冲区数组来避免复制，
+                // 如果切片是 ArraySlice,通过直接重用包装的字节数组代替缓冲区数组来避免复制,
                 // 并将其标记为已完全加载
                 final ArraySlice arraySlice = (ArraySlice) slice;
                 if (arraySlice.sliceStartPos == 0 && arraySlice.sliceLength == arraySlice.arr.length) {
                     // ArraySlice 是整个数组
                     arr = arraySlice.arr;
                 } else {
-                    // ArraySlice 仅覆盖部分数组，而此类不支持起始偏移量，
+                    // ArraySlice 仅覆盖部分数组,而此类不支持起始偏移量,
                     // 因此将切片部分的数组复制到新缓冲区
                     arr = Arrays.copyOfRange(arraySlice.arr, (int) arraySlice.sliceStartPos,
                             (int) (arraySlice.sliceStartPos + arraySlice.sliceLength));
@@ -127,7 +141,7 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
      * @param inputStream
      *            要读取的 {@link InputStream}
      * @param resourceToClose
-     *            调用 {@link ClassFileReader#close()} 时要关闭的底层资源，或 null
+     *            调用 {@link ClassFileReader#close()} 时要关闭的底层资源,或 null
      * @throws IOException
      *             如果无法在 {@link Slice} 上打开解压器
      */
@@ -156,7 +170,7 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
     }
 
     /**
-     * 在发生缓冲区不足时调用，以确保数组中有足够的字节可用于从给定起始索引处
+     * 在发生缓冲区不足时调用,以确保数组中有足够的字节可用于从给定起始索引处
      * 读取指定数量的字节
      *
      * @param targetArrUsed
@@ -165,11 +179,11 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
      *             如果发生 I/O 异常
      */
     private void readTo(final int targetArrUsed) throws IOException {
-        // 数组不需要增长到超过长度提示的大小(如果 zip 条目的未压缩大小被低估，
-        // ClassParser 将被截断)如果为 -1，则假定 2GB 为最大大小
+        // 数组不需要增长到超过长度提示的大小(如果 zip 条目的未压缩大小被低估,
+        // ClassParser 将被截断)如果为 -1,则假定 2GB 为最大大小
         final int maxArrLen = classfileLengthHint == -1 ? FileUtils.MAX_BUFFER_SIZE : classfileLengthHint;
         if (inflaterInputStream == null && randomAccessReader == null) {
-            // 如果 inflaterInputStream 和 randomAccessReader 都未设置，则切片是 ArraySlice，
+            // 如果 inflaterInputStream 和 randomAccessReader 都未设置,则切片是 ArraySlice,
             // 并且数组已经"完全加载"(ArraySlice 的后备数组用作缓冲区)
             throw new IOException("Tried to read past end of fixed array buffer");
         }
@@ -181,7 +195,7 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
         final int maxNewArrUsed = (int) Math.min(Math.max(targetArrUsed, (long) (arrUsed + BUF_CHUNK_SIZE)),
                 maxArrLen);
 
-        // 如果数组太小，无法容纳新的字节块，则将数组大小翻倍
+        // 如果数组太小,无法容纳新的字节块,则将数组大小翻倍
         long newArrLength = arr.length;
         while (newArrLength < maxNewArrUsed) {
             newArrLength = Math.min(maxNewArrUsed, newArrLength * 2L);
@@ -194,14 +208,14 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
         // 计算可以读入数组的最大字节数
         final int maxBytesToRead = arr.length - arrUsed;
 
-        // 将新的数据块读入缓冲区，从位置 arrUsed 开始
+        // 将新的数据块读入缓冲区,从位置 arrUsed 开始
         if (inflaterInputStream != null) {
             // 从解压器输入流读取
             final int numRead = inflaterInputStream.read(arr, arrUsed, maxBytesToRead);
             if (numRead > 0) {
                 arrUsed += numRead;
             }
-        } else /* randomAccessReader != null，所以这是一个(未压缩的)FileSlice */ {
+        } else /* randomAccessReader != null,所以这是一个(未压缩的)FileSlice */ {
             // 不要读超过切片末尾
             final int bytesToRead = Math.min(maxBytesToRead, maxArrLen - arrUsed);
             // 从 FileSlice 读取字节到 arr

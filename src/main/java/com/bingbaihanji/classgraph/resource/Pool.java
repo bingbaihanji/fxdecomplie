@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.resource;
 
 import java.util.ArrayList;
@@ -9,14 +8,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * 用于类型 T 的实例回收器，其中实例化该类型可能抛出受检异常 E
+ * 用于类型 T 的实例回收器,其中实例化该类型可能抛出受检异常 E
  *
  * @param <T>
  *            要回收的类型
  * @param <E>
- *            获取要回收类型的实例时可能抛出的异常，如果没有则为 {@link RuntimeException}
+ *            获取要回收类型的实例时可能抛出的异常,如果没有则为 {@link RuntimeException}
  */
 public abstract class Pool<T, E extends Exception> implements AutoCloseable {
+
     /** 已分配的实例 */
     private final Set<T> usedInstances = Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
 
@@ -24,7 +24,7 @@ public abstract class Pool<T, E extends Exception> implements AutoCloseable {
     private final Queue<T> unusedInstances = new ConcurrentLinkedQueue<>();
 
     /**
-     * 创建一个新实例此方法应返回一个非 null 的类型 T 实例，或者抛出一个类型为 E 的异常
+     * 创建一个新实例此方法应返回一个非 null 的类型 T 实例,或者抛出一个类型为 E 的异常
      *
      * @return 新实例
      * @throws E
@@ -33,7 +33,7 @@ public abstract class Pool<T, E extends Exception> implements AutoCloseable {
     public abstract T newInstance() throws E;
 
     /**
-     * 获取一个类型 T 的对象实例，如果可能则重用之前回收的实例，如果没有当前未使用的实例，则分配一个新实例
+     * 获取一个类型 T 的对象实例,如果可能则重用之前回收的实例,如果没有当前未使用的实例,则分配一个新实例
      *
      * @return 一个新的或回收的对象实例
      * @throws E
@@ -60,7 +60,7 @@ public abstract class Pool<T, E extends Exception> implements AutoCloseable {
     }
 
     /**
-     * 获取一个围绕对象实例的可回收包装器，可用于在 try-with-resources 块结束时回收对象实例
+     * 获取一个围绕对象实例的可回收包装器,可用于在 try-with-resources 块结束时回收对象实例
      *
      * @return 一个新的或回收的对象实例
      * @throws E
@@ -71,7 +71,7 @@ public abstract class Pool<T, E extends Exception> implements AutoCloseable {
     }
 
     /**
-     * 回收一个对象，供后续调用 {@link #acquire()} 重用如果该对象是 {@link Resettable} 的实例，则在回收之前会对其调用
+     * 回收一个对象,供后续调用 {@link #acquire()} 重用如果该对象是 {@link Resettable} 的实例,则在回收之前会对其调用
      * {@link Resettable#reset()}
      *
      * @param instance
@@ -98,8 +98,8 @@ public abstract class Pool<T, E extends Exception> implements AutoCloseable {
      * {@link AutoCloseable#close()}
      *
      * <p>
-     * 在调用此 close 方法后，{@link Pool} 仍可继续用于获取新实例，并且此 close 方法将来可再次调用，
-     * 即调用此方法的效果就是简单地清空回收器中未使用的实例，并关闭任何 {@link AutoCloseable} 实例
+     * 在调用此 close 方法后,{@link Pool} 仍可继续用于获取新实例,并且此 close 方法将来可再次调用,
+     * 即调用此方法的效果就是简单地清空回收器中未使用的实例,并关闭任何 {@link AutoCloseable} 实例
      */
     @Override
     public void close() {
@@ -115,7 +115,7 @@ public abstract class Pool<T, E extends Exception> implements AutoCloseable {
     }
 
     /**
-     * 强制关闭此 {@link Pool}，将所有已获取但尚未回收的实例强制移动到未使用实例列表中，然后调用
+     * 强制关闭此 {@link Pool},将所有已获取但尚未回收的实例强制移动到未使用实例列表中,然后调用
      * {@link #close()} 关闭任何 {@link AutoCloseable} 实例并丢弃所有实例
      */
     public void forceClose() {

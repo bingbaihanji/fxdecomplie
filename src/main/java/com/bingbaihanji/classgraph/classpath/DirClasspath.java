@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
@@ -10,7 +9,11 @@ import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
 import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.VersionFinder;
+import com.bingbaihanji.classgraph.util.WorkQueue;
 
 import java.io.File;
 import java.io.IOError;
@@ -24,11 +27,18 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** 目录类路径元素，使用 {@link Path} API */
+/** 目录类路径元素,使用 {@link Path} API */
 public class DirClasspath extends Classpath {
+
     /** 类路径元素根目录 */
     private final Path classpathEltPath;
 
@@ -78,12 +88,14 @@ public class DirClasspath extends Classpath {
                     // 将 lib 目录中的所有 jar 文件添加为子类路径条目
                     try (DirectoryStream<Path> stream = Files.newDirectoryStream(libDirPath,
                             new DirectoryStream.Filter<Path>() {
+
                                 @Override
                                 public boolean accept(Path filePath) {
                                     return filePath.toString().toLowerCase().endsWith(".jar")
                                             && Files.isRegularFile(filePath);
                                 }
-                            })) {
+                            })
+                    ) {
                         for (final Path filePath : stream) {
                             if (log != null) {
                                 log(classpathElementIdx, "Found lib jar: " + filePath, log);
@@ -132,8 +144,10 @@ public class DirClasspath extends Classpath {
     private Resource newResource(final Path resourcePath, final BasicFileAttributes attributes) {
         final int notYetLoadedLength = -2;
         return new Resource(this, attributes == null ? notYetLoadedLength : attributes.size()) {
-            /** 如果资源已打开，则为 true */
+
+            /** 如果资源已打开,则为 true */
             private final AtomicBoolean isOpen = new AtomicBoolean();
+
             /** 在文件上打开的 {@link PathSlice} */
             private PathSlice pathSlice;
 
@@ -213,7 +227,7 @@ public class DirClasspath extends Classpath {
 
             @Override
             public ClassFileReader openClassfile() throws IOException {
-                // class 文件不会被压缩，因此将其包装在新的 PathSlice 中然后打开
+                // class 文件不会被压缩,因此将其包装在新的 PathSlice 中然后打开
                 openAndCreateSlice();
                 return new ClassFileReader(pathSlice, this);
             }
@@ -239,7 +253,7 @@ public class DirClasspath extends Classpath {
             public void close() {
                 if (isOpen.getAndSet(false)) {
                     if (byteBuffer != null) {
-                        // 任何 ByteBuffer 引用都应该是副本，因此不需要清理
+                        // 任何 ByteBuffer 引用都应该是副本,因此不需要清理
                         byteBuffer = null;
                     }
                     if (pathSlice != null) {
@@ -266,7 +280,7 @@ public class DirClasspath extends Classpath {
      *
      * @param relativePath
      *            要返回的 {@link Resource} 的相对路径
-     * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
+     * @return 给定相对路径的 {@link Resource},如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
     public Resource getResource(final String relativePath) {
@@ -283,7 +297,7 @@ public class DirClasspath extends Classpath {
      *            日志
      */
     private void scanPathRecursively(final Path path, final LogNode log) {
-        // 检查此规范路径是否之前已被扫描过，以避免因符号链接导致递归扫描
+        // 检查此规范路径是否之前已被扫描过,以避免因符号链接导致递归扫描
         // 陷入无限循环
         Path canonicalPath;
         try {
@@ -319,7 +333,7 @@ public class DirClasspath extends Classpath {
         }
 
         // 忽略解压 jar 中的版本化部分 -- 它们仅应在 jar 中使用
-        // TODO: 是否有必要同样支持多版本解压 jar？如果是，则目录类路径条目中的所有路径都必须像
+        // TODO: 是否有必要同样支持多版本解压 jar?如果是,则目录类路径条目中的所有路径都必须像
         // JarClasspath 中那样预先扫描和屏蔽
         if (!ScanConfig.enableMultiReleaseVersions
                 && dirRelativePathStr.startsWith(LogicalZipFile.MULTI_RELEASE_PATH_PREFIX)) {
@@ -374,7 +388,7 @@ public class DirClasspath extends Classpath {
 
         // 仅当目录不仅仅是已接受路径的祖先时才扫描目录中的文件
         if (parentMatchStatus != ScanConfigPathMatch.ANCESTOR_OF_ACCEPTED_PATH) {
-            // 执行先序遍历(先处理目录中的文件，再处理子目录)，以减少文件系统缓存未命中
+            // 执行先序遍历(先处理目录中的文件,再处理子目录),以减少文件系统缓存未命中
             final Iterator<Path> pathsIterator = pathsInDir.iterator();
             while (pathsIterator.hasNext()) {
                 final Path subPath = pathsIterator.next();
@@ -384,7 +398,7 @@ public class DirClasspath extends Classpath {
                     pathsIterator.remove();
                     final Path subPathRelative = classpathEltPath.relativize(subPath);
                     final String subPathRelativeStr = FastPathResolver.resolve(subPathRelative.toString());
-                    // 如果这是一个模块化 jar，则忽略默认包中除 "module-info.class" 之外的所有 class 文件，
+                    // 如果这是一个模块化 jar,则忽略默认包中除 "module-info.class" 之外的所有 class 文件,
                     // 因为这些都是不允许的
                     if (isModularJar && isDefaultPackage && subPathRelativeStr.endsWith(".class")
                             && !"module-info.class".equals(subPathRelativeStr)) {
@@ -419,7 +433,7 @@ public class DirClasspath extends Classpath {
                 }
             }
         } else if (ScanConfig.enableClassInfo && "/".equals(dirRelativePathStr)) {
-            // 始终检查包根中的模块描述符，即使包根不在接受列表中
+            // 始终检查包根中的模块描述符,即使包根不在接受列表中
             final Iterator<Path> pathsIterator = pathsInDir.iterator();
             while (pathsIterator.hasNext()) {
                 final Path subPath = pathsIterator.next();
@@ -466,7 +480,7 @@ public class DirClasspath extends Classpath {
     }
 
     /**
-     * 层次化扫描目录结构，查找 class 文件和匹配的文件
+     * 层次化扫描目录结构,查找 class 文件和匹配的文件
      *
      * @param log
      *            日志
@@ -506,7 +520,7 @@ public class DirClasspath extends Classpath {
     /**
      * 获取目录 {@link File}
      *
-     * @return 作为 {@link File} 的类路径元素目录，如果此类路径元素不由目录支持则返回 null(不应该发生)
+     * @return 作为 {@link File} 的类路径元素目录,如果此类路径元素不由目录支持则返回 null(不应该发生)
      */
     @Override
     public File getFile() {
@@ -542,7 +556,7 @@ public class DirClasspath extends Classpath {
     @Override
     public String toString() {
         try {
-            // 由于某些原因，Path.toString() 不包含 URI 协议
+            // 由于某些原因,Path.toString() 不包含 URI 协议
             return classpathEltPath.toUri().toString();
         } catch (IOError | SecurityException e) {
             return classpathEltPath.toString();

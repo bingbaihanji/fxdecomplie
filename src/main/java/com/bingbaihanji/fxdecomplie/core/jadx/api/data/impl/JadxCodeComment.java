@@ -10,9 +10,12 @@ import org.jetbrains.annotations.Nullable;
 public class JadxCodeComment implements ICodeComment {
 
     private IJavaNodeRef nodeRef;
+
     @Nullable
     private IJavaCodeRef codeRef;
+
     private String comment;
+
     private CommentStyle style = CommentStyle.LINE;
 
     public JadxCodeComment(IJavaNodeRef nodeRef, String comment) {

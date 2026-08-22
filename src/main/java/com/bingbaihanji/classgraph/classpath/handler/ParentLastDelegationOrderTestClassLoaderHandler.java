@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -9,6 +8,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
 
 /** 用于测试 PARENT_LAST 委托顺序的 ClassLoaderHandler */
 class ParentLastDelegationOrderTestClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public ParentLastDelegationOrderTestClassLoaderHandler() {
     }
@@ -20,7 +20,7 @@ class ParentLastDelegationOrderTestClassLoaderHandler implements ClassLoaderHand
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -41,7 +41,7 @@ class ParentLastDelegationOrderTestClassLoaderHandler implements ClassLoaderHand
     @Override
     public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
                                      final LogNode log) {
-        // 先添加自身，然后委托给父级
+        // 先添加自身,然后委托给父级
         classLoaderOrder.add(classLoader, log);
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
     }

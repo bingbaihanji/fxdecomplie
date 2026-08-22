@@ -12,6 +12,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import java.util.List;
 
 public class CleanRegions extends AbstractVisitor {
+
     private static final IRegionVisitor REMOVE_REGION_VISITOR = new RemoveRegionVisitor();
 
     public static void process(MethodNode mth) {
@@ -27,6 +28,7 @@ public class CleanRegions extends AbstractVisitor {
     }
 
     private static class RemoveRegionVisitor extends AbstractRegionVisitor {
+
         private static boolean canRemoveRegion(IContainer container) {
             if (container.contains(AFlag.DONT_GENERATE)) {
                 return true;

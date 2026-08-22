@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 public final class NoBlockTraverserState extends TraverserState implements ISourceBlockState {
 
     private final BlockNode sourceBlock;
+
     private final CentralityState centralityState;
 
     public NoBlockTraverserState(TraverserActivePathState state, CentralityState centralityState, BlockNode sourceBlock) {
@@ -59,7 +60,9 @@ public final class NoBlockTraverserState extends TraverserState implements ISour
     }
 
     private static class NoBlockStateFactory extends TraverserStateFactory<NoBlockTraverserState> {
+
         private final CentralityState centralityState;
+
         private final BlockNode sourceBlock;
 
         public NoBlockStateFactory(CentralityState centralityState, BlockNode sourceBlock) {

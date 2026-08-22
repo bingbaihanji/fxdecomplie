@@ -120,6 +120,8 @@ public class FixMultiEntryLoops {
     }
 
     private enum BlockColor {
-        WHITE, GRAY, BLACK
+        WHITE,
+        GRAY,
+        BLACK
     }
 }

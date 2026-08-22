@@ -17,9 +17,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NameGen {
+
     private static final Pattern ENDS_WITH_NUMBER = Pattern.compile(".*(\\d+)$");
+
     private final MethodNode mth;
+
     private final boolean fallback;
+
     private final Set<String> varNames = new HashSet<>();
 
     public NameGen(MethodNode mth, ClassGen classGen) {

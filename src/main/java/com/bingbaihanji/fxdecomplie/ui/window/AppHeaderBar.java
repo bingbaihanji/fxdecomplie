@@ -9,7 +9,11 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.HeaderBar;
+import javafx.scene.layout.HeaderDragType;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +32,13 @@ public final class AppHeaderBar {
 
     /** 标题栏高度 */
     private static final double TITLE_BAR_HEIGHT = 38.0;
+
     private static final double TITLE_BUTTON_SIZE = 38.0;
+
     private static final double TITLE_ICON_SIZE = 16.0;
+
     private static final String TOP_ON_ICON = "/icon/top-on.png";
+
     private static final String TOP_OFF_ICON = "/icon/top-off.png";
 
     private AppHeaderBar() {

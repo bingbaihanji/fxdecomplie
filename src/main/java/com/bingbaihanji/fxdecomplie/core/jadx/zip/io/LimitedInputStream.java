@@ -7,18 +7,20 @@ import java.io.InputStream;
 /**
  * 带读取大小限制的 {@link FilterInputStream} 包装流
  * <p>
- * 该流对底层的 {@link InputStream} 进行包装，限制总共可读取的字节数
- * 当累计读取的字节数超过预设的 {@code maxSize} 时，会抛出
- * {@link IllegalStateException}，用于防止 ZIP 炸弹等攻击场景中
+ * 该流对底层的 {@link InputStream} 进行包装,限制总共可读取的字节数
+ * 当累计读取的字节数超过预设的 {@code maxSize} 时,会抛出
+ * {@link IllegalStateException},用于防止 ZIP 炸弹等攻击场景中
  * 恶意构造的压缩数据导致的内存溢出
  * </p>
  */
 public class LimitedInputStream extends FilterInputStream {
+
     /** 允许读取的最大字节数 */
     private final long maxSize;
 
     /** 当前已读取的字节位置 */
     private long currentPos;
+
     /** mark 操作时记录的字节位置 */
     private long markPos;
 
@@ -47,9 +49,9 @@ public class LimitedInputStream extends FilterInputStream {
     }
 
     /**
-     * 读取单个字节，并更新已读取计数
+     * 读取单个字节,并更新已读取计数
      *
-     * @return 读取到的字节 (0-255)，如果流已结束则返回 -1
+     * @return 读取到的字节 (0-255),如果流已结束则返回 -1
      */
     @Override
     public int read() throws IOException {
@@ -61,12 +63,12 @@ public class LimitedInputStream extends FilterInputStream {
     }
 
     /**
-     * 读取多个字节到指定数组，并更新已读取计数
+     * 读取多个字节到指定数组,并更新已读取计数
      *
      * @param b   目标字节数组
      * @param off 目标数组的起始偏移量
      * @param len 最大读取字节数
-     * @return 实际读取的字节数，如果流已结束则返回 -1
+     * @return 实际读取的字节数,如果流已结束则返回 -1
      */
     @SuppressWarnings("NullableProblems")
     @Override
@@ -79,7 +81,7 @@ public class LimitedInputStream extends FilterInputStream {
     }
 
     /**
-     * 跳过指定字节数，并更新已读取计数
+     * 跳过指定字节数,并更新已读取计数
      *
      * @param n 要跳过的字节数
      * @return 实际跳过的字节数
@@ -94,7 +96,7 @@ public class LimitedInputStream extends FilterInputStream {
     }
 
     /**
-     * 标记当前读取位置，同时记录当前的已读取计数
+     * 标记当前读取位置,同时记录当前的已读取计数
      *
      * @param readLimit 标记读取上限
      */
@@ -105,7 +107,7 @@ public class LimitedInputStream extends FilterInputStream {
     }
 
     /**
-     * 重置到上次标记的位置，同时恢复已读取计数
+     * 重置到上次标记的位置,同时恢复已读取计数
      */
     @Override
     public void reset() throws IOException {

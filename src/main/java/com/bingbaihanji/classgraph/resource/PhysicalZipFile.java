@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.util.FastPathResolver;
@@ -11,18 +10,24 @@ import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 
-/** 物理 ZIP 文件，通过 {@link FileChannel} 进行内存映射(mmap) */
+/** 物理 ZIP 文件,通过 {@link FileChannel} 进行内存映射(mmap) */
 class PhysicalZipFile {
+
     /** ZIP 文件的路径 */
     private final String pathStr;
+
     /** 该 ZIP 文件的 {@link Slice} */
     Slice slice;
+
     /** 嵌套 JAR 处理器 */
     JarReader JarReader;
+
     /** 支撑此 {@link PhysicalZipFile} 的 {@link Path}(如果有) */
     private Path path;
+
     /** 支撑此 {@link PhysicalZipFile} 的 {@link File}(如果有) */
     private File file;
+
     /** 缓存的 hashCode */
     private volatile int hashCode;
 
@@ -90,15 +95,15 @@ class PhysicalZipFile {
     }
 
     /**
-     * 通过将 {@link InputStream} 读入 RAM 中的数组来构造 {@link PhysicalZipFile}，如果
+     * 通过将 {@link InputStream} 读入 RAM 中的数组来构造 {@link PhysicalZipFile},如果
      * {@link InputStream} 过长则溢出到磁盘
      *
      * @param inputStream
      *            输入流
      * @param inputStreamLengthHint
-     *            要从 inputStream 读取的字节数，如果未知则为 -1
+     *            要从 inputStream 读取的字节数,如果未知则为 -1
      * @param pathStr
-     *            InputStream 打开的源 URL，或此项在父 ZIP 文件中的 ZIP 条目路径
+     *            InputStream 打开的源 URL,或此项在父 ZIP 文件中的 ZIP 条目路径
      * @param JarReader
      *            嵌套 JAR 处理器
      * @param log
@@ -110,8 +115,8 @@ class PhysicalZipFile {
                     final JarReader JarReader, final LogNode log) throws IOException {
         this.JarReader = JarReader;
         this.pathStr = pathStr;
-        // 尝试将 InputStream 下载到字节数组如果成功，将产生一个 ArraySlice
-        // 如果失败，InputStream 将溢出到磁盘，产生一个 FileSlice
+        // 尝试将 InputStream 下载到字节数组如果成功,将产生一个 ArraySlice
+        // 如果失败,InputStream 将溢出到磁盘,产生一个 FileSlice
         this.slice = JarReader.readAllBytesWithSpilloverToDisk(inputStream, /* tempFileBaseName = */ pathStr,
                 inputStreamLengthHint, log);
         this.file = this.slice instanceof FileSlice ? ((FileSlice) this.slice).file : null;
@@ -120,8 +125,8 @@ class PhysicalZipFile {
     /**
      * 获取此 PhysicalZipFile 最外层 JAR 文件的 {@link Path}
      *
-     * @return 此 PhysicalZipFile 最外层 JAR 文件的 {@link Path}，如果此文件是从 URL 直接下载到 RAM，
-     *         或由 {@link File} 支撑，则返回 null
+     * @return 此 PhysicalZipFile 最外层 JAR 文件的 {@link Path},如果此文件是从 URL 直接下载到 RAM,
+     *         或由 {@link File} 支撑,则返回 null
      */
     public Path getPath() {
         return path;
@@ -130,24 +135,24 @@ class PhysicalZipFile {
     /**
      * 获取此 PhysicalZipFile 最外层 JAR 文件的 {@link File}
      *
-     * @return 此 PhysicalZipFile 最外层 JAR 文件的 {@link File}，如果此文件是从 URL 直接下载到 RAM，
-     *         或由 {@link Path} 支撑，则返回 null
+     * @return 此 PhysicalZipFile 最外层 JAR 文件的 {@link File},如果此文件是从 URL 直接下载到 RAM,
+     *         或由 {@link Path} 支撑,则返回 null
      */
     public File getFile() {
         return file;
     }
 
     /**
-     * 获取此 PhysicalZipFile 的路径：如果是文件支撑的，则为文件路径；如果是内存支撑的，则为复合嵌套 JAR 路径
+     * 获取此 PhysicalZipFile 的路径:如果是文件支撑的,则为文件路径;如果是内存支撑的,则为复合嵌套 JAR 路径
      *
-     * @return 此 PhysicalZipFile 的路径：如果是文件支撑的，则为文件路径；如果是内存支撑的，则为复合嵌套 JAR 路径
+     * @return 此 PhysicalZipFile 的路径:如果是文件支撑的,则为文件路径;如果是内存支撑的,则为复合嵌套 JAR 路径
      */
     public String getPathStr() {
         return pathStr;
     }
 
     /**
-     * 获取映射文件的长度，如果包装了 ByteBuffer，则返回其初始剩余字节数
+     * 获取映射文件的长度,如果包装了 ByteBuffer,则返回其初始剩余字节数
      *
      * @return 映射文件的长度
      */

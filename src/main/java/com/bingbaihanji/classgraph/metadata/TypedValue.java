@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.scan.ScanResult;
@@ -14,12 +13,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/** 联合类型，用于类型安全的 JSON 序列化/反序列化任何时候仅设置一个字段 */
+/** 联合类型,用于类型安全的 JSON 序列化/反序列化任何时候仅设置一个字段 */
 class TypedValue extends MetadataNode {
-    // 参数值按类型拆分到不同的字段中，以便序列化和反序列化正常工作
-    // (无法正确序列化 Object 类型的字段，因为具体类型未
+    // 参数值按类型拆分到不同的字段中,以便序列化和反序列化正常工作
+    // (无法正确序列化 Object 类型的字段,因为具体类型未
     // TODO: 移除 JSON 序列化后删除此类
     // 存储在 JSON 中)
+
     /** 枚举值 */
     private AnnotationEnumValue annotationEnumValue;
 
@@ -170,9 +170,9 @@ class TypedValue extends MetadataNode {
      * 实例化或获取包装的值
      *
      * @param annotationClassInfo
-     *            如果非 null，则将此对象实例化为该注解类的参数值
+     *            如果非 null,则将此对象实例化为该注解类的参数值
      * @param paramName
-     *            如果非 null，则将此对象实例化为该命名参数的值
+     *            如果非 null,则将此对象实例化为该命名参数的值
      * @return 此包装类包装的值
      */
     Object instantiateOrGet(final ClassInfo annotationClassInfo, final String paramName) {
@@ -224,7 +224,7 @@ class TypedValue extends MetadataNode {
             final Class<?> eltClass = instantiate
                     ? (Class<?>) getArrayValueClassOrName(annotationClassInfo, paramName, /* getClass = */ true)
                     : null;
-            // 分配数组，如果无法确定元素类型则作为通用的 Object[] 数组，
+            // 分配数组,如果无法确定元素类型则作为通用的 Object[] 数组,
             // 如果可以确定元素类型则作为特定元素类型的数组
             final Object annotationValueObjectArray = eltClass == null ? new Object[objectArrayValue.length]
                     : Array.newInstance(eltClass, objectArrayValue.length);
@@ -262,8 +262,8 @@ class TypedValue extends MetadataNode {
      * @param paramName
      *            参数名称
      * @param getClass
-     *            如果为 true，则返回 {@code Class<?>} 引用，否则返回类名
-     * @return 如果 getClass 为 true，则作为 {@code Class<?>} 引用返回数组值类型，否则作为
+     *            如果为 true,则返回 {@code Class<?>} 引用,否则返回类名
+     * @return 如果 getClass 为 true,则作为 {@code Class<?>} 引用返回数组值类型,否则作为
      *         字符串返回类名
      */
     private Object getArrayValueClassOrName(final ClassInfo annotationClassInfo, final String paramName,
@@ -273,7 +273,7 @@ class TypedValue extends MetadataNode {
                 || annotationClassInfo.methodInfo == null ? null : annotationClassInfo.methodInfo.get(paramName);
         if (annotationClassInfo != null && annotationMethodList != null && !annotationMethodList.isEmpty()) {
             if (annotationMethodList.size() > 1) {
-                // 在注解中，一个给定名称应该只有一个方法
+                // 在注解中,一个给定名称应该只有一个方法
                 throw new IllegalArgumentException("注解类 " + annotationClassInfo.getName()
                         + " 中存在重复的注解参数方法 " + paramName + "()");
             }
@@ -284,7 +284,7 @@ class TypedValue extends MetadataNode {
             if (!(annotationMethodResultTypeSig instanceof ArrayType)) {
                 throw new IllegalArgumentException("注解类 " + annotationClassInfo.getName()
                         + " 中的注解参数 " + paramName
-                        + " 包含数组，但没有数组类型签名");
+                        + " 包含数组,但没有数组类型签名");
             }
             final ArrayType arrayTypeSig = (ArrayType) annotationMethodResultTypeSig;
             if (arrayTypeSig.getNumDimensions() != 1) {
@@ -302,7 +302,7 @@ class TypedValue extends MetadataNode {
             }
         } else {
             // 无法找到此名称的方法 —— 这是一个外部类
-            // 在数组中查找第一个非 null 对象，并将其类型用作数组的元素类型
+            // 在数组中查找第一个非 null 对象,并将其类型用作数组的元素类型
             for (final TypedValue elt : objectArrayValue) {
                 if (elt != null) {
                     // 基本类型数组将被转换为包装类型的数组
@@ -357,7 +357,7 @@ class TypedValue extends MetadataNode {
             final String targetElementTypeName = (String) getArrayValueClassOrName(annotationClassInfo, paramName,
                     /* getClass = */ false);
 
-            // 获取一维非基本类型数组的数组元素类型，并将其转换为基本类型数组
+            // 获取一维非基本类型数组的数组元素类型,并将其转换为基本类型数组
             switch (targetElementTypeName) {
                 case "java.lang.String":
                     // 将包含 String 对象的 Object[] 数组转换为 String[] 数组
@@ -373,7 +373,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -388,7 +388,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -403,7 +403,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -418,7 +418,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -433,7 +433,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -448,7 +448,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -463,7 +463,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -478,7 +478,7 @@ class TypedValue extends MetadataNode {
                         final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
-                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + " 的数组中存在非法 null 值,位于注解类 "
                                     + (annotationClassInfo == null ? "<class outside accept>"
                                     : annotationClassInfo.getName())
                                     + " 的参数 " + paramName + " 中");
@@ -501,7 +501,7 @@ class TypedValue extends MetadataNode {
      */
     @Override
     public String getClassName() {
-        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
+        // getClassInfo() 对此类型无效,因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() 不能在此处调用");
     }
 
@@ -650,7 +650,7 @@ class TypedValue extends MetadataNode {
         } else if (byteArrayValue != null) {
             buf.append(Arrays.toString(byteArrayValue));
         } else if (objectArrayValue != null) {
-            // TODO 这不处理嵌套数组，但此 toString() 方法仅用于调试
+            // TODO 这不处理嵌套数组,但此 toString() 方法仅用于调试
             buf.append(Arrays.toString(objectArrayValue));
         }
     }

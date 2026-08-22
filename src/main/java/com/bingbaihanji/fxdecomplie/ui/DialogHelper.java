@@ -4,7 +4,11 @@ import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.event.EventHandler;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogEvent;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -58,7 +62,7 @@ public final class DialogHelper {
     }
 
     /**
-     * 显示带操作按钮的错误对话框：重试 / 取消 / 查看日志
+     * 显示带操作按钮的错误对话框:重试 / 取消 / 查看日志
      *
      * @param owner     父窗口
      * @param title     对话框标题

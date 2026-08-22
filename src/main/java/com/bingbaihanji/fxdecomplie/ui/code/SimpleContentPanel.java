@@ -16,6 +16,7 @@ import jfx.incubator.scene.control.richtext.CodeArea;
 public class SimpleContentPanel extends AbstractCodeContentPanel {
 
     private final String sourceCode;
+
     private CodeArea codeArea;
 
     public SimpleContentPanel(String sourceCode) {
@@ -23,7 +24,7 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
     }
 
     /**
-     * 轻量词法状态机：移除行注释(//)和块注释(/* ... *​/),压缩连续空行
+     * 轻量词法状态机:移除行注释(//)和块注释(/* ... *​/),压缩连续空行
      */
     static String simplify(String source) {
         StringBuilder sb = new StringBuilder(source.length());

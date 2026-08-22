@@ -18,7 +18,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class BlockSplitter extends AbstractVisitor {
 
@@ -33,6 +39,7 @@ public class BlockSplitter extends AbstractVisitor {
             InsnType.MONITOR_EXIT,
             InsnType.THROW,
             InsnType.MOVE_EXCEPTION);
+
     /**
      * Split without connecting to the next block
      */

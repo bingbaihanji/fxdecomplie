@@ -16,6 +16,7 @@ public record SearchResult(
         int lineNumber,
         MatchType matchType
 ) {
+
     /** 匹配类型 */
     public enum MatchType {
         /** 类名匹配 */ CLASS_NAME,

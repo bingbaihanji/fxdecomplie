@@ -36,6 +36,7 @@ public abstract class VarRef implements ICodeAnnotation {
     }
 
     public static final class FixedVarRef extends VarRef {
+
         private final int refPos;
 
         public FixedVarRef(int refPos) {
@@ -49,6 +50,7 @@ public abstract class VarRef implements ICodeAnnotation {
     }
 
     public static final class RelatedVarRef extends VarRef {
+
         private final VarNode varNode;
 
         public RelatedVarRef(VarNode varNode) {

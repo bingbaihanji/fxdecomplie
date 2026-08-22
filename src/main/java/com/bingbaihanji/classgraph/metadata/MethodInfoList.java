@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -10,8 +9,10 @@ import java.util.Set;
 
 /** {@link MethodInfo} 对象列表 */
 public class MethodInfoList extends InfoList<MethodInfo> {
+
     /** 不可修改的空 {@link MethodInfoList} */
     static final MethodInfoList EMPTY_LIST = new MethodInfoList();
+
     /** 序列化版本 UID */
     private static final long serialVersionUID = 1L;
 
@@ -80,7 +81,7 @@ public class MethodInfoList extends InfoList<MethodInfo> {
      * @return 此 {@link MethodInfoList} 作为从方法名称到具有该名称的方法的 {@link MethodInfoList} 的映射
      */
     public Map<String, MethodInfoList> asMap() {
-        // 注意：MethodInfoList 继承自 InfoList 而非 InfoList，因为一个名称可能被多个
+        // 注意:MethodInfoList 继承自 InfoList 而非 InfoList,因为一个名称可能被多个
         // MethodInfo 对象共享(因此 asMap() 需要返回 Map<String, MethodInfoList> 而非 Map<String, MethodInfo>)
         final Map<String, MethodInfoList> methodNameToMethodInfoList = new HashMap<>();
         for (final MethodInfo methodInfo : this) {
@@ -102,7 +103,7 @@ public class MethodInfoList extends InfoList<MethodInfo> {
      *
      * @param methodName
      *            方法名称
-     * @return 如果列表包含具有给定名称的方法，则返回 true
+     * @return 如果列表包含具有给定名称的方法,则返回 true
      */
     public boolean containsName(final String methodName) {
         for (final MethodInfo mi : this) {
@@ -114,14 +115,14 @@ public class MethodInfoList extends InfoList<MethodInfo> {
     }
 
     /**
-     * 返回所有匹配给定名称的方法列表(由于重载，可能有一个以上的方法具有给定名称，
+     * 返回所有匹配给定名称的方法列表(由于重载,可能有一个以上的方法具有给定名称,
      * 因此返回 {@link MethodInfoList} 而非单个 {@link MethodInfo})
      *
      * @param methodName
      *            方法名称
      * @return 此列表中具有给定名称的 {@link MethodInfo} 对象的 {@link MethodInfoList}
-     *         (由于重载，可能有一个以上的方法具有给定名称，因此返回 {@link MethodInfoList}
-     *         而非单个 {@link MethodInfo})如果没有方法具有匹配的名称，则返回空列表
+     *         (由于重载,可能有一个以上的方法具有给定名称,因此返回 {@link MethodInfoList}
+     *         而非单个 {@link MethodInfo})如果没有方法具有匹配的名称,则返回空列表
      */
     public MethodInfoList get(final String methodName) {
         boolean hasMethodWithName = false;
@@ -145,13 +146,13 @@ public class MethodInfoList extends InfoList<MethodInfo> {
     }
 
     /**
-     * 返回具有给定名称的单个方法，如果未找到则返回 null如果存在两个具有给定名称的方法，
+     * 返回具有给定名称的单个方法,如果未找到则返回 null如果存在两个具有给定名称的方法,
      * 则抛出 {@link IllegalArgumentException}
      *
      * @param methodName
      *            方法名称
      * @return 列表中具有给定名称的 {@link MethodInfo} 对象(如果恰好存在一个具有给定名称的方法)
-     *         如果没有具有给定名称的方法，则返回 null
+     *         如果没有具有给定名称的方法,则返回 null
      * @throws IllegalArgumentException
      *             如果存在两个或更多具有给定名称的方法
      */
@@ -194,17 +195,18 @@ public class MethodInfoList extends InfoList<MethodInfo> {
     }
 
     /**
-     * 使用将 {@link MethodInfo} 对象映射为布尔值的谓词过滤 {@link MethodInfoList}，
+     * 使用将 {@link MethodInfo} 对象映射为布尔值的谓词过滤 {@link MethodInfoList},
      * 为列表中谓词为 true 的所有项生成另一个 {@link MethodInfoList}
      */
     @FunctionalInterface
     public interface MethodInfoFilter {
+
         /**
          * 是否允许 {@link MethodInfo} 列表项通过过滤器
          *
          * @param methodInfo
          *            要过滤的 {@link MethodInfo} 项
-         * @return 是否允许该项通过过滤器如果为 true，则将其复制到输出列表；如果为 false，则将其排除
+         * @return 是否允许该项通过过滤器如果为 true,则将其复制到输出列表;如果为 false,则将其排除
          */
         boolean accept(MethodInfo methodInfo);
     }

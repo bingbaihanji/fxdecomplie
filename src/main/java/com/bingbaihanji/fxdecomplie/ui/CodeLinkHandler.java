@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 public final class CodeLinkHandler {
 
     private static final String LINK_HANDLER_KEY = "CODE_LINK_HANDLER";
+
     private static final Set<String> NON_NAVIGABLE_TOKENS = Set.of(
             "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
             "class", "const", "continue", "default", "do", "double", "else", "enum",
@@ -43,7 +44,7 @@ public final class CodeLinkHandler {
      *
      * @param codeArea   代码编辑区域
      * @param metadata   代码元数据(行 → 引用映射)
-     * @param onNavigate 导航回调：接收点击处的第一个引用
+     * @param onNavigate 导航回调:接收点击处的第一个引用
      */
     public static void install(CodeArea codeArea, CodeMetadata metadata,
                                Consumer<CodeMetadata.Reference> onNavigate) {
@@ -111,7 +112,7 @@ public final class CodeLinkHandler {
     /**
      * 从行引用列表中选择与点击 token 匹配的引用
      *
-     * <p>匹配策略(按优先级)：
+     * <p>匹配策略(按优先级):
      * <ol>
      *   <li>完全限定名匹配(含内部类 $ 分隔)</li>
      *   <li>简单类名匹配(仅最后一段)</li>

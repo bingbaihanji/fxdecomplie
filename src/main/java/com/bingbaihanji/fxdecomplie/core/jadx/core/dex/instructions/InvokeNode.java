@@ -17,12 +17,13 @@ public class InvokeNode extends BaseInvokeNode {
 
     /** 调用类型 (如 STATIC VIRTUAL DIRECT INTERFACE 等) */
     private final InvokeType type;
+
     /** 被调用方法的元信息 */
     private final MethodInfo mth;
 
     /**
      * 根据方法信息和指令数据构造调用节点
-     * 对于非静态调用，自动添加实例参数 (this)作为第一个参数
+     * 对于非静态调用,自动添加实例参数 (this)作为第一个参数
      *
      * @param mthInfo    被调用方法信息
      * @param insn       原始 DEX 指令数据
@@ -34,12 +35,12 @@ public class InvokeNode extends BaseInvokeNode {
     }
 
     /**
-     * 根据方法信息 指令数据和调用类型构造调用节点，可显式控制是否需要实例参数
+     * 根据方法信息 指令数据和调用类型构造调用节点,可显式控制是否需要实例参数
      *
      * @param mth          被调用方法信息
      * @param insn         原始 DEX 指令数据
      * @param type         调用类型
-     * @param instanceCall 是否需要实例参数 (this)，非静态调用时为 true
+     * @param instanceCall 是否需要实例参数 (this),非静态调用时为 true
      * @param isRange      是否为范围格式的指令
      */
     public InvokeNode(MethodInfo mth, InsnData insn, InvokeType type, boolean instanceCall, boolean isRange) {
@@ -89,9 +90,9 @@ public class InvokeNode extends BaseInvokeNode {
 
     /**
      * 获取实例参数 (即 this 引用)
-     * 仅对非静态调用有效，实例参数始终位于参数列表的第一个位置
+     * 仅对非静态调用有效,实例参数始终位于参数列表的第一个位置
      *
-     * @return 实例参数 (非静态调用时)，静态调用或无参数时返回 null
+     * @return 实例参数 (非静态调用时),静态调用或无参数时返回 null
      */
     @Override
     @Nullable
@@ -111,7 +112,7 @@ public class InvokeNode extends BaseInvokeNode {
     /**
      * 判断是否为多态调用
      * <p>
-     * 包括两种情形：
+     * 包括两种情形:
      * <ul>
      *   <li>显式的 POLYMORPHIC 调用类型</li>
      *   <li>对 {@code java.lang.invoke.MethodHandle.invoke} 或
@@ -135,7 +136,7 @@ public class InvokeNode extends BaseInvokeNode {
 
     /**
      * 获取第一个实际参数的偏移量
-     * 静态调用第一个参数从索引 0 开始，非静态调用从索引 1 开始 (索引 0 为 this)
+     * 静态调用第一个参数从索引 0 开始,非静态调用从索引 1 开始 (索引 0 为 this)
      *
      * @return 第一个实际参数的索引偏移
      */
@@ -152,7 +153,7 @@ public class InvokeNode extends BaseInvokeNode {
 
     /**
      * 判断两个节点是否语义相同
-     * 比较调用类型和被调用方法，以及基类中的通用参数属性
+     * 比较调用类型和被调用方法,以及基类中的通用参数属性
      *
      * @param obj 待比较的指令节点
      * @return true 如果两个节点表示相同的调用

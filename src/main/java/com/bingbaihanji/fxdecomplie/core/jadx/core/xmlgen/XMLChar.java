@@ -50,22 +50,27 @@ public class XMLChar {
      * Valid character mask.
      */
     public static final int MASK_VALID = 0x01;
+
     /**
      * Space character mask.
      */
     public static final int MASK_SPACE = 0x02;
+
     /**
      * Name start character mask.
      */
     public static final int MASK_NAME_START = 0x04;
+
     /**
      * Name character mask.
      */
     public static final int MASK_NAME = 0x08;
+
     /**
      * Pubid character mask.
      */
     public static final int MASK_PUBID = 0x10;
+
     /**
      * Content character mask. Special characters are those that can
      * be considered the start of markup, such as '&lt;' and '&amp;'.
@@ -75,14 +80,17 @@ public class XMLChar {
      * This is an optimization for the inner loop of character scanning.
      */
     public static final int MASK_CONTENT = 0x20;
+
     /**
      * NCName start character mask.
      */
     public static final int MASK_NCNAME_START = 0x40;
+
     /**
      * NCName character mask.
      */
     public static final int MASK_NCNAME = 0x80;
+
     /**
      * Character flags.
      */

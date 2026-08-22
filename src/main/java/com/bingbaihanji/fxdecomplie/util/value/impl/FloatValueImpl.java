@@ -15,6 +15,7 @@ import java.util.OptionalDouble;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class FloatValueImpl implements FloatValue {
+
     private final OptionalDouble value;
 
     /**

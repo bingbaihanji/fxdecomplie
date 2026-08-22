@@ -2,7 +2,12 @@ package com.bingbaihanji.fxdecomplie.ui.menu;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
-import javafx.scene.control.*;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCombination;
 
 import java.util.EnumMap;
@@ -213,6 +218,7 @@ public class MainMenuBar extends MenuBar {
 
     /** 综合菜单动作接口,聚合所有子菜单的动作定义 */
     public interface Actions extends FileActions, EditActions, ViewActions, EngineActions {
+
         /** 显示关于对话框 */
         void about();
     }

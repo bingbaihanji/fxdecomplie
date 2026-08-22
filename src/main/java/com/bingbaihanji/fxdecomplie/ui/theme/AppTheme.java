@@ -48,7 +48,7 @@ public final class AppTheme {
             }
             return ThemeManager.resolveThemeData("Dark+");
         } catch (RuntimeException e) {
-            // 最外层兜底：主题加载异常时使用硬编码默认暗色主题,确保编辑器始终可渲染
+            // 最外层兜底:主题加载异常时使用硬编码默认暗色主题,确保编辑器始终可渲染
             log.warn("加载编辑器主题失败,使用默认暗色主题", e);
             return VsCodeThemeLoader.defaultDark();
         }

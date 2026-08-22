@@ -31,13 +31,17 @@ package com.bingbaihanji.classgraph.resource;
 import com.bingbaihanji.classgraph.util.StringUtils;
 
 import java.io.IOException;
-import java.nio.*;
+import java.nio.Buffer;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ReadOnlyBufferException;
 
 /**
  * 用于 {@link ByteBuffer} 的 {@link RandomAccessReader}按 zipfile 格式所需的<b>小端序</b>读取
  */
 public class RandomAccessByteBufferReader implements RandomAccessReader {
+
     /** 字节缓冲区 */
     private final ByteBuffer byteBuffer;
 

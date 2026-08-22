@@ -5,9 +5,17 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.BaseInvokeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IndexInsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.ConstructorInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IMethodDetails;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.utils.TypeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.methods.MutableMethodDetails;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrinkVisitor;
@@ -36,6 +44,7 @@ import java.util.function.Function;
         }
 )
 public class MethodInvokeVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(MethodInvokeVisitor.class);
 
     private RootNode root;

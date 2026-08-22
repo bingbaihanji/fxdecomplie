@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 
 public class BlockFinisher extends AbstractVisitor {
+
     @Override
     public void visit(MethodNode mth) {
         if (mth.isNoCode() || mth.getBasicBlocks().isEmpty()) {

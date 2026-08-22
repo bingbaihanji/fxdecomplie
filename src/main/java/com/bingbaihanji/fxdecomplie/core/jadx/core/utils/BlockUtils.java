@@ -11,7 +11,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.TernaryInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.Edge;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfCondition;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.CatchAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExceptionHandler;
@@ -21,7 +25,20 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1052,7 +1069,8 @@ public class BlockUtils {
                 return null;
             }
             if (k-- < 0) {
-                mth.addWarnComment("Path cross not found for " + blocks + ", limit reached: " + mth.getBasicBlocks().size());
+                mth.addWarnComment("Path cross not found for " + blocks + ", limit reached: " + mth.getBasicBlocks()
+                        .size());
                 return null;
             }
             // replace domFrontBS with combinedDF

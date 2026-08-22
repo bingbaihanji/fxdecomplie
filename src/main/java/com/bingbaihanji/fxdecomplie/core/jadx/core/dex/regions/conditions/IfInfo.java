@@ -12,13 +12,21 @@ import java.util.List;
 import java.util.Set;
 
 public final class IfInfo {
+
     private final MethodNode mth;
+
     private final IfCondition condition;
+
     private final BlockSet mergedBlocks;
+
     private final BlockNode thenBlock;
+
     private final BlockNode elseBlock;
+
     private final Set<BlockNode> skipBlocks;
+
     private final List<InsnNode> forceInlineInsns;
+
     private @Nullable BlockNode outBlock;
 
     public IfInfo(MethodNode mth, IfCondition condition, BlockNode thenBlock, BlockNode elseBlock) {

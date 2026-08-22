@@ -17,8 +17,11 @@ public class JadxNodeRef implements IJavaNodeRef {
             .comparing(IJavaNodeRef::getType)
             .thenComparing(IJavaNodeRef::getDeclaringClass)
             .thenComparing(IJavaNodeRef::getShortId);
+
     private RefType refType;
+
     private String declClass;
+
     @Nullable
     private String shortId;
 

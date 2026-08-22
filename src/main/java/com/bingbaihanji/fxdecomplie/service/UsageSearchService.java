@@ -6,16 +6,25 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * 用法搜索服务 — 通过 ASM 扫描字节码操作数查找类/成员的引用位置
  *
- * <p>逐类扫描工作区索引中的所有 class 字节码,在以下位置匹配目标：
+ * <p>逐类扫描工作区索引中的所有 class 字节码,在以下位置匹配目标:
  * <ul>
  *   <li>类继承/实现关系(superName interfaces)</li>
  *   <li>字段访问指令(GETFIELD/PUTFIELD/GETSTATIC/PUTSTATIC)</li>
@@ -26,11 +35,11 @@ import java.util.*;
  *   <li>字段/方法描述符中的对象类型引用</li>
  * </ul>
  *
- * <p>查询格式支持：
+ * <p>查询格式支持:
  * <ul>
- *   <li>全限定类名：{@code com.example.MyClass}</li>
- *   <li>简单类名：{@code MyClass}</li>
- *   <li>成员引用：{@code com.example.MyClass#methodName}</li>
+ *   <li>全限定类名:{@code com.example.MyClass}</li>
+ *   <li>简单类名:{@code MyClass}</li>
+ *   <li>成员引用:{@code com.example.MyClass#methodName}</li>
  *   <li>内部类用 {@code $} 或 {@code .} 分隔均可</li>
  * </ul>
  *
@@ -89,6 +98,7 @@ public final class UsageSearchService {
         try {
             ClassReader reader = new ClassReader(bytes);
             reader.accept(new ClassVisitor(Opcodes.ASM9) {
+
                 @Override
                 public void visit(int version, int access, String name, String signature,
                                   String superName, String[] interfaces) {
@@ -113,6 +123,7 @@ public final class UsageSearchService {
                 public MethodVisitor visitMethod(int access, String name, String descriptor,
                                                  String signature, String[] exceptions) {
                     return new MethodVisitor(Opcodes.ASM9) {
+
                         private int currentLine = 1;
 
                         @Override
@@ -300,7 +311,7 @@ public final class UsageSearchService {
 
     /**
      * 判断字节码中的类内部名是否匹配搜索目标
-     * 匹配策略：全限定名包含匹配 + 简单名双向包含匹配(支持混淆类名自动匹配)
+     * 匹配策略:全限定名包含匹配 + 简单名双向包含匹配(支持混淆类名自动匹配)
      */
     private static boolean matchesClass(Target target, String owner) {
         if (owner == null || owner.isBlank()) {
@@ -347,12 +358,12 @@ public final class UsageSearchService {
         // 'L' 是 JVM 对象类型前缀,小写后 'l' 与查询 classPart 同大小写,直接拼接匹配
         String lower = descriptor.toLowerCase(Locale.ROOT);
 
-        // ---- 全路径匹配：描述符含 "ljava/lang/String;" 则匹配 classPart="java/lang/string" ----
+        // ---- 全路径匹配:描述符含 "ljava/lang/String;" 则匹配 classPart="java/lang/string" ----
         if (lower.contains('l' + target.classPart + ';')) {
             return true;
         }
 
-        // ---- 简单名兼容匹配：查询 "String" 也能匹配 method(String) 的参数类型 ----
+        // ---- 简单名兼容匹配:查询 "String" 也能匹配 method(String) 的参数类型 ----
         // 从 classPart 提取最后一段作为简单名(如 "java/lang/string" → "string"),
         // 遍历描述符中每个 "l...;" 对象类型块,将其类的简单名与查询简单名比较
         int lastSlash = target.classPart.lastIndexOf('/');
@@ -420,7 +431,7 @@ public final class UsageSearchService {
     /**
      * 用户查询解析结果 — 将原始输入拆分为类名部分和可选的成员名部分
      *
-     * @param raw        原始查询字符串(已规范化：小写 分隔符统一为 {@code /})
+     * @param raw        原始查询字符串(已规范化:小写 分隔符统一为 {@code /})
      * @param classPart  类名部分(JVM 内部名格式,如 {@code com/example/myclass})
      * @param memberPart 成员名部分({@code #} 之后的内容),无成员时为空字符串
      */
@@ -429,7 +440,7 @@ public final class UsageSearchService {
         /**
          * 解析用户查询字符串为 {@link Target}
          *
-         * <p>支持的格式：
+         * <p>支持的格式:
          * <ul>
          *   <li>{@code com.example.MyClass} — 全限定类名</li>
          *   <li>{@code MyClass} — 简单类名</li>

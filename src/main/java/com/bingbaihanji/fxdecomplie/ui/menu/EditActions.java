@@ -7,6 +7,7 @@ package com.bingbaihanji.fxdecomplie.ui.menu;
  * @date 2026-06-17
  */
 public interface EditActions {
+
     /** 复制选中文本 */
     void copySelection();
 

@@ -7,7 +7,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.impl.AlwaysRename;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +22,16 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DeobfPresets {
+
     private static final Logger LOG = LoggerFactory.getLogger(DeobfPresets.class);
 
     private static final Charset MAP_FILE_CHARSET = UTF_8;
@@ -30,8 +39,11 @@ public class DeobfPresets {
     private final Path deobfMapFile;
 
     private final Map<String, String> pkgPresetMap = new HashMap<>();
+
     private final Map<String, String> clsPresetMap = new HashMap<>();
+
     private final Map<String, String> fldPresetMap = new HashMap<>();
+
     private final Map<String, String> mthPresetMap = new HashMap<>();
 
     private DeobfPresets(Path deobfMapFile) {
@@ -58,7 +70,7 @@ public class DeobfPresets {
             String baseName = IoUtils.getPathBaseName(inputFilePath);
             return inputFilePath.getParent().resolve(baseName + ".jobf");
         }
-        // 无输入文件时 (如直接反编译内存中的类)，回退到输出目录
+        // 无输入文件时 (如直接反编译内存中的类),回退到输出目录
         return jadxArgs.getOutDir().toPath().toAbsolutePath().resolve("default.jobf");
     }
 
@@ -176,6 +188,7 @@ public class DeobfPresets {
         DeobfuscatorVisitor.process(root,
                 AlwaysRename.INSTANCE,
                 new IAliasProvider() {
+
                     @Override
                     public String forPackage(PackageNode pkg) {
                         return pkgPresetMap.get(pkg.getPkgInfo().getFullName());

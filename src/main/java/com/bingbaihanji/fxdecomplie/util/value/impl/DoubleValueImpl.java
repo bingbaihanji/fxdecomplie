@@ -15,6 +15,7 @@ import java.util.OptionalDouble;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class DoubleValueImpl implements DoubleValue {
+
     private final OptionalDouble value;
 
     /**

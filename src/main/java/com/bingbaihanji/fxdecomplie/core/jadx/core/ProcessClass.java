@@ -28,10 +28,11 @@ import java.util.Map;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState.*;
 
 /**
- * 类处理核心组件，负责类的加载 处理和代码生成
- * 管理反编译过程中的各个阶段 (pass)，协调类的依赖处理和代码生成流程
+ * 类处理核心组件,负责类的加载 处理和代码生成
+ * 管理反编译过程中的各个阶段 (pass),协调类的依赖处理和代码生成流程
  */
 public class ProcessClass {
+
     private static final Logger LOG = LoggerFactory.getLogger(ProcessClass.class);
 
     /** 未生成代码的标记对象 */
@@ -39,11 +40,12 @@ public class ProcessClass {
 
     /** 反编译处理阶段列表 (访问者链) */
     private final List<IDexTreeVisitor> passes;
+
     /** 不同反编译模式对应的 ProcessClass 实例缓存 */
     private final Map<DecompilationMode, ProcessClass> modesMap = new EnumMap<>(DecompilationMode.class);
 
     /**
-     * 构造函数，初始化处理阶段列表
+     * 构造函数,初始化处理阶段列表
      *
      * @param passesList 反编译处理阶段列表
      */
@@ -82,12 +84,12 @@ public class ProcessClass {
      *
      * @param cls     待处理的类节点
      * @param codegen 是否执行代码生成阶段
-     * @return 代码生成模式下返回生成的代码信息，否则返回 null
+     * @return 代码生成模式下返回生成的代码信息,否则返回 null
      */
     @Nullable
     private ICodeInfo process(ClassNode cls, boolean codegen) {
         if (!codegen && cls.getState() == PROCESS_COMPLETE) {
-            // 无需处理，类已完成处理
+            // 无需处理,类已完成处理
             return null;
         }
         Utils.checkThreadInterrupt();
@@ -147,7 +149,7 @@ public class ProcessClass {
 
     /**
      * 为指定类生成反编译代码
-     * 先处理顶级父类，然后处理依赖类，最后生成当前类的代码
+     * 先处理顶级父类,然后处理依赖类,最后生成当前类的代码
      *
      * @param cls 待生成代码的类节点
      * @return 生成的代码信息
@@ -184,7 +186,7 @@ public class ProcessClass {
     }
 
     /**
-     * 强制处理类，不处理其依赖项
+     * 强制处理类,不处理其依赖项
      * 用于需要单独处理某个类而不触发完整依赖链处理的场景
      *
      * @param cls 待处理的类节点
@@ -204,11 +206,11 @@ public class ProcessClass {
     }
 
     /**
-     * 强制为类生成代码，不处理其依赖项
-     * 跳过依赖处理阶段，直接执行代码生成
+     * 强制为类生成代码,不处理其依赖项
+     * 跳过依赖处理阶段,直接执行代码生成
      *
      * @param cls 待生成代码的类节点
-     * @return 生成的代码信息，失败时返回 null
+     * @return 生成的代码信息,失败时返回 null
      * @throws JadxRuntimeException 代码生成失败时抛出
      */
     public @Nullable ICodeInfo forceGenerateCode(ClassNode cls) {
@@ -225,7 +227,7 @@ public class ProcessClass {
      *
      * @param cls  待生成代码的类节点
      * @param mode 反编译模式
-     * @return 生成的代码信息，失败时返回 null
+     * @return 生成的代码信息,失败时返回 null
      */
     public @Nullable ICodeInfo forceGenerateCodeForMode(ClassNode cls, DecompilationMode mode) {
         synchronized (modesMap) {
@@ -246,9 +248,9 @@ public class ProcessClass {
 
     /**
      * 初始化所有处理阶段 (访问者)
-     * 在开始处理类之前调用，确保所有访问者已准备好
+     * 在开始处理类之前调用,确保所有访问者已准备好
      *
-     * @param root 根节点，包含整个 DEX 文件的结构信息
+     * @param root 根节点,包含整个 DEX 文件的结构信息
      */
     public void initPasses(RootNode root) {
         for (IDexTreeVisitor pass : passes) {
@@ -262,7 +264,7 @@ public class ProcessClass {
 
     /**
      * 处理方法直到遇到指定名称的访问者
-     * 用于调试或部分处理场景，可控制是否包含目标访问者本身
+     * 用于调试或部分处理场景,可控制是否包含目标访问者本身
      *
      * @param mth            待处理的方法节点
      * @param visitorName    目标访问者名称
@@ -291,7 +293,7 @@ public class ProcessClass {
 
     /**
      * 处理方法直到指定的访问者
-     * 重新加载方法后，按顺序执行处理阶段直到指定访问者
+     * 重新加载方法后,按顺序执行处理阶段直到指定访问者
      *
      * @param mth               待处理的方法节点
      * @param lastPassToProcess 最后一个要执行的处理阶段

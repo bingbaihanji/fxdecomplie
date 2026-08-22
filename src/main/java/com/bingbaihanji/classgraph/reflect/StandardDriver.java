@@ -28,22 +28,32 @@
  */
 package com.bingbaihanji.classgraph.reflect;
 
-import java.lang.reflect.*;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.concurrent.Callable;
 
 /**
  * 标准反射驱动(必要时使用 {@link AccessibleObject#setAccessible(boolean)} 访问非公开字段)
  */
 class StandardDriver extends ReflectionDriver {
+
     private static Method setAccessibleMethod;
+
     private static Method trySetAccessibleMethod;
+
     private static Class<?> accessControllerClass;
+
     private static Class<?> privilegedActionClass;
+
     private static Method accessControllerDoPrivileged;
 
     static {
         // 查找已弃用的方法以消除编译期警告
-        // TODO 待此问题修复后切换到 MethodHandles：
+        // TODO 待此问题修复后切换到 MethodHandles:
         // https://github.com/mojohaus/animal-sniffer/issues/67
         try {
             setAccessibleMethod = AccessibleObject.class.getDeclaredMethod("setAccessible", boolean.class);
@@ -88,7 +98,7 @@ class StandardDriver extends ReflectionDriver {
     }
 
     /**
-     * 如果可能，使用反射在 AccessController.doPrivileged(PrivilegedAction) 上下文中调用方法
+     * 如果可能,使用反射在 AccessController.doPrivileged(PrivilegedAction) 上下文中调用方法
      * (AccessController 在 JDK 17 中已弃用)
      */
     @SuppressWarnings("unchecked")
@@ -112,6 +122,7 @@ class StandardDriver extends ReflectionDriver {
         }
         try {
             return doPrivileged(new Callable<Boolean>() {
+
                 @Override
                 public Boolean call() throws Exception {
                     return tryMakeAccessible(obj);
@@ -181,6 +192,7 @@ class StandardDriver extends ReflectionDriver {
     }
 
     private class PrivilegedActionInvocationHandler<T> implements InvocationHandler {
+
         private final Callable<T> callable;
 
         public PrivilegedActionInvocationHandler(final Callable<T> callable) {

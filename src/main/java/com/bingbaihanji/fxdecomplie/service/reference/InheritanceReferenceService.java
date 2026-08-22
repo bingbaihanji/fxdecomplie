@@ -2,26 +2,37 @@ package com.bingbaihanji.fxdecomplie.service.reference;
 
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
-import com.bingbaihanji.fxdecomplie.service.classscan.ClassMetadata;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceGroup;
 import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceNode;
 import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceTree;
 import com.bingbaihanji.fxdecomplie.model.reference.Kind;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassMetadata;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * 继承引用分析服务,构建包含类级别和方法级别关系的继承引用树
  *
- * <p>类级别:父类、接口、注解、实现类、子类</p>
- * <p>方法级别:重写的方法、被子类重写的方法、继承但未重写的方法</p>
+ * <p>类级别:父类,接口,注解,实现类,子类</p>
+ * <p>方法级别:重写的方法,被子类重写的方法,继承但未重写的方法</p>
  *
  * @author bingbaihanji
  * @date 2026-07-20
@@ -29,7 +40,9 @@ import java.util.stream.Collectors;
 public final class InheritanceReferenceService {
 
     private static final Logger log = LoggerFactory.getLogger(InheritanceReferenceService.class);
+
     private static final int MAX_OVERFLOW = 200;
+
     private static final int MAX_METHOD_ITEMS = 50;
 
     private InheritanceReferenceService() {
@@ -89,18 +102,18 @@ public final class InheritanceReferenceService {
                     interfaceNodes, false));
         }
 
-        // 注解：优先从 ClassGraph 全局索引获取，回退到本地 ASM 解析
+        // 注解:优先从 ClassGraph 全局索引获取,回退到本地 ASM 解析
         List<InheritanceReferenceNode> annotationNodes = new ArrayList<>();
         if (index != null) {
             ClassMetadata cm = index.classInfo(meta.name);
             if (cm != null) {
                 for (var ann : cm.annotations()) {
                     annotationNodes.add(
-                        nodeFor(workspace, ann.className(), Kind.ANNOTATION, 1, index));
+                            nodeFor(workspace, ann.className(), Kind.ANNOTATION, 1, index));
                 }
             }
         }
-        // 回退：索引未就绪时使用本地解析
+        // 回退:索引未就绪时使用本地解析
         if (annotationNodes.isEmpty() && !meta.annotations.isEmpty()) {
             for (String ann : meta.annotations) {
                 annotationNodes.add(nodeFor(workspace, ann, Kind.ANNOTATION, 1, index));
@@ -629,11 +642,17 @@ public final class InheritanceReferenceService {
     // ── 内部类型 ──
 
     private static final class LocalVisitor extends ClassVisitor {
+
         final List<String> interfaces = new ArrayList<>();
+
         final List<String> annotations = new ArrayList<>();
+
         final List<MethodData> methods = new ArrayList<>();
+
         String name;
+
         int access;
+
         String superName;
 
         LocalVisitor() {
@@ -685,6 +704,7 @@ public final class InheritanceReferenceService {
 
     // 本地引用 java.lang.reflect.Modifier,避免歧义
     private static final class Modifier {
+
         static boolean isStatic(int access) {
             return (access & Opcodes.ACC_STATIC) != 0;
         }

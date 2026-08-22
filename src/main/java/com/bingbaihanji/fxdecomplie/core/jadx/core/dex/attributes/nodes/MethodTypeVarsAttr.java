@@ -13,7 +13,9 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.isEmpty;
  * Set of known type variables at current method
  */
 public class MethodTypeVarsAttr implements IJadxAttribute {
+
     private static final MethodTypeVarsAttr EMPTY = new MethodTypeVarsAttr(Collections.emptySet());
+
     private final Set<ArgType> typeVars;
 
     private MethodTypeVarsAttr(Set<ArgType> typeVars) {

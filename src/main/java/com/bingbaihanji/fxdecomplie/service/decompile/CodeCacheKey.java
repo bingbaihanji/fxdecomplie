@@ -3,9 +3,9 @@ package com.bingbaihanji.fxdecomplie.service.decompile;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
 /**
- * 反编译缓存键 — 组合工作区、类、引擎、选项。
+ * 反编译缓存键 — 组合工作区,类,引擎,选项.
  *
- * <p>使用 \0 分隔符避免前缀碰撞（\0 不出现在 JVM 内部名称中）。</p>
+ * <p>使用 \0 分隔符避免前缀碰撞(\0 不出现在 JVM 内部名称中).</p>
  */
 public record CodeCacheKey(String workspaceKey, String internalName,
                            DecompilerTypeEnum engine, String optionsHash) {

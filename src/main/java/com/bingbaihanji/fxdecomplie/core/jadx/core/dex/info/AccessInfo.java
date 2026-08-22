@@ -7,15 +7,17 @@ import org.intellij.lang.annotations.MagicConstant;
 /**
  * 访问修饰符信息封装类
  * <p>
- * 用于封装类 字段 方法的访问标志 (access flags)，
+ * 用于封装类 字段 方法的访问标志 (access flags),
  * 提供标志位的判断 修改 可见性比较及字符串表示等功能
  * </p>
  */
 public class AccessInfo {
 
-    /** 可见性标志掩码，包含 public protected private 三个标志位 */
+    /** 可见性标志掩码,包含 public protected private 三个标志位 */
     public static final int VISIBILITY_FLAGS = AccessFlags.PUBLIC | AccessFlags.PROTECTED | AccessFlags.PRIVATE;
+
     private final int accFlags;
+
     private final AFType type;
 
     /**
@@ -30,9 +32,9 @@ public class AccessInfo {
     }
 
     /**
-     * 将可见性标志位转换为排序值，用于可见性强弱比较
+     * 将可见性标志位转换为排序值,用于可见性强弱比较
      * <p>
-     * 排序规则：private=1, package-private=2, protected=3, public=4
+     * 排序规则:private=1, package-private=2, protected=3, public=4
      * </p>
      *
      * @param flag 可见性标志位
@@ -82,11 +84,11 @@ public class AccessInfo {
     }
 
     /**
-     * 移除指定的访问标志位，返回新的 {@link AccessInfo} 实例
-     * 如果当前不包含该标志位，则返回自身
+     * 移除指定的访问标志位,返回新的 {@link AccessInfo} 实例
+     * 如果当前不包含该标志位,则返回自身
      *
      * @param flag 要移除的标志位
-     * @return 移除标志位后的新实例，或当前实例
+     * @return 移除标志位后的新实例,或当前实例
      */
     public AccessInfo remove(int flag) {
         if (containsFlag(flag)) {
@@ -96,11 +98,11 @@ public class AccessInfo {
     }
 
     /**
-     * 添加指定的访问标志位，返回新的 {@link AccessInfo} 实例
-     * 如果当前已包含该标志位，则返回自身
+     * 添加指定的访问标志位,返回新的 {@link AccessInfo} 实例
+     * 如果当前已包含该标志位,则返回自身
      *
      * @param flag 要添加的标志位
-     * @return 添加标志位后的新实例，或当前实例
+     * @return 添加标志位后的新实例,或当前实例
      */
     public AccessInfo add(int flag) {
         if (!containsFlag(flag)) {
@@ -110,12 +112,12 @@ public class AccessInfo {
     }
 
     /**
-     * 更改可见性修饰符，返回新的 {@link AccessInfo} 实例
-     * 会清除原有的可见性标志位 (public/protected/private)，然后设置新的可见性
-     * 如果新可见性与当前相同，则返回自身
+     * 更改可见性修饰符,返回新的 {@link AccessInfo} 实例
+     * 会清除原有的可见性标志位 (public/protected/private),然后设置新的可见性
+     * 如果新可见性与当前相同,则返回自身
      *
      * @param flag 新的可见性标志位
-     * @return 更改可见性后的新实例，或当前实例
+     * @return 更改可见性后的新实例,或当前实例
      */
     public AccessInfo changeVisibility(int flag) {
         int currentVisFlags = accFlags & VISIBILITY_FLAGS;
@@ -138,7 +140,7 @@ public class AccessInfo {
     /**
      * 判断当前可见性是否弱于另一个 {@link AccessInfo}
      * <p>
-     * 可见性强弱顺序 (从弱到强)：private &lt; package-private &lt; protected &lt; public
+     * 可见性强弱顺序 (从弱到强):private &lt; package-private &lt; protected &lt; public
      * </p>
      *
      * @param otherAccInfo 要比较的另一个访问信息
@@ -302,7 +304,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 transient (瞬态字段，不参与序列化)
+     * 判断是否为 transient (瞬态字段,不参与序列化)
      *
      * @return 如果是 transient 则返回 {@code true}
      */
@@ -311,7 +313,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 volatile (易变字段，保证多线程可见性)
+     * 判断是否为 volatile (易变字段,保证多线程可见性)
      *
      * @return 如果是 volatile 则返回 {@code true}
      */
@@ -349,8 +351,8 @@ public class AccessInfo {
     /**
      * 根据访问标志生成 Java 源码风格的修饰符字符串 (以空格分隔并带尾随空格)
      * <p>
-     * 会按照类型 (方法 字段 类)追加相应的修饰符，例如 synchronized volatile strict 等
-     * 当 {@code showHidden} 为 {@code true} 时，还会以注释形式追加隐藏标志，
+     * 会按照类型 (方法 字段 类)追加相应的修饰符,例如 synchronized volatile strict 等
+     * 当 {@code showHidden} 为 {@code true} 时,还会以注释形式追加隐藏标志,
      * 如 {@code /* bridge *}{@code /} {@code /* synthetic *}{@code /} 等
      * </p>
      *
@@ -435,7 +437,7 @@ public class AccessInfo {
     /**
      * 获取可见性级别的名称
      *
-     * @return 可见性名称，取值为 {@code "package-private"} {@code "public"}
+     * @return 可见性名称,取值为 {@code "package-private"} {@code "public"}
      *         {@code "private"} 或 {@code "protected"}
      * @throws JadxRuntimeException 如果可见性标志位无法识别
      */
@@ -465,7 +467,7 @@ public class AccessInfo {
     }
 
     /**
-     * 返回访问信息的调试字符串表示，包含所属类型 十六进制标志值及修饰符字符串
+     * 返回访问信息的调试字符串表示,包含所属类型 十六进制标志值及修饰符字符串
      *
      * @return 调试用字符串
      */

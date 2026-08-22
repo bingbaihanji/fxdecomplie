@@ -6,7 +6,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.options.OptionFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.options.OptionType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -120,14 +127,23 @@ public abstract class BasePluginOptionsBuilder implements JadxPluginOptions {
     }
 
     protected static class OptionData<T> implements OptionDescription, OptionBuilder<T> {
+
         private final String name;
+
         private String desc;
+
         private List<T> values = Collections.emptyList();
+
         private OptionType type = OptionType.STRING;
+
         private Set<OptionFlag> flags = EnumSet.noneOf(OptionFlag.class);
+
         private Function<String, T> parser;
+
         private Function<T, String> formatter;
+
         private Consumer<T> setter;
+
         private T defaultValue;
 
         public OptionData(String name) {

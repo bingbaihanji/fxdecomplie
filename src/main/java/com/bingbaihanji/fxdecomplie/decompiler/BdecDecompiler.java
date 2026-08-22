@@ -7,13 +7,18 @@ import com.bingbaihanji.bdec.BdecResult;
 /**
  * bdec 反编译引擎适配器
  *
- * <p>桥接 fxdecomplie {@link Decompiler} 接口与 bdec 的 {@link BdecEngine}。
- * 依赖类字节码通过 fxdecomplie {@link DecompilerContext} 解析。</p>
+ * <p>桥接 fxdecomplie {@link Decompiler} 接口与 bdec 的 {@link BdecEngine}.
+ * 依赖类字节码通过 fxdecomplie {@link DecompilerContext} 解析.</p>
  *
  * @author bingbaihanji
  * @date 2026-08-17
  */
 public final class BdecDecompiler implements Decompiler {
+
+    private static String failureOutput(String typeName, String reason) {
+        return "// Bdec Error: " + typeName + "\n// "
+                + (reason == null || reason.isBlank() ? "未知错误" : reason);
+    }
 
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
@@ -59,11 +64,6 @@ public final class BdecDecompiler implements Decompiler {
                     : e.getClass().getSimpleName();
             return failureOutput(typeName, reason);
         }
-    }
-
-    private static String failureOutput(String typeName, String reason) {
-        return "// Bdec Error: " + typeName + "\n// "
-                + (reason == null || reason.isBlank() ? "未知错误" : reason);
     }
 
     @Override

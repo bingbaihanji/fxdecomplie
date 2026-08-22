@@ -24,21 +24,29 @@ public abstract class AbstractCodeContentPanel extends StackPane {
 
     /** 未加载标记 */
     private static final int STATE_UNLOADED = 0;
+
     /** 加载中 */
     private static final int STATE_LOADING = 1;
+
     /** 已加载 */
     private static final int STATE_LOADED = 2;
+
     /** 加载失败 */
     private static final int STATE_ERROR = 3;
 
     private final AtomicInteger state = new AtomicInteger(STATE_UNLOADED);
+
     /** 字体族(由 CodeContentDeck 在创建面板后设置) */
     protected volatile String fontFamily = "Consolas";
+
     /** 字号(由 CodeContentDeck 在创建面板后设置) */
     protected volatile int fontSize = 14;
+
     /** 行号开关(由 CodeContentDeck 在创建面板后设置) */
     protected volatile boolean lineNumbersEnabled = true;
+
     private volatile Object cancelToken;
+
     /** 内容创建完成回调(面板创建 CodeArea 后触发,用于应用字体/行号) */
     private volatile Runnable onContentCreated;
 

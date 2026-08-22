@@ -8,7 +8,9 @@ import java.util.Objects;
 public class PackageInfo {
 
     private final @Nullable PackageInfo parentPkg;
+
     private final String fullName;
+
     private final String name;
 
     private PackageInfo(String fullName, @Nullable PackageInfo parentPkg, String name) {

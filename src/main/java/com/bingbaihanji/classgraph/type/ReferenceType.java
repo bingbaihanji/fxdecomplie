@@ -2,9 +2,10 @@ package com.bingbaihanji.classgraph.type;
 
 /**
  * 引用类型的类型签名子类包括 {@link TypeRef}
- * ({@link ClassRef} 或 {@link TypeVar})，以及 {@link ArrayType}
+ * ({@link ClassRef} 或 {@link TypeVar}),以及 {@link ArrayType}
  */
 public abstract class ReferenceType extends TypeSignature {
+
     /** 构造函数 */
     protected ReferenceType() {
         super();
@@ -52,7 +53,7 @@ public abstract class ReferenceType extends TypeSignature {
     static ReferenceType parseClassBound(final TypeParser TypeParser, final String definingClassName)
             throws ParseException {
         TypeParser.expect(':');
-        // 如果 ':' 之后没有签名，则可能返回 null(类边界签名可以为空)
+        // 如果 ':' 之后没有签名,则可能返回 null(类边界签名可以为空)
         return parseReferenceType(TypeParser, definingClassName);
     }
 }

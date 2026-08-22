@@ -9,7 +9,11 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,13 +23,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class JavaInputLoader {
+
     private static final Logger LOG = LoggerFactory.getLogger(JavaInputLoader.class);
 
     private static final int MAX_MAGIC_SIZE = 4;
+
     private static final byte[] JAVA_CLASS_FILE_MAGIC = {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
+
     private static final byte[] ZIP_FILE_MAGIC = {0x50, 0x4B, 0x03, 0x04};
 
     private final ZipReader zipReader;
+
     private final Path tempPath;
 
     private int classUniqId = 1;

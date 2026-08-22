@@ -5,8 +5,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg
 import org.jetbrains.annotations.NotNull;
 
 public final class TypeUpdateEntry implements Comparable<TypeUpdateEntry> {
+
     private final int seq;
+
     private final InsnArg arg;
+
     private final ArgType type;
 
     public TypeUpdateEntry(int seq, InsnArg arg, ArgType type) {

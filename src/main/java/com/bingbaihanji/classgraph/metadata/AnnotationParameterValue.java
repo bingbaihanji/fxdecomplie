@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.scan.ScanResult;
@@ -12,6 +11,7 @@ import java.util.Set;
 /** 用于将注解参数名与注解参数值配对包装的包装器 */
 public class AnnotationParameterValue extends MetadataNode
         implements Named, Comparable<AnnotationParameterValue> {
+
     /** 参数名 */
     private String name;
 
@@ -70,12 +70,12 @@ public class AnnotationParameterValue extends MetadataNode
     /**
      * 获取注解参数值
      *
-     * @return 注解参数值可能为以下类型之一：
+     * @return 注解参数值可能为以下类型之一:
      *         <ul>
      *         <li>String —— 字符串常量
      *         <li>String[] —— 字符串数组
-     *         <li>包装类型，如 Integer 或 Character —— 基本类型常量
-     *         <li>一维基本类型数组(即 int[]、long[]、short[]、char[]、byte[]、boolean[]、
+     *         <li>包装类型,如 Integer 或 Character —— 基本类型常量
+     *         <li>一维基本类型数组(即 int[],long[],short[],char[],byte[],boolean[],
      *         float[] 或 double[])—— 基本类型数组
      *         <li>一维 {@link Object}[] 数组 —— 数组类型(且数组元素类型可能为此列表中的类型之一)
      *         <li>{@link AnnotationEnumValue} —— 枚举常量(包装了枚举类及其常量的字符串名称)
@@ -104,7 +104,7 @@ public class AnnotationParameterValue extends MetadataNode
      */
     @Override
     public String getClassName() {
-        // getClassInfo() 对此类型无效，因此 getClassName() 无需实现
+        // getClassInfo() 对此类型无效,因此 getClassName() 无需实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
 
@@ -146,8 +146,8 @@ public class AnnotationParameterValue extends MetadataNode
     }
 
     /**
-     * 对于基本类型数组参数，将包含包装类型的 Object[] 数组替换为基本类型数组(需要检查注解类的每个方法
-     * 的类型，以确定其是否为基本类型数组)
+     * 对于基本类型数组参数,将包含包装类型的 Object[] 数组替换为基本类型数组(需要检查注解类的每个方法
+     * 的类型,以确定其是否为基本类型数组)
      *
      * @param annotationClassInfo
      *            注解类信息
@@ -227,7 +227,7 @@ public class AnnotationParameterValue extends MetadataNode
     }
 
     /**
-     * 转换为字符串，仅包含参数值
+     * 转换为字符串,仅包含参数值
      *
      * @param buf
      *            缓冲区
@@ -263,7 +263,7 @@ public class AnnotationParameterValue extends MetadataNode
     }
 
     /**
-     * 转换为字符串，仅包含参数值
+     * 转换为字符串,仅包含参数值
      *
      * @return 字符串
      */

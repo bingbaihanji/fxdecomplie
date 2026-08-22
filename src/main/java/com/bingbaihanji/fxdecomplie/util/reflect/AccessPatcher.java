@@ -14,12 +14,14 @@ import java.util.Set;
 /**
  * 解除 JDK 内部反射访问限制的工具
  * <p>
- * <b>必须先初始化 {@link ReflectUtils}！</b>
+ * <b>必须先初始化 {@link ReflectUtils}!</b>
  *
  * @author xDark
  */
 public final class AccessPatcher {
+
     private static final Logger log = LoggerFactory.getLogger(AccessPatcher.class);
+
     private static volatile boolean patched;
 
     // 禁止任何实例化
@@ -64,7 +66,8 @@ public final class AccessPatcher {
             for (ClassLoader cl = context.getClassLoader(); cl != null; cl = cl.getParent()) {
                 modules.add(cl.getUnnamedModule());
             }
-            MethodHandle export = ReflectUtils.lookup().findVirtual(Module.class, "implAddOpens", MethodType.methodType(void.class, String.class));
+            MethodHandle export = ReflectUtils.lookup()
+                    .findVirtual(Module.class, "implAddOpens", MethodType.methodType(void.class, String.class));
             for (Module module : modules) {
                 for (String name : module.getPackages()) {
                     try {

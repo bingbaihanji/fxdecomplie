@@ -325,13 +325,13 @@ public abstract class FieldAccess {
                     mv.visitInsn(ARETURN);
                 }
             }
-            // 其余字段：类型不同
+            // 其余字段:类型不同
             if (hasAnyBadTypeLabel) {
                 mv.visitLabel(labelForInvalidTypes);
                 mv.visitFrame(F_SAME, 0, null, 0, null);
                 insertThrowExceptionForFieldType(mv, "String");
             }
-            // 默认：字段未找到
+            // 默认:字段未找到
             mv.visitLabel(defaultLabel);
             mv.visitFrame(F_SAME, 0, null, 0, null);
         }
@@ -424,13 +424,13 @@ public abstract class FieldAccess {
                     mv.visitInsn(RETURN);
                 }
             }
-            // 其余字段：类型不同
+            // 其余字段:类型不同
             if (hasAnyBadTypeLabel) {
                 mv.visitLabel(labelForInvalidTypes);
                 mv.visitFrame(F_SAME, 0, null, 0, null);
                 insertThrowExceptionForFieldType(mv, primitiveType.getClassName());
             }
-            // 默认：字段未找到
+            // 默认:字段未找到
             mv.visitLabel(defaultLabel);
             mv.visitFrame(F_SAME, 0, null, 0, null);
         }
@@ -518,13 +518,13 @@ public abstract class FieldAccess {
                     mv.visitInsn(returnValueInstruction);
                 }
             }
-            // 其余字段：类型不同
+            // 其余字段:类型不同
             if (hasAnyBadTypeLabel) {
                 mv.visitLabel(labelForInvalidTypes);
                 mv.visitFrame(F_SAME, 0, null, 0, null);
                 insertThrowExceptionForFieldType(mv, primitiveType.getClassName());
             }
-            // 默认：字段未找到
+            // 默认:字段未找到
             mv.visitLabel(defaultLabel);
             mv.visitFrame(F_SAME, 0, null, 0, null);
         }

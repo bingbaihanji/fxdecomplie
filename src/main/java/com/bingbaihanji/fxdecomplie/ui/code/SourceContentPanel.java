@@ -25,23 +25,39 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
 
     /** 超大源码禁用正则高亮和链接扫描 */
     private static final int LARGE_SOURCE_THRESHOLD = 500_000;
+
     /** Fira Code 字体资源路径 */
     private static final String FIRA_CODE_LIGHT = "/ttf/FiraCode-Light.ttf";
+
     private final VsCodeThemeLoader.ThemeData theme;
+
     private final String fontFamily;
+
     private final int fontSize;
+
     private final boolean wrapText;
+
     private final boolean lineNumbersEnabled;
+
     private final CodeMetadata metadata;
+
     private final Consumer<CodeMetadata.Reference> onNavigate;
+
     private CodeArea codeArea;
+
     private BracketHighlighter bracketHighlighter;
+
     private LinkHoverHighlighter linkHoverHighlighter;
+
     private String sourceCode;
+
     private BiConsumer<Integer, String> onTokenNavigate;
+
     /** CodeArea 重建后的回调,用于父组件重新安装事件处理器 */
     private Runnable onCodeAreaRebuilt;
+
     private boolean linkNavigationEnabled;
+
     private int cachedLineCount = -1;
 
     /** 使用默认主题和字体创建源码面板 */
@@ -87,8 +103,8 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         codeArea = new CodeArea();
         codeArea.getStyleClass().add("code-editor");
         codeArea.setStyle("""
-                -fx-font-feature-settings: "calt" 1, "liga" 1;
-                """);
+                          -fx-font-feature-settings: "calt" 1, "liga" 1;
+                          """);
         codeArea.setEditable(false);
         codeArea.setWrapText(wrapText);
 
@@ -275,7 +291,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         return codeArea != null;
     }
 
-    /** 释放资源：清理高亮器并置空 codeArea */
+    /** 释放资源:清理高亮器并置空 codeArea */
     @Override
     public void dispose() {
         super.dispose();

@@ -6,8 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 class VarUsage {
+
     private final SSAVar var;
+
     private final List<UsePlace> assigns = new ArrayList<>(3);
+
     private final List<UsePlace> uses = new ArrayList<>(3);
 
     VarUsage(SSAVar var) {

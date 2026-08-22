@@ -7,7 +7,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.IAttributeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class JadxCommentsAttr implements IJadxAttribute {

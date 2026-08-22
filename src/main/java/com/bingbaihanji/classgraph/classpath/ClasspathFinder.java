@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
@@ -18,20 +17,21 @@ import java.util.Set;
 
 /** 用于查找唯一有序类路径元素的类 */
 public class ClasspathFinder {
+
     /** 类路径顺序 */
     private final ClasspathOrder classpathOrder;
 
-    /** {@link ModuleFinder}，如果需要扫描模块的话 */
+    /** {@link ModuleFinder},如果需要扫描模块的话 */
     private final ModuleFinder moduleFinder;
 
     /**
-     * ClassLoader 被调用以加载类的默认顺序，遵循父级优先/父级后置委托顺序
+     * ClassLoader 被调用以加载类的默认顺序,遵循父级优先/父级后置委托顺序
      */
     private ClassLoader[] classLoaderOrderRespectingParentDelegation;
 
     /**
-     * 如果找到的某个类加载器是现有的 {@link ScanClassLoader} 实例，则首先委托到该类加载器，
-     * 而不是尝试从当前扫描的 {@link ScanClassLoader} 加载，这样嵌套扫描之间的类才能兼容(#485)
+     * 如果找到的某个类加载器是现有的 {@link ScanClassLoader} 实例,则首先委托到该类加载器,
+     * 而不是尝试从当前扫描的 {@link ScanClassLoader} 加载,这样嵌套扫描之间的类才能兼容(#485)
      */
     private ScanClassLoader delegateClassGraphClassLoader;
 
@@ -48,23 +48,23 @@ public class ClasspathFinder {
     public ClasspathFinder(final ScanConfig ScanConfig, final ReflectionUtils reflectionUtils, final LogNode log) {
         final LogNode classpathFinderLog = log == null ? null : log.log("Finding classpath and modules");
 
-        // 如果覆盖的类加载器是 AppClassLoader，则需要扫描传统类路径(#639)
+        // 如果覆盖的类加载器是 AppClassLoader,则需要扫描传统类路径(#639)
         boolean forceScanJavaClassPath = false;
 
-        // 如果覆盖了类加载器，检查覆盖的类加载器是否为 JPMS 类加载器
-        // 如果是，则需要启用非系统模块扫描
+        // 如果覆盖了类加载器,检查覆盖的类加载器是否为 JPMS 类加载器
+        // 如果是,则需要启用非系统模块扫描
         boolean scanNonSystemModules;
         if (ScanConfig.overrideClasspath != null) {
-            // 如果类路径被覆盖，则不扫描非系统模块
+            // 如果类路径被覆盖,则不扫描非系统模块
             scanNonSystemModules = false;
         } else if (ScanConfig.overrideClassLoaders != null) {
-            // 如果覆盖了类加载器，仅当覆盖的类加载器是 JPMS
+            // 如果覆盖了类加载器,仅当覆盖的类加载器是 JPMS
             // AppClassLoader 或 PlatformClassLoader 时才扫描非系统模块
             scanNonSystemModules = false;
             for (final ClassLoader classLoader : ScanConfig.overrideClassLoaders) {
                 final String classLoaderClassName = classLoader.getClass().getName();
-                // 无法直接实例化 AppClassLoader 或 PlatformClassLoader，因此如果这些作为
-                // 覆盖类加载器传入，它们必定是通过
+                // 无法直接实例化 AppClassLoader 或 PlatformClassLoader,因此如果这些作为
+                // 覆盖类加载器传入,它们必定是通过
                 // Thread.currentThread().getContextClassLoader() [.getParent()] 或类似方式获取的
                 if (!ScanConfig.enableSystemJarsAndModules
                         && "jdk.internal.loader.ClassLoaders$PlatformClassLoader".equals(classLoaderClassName)) {
@@ -86,7 +86,7 @@ public class ClasspathFinder {
                 }
             }
         } else {
-            // 如果类加载器和类路径都未被覆盖，则仅在启用了模块扫描时才扫描非系统模块
+            // 如果类加载器和类路径都未被覆盖,则仅在启用了模块扫描时才扫描非系统模块
             scanNonSystemModules = ScanConfig.scanModules;
         }
 
@@ -117,7 +117,7 @@ public class ClasspathFinder {
             final LogNode overrideLog = classpathFinderLog == null ? null
                     : classpathFinderLog.log("Overriding classpath with: " + ScanConfig.overrideClasspath);
             classpathOrder.addClasspathEntries(ScanConfig.overrideClasspath,
-                    // 如果覆盖了类路径，则 ScanClassLoader 中用于加载类的类加载器
+                    // 如果覆盖了类路径,则 ScanClassLoader 中用于加载类的类加载器
                     // 会被一个从覆盖类路径加载的自定义 URLClassLoader 覆盖
                     // 这里仅使用 defaultClassLoader 作为占位符
                     defaultClassLoader, ScanConfig, overrideLog);
@@ -129,7 +129,7 @@ public class ClasspathFinder {
             classLoaderOrderRespectingParentDelegation = contextClassLoaders;
         }
 
-        // 如果启用了系统 JAR 和模块，将 JRE rt.jar 添加到类路径开头
+        // 如果启用了系统 JAR 和模块,将 JRE rt.jar 添加到类路径开头
         if (ScanConfig.enableSystemJarsAndModules) {
             final String jreRtJar = SystemJarFinder.getJreRtJarPath();
 
@@ -171,7 +171,7 @@ public class ClasspathFinder {
                 }
             }
 
-            // 查找所有唯一类加载器，按委托顺序
+            // 查找所有唯一类加载器,按委托顺序
             final LogNode classloaderOrderLog = classpathFinderLog == null ? null
                     : classpathFinderLog.log("Finding unique classloaders in delegation order");
             final ClassLoaderOrder classLoaderOrder = new ClassLoaderOrder(reflectionUtils);
@@ -197,7 +197,7 @@ public class ClasspathFinder {
                 for (final HandlerRegistryEntry classLoaderHandlerRegistryEntry : ent.getValue()) {
                     // 将类路径条目添加到 ignoredClasspathOrder 或 classpathOrder
                     if (!ScanConfig.ignoreParentClassLoaders || !allParentClassLoaders.contains(classLoader)) {
-                        // 否则将类路径条目添加到 classpathOrder，并将类加载器添加到
+                        // 否则将类路径条目添加到 classpathOrder,并将类加载器添加到
                         // 最终的类加载器顺序中
                         final LogNode classloaderHandlerLog = classloaderURLLog == null ? null
                                 : classloaderURLLog.log("Classloader " + classLoader.getClass().getName()
@@ -218,13 +218,13 @@ public class ClasspathFinder {
                 }
             }
 
-            // 需要记录类加载器的委托顺序，特别是为了遵循父级后置委托
-            // 顺序，因为这不是默认行为(issue #267)
+            // 需要记录类加载器的委托顺序,特别是为了遵循父级后置委托
+            // 顺序,因为这不是默认行为(issue #267)
             classLoaderOrderRespectingParentDelegation = finalClassLoaderOrder.toArray(new ClassLoader[0]);
         }
 
-        // 仅在父级类加载器未被忽略、类加载器未被覆盖且类路径未被覆盖的情况下扫描 java.class.path，
-        // 除非仅启用了模块扫描且遇到了未命名模块层 -- 在这种情况下，必须强制扫描 java.class.path，
+        // 仅在父级类加载器未被忽略,类加载器未被覆盖且类路径未被覆盖的情况下扫描 java.class.path,
+        // 除非仅启用了模块扫描且遇到了未命名模块层 -- 在这种情况下,必须强制扫描 java.class.path,
         // 因为 ModuleLayer API 不允许打开未命名模块
         if (forceScanJavaClassPath
                 || (!ScanConfig.ignoreParentClassLoaders && ScanConfig.overrideClassLoaders == null
@@ -263,7 +263,7 @@ public class ClasspathFinder {
     }
 
     /**
-     * 获取 ClassLoader 顺序，遵循父级优先/父级后置委托顺序
+     * 获取 ClassLoader 顺序,遵循父级优先/父级后置委托顺序
      *
      * @return 类加载器顺序
      */
@@ -274,8 +274,8 @@ public class ClasspathFinder {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 如果找到的某个类加载器是现有的 {@link ScanClassLoader} 实例，则首先委托到该类加载器，
-     * 而不是尝试从当前扫描的 {@link ScanClassLoader} 加载，这样嵌套扫描之间的类才能兼容(#485)
+     * 如果找到的某个类加载器是现有的 {@link ScanClassLoader} 实例,则首先委托到该类加载器,
+     * 而不是尝试从当前扫描的 {@link ScanClassLoader} 加载,这样嵌套扫描之间的类才能兼容(#485)
      *
      * @return 在使用此扫描自身的 {@link ScanClassLoader} 加载类之前要委托的
      *         {@link ScanClassLoader}(如果没有则返回 null)

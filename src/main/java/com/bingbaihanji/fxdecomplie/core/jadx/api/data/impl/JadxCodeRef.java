@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.annotations.VarNode;
 public class JadxCodeRef implements IJavaCodeRef {
 
     private CodeRefType attachType;
+
     private int index;
 
     public JadxCodeRef(CodeRefType attachType, int index) {

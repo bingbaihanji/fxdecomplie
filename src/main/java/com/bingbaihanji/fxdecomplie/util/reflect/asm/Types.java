@@ -19,29 +19,53 @@ import java.util.List;
  * @author Matt Coley
  */
 public class Types {
+
     public static final Type OBJECT_TYPE = Type.getObjectType("java/lang/Object");
+
     public static final Type CLASS_TYPE = Type.getObjectType("java/lang/Class");
+
     public static final Type STRING_TYPE = Type.getObjectType("java/lang/String");
+
     public static final Type BOX_VOID = Type.getObjectType("java/lang/Void");
+
     public static final Type BOX_BOOLEAN = Type.getObjectType("java/lang/Boolean");
+
     public static final Type BOX_CHAR = Type.getObjectType("java/lang/Character");
+
     public static final Type BOX_BYTE = Type.getObjectType("java/lang/Byte");
+
     public static final Type BOX_SHORT = Type.getObjectType("java/lang/Short");
+
     public static final Type BOX_INT = Type.getObjectType("java/lang/Integer");
+
     public static final Type BOX_FLOAT = Type.getObjectType("java/lang/Float");
+
     public static final Type BOX_LONG = Type.getObjectType("java/lang/Long");
+
     public static final Type BOX_DOUBLE = Type.getObjectType("java/lang/Double");
+
     public static final Type METHOD_HANDLE_TYPE = Type.getObjectType("java/lang/invoke/MethodHandle");
+
     public static final Type ARRAY_1D_BOOLEAN = Type.getObjectType("[Z");
+
     public static final Type ARRAY_1D_CHAR = Type.getObjectType("[C");
+
     public static final Type ARRAY_1D_BYTE = Type.getObjectType("[B");
+
     public static final Type ARRAY_1D_SHORT = Type.getObjectType("[S");
+
     public static final Type ARRAY_1D_INT = Type.getObjectType("[I");
+
     public static final Type ARRAY_1D_FLOAT = Type.getObjectType("[F");
+
     public static final Type ARRAY_1D_DOUBLE = Type.getObjectType("[D");
+
     public static final Type ARRAY_1D_LONG = Type.getObjectType("[J");
+
     public static final Type ARRAY_1D_OBJECT = Type.getObjectType("[Ljava/lang/Object;");
+
     public static final Type ARRAY_1D_STRING = Type.getObjectType("[Ljava/lang/String;");
+
     public static final Type[] PRIMITIVES = new Type[]{
             Type.VOID_TYPE,
             Type.BOOLEAN_TYPE,
@@ -53,6 +77,7 @@ public class Types {
             Type.DOUBLE_TYPE,
             Type.LONG_TYPE
     };
+
     public static final Collection<String> PRIMITIVE_BOXES = Arrays.asList(
             "Ljava/lang/Boolean;",
             "Ljava/lang/Byte;",
@@ -214,10 +239,12 @@ public class Types {
      */
     @SuppressWarnings("all")
     public static boolean isValidDesc(String desc) {
-        if (desc == null)
+        if (desc == null) {
             return false;
-        if (desc.length() == 0)
+        }
+        if (desc.length() == 0) {
             return false;
+        }
         char first = desc.charAt(0);
         if (first == '(') {
             try {
@@ -231,10 +258,11 @@ public class Types {
         } else if (first == 'L' || first == '[') {
             try {
                 Type type = Type.getType(desc);
-                if (type.getSort() == Type.OBJECT && !desc.endsWith(";"))
+                if (type.getSort() == Type.OBJECT && !desc.endsWith(";")) {
                     return false;
-                else if (type.getSort() == Type.ARRAY && type.getElementType() == null)
+                } else if (type.getSort() == Type.ARRAY && type.getElementType() == null) {
                     return false;
+                }
                 return true;
             } catch (Throwable t) {
                 return false;
@@ -260,7 +288,7 @@ public class Types {
      * @param opcode
      * 		某个指令操作码
      *
-     * @return 隐含的变量类型；若传入的操作码不隐含类型则返回 {@code null}
+     * @return 隐含的变量类型;若传入的操作码不隐含类型则返回 {@code null}
      */
 
     public static Type fromVarOpcode(int opcode) {
@@ -278,7 +306,7 @@ public class Types {
      * @param opcode
      * 		某个数组操作码
      *
-     * @return 隐含的变量类型；若传入的操作码不隐含类型则返回 {@code null}
+     * @return 隐含的变量类型;若传入的操作码不隐含类型则返回 {@code null}
      */
 
     public static Type fromArrayOpcode(int opcode) {
@@ -319,7 +347,7 @@ public class Types {
      * @param sort
      * 		类型 sort 值
      *
-     * @return 给定 sort 对应的基本类型；若非基本类型则返回 {@link #OBJECT_TYPE}
+     * @return 给定 sort 对应的基本类型;若非基本类型则返回 {@link #OBJECT_TYPE}
      */
 
     public static Type fromSort(int sort) {
@@ -343,7 +371,7 @@ public class Types {
      *
      * @return 归一化后的 sort这是基于运行时预期的语境
      * 任何小于 {@code int} 的类型都被视为 {@code int}
-     * 在大多数情况下，数组类型基本可以直接替换为对象类型
+     * 在大多数情况下,数组类型基本可以直接替换为对象类型
      */
     public static int getNormalizedSort(int sort) {
         if (sort == Type.ARRAY) {
@@ -406,7 +434,7 @@ public class Types {
      * @param operand
      *        用于 {@link Opcodes#NEWARRAY} 的 {@link IntInsnNode#operand}
      *
-     * @return 数组元素的类型；若操作数不匹配任何基本类型则返回 {@link #OBJECT_TYPE}
+     * @return 数组元素的类型;若操作数不匹配任何基本类型则返回 {@link #OBJECT_TYPE}
      */
 
     public static Type newArrayElementType(int operand) {
@@ -441,7 +469,7 @@ public class Types {
             return pretty(type);
 
         } catch (Throwable t) {
-            // 无效描述符，原样返回
+            // 无效描述符,原样返回
             return descriptor;
         }
     }
@@ -492,7 +520,7 @@ public class Types {
      * @param signature
      * 		类声明签名
      *
-     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}
+     * @return 对于有效签名或 {@code null} 返回 {@code true},否则返回 {@code false}
      */
     public static boolean isValidClassSignature(String signature) {
         return isValidSignature(signature, SignatureContext.CLASS);
@@ -502,7 +530,7 @@ public class Types {
      * @param signature
      * 		字段或变量签名
      *
-     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}
+     * @return 对于有效签名或 {@code null} 返回 {@code true},否则返回 {@code false}
      */
     public static boolean isValidFieldSignature(String signature) {
         return isValidSignature(signature, SignatureContext.FIELD);
@@ -512,7 +540,7 @@ public class Types {
      * @param signature
      * 		方法签名
      *
-     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}
+     * @return 对于有效签名或 {@code null} 返回 {@code true},否则返回 {@code false}
      */
     public static boolean isValidMethodSignature(String signature) {
         return isValidSignature(signature, SignatureContext.METHOD);
@@ -524,7 +552,7 @@ public class Types {
      * @param context
      * 		签名使用语境
      *
-     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}
+     * @return 对于有效签名或 {@code null} 返回 {@code true},否则返回 {@code false}
      */
     public static boolean isValidSignature(String signature, SignatureContext context) {
         if (signature == null) {

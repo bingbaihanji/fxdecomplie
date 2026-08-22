@@ -34,29 +34,38 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * 插件上下文，作为单个插件运行时的核心载体
+ * 插件上下文,作为单个插件运行时的核心载体
  * <p>
  * 同时实现 {@link JadxPluginContext} (提供给插件访问反编译器能力的接口)与
- * {@link JadxPluginRuntimeData} (对外暴露插件运行时数据)，并负责在正确的类加载器下
+ * {@link JadxPluginRuntimeData} (对外暴露插件运行时数据),并负责在正确的类加载器下
  * 初始化/卸载插件 注册代码输入 处理选项与输入哈希等
  */
 public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, Comparable<PluginContext> {
+
     /** 所属的反编译器实例 */
     private final JadxDecompiler decompiler;
+
     /** 全局插件数据 (所有插件的集合视图) */
     private final JadxPluginsData pluginsData;
+
     /** 当前插件实例 */
     private final JadxPlugin plugin;
+
     /** 当前插件的元信息 */
     private final JadxPluginInfo pluginInfo;
+
     /** 加载当前插件的类加载器 */
     private final ClassLoader pluginClassLoader;
+
     /** 插件注册的代码输入列表 */
     private final List<JadxCodeInput> codeInputs = new ArrayList<>();
+
     /** 应用级上下文 (提供 GUI 上下文 文件获取器等) */
     private AppContext appContext;
+
     /** 插件注册的选项 (可能为空) */
     private @Nullable JadxPluginOptions options;
+
     /** 插件注册的输入哈希提供者 (可能为空) */
     private @Nullable Supplier<String> inputsHashSupplier;
 
@@ -79,7 +88,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 初始化插件 (在插件类加载器上下文中调用 {@link JadxPlugin#init})，并标记为已初始化
+     * 初始化插件 (在插件类加载器上下文中调用 {@link JadxPlugin#init}),并标记为已初始化
      */
     public void init() {
         classLoaderWrap(() -> {
@@ -98,7 +107,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 在插件类加载器作为线程上下文类加载器的环境下执行给定任务，执行完成后恢复原有类加载器
+     * 在插件类加载器作为线程上下文类加载器的环境下执行给定任务,执行完成后恢复原有类加载器
      *
      * @param task 需要在插件类加载器上下文中执行的任务
      */
@@ -149,7 +158,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         return codeInputs;
     }
 
-    /** 注册插件选项，并将当前已有的插件选项值应用到其中 */
+    /** 注册插件选项,并将当前已有的插件选项值应用到其中 */
     @Override
     public void registerOptions(JadxPluginOptions options) {
         try {
@@ -160,14 +169,14 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         }
     }
 
-    /** 注册输入哈希提供者，用于自定义计算插件输入的哈希值 */
+    /** 注册输入哈希提供者,用于自定义计算插件输入的哈希值 */
     @Override
     public void registerInputsHashSupplier(Supplier<String> supplier) {
         this.inputsHashSupplier = supplier;
     }
 
     /**
-     * 获取插件输入哈希：若注册了自定义提供者则使用之，否则回退到基于选项的默认哈希
+     * 获取插件输入哈希:若注册了自定义提供者则使用之,否则回退到基于选项的默认哈希
      */
     @Override
     public String getInputsHash() {
@@ -264,7 +273,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 加载给定的代码文件，将所有已注册代码输入的加载结果合并为一个代码加载器
+     * 加载给定的代码文件,将所有已注册代码输入的加载结果合并为一个代码加载器
      *
      * @param files     待加载的文件路径列表
      * @param closeable 加载完成后需要关闭的资源 (可能为空)

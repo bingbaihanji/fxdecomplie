@@ -10,9 +10,9 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Guard clause 工具 — 消除散布的 null 检查和空集合处理。
+ * Guard clause 工具 — 消除散布的 null 检查和空集合处理.
  *
- * <p>提供安全的 null 处理包装器，减少调用方的防御性代码。</p>
+ * <p>提供安全的 null 处理包装器,减少调用方的防御性代码.</p>
  */
 public final class MetadataGuards {
 
@@ -35,13 +35,13 @@ public final class MetadataGuards {
     /** 返回非 null 的不可变列表 */
     public static <T> List<T> safeList(Collection<T> collection) {
         return collection == null ? List.of()
-            : List.copyOf(collection);
+                : List.copyOf(collection);
     }
 
     /** 返回非 null 的 Stream */
     public static <T> Stream<T> safeStream(Collection<T> collection) {
         return collection == null ? Stream.empty()
-            : collection.stream();
+                : collection.stream();
     }
 
     /** 检查集合是否为 null 或空 */
@@ -63,22 +63,22 @@ public final class MetadataGuards {
         }
     }
 
-    /** 如果值非 null 则映射，否则返回默认值 */
+    /** 如果值非 null 则映射,否则返回默认值 */
     public static <T, R> R mapOrElse(T value, Function<T, R> mapper, R defaultValue) {
         return value != null ? mapper.apply(value) : defaultValue;
     }
 
-    /** 如果集合非空则映射，否则返回默认值 */
+    /** 如果集合非空则映射,否则返回默认值 */
     public static <T, R> R mapNonEmpty(Collection<T> collection,
-                                        Function<Collection<T>, R> mapper,
-                                        Supplier<R> defaultSupplier) {
+                                       Function<Collection<T>, R> mapper,
+                                       Supplier<R> defaultSupplier) {
         return isNotEmpty(collection) ? mapper.apply(collection)
-            : defaultSupplier.get();
+                : defaultSupplier.get();
     }
 
     // ─── 类名处理 ───
 
-    /** 安全地获取简单类名（去掉包前缀） */
+    /** 安全地获取简单类名(去掉包前缀) */
     public static String simpleName(String internalName) {
         if (internalName == null || internalName.isBlank()) {
             return "";
@@ -102,7 +102,7 @@ public final class MetadataGuards {
     public static MetadataQueryService queryServiceFor(
             ClassMetadataReader reader) {
         return new MetadataQueryService(
-            Collections.singletonMap(reader.className(), reader));
+                Collections.singletonMap(reader.className(), reader));
     }
 
     /** 从 ClassMetadataReader 映射创建查询服务 */

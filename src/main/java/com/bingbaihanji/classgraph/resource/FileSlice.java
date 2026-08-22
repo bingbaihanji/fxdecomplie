@@ -44,18 +44,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** {@link File} 切片 */
 public class FileSlice extends Slice {
+
     /** {@link File} 文件 */
     public final File file;
+
     /** 文件长度 */
     private final long fileLength;
+
     /** 如果这是顶级文件切片则为 true */
     private final boolean isTopLevelFileSlice;
+
     /** 如果已调用 {@link #close} 则为 true */
     private final AtomicBoolean isClosed = new AtomicBoolean();
+
     /** 在 {@link File} 上打开的 {@link RandomAccessFile} */
     public RandomAccessFile raf;
+
     /** 文件通道 */
     private FileChannel fileChannel;
+
     /** 后备字节缓冲区(如果有) */
     private java.nio.ByteBuffer backingByteBuffer;
 
@@ -71,7 +78,7 @@ public class FileSlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      */
@@ -86,14 +93,14 @@ public class FileSlice extends Slice {
         this.isTopLevelFileSlice = false;
 
         if (parentSlice.backingByteBuffer != null) {
-            // 如果存在后备字节缓冲区，则复制并切片它
+            // 如果存在后备字节缓冲区,则复制并切片它
             this.backingByteBuffer = parentSlice.backingByteBuffer.duplicate();
             ((Buffer) this.backingByteBuffer).position((int) sliceStartPos);
             ((Buffer) this.backingByteBuffer).limit((int) (sliceStartPos + sliceLength));
         }
 
-        // 仅将顶级文件切片标记为打开状态(子切片不需要标记为打开状态，因为
-        // 它们不需要被关闭，它们只是复制顶级切片的资源引用)
+        // 仅将顶级文件切片标记为打开状态(子切片不需要标记为打开状态,因为
+        // 它们不需要被关闭,它们只是复制顶级切片的资源引用)
     }
 
     /**
@@ -104,7 +111,7 @@ public class FileSlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      * @param log
@@ -127,11 +134,11 @@ public class FileSlice extends Slice {
             // TODO: for JDK 24+, use the new Arena API to memory-map the file to a MemorySegment:
             // https://docs.oracle.com/en/java/javase/22/docs//api/java.base/java/nio/channels/FileChannel.html#map(java.nio.channels.FileChannel.MapMode,long,long,java.lang.foreign.Arena)
             try {
-                // 尝试映射文件(某些操作系统在文件无法映射时抛出 OutOfMemoryError，
+                // 尝试映射文件(某些操作系统在文件无法映射时抛出 OutOfMemoryError,
                 // 有些则抛出 IOException)
                 backingByteBuffer = fileChannel.map(MapMode.READ_ONLY, 0L, fileLength);
             } catch (IOException | OutOfMemoryError e) {
-                // 尝试运行垃圾回收，然后再次尝试映射文件
+                // 尝试运行垃圾回收,然后再次尝试映射文件
                 System.gc();
                 JarReader.runFinalizationMethod();
                 try {
@@ -177,7 +184,7 @@ public class FileSlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @return 切片
      */
     @Override
@@ -190,17 +197,17 @@ public class FileSlice extends Slice {
     }
 
     /**
-     * 直接从 FileChannel 读取(慢速路径，但可以处理大于 2GB 的文件)
+     * 直接从 FileChannel 读取(慢速路径,但可以处理大于 2GB 的文件)
      *
      * @return 随机访问读取器
      */
     @Override
     public RandomAccessReader randomAccessReader() {
         if (backingByteBuffer == null) {
-            // 如果文件未被 mmap，返回使用 FileChannel 的 RandomAccessReader
+            // 如果文件未被 mmap,返回使用 FileChannel 的 RandomAccessReader
             return new RandomAccessFileChannelReader(fileChannel, sliceStartPos, sliceLength);
         } else {
-            // 如果文件已被 mmap，返回使用 ByteBuffer 的 RandomAccessReader
+            // 如果文件已被 mmap,返回使用 ByteBuffer 的 RandomAccessReader
             return new RandomAccessByteBufferReader(backingByteBuffer, sliceStartPos, sliceLength);
         }
     }
@@ -215,7 +222,7 @@ public class FileSlice extends Slice {
     @Override
     public byte[] load() throws IOException {
         if (isDeflatedZipEntry) {
-            // 如果已压缩，则解压到内存中
+            // 如果已压缩,则解压到内存中
             if (inflatedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
@@ -238,7 +245,7 @@ public class FileSlice extends Slice {
     }
 
     /**
-     * 将切片读入 {@link ByteBuffer}(或者，如果调用了 {@link ClassGraph#withMemoryMapping()}，
+     * 将切片读入 {@link ByteBuffer}(或者,如果调用了 {@link ClassGraph#withMemoryMapping()},
      * 则将切片内存映射到 {@link MappedByteBuffer})
      *
      * @return 字节缓冲区
@@ -248,14 +255,14 @@ public class FileSlice extends Slice {
     @Override
     public java.nio.ByteBuffer read() throws IOException {
         if (isDeflatedZipEntry) {
-            // 如果已压缩，则解压到内存中(遗憾的是，没有可以按需解压部分流的懒加载
-            // ByteBuffer，因此我们不得不解压整个 zip 条目)
+            // 如果已压缩,则解压到内存中(遗憾的是,没有可以按需解压部分流的懒加载
+            // ByteBuffer,因此我们不得不解压整个 zip 条目)
             if (inflatedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
             return java.nio.ByteBuffer.wrap(load());
         } else if (backingByteBuffer == null) {
-            // 从 RandomAccessFile 复制到字节数组，然后包装成 ByteBuffer
+            // 从 RandomAccessFile 复制到字节数组,然后包装成 ByteBuffer
             if (sliceLength > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("File is larger than 2GB");
             }
@@ -281,15 +288,15 @@ public class FileSlice extends Slice {
     public void close() {
         if (!isClosed.getAndSet(true)) {
             if (isTopLevelFileSlice && backingByteBuffer != null) {
-                // 仅在顶级文件切片中关闭 ByteBuffer，这样 ByteBuffer 只关闭一次
-                // (此外，MappedByteBuffer 的副本无法通过 cleaner API 关闭)
+                // 仅在顶级文件切片中关闭 ByteBuffer,这样 ByteBuffer 只关闭一次
+                // (此外,MappedByteBuffer 的副本无法通过 cleaner API 关闭)
                 JarReader.closeDirectByteBuffer(backingByteBuffer);
             }
             backingByteBuffer = null;
             fileChannel = null;
             if (isTopLevelFileSlice) {
-                // 仅关闭顶级文件切片的 RAF；子切片共享父切片的 RAF，
-                // 关闭它们会导致父切片和其他子切片的底层文件被意外关闭。
+                // 仅关闭顶级文件切片的 RAF;子切片共享父切片的 RAF,
+                // 关闭它们会导致父切片和其他子切片的底层文件被意外关闭.
                 try {
                     // 关闭 raf 也会关闭关联的 FileChannel
                     raf.close();

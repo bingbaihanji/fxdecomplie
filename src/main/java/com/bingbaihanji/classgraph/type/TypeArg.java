@@ -6,13 +6,19 @@ import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
 import com.bingbaihanji.classgraph.metadata.ClassInfo;
 import com.bingbaihanji.classgraph.scan.ScanResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /** 一个类型参数 */
 public final class TypeArg extends HierarchicalType {
+
     /** 通配符类型 */
     private final Wildcard wildcard;
-    /** 类型签名(如果 wildcard == ANY，则为 null) */
+
+    /** 类型签名(如果 wildcard == ANY,则为 null) */
     private final ReferenceType typeSignature;
 
     /**
@@ -104,7 +110,7 @@ public final class TypeArg extends HierarchicalType {
     }
 
     /**
-     * 获取类型通配符，其值为 {NONE, ANY, EXTENDS, SUPER} 之一
+     * 获取类型通配符,其值为 {NONE, ANY, EXTENDS, SUPER} 之一
      *
      * @return 类型通配符
      */
@@ -113,7 +119,7 @@ public final class TypeArg extends HierarchicalType {
     }
 
     /**
-     * 获取与通配符关联的类型签名(如果通配符为 ANY，则为 null)
+     * 获取与通配符关联的类型签名(如果通配符为 ANY,则为 null)
      *
      * @return 类型签名
      */
@@ -148,7 +154,7 @@ public final class TypeArg extends HierarchicalType {
      */
     @Override
     public String getClassName() {
-        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
+        // getClassInfo() 对此类型无效,因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
 

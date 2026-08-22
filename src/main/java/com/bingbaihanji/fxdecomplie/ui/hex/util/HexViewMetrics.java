@@ -5,22 +5,39 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
 public class HexViewMetrics {
+
     private static final double CELL_PADDING = 2.0;
+
     private static final double ADDRESS_GAP = 8.0;
+
     private static final double GROUP_GAP = 8.0;
+
     private static final double ASCII_GAP = 14.0;
+
     private static final double HEADER_VERTICAL_PADDING = 5.0;
+
     private final Font font;
+
     private final double charWidth;
+
     private final double textHeight;
+
     private final double rowHeight;
+
     private final int bytesPerRow;
+
     private final int addressWidth;
+
     private final double addressColWidth;
+
     private final double hexColWidth;
+
     private final double asciiColWidth;
+
     private final double totalWidth;
+
     private final double groupGapWidth;
+
     private final double headerHeight;
 
     public HexViewMetrics(Font font, int bytesPerRow, int addressWidth) {

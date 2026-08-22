@@ -13,11 +13,33 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AttrNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.SkipMethodArgsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.AccessInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstStringNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.FillArrayInsn;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.FilledNewArrayNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfOp;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IndexInsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.NewArrayNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.SwitchInsn;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.NamedArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.ConstructorInsn;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.TernaryInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IFieldInfoRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IMethodDetails;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfCondition;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExcHandlerAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExceptionHandler;
@@ -43,8 +65,8 @@ import static com.bingbaihanji.fxdecomplie.util.collection.ListUtils.allMatch;
 /**
  * 方法指令修改访问器
  * <p>
- * 负责对方法内的指令进行修改 (删除 替换 处理异常处理器等)，
- * 例如：将常量替换为常量字段引用 内联 CMP 指令 移除多余的类型转换 
+ * 负责对方法内的指令进行修改 (删除 替换 处理异常处理器等),
+ * 例如:将常量替换为常量字段引用 内联 CMP 指令 移除多余的类型转换 
  * 将 new-array + fill-array 合并为填充数组指令 处理 move-exception 等
  * 该访问器在 {@link CodeShrinkVisitor} 与 {@link ProcessVariables} 之前运行
  */
@@ -57,9 +79,11 @@ import static com.bingbaihanji.fxdecomplie.util.collection.ListUtils.allMatch;
         }
 )
 public class ModVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(ModVisitor.class);
 
     private static final long DOUBLE_TO_BITS = Double.doubleToLongBits(1);
+
     private static final long FLOAT_TO_BITS = Float.floatToIntBits(1);
 
     private static void replaceStep(MethodNode mth, InsnRemover remover) {
@@ -86,7 +110,7 @@ public class ModVisitor extends AbstractVisitor {
                         break;
 
                     case NEW_ARRAY:
-                        // 如果下一条指令是 'fill-array'，则替换为已填充的数组
+                        // 如果下一条指令是 'fill-array',则替换为已填充的数组
                         NewArrayNode newArrInsn = (NewArrayNode) insn;
                         InsnNode nextInsn = getFirstUseSkipMove(insn.getResult());
                         if (nextInsn != null && nextInsn.getType() == InsnType.FILL_ARRAY) {
@@ -134,7 +158,7 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 如果字段在使用处不可见，则将实例转换 (cast)为其声明所在的原始类
+     * 如果字段在使用处不可见,则将实例转换 (cast)为其声明所在的原始类
      */
     private static void fixFieldUsage(MethodNode mth, IndexInsnNode insn) {
         InsnArg instanceArg = insn.getArg(insn.getType() == InsnType.IGET ? 0 : 1);
@@ -276,7 +300,7 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 将 CMP 指令内联到 'if' 指令中，以便于条件合并
+     * 将 CMP 指令内联到 'if' 指令中,以便于条件合并
      */
     private static void inlineCMPInsns(MethodNode mth, BlockNode block, int i, InsnNode insn, InsnRemover remover) {
         RegisterArg resArg = insn.getResult();
@@ -405,7 +429,7 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 对匿名类构造函数调用中的参数应用以下处理：
+     * 对匿名类构造函数调用中的参数应用以下处理:
      * <ul>
      *     <li>禁止将其内联到构造函数调用中</li>
      *     <li>将变量声明为 final (编译器隐式要求)</li>
@@ -429,7 +453,7 @@ public class ModVisitor extends AbstractVisitor {
                 }
             }
         } else {
-            // 无法获取额外信息，则对所有参数应用修改 (最安全的方案)
+            // 无法获取额外信息,则对所有参数应用修改 (最安全的方案)
             co.getArguments().forEach(ModVisitor::anonymousCallArgMod);
         }
     }
@@ -443,7 +467,7 @@ public class ModVisitor extends AbstractVisitor {
 
     /**
      * 返回参数的第一个使用指令
-     * 如果只被使用一次，则尝试沿 move 链继续追踪
+     * 如果只被使用一次,则尝试沿 move 链继续追踪
      */
     @Nullable
     private static InsnNode getFirstUseSkipMove(RegisterArg arg) {
@@ -507,7 +531,7 @@ public class ModVisitor extends AbstractVisitor {
         }
         ExceptionHandler excHandler = excHandlerAttr.getHandler();
 
-        // 结果参数同时被该指令和异常处理器使用，
+        // 结果参数同时被该指令和异常处理器使用,
         RegisterArg resArg = insn.getResult();
         ArgType type = excHandler.getArgType();
         String name = excHandler.isCatchAll() ? "th" : "e";
@@ -569,7 +593,8 @@ public class ModVisitor extends AbstractVisitor {
         if (paramsAnnotation == null) {
             return;
         }
-        paramsAnnotation.getParamList().forEach(annotationsList -> replaceConstsInAnnotationsAttr(cls, annotationsList));
+        paramsAnnotation.getParamList()
+                .forEach(annotationsList -> replaceConstsInAnnotationsAttr(cls, annotationsList));
     }
 
     private void replaceConstsInAnnotationForAttrNode(ClassNode parentCls, AttrNode attrNode) {

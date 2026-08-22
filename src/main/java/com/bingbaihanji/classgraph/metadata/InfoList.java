@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.util.LazyList;
@@ -15,6 +14,7 @@ import java.util.List;
  *            元素类型
  */
 public class InfoList<T extends Named> extends LazyList<T> {
+
     /** 序列化版本 UID */
     static final long serialVersionUID = 1L;
 
@@ -60,9 +60,9 @@ public class InfoList<T extends Named> extends LazyList<T> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取此列表中所有项的名称，通过对列表中的每一项调用 {@code getName()} 来获取
+     * 获取此列表中所有项的名称,通过对列表中的每一项调用 {@code getName()} 来获取
      *
-     * @return 此列表中所有项的名称，通过对列表中的每一项调用 {@code getName()} 来获取
+     * @return 此列表中所有项的名称,通过对列表中的每一项调用 {@code getName()} 来获取
      */
     public List<String> getNames() {
         if (this.isEmpty()) {
@@ -79,9 +79,9 @@ public class InfoList<T extends Named> extends LazyList<T> {
     }
 
     /**
-     * 获取此列表中所有项的字符串表示，通过对列表中的每一项调用 {@code toString()} 来获取
+     * 获取此列表中所有项的字符串表示,通过对列表中的每一项调用 {@code toString()} 来获取
      *
-     * @return 此列表中所有项的字符串表示，通过对列表中的每一项调用 {@code toString()} 来获取
+     * @return 此列表中所有项的字符串表示,通过对列表中的每一项调用 {@code toString()} 来获取
      */
     public List<String> getAsStrings() {
         if (this.isEmpty()) {
@@ -96,13 +96,13 @@ public class InfoList<T extends Named> extends LazyList<T> {
     }
 
     /**
-     * 获取此列表中所有项的字符串表示，仅使用命名类的<a href=
+     * 获取此列表中所有项的字符串表示,仅使用命名类的<a href=
      * "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">简单
-     * 名称</a>如果对象是 {@code MetadataNode} 的子类(例如 {@link ClassInfo}、{@link MethodInfo} 或
-     * {@link FieldInfo} 对象)，则调用 {@code MetadataNode#toStringWithSimpleNames()}；否则对列表中的每一项
+     * 名称</a>如果对象是 {@code MetadataNode} 的子类(例如 {@link ClassInfo},{@link MethodInfo} 或
+     * {@link FieldInfo} 对象),则调用 {@code MetadataNode#toStringWithSimpleNames()};否则对列表中的每一项
      * 调用 {@code toString()}
      *
-     * @return 此列表中所有项的字符串表示，仅使用命名类的<a href=
+     * @return 此列表中所有项的字符串表示,仅使用命名类的<a href=
      *         "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">
      *         简单名称</a>
      */

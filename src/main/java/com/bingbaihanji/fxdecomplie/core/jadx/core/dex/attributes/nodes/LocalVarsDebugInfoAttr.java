@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import java.util.List;
 
 public class LocalVarsDebugInfoAttr implements IJadxAttribute {
+
     private final List<ILocalVar> localVars;
 
     public LocalVarsDebugInfoAttr(List<ILocalVar> localVars) {

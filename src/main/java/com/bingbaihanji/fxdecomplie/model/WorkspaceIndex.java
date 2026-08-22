@@ -7,7 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -23,12 +29,17 @@ public final class WorkspaceIndex {
             List.of(), List.of(), Map.of());
 
     private static final Logger log = LoggerFactory.getLogger(WorkspaceIndex.class);
+
     private static final long MAX_INDEXED_RESOURCE_BYTES = 5L * 1024 * 1024;
 
     private final List<ClassIndexEntry> classes;
+
     private final List<ResourceIndexEntry> resources;
+
     private final Map<String, ClassIndexEntry> classesByInternalName;
+
     private volatile Map<String, byte[]> resourceBytesByPathCache;
+
     private volatile Map<String, List<String>> subclassesByParentCache;
 
     private WorkspaceIndex(List<ClassIndexEntry> classes, List<ResourceIndexEntry> resources,
@@ -158,7 +169,7 @@ public final class WorkspaceIndex {
             log.warn("解析类元数据失败: {}", node.getFullPath());
         }
 
-        // 使用 node::resolveBytes 延迟加载：索引构建时只解析元数据,
+        // 使用 node::resolveBytes 延迟加载:索引构建时只解析元数据,
         // 字节码在首次打开 class 时才缓存到节点,避免大型 JAR 预热阶段占用过多内存
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
                 node::resolveBytes, methods, fields, superName, interfaces, node);
@@ -340,6 +351,7 @@ public final class WorkspaceIndex {
     }
 
     public record BuildProgress(int processed, int total, String phase) {
+
         public double progress() {
             if (total <= 0) {
                 return 1.0;

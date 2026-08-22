@@ -1,4 +1,3 @@
-
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -11,9 +10,10 @@ import com.bingbaihanji.classgraph.util.LogNode;
 import java.net.URL;
 
 /**
- * 允许以 ScanClassLoader 作为参数调用 overrideClassLoaders，以便嵌套扫描可以共享单个类加载器(#485)
+ * 允许以 ScanClassLoader 作为参数调用 overrideClassLoaders,以便嵌套扫描可以共享单个类加载器(#485)
  */
 class ClassGraphClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public ClassGraphClassLoaderHandler() {
     }
@@ -25,7 +25,7 @@ class ClassGraphClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类之一
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -67,9 +67,9 @@ class ClassGraphClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
                                    final ScanConfig ScanConfig, final LogNode log) {
-        // ScanClassLoader 覆盖了 URLClassLoader，因此我们可以使用与 URLClassLoader 相同的方式获取基本类路径 URL
-        // 然而，类加载将优先尝试重用旧的 ScanClassLoader，然后再使用当前扫描中的新 ScanClassLoader 进行加载，
-        // 因此以下 URL 将被当前扫描扫描，但只有旧的类加载器失败时，才会从这些 URL 加载类
+        // ScanClassLoader 覆盖了 URLClassLoader,因此我们可以使用与 URLClassLoader 相同的方式获取基本类路径 URL
+        // 然而,类加载将优先尝试重用旧的 ScanClassLoader,然后再使用当前扫描中的新 ScanClassLoader 进行加载,
+        // 因此以下 URL 将被当前扫描扫描,但只有旧的类加载器失败时,才会从这些 URL 加载类
         for (final URL url : ((ScanClassLoader) classLoader).getURLs()) {
             if (url != null) {
                 classpathOrder.addClasspathEntry(url, classLoader, ScanConfig, log);

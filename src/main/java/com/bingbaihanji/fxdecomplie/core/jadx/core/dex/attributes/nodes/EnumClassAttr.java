@@ -13,6 +13,7 @@ import java.util.List;
 public class EnumClassAttr implements IJadxAttribute {
 
     private final List<EnumField> fields;
+
     private MethodNode staticMethod;
 
     public EnumClassAttr(List<EnumField> fields) {
@@ -42,9 +43,13 @@ public class EnumClassAttr implements IJadxAttribute {
     }
 
     public static class EnumField {
+
         private final FieldNode field;
+
         private final ConstructorInsn constrInsn;
+
         private final @Nullable String nameStr;
+
         private ClassNode cls;
 
         public EnumField(FieldNode field, ConstructorInsn co, @Nullable String nameStr) {

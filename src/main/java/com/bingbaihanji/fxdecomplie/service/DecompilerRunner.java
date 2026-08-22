@@ -17,7 +17,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.jar.JarEntry;
@@ -30,7 +36,7 @@ import java.util.zip.ZipFile;
  * <h3>整体流水线</h3>
  * <ol>
  *   <li><b>提交</b> — 调用方通过 {@link #decompileWithTimeout} 提交反编译请求</li>
- *   <li><b>执行</b> — 在线程池中运行 {@link #decompileWithFallback}：
+ *   <li><b>执行</b> — 在线程池中运行 {@link #decompileWithFallback}:
  *     <ol type="a">
  *       <li>首选引擎反编译 → 成功则返回</li>
  *       <li>引擎抛异常或返回失败文本 → 按 VF→CFR→Procyon→JD 顺序回退</li>
@@ -47,6 +53,7 @@ import java.util.zip.ZipFile;
 public final class DecompilerRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DecompilerRunner.class);
+
     private static final DecompilerTypeEnum[] JD_FALLBACK_ENGINES = {
             DecompilerTypeEnum.VINEFLOWER,
             DecompilerTypeEnum.CFR,
@@ -55,13 +62,19 @@ public final class DecompilerRunner {
             // JD-Core 对新语法支持较弱,只作为其他引擎失败后的最后兜底
             DecompilerTypeEnum.JD
     };
+
     private static final int TIMEOUT_SECONDS = 30;
-    /** 连续超时阈值：超过后重建线程池以丢弃可能僵死的线程 */
+
+    /** 连续超时阈值:超过后重建线程池以丢弃可能僵死的线程 */
     private static final int CONSECUTIVE_TIMEOUT_THRESHOLD = 3;
+
     private static final int MAX_DECOMPILER_THREADS = Math.clamp(
             Runtime.getRuntime().availableProcessors() / 2, 1, 2);
+
     private static final AtomicInteger THREAD_ID = new AtomicInteger();
+
     private static final AtomicInteger consecutiveTimeouts = new AtomicInteger();
+
     private static volatile ThreadPoolExecutor executor = createExecutor();
 
     private DecompilerRunner() {
@@ -124,7 +137,7 @@ public final class DecompilerRunner {
     }
 
     /**
-     * 批量反编译专用：不关闭 context,由调用方管理生命周期
+     * 批量反编译专用:不关闭 context,由调用方管理生命周期
      */
     public static String decompileWithTimeoutNoClose(String classFilePath, byte[] classBytes,
                                                      DecompilerTypeEnum engine,
@@ -495,11 +508,15 @@ public final class DecompilerRunner {
      * 依赖解析时为每个引用类重复打开归档导致交互打开变慢
      */
     private static final class WorkspaceClassPath implements AutoCloseable {
+
         private static final int MAX_HIT_CACHE = 256;
 
         private final Workspace workspace;
+
         private final LruCache<String, byte[]> hitCache = new LruCache<>(MAX_HIT_CACHE);
+
         private final Set<String> missCache = Collections.synchronizedSet(new HashSet<>());
+
         private ZipFile zipFile;
 
         private WorkspaceClassPath(Workspace workspace) {

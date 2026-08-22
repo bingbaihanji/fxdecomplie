@@ -8,7 +8,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUt
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.InfoStorage;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class UserRenames {
+
     private static final Logger LOG = LoggerFactory.getLogger(UserRenames.class);
 
     public static void apply(RootNode root) {

@@ -7,11 +7,22 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.TraverserController;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.TraverserException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.TraverserStateFactory;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.IdentifiedScopeWithTerminatorTraverserState;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.NewBlockTraverserState;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.RecoveredFromCacheTraverserState;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TerminalTraverserState;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserActivePathState;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserBlockInfo;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserGlobalCommonState;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 import java.util.function.Function;
 
 public final class MergePathActivePathTraverserHandler extends AbstractActivePathTraverserHandler {
@@ -209,10 +220,15 @@ public final class MergePathActivePathTraverserHandler extends AbstractActivePat
     }
 
     private static final class PostMergeStatus {
+
         public final Set<RegisterArg> finallyAllowableOutputs = new ArraySet<>();
+
         public final Set<RegisterArg> candidateAllowableOutputs = new ArraySet<>();
+
         public boolean finallyAllowsCentral;
+
         public boolean candidateAllowsCentral;
+
         public boolean perfectMatch = true;
     }
 }

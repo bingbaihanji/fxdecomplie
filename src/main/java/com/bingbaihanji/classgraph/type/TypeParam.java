@@ -6,14 +6,21 @@ import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
 import com.bingbaihanji.classgraph.metadata.ClassInfo;
 import com.bingbaihanji.classgraph.scan.ScanResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /** 一个类型形参 */
 public final class TypeParam extends HierarchicalType {
+
     /** 类边界 -- 可能为 null */
     public final ReferenceType classBound;
+
     /** 接口边界 -- 可能为空 */
     public final List<ReferenceType> interfaceBounds;
+
     /** 类型形参标识符 */
     final String name;
 
@@ -109,7 +116,7 @@ public final class TypeParam extends HierarchicalType {
     /**
      * 获取类型形参接口边界
      *
-     * @return 获取类型形参接口边界，可能为空列表
+     * @return 获取类型形参接口边界,可能为空列表
      */
     public List<ReferenceType> getInterfaceBounds() {
         return interfaceBounds;
@@ -133,7 +140,7 @@ public final class TypeParam extends HierarchicalType {
      */
     @Override
     public String getClassName() {
-        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
+        // getClassInfo() 对此类型无效,因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
 

@@ -34,6 +34,7 @@ import java.util.Arrays;
 
 /** 字节数组切片 */
 public class ArraySlice extends Slice {
+
     /** 包装的字节数组 */
     public byte[] arr;
 
@@ -49,7 +50,7 @@ public class ArraySlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      */
@@ -68,7 +69,7 @@ public class ArraySlice extends Slice {
      * @param isDeflatedZipEntry
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @param JarReader
      *            嵌套 jar 处理器
      */
@@ -82,13 +83,13 @@ public class ArraySlice extends Slice {
      * 从此切片切出子切片
      *
      * @param offset
-     *            相对于此切片起始位置的偏移量，用作子切片的起始位置
+     *            相对于此切片起始位置的偏移量,用作子切片的起始位置
      * @param length
      *            子切片的长度
      * @param isDeflatedZipEntry
      *            是否是压缩的 zip 条目
      * @param inflatedLengthHint
-     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     *            压缩 zip 条目的未压缩大小,未知为 -1,如果是非压缩 zip 条目则为 0
      * @return 切片
      */
     @Override
@@ -110,15 +111,15 @@ public class ArraySlice extends Slice {
     @Override
     public byte[] load() throws IOException {
         if (isDeflatedZipEntry) {
-            // 如有必要，解压到内存中
+            // 如有必要,解压到内存中
             try (InputStream inputStream = open()) {
                 return com.bingbaihanji.classgraph.resource.JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else if (sliceStartPos == 0L && sliceLength == arr.length) {
-            // 快速路径 —— 如果数组是整个切片且未压缩，则直接返回整个数组
+            // 快速路径 —— 如果数组是整个切片且未压缩,则直接返回整个数组
             return arr;
         } else {
-            // 如果是切片且未压缩，则复制数组的范围
+            // 如果是切片且未压缩,则复制数组的范围
             return Arrays.copyOfRange(arr, (int) sliceStartPos, (int) (sliceStartPos + sliceLength));
         }
     }

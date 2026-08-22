@@ -14,8 +14,8 @@ import javafx.scene.text.TextAlignment;
 /**
  * 在 JavaFX Canvas 上绘制十六进制编辑器网格的渲染器 
  * <p>
- * 负责绘制地址列、十六进制字节网格(支持每行字节数自定义)、ASCII 列,
- * 以及选区边框、前景/背景高亮等视觉效果 
+ * 负责绘制地址列,十六进制字节网格(支持每行字节数自定义),ASCII 列,
+ * 以及选区边框,前景/背景高亮等视觉效果 
  * </p>
  *
  * @author BingBaiHanJi
@@ -28,17 +28,26 @@ public class HexGridRenderer {
 
     // ---------- 颜色常量 ----------
     private static final Color ADDRESS_COLOR = Color.rgb(120, 120, 120);
+
     private static final Color HEADER_BG = Color.rgb(35, 35, 40);
+
     private static final Color HEADER_TEXT_COLOR = Color.rgb(180, 180, 180);
+
     private static final Color HEADER_RULE_COLOR = Color.rgb(55, 55, 62);
+
     private static final Color ASCII_SEPARATOR_COLOR = Color.rgb(80, 80, 80);
+
     private static final Color SELECTION_FRAME_COLOR = Color.rgb(200, 200, 200);
+
     private static final Color DEFAULT_TEXT_COLOR = Color.rgb(220, 220, 220);
+
     private static final Color GRID_BG = Color.rgb(25, 25, 28);
 
     // ---------- 成员变量 ----------
     private final GraphicsContext gc;          // 图形上下文
-    private HexViewMetrics metrics;            // 度量信息(字体、间距、列宽等)
+
+    private HexViewMetrics metrics;            // 度量信息(字体,间距,列宽等)
+
     private byte[] rowBuf;                     // 每行读取数据的复用缓冲区
 
     /**
@@ -70,7 +79,7 @@ public class HexGridRenderer {
     }
 
     /**
-     * 更新度量信息(当字体、每行字节数等变化时调用) 
+     * 更新度量信息(当字体,每行字节数等变化时调用) 
      *
      * @param metrics 新的度量对象
      */
@@ -80,12 +89,12 @@ public class HexGridRenderer {
     }
 
     /**
-     * 绘制十六进制网格主体(包括地址列、十六进制列、ASCII 列以及高亮/选区效果) 
+     * 绘制十六进制网格主体(包括地址列,十六进制列,ASCII 列以及高亮/选区效果) 
      *
      * @param provider     数据提供者,用于读取字节
      * @param selection    选区模型,用于绘制选区边框
      * @param highlights   高亮模型,提供前景/背景色
-     * @param config       视图配置(大小写、是否显示 ASCII 等)
+     * @param config       视图配置(大小写,是否显示 ASCII 等)
      * @param scrollRow    当前滚动到的行索引(从 0 开始)
      * @param canvasWidth  画布宽度
      * @param canvasHeight 画布高度
@@ -211,7 +220,7 @@ public class HexGridRenderer {
     }
 
     /**
-     * 绘制表头(地址标签、列编号、ASCII 标签) 
+     * 绘制表头(地址标签,列编号,ASCII 标签) 
      *
      * @param y      表头起始 Y 坐标(通常为 0)
      * @param config 视图配置
@@ -235,7 +244,7 @@ public class HexGridRenderer {
         gc.setFill(HEADER_TEXT_COLOR);
         double textY = y + (metrics.getHeaderHeight() + metrics.getTextHeight()) / 2.0 - 2.0;
 
-        // “Address” 标签
+        // "Address" 标签
         gc.fillText("Address", 0, textY);
 
         // 列编号(00, 01, ...)
@@ -246,7 +255,7 @@ public class HexGridRenderer {
             gc.fillText(hdr, metrics.getHexCellX(col) + 1, textY);
         }
 
-        // “ASCII” 标签
+        // "ASCII" 标签
         if (config.isShowAscii()) {
             gc.fillText("ASCII", metrics.getAsciiCellX(0), textY);
         }

@@ -9,7 +9,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import static java.util.Objects.requireNonNull;
 
 public final class FieldInitInsnAttr extends PinnedAttribute {
+
     private final MethodNode mth;
+
     private final InsnNode insn;
 
     public FieldInitInsnAttr(MethodNode mth, InsnNode insn) {

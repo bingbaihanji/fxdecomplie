@@ -8,6 +8,7 @@ import java.util.Objects;
 public class BlockParentContainer {
 
     private final IContainer parent;
+
     private final IBlock block;
 
     public BlockParentContainer(IContainer parent, IBlock block) {

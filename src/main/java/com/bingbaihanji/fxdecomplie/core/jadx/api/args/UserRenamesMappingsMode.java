@@ -8,17 +8,17 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.args;
 public enum UserRenamesMappingsMode {
 
     /**
-     * 仅读取映射文件，用户可手动保存 (默认模式)
+     * 仅读取映射文件,用户可手动保存 (默认模式)
      */
     READ,
 
     /**
-     * 读取映射文件，并在每次变更后自动保存
+     * 读取映射文件,并在每次变更后自动保存
      */
     READ_AND_AUTOSAVE_EVERY_CHANGE,
 
     /**
-     * 读取映射文件，并在退出应用或关闭项目前自动保存
+     * 读取映射文件,并在退出应用或关闭项目前自动保存
      */
     READ_AND_AUTOSAVE_BEFORE_CLOSING,
 
@@ -30,7 +30,7 @@ public enum UserRenamesMappingsMode {
     /**
      * 获取默认的映射读写模式
      *
-     * @return 默认返回 {@link #READ}，即仅读取 用户手动保存
+     * @return 默认返回 {@link #READ},即仅读取 用户手动保存
      */
     public static UserRenamesMappingsMode getDefault() {
         return READ;

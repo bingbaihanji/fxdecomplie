@@ -13,10 +13,15 @@ import java.util.Collections;
 import java.util.List;
 
 public class JavaFieldData implements IFieldData {
+
     private String name;
+
     private String parentClassType;
+
     private String type;
+
     private int accessFlags;
+
     private JavaAttrStorage attributes;
 
     @Override

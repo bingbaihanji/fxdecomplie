@@ -7,29 +7,46 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.clsp.ClspClassSource;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ICodeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.notEmpty;
 
 public class UsageInfo implements IUsageInfoData {
+
     private final RootNode root;
 
     private final UseSet<ClassNode, ClassNode> clsDeps = new UseSet<>();
+
     private final UseSet<ClassNode, ClassNode> clsUsage = new UseSet<>();
+
     private final UseSet<ClassNode, MethodNode> clsUseInMth = new UseSet<>();
+
     private final UseSet<FieldNode, MethodNode> fieldUsage = new UseSet<>();
+
     // MethodNodeA -> Set of MethodNodes that MethodNodeA is called from
     private final UseSet<MethodNode, MethodNode> mthUsage = new UseSet<>();
+
     // MethodNodeA -> Set of MethodNodes that MethodNodeA calls
     private final UseSet<MethodNode, MethodNode> mthUses = new UseSet<>();
+
     // MethodNodeA -> Set of MethodInfos for methods that MethodNodeA calls that cannot be resolved
     private final UseSet<MethodNode, MethodInfo> unresolvedMthUsage = new UseSet<>();
+
     private final Map<MethodNode, Boolean> selfCalls = new HashMap<>();
 
     public UsageInfo(RootNode root) {

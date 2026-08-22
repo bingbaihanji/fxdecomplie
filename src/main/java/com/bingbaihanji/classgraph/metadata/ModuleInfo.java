@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.classpath.Classpath;
@@ -14,6 +13,7 @@ import java.util.Set;
 
 /** 保存扫描过程中遇到的包的元数据 */
 public class ModuleInfo implements Comparable<ModuleInfo>, Named {
+
     /** 模块名称 */
     private String name;
 
@@ -27,14 +27,14 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     private transient URI locationURI;
 
     /**
-     * 对 module-info.class 文件上的注解的唯 {@link AnnotationInfo} 对象集合(如果存在)，否则为 null
+     * 对 module-info.class 文件上的注解的唯 {@link AnnotationInfo} 对象集合(如果存在),否则为 null
      */
     private Set<AnnotationInfo> annotationInfoSet;
 
-    /** 对 module-info.class 文件上的注解的 {@link AnnotationInfo} 对象集合(如果存在)，否则为 null */
+    /** 对 module-info.class 文件上的注解的 {@link AnnotationInfo} 对象集合(如果存在),否则为 null */
     private AnnotationInfoList annotationInfo;
 
-    /** 在这个类中找到的包的 {@link PackageInfo} 对象集合(如果有)，否则为 null */
+    /** 在这个类中找到的包的 {@link PackageInfo} 对象集合(如果有),否则为 null */
     private Set<PackageInfo> packageInfoSet;
 
     /** 模块中的类集合 */
@@ -62,9 +62,9 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     }
 
     /**
-     * 模块名称，对于未命名模块则为 {@code ""}
+     * 模块名称,对于未命名模块则为 {@code ""}
      *
-     * @return 模块名称，对于未命名模块则为 {@code ""}
+     * @return 模块名称,对于未命名模块则为 {@code ""}
      */
     @Override
     public String getName() {
@@ -72,9 +72,9 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     }
 
     /**
-     * 模块位置，对于位置未知的模块则为 null
+     * 模块位置,对于位置未知的模块则为 null
      *
-     * @return 模块位置，对于位置未知的模块则为 null
+     * @return 模块位置,对于位置未知的模块则为 null
      */
     public URI getLocation() {
         if (locationURI == null) {
@@ -88,10 +88,10 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
 
     /**
      * 此模块的 {@link ModuleRef}如果此模块是从传统类路径上包含 {@code module-info.class} 文件的类路径元素
-     * 获取的，则返回 null
+     * 获取的,则返回 null
      *
      * @return 此模块的 {@link ModuleRef}如果此模块是从传统类路径上包含 {@code module-info.class} 文件的
-     *         类路径元素获取的，则返回 null
+     *         类路径元素获取的,则返回 null
      */
     public ModuleRef getModuleRef() {
         return moduleRef;
@@ -113,11 +113,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     }
 
     /**
-     * 获取此模块中指定名称类的 {@link ClassInfo} 对象，如果在此模块中未找到该类则返回 null
+     * 获取此模块中指定名称类的 {@link ClassInfo} 对象,如果在此模块中未找到该类则返回 null
      *
      * @param className
      *            类名
-     * @return 此模块中指定名称类的 {@link ClassInfo} 对象，如果在此模块中未找到该类则返回 null
+     * @return 此模块中指定名称类的 {@link ClassInfo} 对象,如果在此模块中未找到该类则返回 null
      */
     public ClassInfo getClassInfo(final String className) {
         for (final ClassInfo ci : classInfoSet) {
@@ -153,11 +153,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     }
 
     /**
-     * 获取此模块中指定名称包的 {@link PackageInfo} 对象，如果在此模块中未找到该包则返回 null
+     * 获取此模块中指定名称包的 {@link PackageInfo} 对象,如果在此模块中未找到该包则返回 null
      *
      * @param packageName
      *            包名
-     * @return 此模块中指定名称包的 {@link PackageInfo} 对象，如果在此模块中未找到该包则返回 null
+     * @return 此模块中指定名称包的 {@link PackageInfo} 对象,如果在此模块中未找到该包则返回 null
      */
     public PackageInfo getPackageInfo(final String packageName) {
         if (packageInfoSet == null) {
@@ -212,11 +212,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     }
 
     /**
-     * 获取此模块上的某个注解，如果模块没有该注解则返回 null
+     * 获取此模块上的某个注解,如果模块没有该注解则返回 null
      *
      * @param annotation
      *            注解类
-     * @return 表示此模块上该注解的 {@link AnnotationInfo} 对象，如果模块没有该注解则返回 null
+     * @return 表示此模块上该注解的 {@link AnnotationInfo} 对象,如果模块没有该注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -224,11 +224,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     }
 
     /**
-     * 获取此模块上的某个命名注解，如果模块没有该命名注解则返回 null
+     * 获取此模块上的某个命名注解,如果模块没有该命名注解则返回 null
      *
      * @param annotationName
      *            注解名称
-     * @return 表示此模块上该命名注解的 {@link AnnotationInfo} 对象，如果模块没有该命名注解则返回 null
+     * @return 表示此模块上该命名注解的 {@link AnnotationInfo} 对象,如果模块没有该命名注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
         for (final AnnotationInfo ai : getAnnotationInfo()) {

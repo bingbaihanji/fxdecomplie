@@ -6,7 +6,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.InsnGen;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.CodegenException;
@@ -18,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 public class CheckRegions extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(CheckRegions.class);
 
     private static String getBlockInsnStr(MethodNode mth, IBlock block) {
@@ -49,6 +54,7 @@ public class CheckRegions extends AbstractVisitor {
         // check if all blocks included in regions
         Set<BlockNode> blocksInRegions = new ArraySet<>();
         DepthRegionTraversal.traverse(mth, new AbstractRegionVisitor() {
+
             @Override
             public void processBlock(MethodNode mth, IBlock container) {
                 if (!(container instanceof BlockNode)) {
@@ -82,6 +88,7 @@ public class CheckRegions extends AbstractVisitor {
         }
 
         DepthRegionTraversal.traverse(mth, new AbstractRegionVisitor() {
+
             @Override
             public boolean enterRegion(MethodNode mth, IRegion region) {
                 if (region instanceof LoopRegion) {

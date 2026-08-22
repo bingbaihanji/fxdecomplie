@@ -17,7 +17,7 @@ public class CodeMetadata {
     private final Map<Integer, List<Reference>> refsByLine;
 
     public CodeMetadata(Map<Integer, List<Reference>> refsByLine) {
-        // 深拷贝：Map 和每个 List 均不可变,防止外部修改破坏内部状态
+        // 深拷贝:Map 和每个 List 均不可变,防止外部修改破坏内部状态
         Map<Integer, List<Reference>> copy = new ArrayMap<>(refsByLine.size());
         for (var entry : refsByLine.entrySet()) {
             copy.put(entry.getKey(), List.copyOf(entry.getValue()));
@@ -42,7 +42,11 @@ public class CodeMetadata {
     }
 
     /** 反编译源码中发现的可导航引用类型 */
-    public enum RefType {CLASS_REF, METHOD_REF, FIELD_REF}
+    public enum RefType {
+        CLASS_REF,
+        METHOD_REF,
+        FIELD_REF
+    }
 
     /**
      * 反编译源码中的单个可导航引用

@@ -3,7 +3,14 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.export;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -17,8 +24,11 @@ import java.util.function.Function;
 public class TemplateFile {
 
     private final String templateName;
+
     private final InputStream template;
+
     private final Map<String, String> values = new HashMap<>();
+
     private @Nullable Function<String, String> valueSanitizer;
 
     private TemplateFile(String name, InputStream in) {
@@ -150,12 +160,18 @@ public class TemplateFile {
     }
 
     private enum State {
-        NONE, START, VARIABLE, END
+        NONE,
+        START,
+        VARIABLE,
+        END
     }
 
     private static class ParserState {
+
         private State state = State.NONE;
+
         private StringBuilder curVariable;
+
         private boolean skip;
     }
 }

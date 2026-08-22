@@ -1,6 +1,12 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,11 +16,11 @@ import java.util.Map;
 /**
  * 自定义 ClassVisitor + 原始字节解析,生成 jadx 风格的字节码文本
  *
- * <p>包含：magic/version 头 访问标志(hex 值) 常量池逐条列出(含引用注释) 
+ * <p>包含:magic/version 头 访问标志(hex 值) 常量池逐条列出(含引用注释) 
  * 每个方法的 descriptor/flags/Code 属性(stack/locals/args_size) 
  * 指令 hex 偏移 + 原始字节 + | + 偏移 + 操作码</p>
  *
- * <p>两阶段处理：阶段1 从 raw bytes 解析常量池和 Code 属性文件偏移 
+ * <p>两阶段处理:阶段1 从 raw bytes 解析常量池和 Code 属性文件偏移 
  * 阶段2 用 ASM ClassVisitor 遍历类结构,MethodVisitor 中输出 hex+指令</p>
  *
  * @author bingbaihanji
@@ -25,12 +31,17 @@ final class BytecodeTextBuilder extends ClassVisitor {
     private static final Logger log = LoggerFactory.getLogger(BytecodeTextBuilder.class);
 
     private static final String INDENT = "    ";
+
     private static final String INSN_INDENT = INDENT + INDENT;
 
     private final byte[] raw;
+
     private final StringBuilder sb = new StringBuilder(8192);
+
     private final Map<String, Integer> methodCodeOffsets;
+
     private String className;
+
     private String internalName;
 
     BytecodeTextBuilder(byte[] raw) {
@@ -39,7 +50,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         this.methodCodeOffsets = scanCodeOffsets(this.raw);
     }
 
-    // -- 阶段1：原始字节解析工具 --
+    // -- 阶段1:原始字节解析工具 --
 
     // ==================== 常量池 ====================
 
@@ -50,7 +61,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
         try {
             int count = readU2(raw, 8);
-            // 防御：count 不能超过文件大小(每个条目最少1字节tag)
+            // 防御:count 不能超过文件大小(每个条目最少1字节tag)
             if (count < 1 || count > raw.length) {
                 return "Constant pool: <invalid count=" + count + ">\n\n";
             }
@@ -201,7 +212,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         h.append("minor version: ").append(minor).append('\n');
         h.append("major version: ").append(major).append("  # ").append(javaVersionName(major)).append('\n');
 
-        // 类体起始偏移(跳过常量池后),布局：access_flags(2) + this_class(2) + super_class(2) + if_count(2)
+        // 类体起始偏移(跳过常量池后),布局:access_flags(2) + this_class(2) + super_class(2) + if_count(2)
         int bodyOff = skipToClassBody(raw);
         // 访问标志(+0)
         int access = readU2(raw, bodyOff);
@@ -507,7 +518,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         if (index < 1 || raw == null || raw.length < 10) {
             return "?";
         }
-        // 防御：index 不应超过可用的常量池条目数
+        // 防御:index 不应超过可用的常量池条目数
         if (index > raw.length) {
             return "?";
         }
@@ -529,7 +540,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 int len = readU2(raw, off);
                 if (off + 2 + len > raw.length) {
                     return "?";
-                } // 防御：UTF8内容不超出数组
+                } // 防御:UTF8内容不超出数组
                 return new String(raw, off + 2, len, java.nio.charset.StandardCharsets.UTF_8);
             }
             return "?";
@@ -595,7 +606,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         if (b != 0xC4) {
             return sizeOf(b);
         }
-        // WIDE 前缀：边界检查防止截断字节码
+        // WIDE 前缀:边界检查防止截断字节码
         if (offset + 1 >= raw.length) {
             return 1; // 截断的 WIDE,仅消耗前缀字节
         }
@@ -725,9 +736,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
         };
     }
 
-    // ==================== 阶段2：ASM Visitor ====================
+    // ==================== 阶段2:ASM Visitor ====================
 
-    /** 访问类头信息：输出版本号 访问标志 常量池 字段/方法计数等 */
+    /** 访问类头信息:输出版本号 访问标志 常量池 字段/方法计数等 */
     @Override
     public void visit(int version, int access, String name, String signature,
                       String superName, String[] interfaces) {
@@ -766,7 +777,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         // 已通过 parseClassAttributes 处理,这里不再重复输出
     }
 
-    /** 访问字段：输出字段签名 访问标志及可选初始值 */
+    /** 访问字段:输出字段签名 访问标志及可选初始值 */
     @Override
     public FieldVisitor visitField(int access, String name, String descriptor,
                                    String signature, Object value) {
@@ -786,7 +797,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return null;
     }
 
-    /** 访问方法：输出方法签名 描述符 访问标志及 Code 属性字节码指令 */
+    /** 访问方法:输出方法签名 描述符 访问标志及 Code 属性字节码指令 */
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor,
                                      String signature, String[] exceptions) {
@@ -858,8 +869,11 @@ final class BytecodeTextBuilder extends ClassVisitor {
      * 读取对应偏移的 hex 数据并格式化输出</p>
      */
     private class BytecodeMethodWriter extends MethodVisitor {
+
         private final byte[] raw;
+
         private final int codeOffset;
+
         private int pc;
 
         BytecodeMethodWriter(int access, String name, String desc,
@@ -1030,7 +1044,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出 LDC 系列指令(加载常量：字符串 整数 浮点数 类型等) */
+        /** 输出 LDC 系列指令(加载常量:字符串 整数 浮点数 类型等) */
         @Override
         public void visitLdcInsn(Object cst) {
             int size;
@@ -1039,7 +1053,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             if (cst instanceof Integer || cst instanceof Float) {
                 size = 2;
                 opcode = Opcodes.LDC;
-                // 边界检查：截断的 class 文件中 codeOffset+pc+1 可能超出数组范围
+                // 边界检查:截断的 class 文件中 codeOffset+pc+1 可能超出数组范围
                 int rawIdx = codeOffset + pc + 1;
                 idx = (rawIdx >= 0 && rawIdx < raw.length) ? (raw[rawIdx] & 0xFF) : 0;
             } else if (cst instanceof Long || cst instanceof Double) {
@@ -1143,7 +1157,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 int b = raw[fileOff + i] & 0xFF;
                 sb.append(String.format("%02x ", b));
             }
-            // 对齐：6字节 = 18字符 + 10(addr) + 2 = 30, 对齐到38
+            // 对齐:6字节 = 18字符 + 10(addr) + 2 = 30, 对齐到38
             int printed = 10 + size * 3;
             while (printed < 38) {
                 sb.append(' ');

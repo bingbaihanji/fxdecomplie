@@ -14,10 +14,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Bytecode 层回归测试 — 验证 ClassFileParser 对 class 文件结构的解析正确性。
+ * Bytecode 层回归测试 — 验证 ClassFileParser 对 class 文件结构的解析正确性.
  *
- * <p>由于 ClassGraph 的 {@link ClassParser} 需要完整的 ScanConfig/Classpath 基础设施，
- * 本测试通过项目级 ClassFileParser 覆盖相同的字节码解析场景。</p>
+ * <p>由于 ClassGraph 的 {@link ClassParser} 需要完整的 ScanConfig/Classpath 基础设施,
+ * 本测试通过项目级 ClassFileParser 覆盖相同的字节码解析场景.</p>
  */
 @DisplayName("ClassParser (bytecode regression)")
 class ClassParserTest {
@@ -51,7 +51,7 @@ class ClassParserTest {
             ClassFileMetadata meta = parse(bytes);
             assertEquals("com/example/Hello", meta.internalName());
             assertEquals("java/lang/Object", meta.superName());
-            // 非接口（ACC_INTERFACE = 0x0200）
+            // 非接口(ACC_INTERFACE = 0x0200)
             assertEquals(0, meta.accessFlags() & 0x0200);
         }
 

@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 public class SimpleAfterLoadPass implements JadxAfterLoadPass {
 
     private final JadxPassInfo info;
+
     private final Consumer<JadxDecompiler> init;
 
     public SimpleAfterLoadPass(String name, Consumer<JadxDecompiler> init) {

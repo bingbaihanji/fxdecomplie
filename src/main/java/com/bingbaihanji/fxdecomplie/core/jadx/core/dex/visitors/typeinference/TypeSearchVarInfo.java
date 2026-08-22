@@ -7,11 +7,17 @@ import java.util.Collections;
 import java.util.List;
 
 public class TypeSearchVarInfo {
+
     private final SSAVar var;
+
     private boolean typeResolved;
+
     private ArgType currentType;
+
     private List<ArgType> candidateTypes;
+
     private int currentIndex = -1;
+
     private List<ITypeConstraint> constraints;
 
     public TypeSearchVarInfo(SSAVar var) {

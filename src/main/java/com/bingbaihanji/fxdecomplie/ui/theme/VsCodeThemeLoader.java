@@ -129,7 +129,7 @@ public final class VsCodeThemeLoader {
                 // 多 scope 逗号分隔时取第一个作为映射键
                 String key = scope.contains(",") ? scope.split(",")[0].trim() : scope;
                 if (key.startsWith(".")) {
-                    // 以点开头的 scope(如 ".entity.name.function")：同时注册去点和带点两种键
+                    // 以点开头的 scope(如 ".entity.name.function"):同时注册去点和带点两种键
                     String strippedKey = key.substring(1);
                     if (!tokenStyles.containsKey(strippedKey)) {
                         tokenStyles.putIfAbsent(strippedKey, style(fgHex, bold, italic));

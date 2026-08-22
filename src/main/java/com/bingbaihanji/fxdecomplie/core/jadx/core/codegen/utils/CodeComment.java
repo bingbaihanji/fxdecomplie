@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.data.ICodeComment;
 public class CodeComment {
 
     private final String comment;
+
     private final CommentStyle style;
 
     public CodeComment(String comment, CommentStyle style) {

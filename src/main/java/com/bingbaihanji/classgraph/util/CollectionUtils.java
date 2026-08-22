@@ -1,18 +1,23 @@
 package com.bingbaihanji.classgraph.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.ConcurrentModificationException;
+import java.util.List;
 
 /**
  * 集合工具类
  */
 public final class CollectionUtils {
+
     /** 不可构造 */
     private CollectionUtils() {
         // 空
     }
 
     /**
-     * 如果集合非空则排序(防止当一个不可变空列表被多次返回时，
+     * 如果集合非空则排序(防止当一个不可变空列表被多次返回时,
      * 在一个线程中排序而在另一个线程中遍历时抛出 {@link ConcurrentModificationException} -- #334)
      *
      * @param <T>
@@ -27,7 +32,7 @@ public final class CollectionUtils {
     }
 
     /**
-     * 如果集合非空则排序(防止当一个不可变空列表被多次返回时，
+     * 如果集合非空则排序(防止当一个不可变空列表被多次返回时,
      * 在一个线程中排序而在另一个线程中遍历时抛出 {@link ConcurrentModificationException} -- #334)
      *
      * @param <T>

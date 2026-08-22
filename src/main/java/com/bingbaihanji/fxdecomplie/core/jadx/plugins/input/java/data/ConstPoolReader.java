@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICallSite;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodHandle;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.MethodHandleType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.impl.CallSite;
@@ -22,17 +26,21 @@ import java.util.List;
 /**
  * 常量池读取器
  * <p>
- * 依据 {@link ClassOffsets} 记录的各常量池项偏移，从 class 文件的字节数据中
- * 按索引读取常量池条目，包括类引用 字段引用 方法引用 调用点 方法句柄
- * 以及各类字面量常量，并将其转换为上层需要的数据结构
+ * 依据 {@link ClassOffsets} 记录的各常量池项偏移,从 class 文件的字节数据中
+ * 按索引读取常量池条目,包括类引用 字段引用 方法引用 调用点 方法句柄
+ * 以及各类字面量常量,并将其转换为上层需要的数据结构
  */
 public class ConstPoolReader {
+
     /** 所属的类读取器 */
     private final JavaClassReader clsReader;
+
     /** 所属的类数据 */
     private final JavaClassData clsData;
+
     /** 底层字节数据读取器 */
     private final DataReader data;
+
     /** 常量池各条目的偏移信息 */
     private final ClassOffsets offsets;
 
@@ -52,10 +60,10 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的类常量，返回其规范化后的类型描述符
+     * 读取指定索引处的类常量,返回其规范化后的类型描述符
      *
      * @param idx 常量池索引
-     * @return 类型描述符，索引对应的名称为空时返回 {@code null}
+     * @return 类型描述符,索引对应的名称为空时返回 {@code null}
      */
     @Nullable
     public String getClass(int idx) {
@@ -177,7 +185,7 @@ public class ConstPoolReader {
      * 读取指定索引处的方法句柄
      *
      * @param idx 常量池索引
-     * @return 方法句柄，字段类型句柄返回 {@link FieldRefHandle}，否则返回 {@link MethodRefHandle}
+     * @return 方法句柄,字段类型句柄返回 {@link FieldRefHandle},否则返回 {@link MethodRefHandle}
      */
     private IMethodHandle getMethodHandle(int idx) {
         jumpToData(idx);
@@ -225,8 +233,8 @@ public class ConstPoolReader {
     /**
      * 读取指定索引处的 UTF-8 字符串常量
      *
-     * @param idx 常量池索引，为 0 时表示无值
-     * @return 字符串内容，索引为 0 时返回 {@code null}
+     * @param idx 常量池索引,为 0 时表示无值
+     * @return 字符串内容,索引为 0 时返回 {@code null}
      */
     public String getUtf8(int idx) {
         if (idx == 0) {
@@ -237,7 +245,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 跳转到指定索引的常量条目并读取其标签，返回常量类型
+     * 跳转到指定索引的常量条目并读取其标签,返回常量类型
      *
      * @param idx 常量池索引
      * @return 该常量的类型
@@ -375,7 +383,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 规范化类名，使其成为合法的类型描述符
+     * 规范化类名,使其成为合法的类型描述符
      * <p>
      * 数组类型 (以 {@code [} 开头)原样返回 已带 {@code L}/{@code T} 前缀且以
      * {@code ;} 结尾的原样返回 其余情况补全为 {@code L<类名>;} 形式

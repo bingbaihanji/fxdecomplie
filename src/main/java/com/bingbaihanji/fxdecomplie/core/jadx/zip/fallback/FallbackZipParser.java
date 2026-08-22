@@ -20,11 +20,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class FallbackZipParser implements IZipParser {
+
     private static final Logger LOG = LoggerFactory.getLogger(FallbackZipParser.class);
 
     private final File file;
+
     private final ZipFile zipFile;
+
     private final IJadxZipSecurity zipSecurity;
+
     private final boolean useLimitedDataStream;
 
     public FallbackZipParser(File file, ZipReaderOptions options) throws FallbackException {

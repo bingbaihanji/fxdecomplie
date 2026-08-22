@@ -1,23 +1,29 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.FieldInfoList.FieldInfoFilter;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-/** 管理类的字段和方法查询逻辑，包括覆盖顺序解析 */
+/** 管理类的字段和方法查询逻辑,包括覆盖顺序解析 */
 public class ClassMembers {
 
     /** 所属的 ClassInfo 对象 */
     private final ClassInfo owner;
+
     /**
-     * 类字段或方法的覆盖顺序（基类优先，然后是接口，然后是超类）
+     * 类字段或方法的覆盖顺序(基类优先,然后是接口,然后是超类)
      */
     private volatile List<ClassInfo> overrideOrder;
+
     /**
-     * 类方法的覆盖顺序（基类优先，然后是超类，然后是接口）
+     * 类方法的覆盖顺序(基类优先,然后是超类,然后是接口)
      */
     private volatile List<ClassInfo> methodOverrideOrder;
 
@@ -34,7 +40,7 @@ public class ClassMembers {
     // 覆盖顺序
 
     /**
-     * 递归遍历接口和超类，获取字段被覆盖的顺序
+     * 递归遍历接口和超类,获取字段被覆盖的顺序
      *
      * @param visited          已访问的类集合
      * @param overrideOrderOut 输出的覆盖顺序列表
@@ -56,7 +62,7 @@ public class ClassMembers {
     }
 
     /**
-     * 获取字段覆盖的顺序（基类优先）
+     * 获取字段覆盖的顺序(基类优先)
      *
      * @return 覆盖顺序列表
      */
@@ -64,7 +70,8 @@ public class ClassMembers {
         if (overrideOrder == null) {
             synchronized (this) {
                 if (overrideOrder == null) {
-                    overrideOrder = owner.members().getFieldOverrideOrder(new HashSet<ClassInfo>(), new ArrayList<ClassInfo>());
+                    overrideOrder = owner.members()
+                            .getFieldOverrideOrder(new HashSet<ClassInfo>(), new ArrayList<ClassInfo>());
                 }
             }
         }
@@ -72,10 +79,10 @@ public class ClassMembers {
     }
 
     /**
-     * 递归收集类和接口，按照方法覆盖的优先级降序排列
+     * 递归收集类和接口,按照方法覆盖的优先级降序排列
      * <p>
-     * 首先收集所有直接超类，因为它们的方法始终比接口声明的方法具有更高的优先级
-     * 然后遍历接口，将扩展已找到接口的接口插入到输出中该接口之前
+     * 首先收集所有直接超类,因为它们的方法始终比接口声明的方法具有更高的优先级
+     * 然后遍历接口,将扩展已找到接口的接口插入到输出中该接口之前
      * 不相关接口之间的顺序未定义
      * <p>
      * 详见 Java 语言规范 8.4.8
@@ -89,10 +96,10 @@ public class ClassMembers {
         if (!visited.add(owner)) {
             return overrideOrderOut;
         }
-        // 首先收集具体超类，直接添加到 overrideOrder
+        // 首先收集具体超类,直接添加到 overrideOrder
         if (!owner.isInterfaceOrAnnotation()) {
             overrideOrderOut.add(owner);
-            // 首先遍历直接超类，它们在方法覆盖方面具有最高优先级
+            // 首先遍历直接超类,它们在方法覆盖方面具有最高优先级
             final ClassInfo superclass = owner.hierarchy().getSuperclass();
             if (superclass != null) {
                 superclass.members().getMethodOverrideOrder(visited, overrideOrderOut);
@@ -103,10 +110,10 @@ public class ClassMembers {
             return overrideOrderOut;
         }
         // overrideOrderOut 现在已包含所有具体类
-        // 这是一个接口如果某个被扩展的接口已在输出中，则需要将其插入到该接口之前
-        // 否则，此接口与目前收集的所有 ClassInfo 无关，可以直接添加到结果中
+        // 这是一个接口如果某个被扩展的接口已在输出中,则需要将其插入到该接口之前
+        // 否则,此接口与目前收集的所有 ClassInfo 无关,可以直接添加到结果中
         // 编译器应该防止继承具有相同签名方法的不相关接口
-        // 但由于在运行时动态链接了不同的接口，这种情况仍可能发生，此时返回的顺序未定义
+        // 但由于在运行时动态链接了不同的接口,这种情况仍可能发生,此时返回的顺序未定义
         final ClassInfoList interfaces = owner.hierarchy().getInterfaces();
         int minIndex = Integer.MAX_VALUE;
         for (final ClassInfo iface : interfaces) {
@@ -137,7 +144,8 @@ public class ClassMembers {
         if (methodOverrideOrder == null) {
             synchronized (this) {
                 if (methodOverrideOrder == null) {
-                    methodOverrideOrder = owner.members().getMethodOverrideOrder(new HashSet<ClassInfo>(), new ArrayList<ClassInfo>());
+                    methodOverrideOrder = owner.members()
+                            .getMethodOverrideOrder(new HashSet<ClassInfo>(), new ArrayList<ClassInfo>());
                 }
             }
         }
@@ -148,9 +156,9 @@ public class ClassMembers {
     // 字段信息
 
     /**
-     * 返回此类声明（但不包括其超类声明）的所有可见字段的信息
+     * 返回此类声明(但不包括其超类声明)的所有可见字段的信息
      *
-     * @return 此类声明的可见字段的 FieldInfo 对象列表，如果没有找到或可见的字段则返回空列表
+     * @return 此类声明的可见字段的 FieldInfo 对象列表,如果没有找到或可见的字段则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableFieldInfo()
      */
     public FieldInfoList getDeclaredFieldInfo() {
@@ -163,7 +171,7 @@ public class ClassMembers {
     /**
      * 返回此类或其超类声明的所有可见字段的信息
      *
-     * @return 此类或其超类的可见字段的 FieldInfo 对象列表，如果没有找到或可见的字段则返回空列表
+     * @return 此类或其超类的可见字段的 FieldInfo 对象列表,如果没有找到或可见的字段则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableFieldInfo()
      */
     public FieldInfoList getFieldInfo() {
@@ -186,10 +194,10 @@ public class ClassMembers {
     }
 
     /**
-     * 返回此类声明（但不包括其超类声明）的指定名称字段的信息
+     * 返回此类声明(但不包括其超类声明)的指定名称字段的信息
      *
      * @param fieldName 字段名
-     * @return 此类声明的指定名称字段的 {@link FieldInfo} 对象，如果在此类中未找到该字段（或不可见）则返回 null
+     * @return 此类声明的指定名称字段的 {@link FieldInfo} 对象,如果在此类中未找到该字段(或不可见)则返回 null
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableFieldInfo()
      */
     public FieldInfo getDeclaredFieldInfo(final String fieldName) {
@@ -211,7 +219,7 @@ public class ClassMembers {
      * 返回此类或其超类声明的指定名称字段的信息
      *
      * @param fieldName 字段名
-     * @return 此类或其超类指定名称字段的 {@link FieldInfo} 对象，如果没有找到或可见的字段则返回空列表
+     * @return 此类或其超类指定名称字段的 {@link FieldInfo} 对象,如果没有找到或可见的字段则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableFieldInfo()
      */
     public FieldInfo getFieldInfo(final String fieldName) {
@@ -309,10 +317,10 @@ public class ClassMembers {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // 方法信息（内部）
+    // 方法信息(内部)
 
     /**
-     * 获取类中声明的方法、构造函数和/或静态初始化方法
+     * 获取类中声明的方法,构造函数和/或静态初始化方法
      *
      * @param methodName                  方法名
      * @param getNormalMethods            是否获取普通方法
@@ -329,12 +337,12 @@ public class ClassMembers {
             return MethodInfoList.EMPTY_LIST;
         }
         if (methodName == null) {
-            // 如果没有提供方法名，则按方法类型筛选（普通方法/构造函数/静态初始化方法）
+            // 如果没有提供方法名,则按方法类型筛选(普通方法/构造函数/静态初始化方法)
             final MethodInfoList methodInfoList = new MethodInfoList();
             for (final MethodInfo mi : owner.methodInfo) {
                 final String miName = mi.getName();
                 final boolean isConstructor = "<init>".equals(miName);
-                // （目前静态初始化方法永远不会被公共方法返回）
+                // (目前静态初始化方法永远不会被公共方法返回)
                 final boolean isStaticInitializer = "<clinit>".equals(miName);
                 if ((isConstructor && getConstructorMethods) || (isStaticInitializer && getStaticInitializerMethods)
                         || (!isConstructor && !isStaticInitializer && getNormalMethods)) {
@@ -343,7 +351,7 @@ public class ClassMembers {
             }
             return methodInfoList;
         } else {
-            // 如果提供了方法名，则筛选名称匹配的方法，忽略方法类型
+            // 如果提供了方法名,则筛选名称匹配的方法,忽略方法类型
             boolean hasMethodWithName = false;
             for (final MethodInfo f : owner.methodInfo) {
                 if (f.getName().equals(methodName)) {
@@ -365,7 +373,7 @@ public class ClassMembers {
     }
 
     /**
-     * 获取类的方法、构造函数和/或静态初始化方法
+     * 获取类的方法,构造函数和/或静态初始化方法
      *
      * @param methodName                  方法名
      * @param getNormalMethods            是否获取普通方法
@@ -384,8 +392,9 @@ public class ClassMembers {
         for (final ClassInfo ci : owner.members().getMethodOverrideOrder()) {
             // 构造函数不从超类继承
             boolean shouldGetConstructorMethods = ci == owner && getConstructorMethods;
-            for (final MethodInfo mi : ci.members().getDeclaredMethodInfo(methodName, getNormalMethods, shouldGetConstructorMethods,
-                    getStaticInitializerMethods)) {
+            for (final MethodInfo mi : ci.members()
+                    .getDeclaredMethodInfo(methodName, getNormalMethods, shouldGetConstructorMethods,
+                            getStaticInitializerMethods)) {
                 // 如果方法尚未被具有相同名称和类型描述符的方法覆盖
                 if (nameAndTypeDescriptorSet.add(new AbstractMap.SimpleEntry<>(mi.getName(), mi.getTypeDescriptorStr()))) {
                     // 将方法添加到输出顺序中
@@ -397,12 +406,12 @@ public class ClassMembers {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // 方法信息（公开）
+    // 方法信息(公开)
 
     /**
-     * 返回此类声明（但不包括其接口或超类声明）的可见方法（非构造函数）的信息
+     * 返回此类声明(但不包括其接口或超类声明)的可见方法(非构造函数)的信息
      *
-     * @return 此类声明的可见方法的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表
+     * @return 此类声明的可见方法的 {@link MethodInfo} 对象列表,如果没有找到方法则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getDeclaredMethodInfo() {
@@ -411,9 +420,9 @@ public class ClassMembers {
     }
 
     /**
-     * 返回此类或其接口或超类声明的可见方法（非构造函数）的信息
+     * 返回此类或其接口或超类声明的可见方法(非构造函数)的信息
      *
-     * @return 此类、其接口和超类的可见方法的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表
+     * @return 此类,其接口和超类的可见方法的 {@link MethodInfo} 对象列表,如果没有找到方法则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getMethodInfo() {
@@ -422,9 +431,9 @@ public class ClassMembers {
     }
 
     /**
-     * 返回此类声明（但不包括其接口或超类声明）的可见构造函数的信息
+     * 返回此类声明(但不包括其接口或超类声明)的可见构造函数的信息
      *
-     * @return 此类声明的可见构造函数的 {@link MethodInfo} 对象列表，如果没有找到或可见的构造函数则返回空列表
+     * @return 此类声明的可见构造函数的 {@link MethodInfo} 对象列表,如果没有找到或可见的构造函数则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getDeclaredConstructorInfo() {
@@ -435,7 +444,7 @@ public class ClassMembers {
     /**
      * 返回此类或其接口或超类声明的可见构造函数的信息
      *
-     * @return 此类及其超类的可见构造函数的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表
+     * @return 此类及其超类的可见构造函数的 {@link MethodInfo} 对象列表,如果没有找到方法则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getConstructorInfo() {
@@ -444,9 +453,9 @@ public class ClassMembers {
     }
 
     /**
-     * 返回此类声明（但不包括其接口或超类声明）的可见方法和构造函数的信息
+     * 返回此类声明(但不包括其接口或超类声明)的可见方法和构造函数的信息
      *
-     * @return 此类可见方法和构造函数的 {@link MethodInfo} 对象列表，如果没有找到或可见的方法或构造函数则返回空列表
+     * @return 此类可见方法和构造函数的 {@link MethodInfo} 对象列表,如果没有找到或可见的方法或构造函数则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getDeclaredMethodAndConstructorInfo() {
@@ -457,7 +466,7 @@ public class ClassMembers {
     /**
      * 返回此类或其接口或超类声明的可见构造函数的信息
      *
-     * @return 此类、其接口和超类的可见方法和构造函数的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表
+     * @return 此类,其接口和超类的可见方法和构造函数的 {@link MethodInfo} 对象列表,如果没有找到方法则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getMethodAndConstructorInfo() {
@@ -466,10 +475,10 @@ public class ClassMembers {
     }
 
     /**
-     * 返回此类声明（但不包括其接口或超类声明）的指定名称的方法或构造函数的信息
+     * 返回此类声明(但不包括其接口或超类声明)的指定名称的方法或构造函数的信息
      *
      * @param methodName 要查询的方法名
-     * @return 指定名称方法的 {@link MethodInfo} 对象列表，如果在此类中未找到该方法（或不可见）则返回空列表
+     * @return 指定名称方法的 {@link MethodInfo} 对象列表,如果在此类中未找到该方法(或不可见)则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getDeclaredMethodInfo(final String methodName) {
@@ -480,7 +489,7 @@ public class ClassMembers {
      * 返回此类或其接口或超类声明的指定名称的方法或构造函数的信息
      *
      * @param methodName 要查询的方法名
-     * @return 指定名称方法的 {@link MethodInfo} 对象列表，如果在此类中未找到该方法（或不可见）则返回空列表
+     * @return 指定名称方法的 {@link MethodInfo} 对象列表,如果在此类中未找到该方法(或不可见)则返回空列表
      * @throws IllegalArgumentException 如果在启动扫描前未调用 ClassGraph#enableMethodInfo()
      */
     public MethodInfoList getMethodInfo(final String methodName) {
@@ -626,13 +635,14 @@ public class ClassMembers {
     /**
      * 获取枚举类的枚举常量
      *
-     * @return 枚举类的所有枚举常量，作为 {@link FieldInfo} 对象列表（枚举常量在 Java 类中存储为字段）
+     * @return 枚举类的所有枚举常量,作为 {@link FieldInfo} 对象列表(枚举常量在 Java 类中存储为字段)
      */
     public FieldInfoList getEnumConstants() {
         if (!owner.isEnum()) {
             throw new IllegalArgumentException("Class " + owner.getName() + " is not an enum");
         }
         return getFieldInfo().filter(new FieldInfoFilter() {
+
             @Override
             public boolean accept(final FieldInfo fieldInfo) {
                 return fieldInfo.isEnum();
@@ -643,7 +653,7 @@ public class ClassMembers {
     /**
      * 获取枚举类的枚举常量对象
      *
-     * @return 枚举类的所有枚举常量，作为与枚举类型相同类型的对象列表
+     * @return 枚举类的所有枚举常量,作为与枚举类型相同类型的对象列表
      */
     public List<Object> getEnumConstantObjects() {
         if (!owner.isEnum()) {

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class CommonBinaryParser extends ParserConstants {
+
     private static final Logger LOG = LoggerFactory.getLogger(CommonBinaryParser.class);
 
     protected ParserStream is;

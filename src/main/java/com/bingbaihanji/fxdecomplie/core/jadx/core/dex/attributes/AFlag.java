@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes;
 /**
  * 属性标志枚举
  * 用于标记节点 (方法 基本块 指令等)的二进制状态标志 (设置或未设置)
- * 每个标志以 {@link java.util.EnumSet} 形式存储在 {@link AttributeStorage} 中，
+ * 每个标志以 {@link java.util.EnumSet} 形式存储在 {@link AttributeStorage} 中,
  * 使用一个 long 值即可容纳所有标志 (最多 64 个)
  */
 public enum AFlag {
@@ -36,12 +36,12 @@ public enum AFlag {
     /** 不要内联常量 */
     DONT_INLINE_CONST,
     DONT_INVERT, // 不要反转此 if 语句
-    DONT_GENERATE, // 正常处理，但不输出到生成的代码中
-    COMMENT_OUT, // 正常处理，但在生成代码中注释掉该指令
+    DONT_GENERATE, // 正常处理,但不输出到生成的代码中
+    COMMENT_OUT, // 正常处理,但在生成代码中注释掉该指令
     REMOVE, // 可被完全移除
     REMOVE_SUPER_CLASS, // 不要添加父类
 
-    HIDDEN, // 该指令在其他指令内部使用，但未列在参数列表中
+    HIDDEN, // 该指令在其他指令内部使用,但未列在参数列表中
     CONVERTED_ENUM, // 枚举类已成功还原为原始形式
 
     DONT_RENAME, // 反混淆时不要重命名
@@ -52,7 +52,7 @@ public enum AFlag {
     /** 重复标记 */
     DUPLICATED,
 
-    // 此循环条件已被合并，或者不应对其施加单指令限制
+    // 此循环条件已被合并,或者不应对其施加单指令限制
     ALLOW_MULTIPLE_INSNS_LOOP_COND,
 
     /** 异常顶部分割节点 */
@@ -89,7 +89,7 @@ public enum AFlag {
     ANDROID_R_CLASS,
 
     /**
-     * RegisterArg 属性，用于标记方法参数
+     * RegisterArg 属性,用于标记方法参数
      */
     METHOD_ARGUMENT,
 
@@ -122,7 +122,7 @@ public enum AFlag {
     VARARG_CALL,
 
     /**
-     * 使用显式类型常量：如 '(byte) 1' 或带类型后缀 '7L'
+     * 使用显式类型常量:如 '(byte) 1' 或带类型后缀 '7L'
      */
     EXPLICIT_PRIMITIVE_TYPE,
     /** 显式类型转换 */
@@ -144,11 +144,11 @@ public enum AFlag {
 
     // 类处理标志
     RESTART_CODEGEN, // 必须重新执行代码生成
-    RELOAD_AT_CODEGEN_STAGE, // 类在 'process' 阶段无法分析，需在 'codegen' 阶段前卸载
+    RELOAD_AT_CODEGEN_STAGE, // 类在 'process' 阶段无法分析,需在 'codegen' 阶段前卸载
     CLASS_DEEP_RELOAD, // 在 process 阶段前执行深度类卸载 (重载)
     CLASS_UNLOADED, // 类已被完全卸载
 
-    DONT_UNLOAD_CLASS, // 代码生成后不要卸载类 (仅用于测试和调试！)
+    DONT_UNLOAD_CLASS, // 代码生成后不要卸载类 (仅用于测试和调试!)
 
     /** 解析 Java JSR 指令 */
     RESOLVE_JAVA_JSR,

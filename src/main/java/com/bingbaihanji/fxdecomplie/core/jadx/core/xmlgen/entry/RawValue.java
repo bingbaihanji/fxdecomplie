@@ -1,7 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry;
 
 public final class RawValue {
+
     private final int dataType;
+
     private final int data;
 
     public RawValue(int dataType, int data) {

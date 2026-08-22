@@ -8,13 +8,13 @@ import javafx.beans.property.SimpleLongProperty;
 /**
  * 选区模型,用于管理十六进制视图中的选区(选择范围)和光标位置 
  * <p>
- * 该模型维护三个关键状态：
+ * 该模型维护三个关键状态:
  * <ul>
- *   <li><b>选区起始</b>(selectionStart)和<b>选区结束</b>(selectionEnd)：定义当前选中的连续地址区间 </li>
- *   <li><b>光标位置</b>(cursorPosition)：表示当前焦点所在的地址 </li>
+ *   <li><b>选区起始</b>(selectionStart)和<b>选区结束</b>(selectionEnd):定义当前选中的连续地址区间 </li>
+ *   <li><b>光标位置</b>(cursorPosition):表示当前焦点所在的地址 </li>
  * </ul>
- * 支持通过 {@link #startSelection(long)}、{@link #extendSelection(long)} 和 {@link #select(long, long)}
- * 操作选区,并提供了查询选区大小、是否包含某地址等便捷方法 
+ * 支持通过 {@link #startSelection(long)},{@link #extendSelection(long)} 和 {@link #select(long, long)}
+ * 操作选区,并提供了查询选区大小,是否包含某地址等便捷方法 
  * 所有状态均以 JavaFX 属性({@link LongProperty})形式暴露,便于 UI 绑定和监听 
  * </p>
  *
@@ -121,7 +121,7 @@ public class SelectionModel {
     /**
      * 获取选区的最小地址(起始地址) 
      * <p>
-     * 注：若选区起始 > 结束(通常不会发生,因为内部会自动排序),此方法仍返回两者中的较小值 
+     * 注:若选区起始 > 结束(通常不会发生,因为内部会自动排序),此方法仍返回两者中的较小值 
      * </p>
      *
      * @return 选区的最小地址

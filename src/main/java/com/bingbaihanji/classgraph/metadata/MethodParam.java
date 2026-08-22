@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.scan.ScanResult;
@@ -18,10 +17,13 @@ import java.util.Objects;
  * @author lukehutch
  */
 public class MethodParam {
+
     /** 注解信息 */
     public final AnnotationInfo[] annotationInfo;
+
     /** 包含此参数的方法 */
     private final MethodInfo methodInfo;
+
     /** 修饰符 */
     private final int modifiers;
 
@@ -68,7 +70,7 @@ public class MethodParam {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 将修饰符转换为字符串表示，例如 "public static final"
+     * 将修饰符转换为字符串表示,例如 "public static final"
      *
      * @param modifiers
      *            字段或方法修饰符
@@ -97,8 +99,8 @@ public class MethodParam {
     }
 
     /**
-     * 方法参数名称对于未命名的参数(例如合成参数)，或者如果编译 JDK 版本低于 8，或者如果使用 JDK 8+
-     * 编译但未使用命令行开关 `-parameters`，则可能为 null
+     * 方法参数名称对于未命名的参数(例如合成参数),或者如果编译 JDK 版本低于 8,或者如果使用 JDK 8+
+     * 编译但未使用命令行开关 `-parameters`,则可能为 null
      *
      * @return 方法参数名称
      */
@@ -107,8 +109,8 @@ public class MethodParam {
     }
 
     /**
-     * 方法参数修饰符如果未设置修饰符位，或者如果编译 JDK 版本低于 8，或者如果使用 JDK 8+
-     * 编译但未使用命令行开关 `-parameters`，则可能为零
+     * 方法参数修饰符如果未设置修饰符位,或者如果编译 JDK 版本低于 8,或者如果使用 JDK 8+
+     * 编译但未使用命令行开关 `-parameters`,则可能为零
      *
      * @return 方法参数修饰符
      */
@@ -117,7 +119,7 @@ public class MethodParam {
     }
 
     /**
-     * 以字符串形式获取方法参数修饰符，例如 "final"要获取修饰符位，请调用 {@link #getModifiers()}
+     * 以字符串形式获取方法参数修饰符,例如 "final"要获取修饰符位,请调用 {@link #getModifiers()}
      *
      * @return 方法参数的修饰符(字符串形式)
      */
@@ -128,9 +130,9 @@ public class MethodParam {
     }
 
     /**
-     * 方法参数类型签名，可能包含泛型类型信息(如果此参数没有类型签名信息可用，则为 null)
+     * 方法参数类型签名,可能包含泛型类型信息(如果此参数没有类型签名信息可用,则为 null)
      *
-     * @return 方法类型签名(如果可用)，否则为 null
+     * @return 方法类型签名(如果可用),否则为 null
      */
     public TypeSignature getTypeSignature() {
         return typeSignature;
@@ -146,9 +148,9 @@ public class MethodParam {
     }
 
     /**
-     * 方法参数类型签名，如果不可用，则返回方法类型描述符
+     * 方法参数类型签名,如果不可用,则返回方法类型描述符
      *
-     * @return 方法类型签名(如果存在)，否则返回方法类型描述符
+     * @return 方法类型签名(如果存在),否则返回方法类型描述符
      */
     public TypeSignature getTypeSignatureOrTypeDescriptor() {
         return typeSignature != null ? typeSignature : typeDescriptor;
@@ -173,12 +175,12 @@ public class MethodParam {
     }
 
     /**
-     * 获取此方法上的非 {@link Repeatable} 注解，如果方法参数没有该注解则返回 null
-     * (对于 {@link Repeatable} 注解，请使用 {@link #getAnnotationInfoRepeatable(Class)})
+     * 获取此方法上的非 {@link Repeatable} 注解,如果方法参数没有该注解则返回 null
+     * (对于 {@link Repeatable} 注解,请使用 {@link #getAnnotationInfoRepeatable(Class)})
      *
      * @param annotation
      *            注解类
-     * @return 表示此方法参数上该注解的 {@link AnnotationInfo} 对象，如果方法参数没有该注解则返回 null
+     * @return 表示此方法参数上该注解的 {@link AnnotationInfo} 对象,如果方法参数没有该注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -186,23 +188,23 @@ public class MethodParam {
     }
 
     /**
-     * 获取此方法上的命名非 {@link Repeatable} 注解，如果方法参数没有该命名注解则返回 null
-     * (对于 {@link Repeatable} 注解，请使用 {@link #getAnnotationInfoRepeatable(String)})
+     * 获取此方法上的命名非 {@link Repeatable} 注解,如果方法参数没有该命名注解则返回 null
+     * (对于 {@link Repeatable} 注解,请使用 {@link #getAnnotationInfoRepeatable(String)})
      *
      * @param annotationName
      *            注解名称
-     * @return 表示此方法参数上该命名注解的 {@link AnnotationInfo} 对象，如果方法参数没有该命名注解则返回 null
+     * @return 表示此方法参数上该命名注解的 {@link AnnotationInfo} 对象,如果方法参数没有该命名注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
         return getAnnotationInfo().get(annotationName);
     }
 
     /**
-     * 获取此方法上的 {@link Repeatable} 注解，如果方法参数没有该注解则返回空列表
+     * 获取此方法上的 {@link Repeatable} 注解,如果方法参数没有该注解则返回空列表
      *
      * @param annotation
      *            注解类
-     * @return 包含此方法参数上该注解所有实例的 {@link AnnotationInfoList}，如果方法参数没有该注解则返回空列表
+     * @return 包含此方法参数上该注解所有实例的 {@link AnnotationInfoList},如果方法参数没有该注解则返回空列表
      */
     public AnnotationInfoList getAnnotationInfoRepeatable(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -210,11 +212,11 @@ public class MethodParam {
     }
 
     /**
-     * 获取此方法上的命名 {@link Repeatable} 注解，如果方法参数没有该命名注解则返回空列表
+     * 获取此方法上的命名 {@link Repeatable} 注解,如果方法参数没有该命名注解则返回空列表
      *
      * @param annotationName
      *            注解名称
-     * @return 包含此方法参数上该命名注解所有实例的 {@link AnnotationInfoList}，如果方法参数没有该命名注解则返回空列表
+     * @return 包含此方法参数上该命名注解所有实例的 {@link AnnotationInfoList},如果方法参数没有该命名注解则返回空列表
      */
     public AnnotationInfoList getAnnotationInfoRepeatable(final String annotationName) {
         return getAnnotationInfo().getRepeatable(annotationName);
@@ -327,7 +329,7 @@ public class MethodParam {
      * 渲染为字符串
      *
      * @param useSimpleNames
-     *            如果为 true，则仅使用每个类的简单名称
+     *            如果为 true,则仅使用每个类的简单名称
      * @param buf
      *            缓冲区
      */

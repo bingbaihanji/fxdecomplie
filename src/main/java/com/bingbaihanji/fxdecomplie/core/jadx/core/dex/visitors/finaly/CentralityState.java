@@ -5,7 +5,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.Registe
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A centrality state is an object which helps track how instructions can be skipped.
@@ -17,8 +21,11 @@ import java.util.*;
 public final class CentralityState {
 
     private final Set<RegisterArg> allowableOutputArguments = new ArraySet<>();
+
     private final SameInstructionsStrategy sameInstructionsStrategy;
+
     private boolean allowsCentral = true;
+
     private boolean allowsNonStartingNode;
 
     public CentralityState(SameInstructionsStrategy sameInstructionsStrategy, boolean allowsNonStartingNode) {

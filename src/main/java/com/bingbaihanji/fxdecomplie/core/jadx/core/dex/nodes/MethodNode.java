@@ -38,77 +38,107 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 
 /**
- * 方法节点，表示 DEX 字节码中的一个方法
+ * 方法节点,表示 DEX 字节码中的一个方法
  * <p>
- * 继承自 {@link NotificationAttrNode}，实现了方法详情 可加载 代码节点等接口
+ * 继承自 {@link NotificationAttrNode},实现了方法详情 可加载 代码节点等接口
  * 包含方法的字节码指令 基本块 异常处理器 循环信息 SSA 变量等反编译所需数据
  * </p>
  */
 public class MethodNode extends NotificationAttrNode implements IMethodDetails, ILoadable, ICodeNode, Comparable<MethodNode> {
+
     private static final Logger LOG = LoggerFactory.getLogger(MethodNode.class);
-    /** 空指令数组，用于无代码的方法 */
+
+    /** 空指令数组,用于无代码的方法 */
     private static final InsnNode[] EMPTY_INSN_ARRAY = new InsnNode[0];
 
     /** 方法元信息 (名称 签名等) */
     private final MethodInfo mthInfo;
+
     /** 所属父类节点 */
     private final ClassNode parentClass;
-    /** 字节码读取器，用于读取方法的原始字节码 */
+
+    /** 字节码读取器,用于读取方法的原始字节码 */
     private final ICodeReader codeReader;
+
     /** 方法字节码中的原始指令数量 */
     private final int insnsCount;
+
     /** 访问标志 (public/private/static 等) */
     private AccessInfo accFlags;
+
     /** 标识该方法是否无代码 (如抽象方法 接口方法) */
     private boolean noCode;
+
     /** 寄存器总数 */
     private int regsCount;
+
     /** 参数起始寄存器索引 */
     private int argsStartReg;
 
     /** 标识方法是否已加载反编译数据 */
     private boolean loaded;
 
-    // 加载后可用的附加信息，卸载时保留
+    // 加载后可用的附加信息,卸载时保留
     private ArgType retType;
+
     private List<ArgType> argTypes;
+
     private List<ArgType> typeParameters;
 
-    // 反编译数据，卸载时重置
+    // 反编译数据,卸载时重置
+
     /** this 引用的寄存器参数 (非静态方法) */
     private RegisterArg thisArg;
+
     /** 方法参数的寄存器参数列表 */
     private List<RegisterArg> argsList;
+
     /** 方法指令数组 */
     private @Nullable InsnNode[] instructions;
+
     /** 基本块列表 */
     private List<BlockNode> blocks;
+
     /** 基本块最大计数 ID */
     private int blocksMaxCId;
+
     /** 入口基本块 */
     private BlockNode enterBlock;
+
     /** 出口基本块 */
     private BlockNode exitBlock;
+
     /** SSA 变量列表 */
     private List<SSAVar> sVars;
+
     /** 异常处理器列表 */
     private List<ExceptionHandler> exceptionHandlers;
+
     /** 循环信息列表 */
     private List<LoopInfo> loops;
+
     /** 反编译后的代码区域 */
     private Region region;
 
     /** 调用此方法的方法列表 (调用者) */
     private List<MethodNode> useIn = Collections.emptyList();
+
     /** 未解析的调用此方法的方法信息 */
     private List<MethodInfo> unresolvedUsed = Collections.emptyList();
+
     /** 此方法调用的方法集合 (被调用者) */
     private Set<MethodNode> methodsUsed = new HashSet<>();
+
     /** 标识此方法是否包含递归自调用 */
     private boolean callsSelf = false;
 
@@ -149,7 +179,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 卸载方法的反编译数据，释放内存返回类型 参数类型和类型参数不会被卸载
+     * 卸载方法的反编译数据,释放内存返回类型 参数类型和类型参数不会被卸载
      */
     @Override
     public void unload() {
@@ -190,14 +220,14 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 加载方法的反编译数据，包括指令解码和参数初始化
+     * 加载方法的反编译数据,包括指令解码和参数初始化
      *
      * @throws DecodeException 如果指令解码失败
      */
     @Override
     public void load() throws DecodeException {
         if (loaded) {
-            // 方法已加载，直接返回
+            // 方法已加载,直接返回
             return;
         }
         try {
@@ -234,7 +264,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 重新加载方法数据，先卸载再加载
+     * 重新加载方法数据,先卸载再加载
      */
     public void reload() {
         unload();
@@ -246,7 +276,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 初始化方法参数寄存器，包括 this 引用 (非静态方法)和方法参数
+     * 初始化方法参数寄存器,包括 this 引用 (非静态方法)和方法参数
      *
      * @param args 参数类型列表
      */
@@ -310,7 +340,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 更新方法的参数类型，并重新初始化参数寄存器
+     * 更新方法的参数类型,并重新初始化参数寄存器
      *
      * @param newArgTypes 新的参数类型列表
      * @param comment     调试注释信息
@@ -355,7 +385,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 收集方法参数的变量节点列表，用于代码元数据映射
+     * 收集方法参数的变量节点列表,用于代码元数据映射
      *
      * @return 参数变量节点列表
      */
@@ -375,7 +405,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
                 if (declRef instanceof VarNode) {
                     VarNode varNode = (VarNode) declRef;
                     if (!varNode.getMth().equals(this)) {
-                        // 已进入其他方法范围，停止搜索
+                        // 已进入其他方法范围,停止搜索
                         return Boolean.TRUE;
                     }
                     args.add(varNode);
@@ -404,7 +434,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回全部参数寄存器列表，非静态方法会在首位包含 this 参数
+     * 返回全部参数寄存器列表,非静态方法会在首位包含 this 参数
      *
      * @return 包含 this (如有)的全部参数寄存器列表
      */
@@ -420,9 +450,9 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回 this 引用寄存器参数，静态方法返回 null
+     * 返回 this 引用寄存器参数,静态方法返回 null
      *
-     * @return this 参数寄存器，静态方法为 null
+     * @return this 参数寄存器,静态方法为 null
      */
     @Nullable
     public RegisterArg getThisArg() {
@@ -494,7 +524,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /**
      * 返回方法解码后的指令数组
      *
-     * @return 指令数组，未加载时可能为 null
+     * @return 指令数组,未加载时可能为 null
      */
     public InsnNode[] getInstructions() {
         return instructions;
@@ -515,7 +545,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 完成基本块构建，锁定基本块和循环信息使其不可变
+     * 完成基本块构建,锁定基本块和循环信息使其不可变
      */
     public void finishBasicBlocks() {
         blocks = lockList(blocks);
@@ -641,7 +671,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
      * 返回包含指定基本块的循环 (返回首个匹配)
      *
      * @param block 基本块
-     * @return 包含该块的循环信息，无则返回 null
+     * @return 包含该块的循环信息,无则返回 null
      */
     @Nullable
     public LoopInfo getLoopForBlock(BlockNode block) {
@@ -792,7 +822,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     public boolean isDefaultConstructor() {
         if (isConstructor()) {
             int defaultArgCount = 0;
-            // 针对非静态内部类构造方法的处理：它带有一个合成参数
+            // 针对非静态内部类构造方法的处理:它带有一个合成参数
             if (parentClass.getClassInfo().isInner()
                     && !parentClass.getAccessFlags().isStatic()) {
                 ClassNode outerCls = parentClass.getParentClass();
@@ -853,7 +883,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 为指定赋值寄存器参数创建新的 SSA 变量，自动分配版本号
+     * 为指定赋值寄存器参数创建新的 SSA 变量,自动分配版本号
      *
      * @param assignArg 赋值寄存器参数
      * @return 新建的 SSA 变量
@@ -965,7 +995,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /**
      * 返回方法字节码在文件中的偏移量
      *
-     * @return 代码偏移量，无代码时返回 0
+     * @return 代码偏移量,无代码时返回 0
      */
     public long getMethodCodeOffset() {
         return noCode ? 0 : codeReader.getCodeOffset();
@@ -974,7 +1004,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /**
      * 返回方法的调试信息
      *
-     * @return 调试信息，无代码时返回 null
+     * @return 调试信息,无代码时返回 null
      */
     @Nullable
     public IDebugInfo getDebugInfo() {
@@ -982,7 +1012,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 忽略此方法，标记为不生成代码并置为无代码
+     * 忽略此方法,标记为不生成代码并置为无代码
      */
     public void ignoreMethod() {
         add(AFlag.DONT_GENERATE);
@@ -1004,7 +1034,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /**
      * 计算当前阶段的指令数量
      *
-     * @return 指令数量，无法确定时返回 -1
+     * @return 指令数量,无法确定时返回 -1
      */
     public long countInsns() {
         if (instructions != null) {
@@ -1051,7 +1081,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /**
      * 返回方法的字节码读取器
      *
-     * @return 字节码读取器，无代码时可能为 null
+     * @return 字节码读取器,无代码时可能为 null
      */
     public @Nullable ICodeReader getCodeReader() {
         return codeReader;
@@ -1063,14 +1093,14 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置调用此方法的方法列表 (调用者)，设置后请勿修改传入列表
+     * 设置调用此方法的方法列表 (调用者),设置后请勿修改传入列表
      *
      * @param useIn 调用者方法列表
      */
     public void setUseIn(List<MethodNode> useIn) {
         this.useIn = useIn;
 
-        // 通知所有调用者方法：此方法 (被调用者)被它们使用
+        // 通知所有调用者方法:此方法 (被调用者)被它们使用
         for (MethodNode methodUsedIn : useIn) {
             methodUsedIn.addUsed(this);
         }
@@ -1088,7 +1118,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回此方法调用的方法集合 (被调用者)，返回前会剔除无效项
+     * 返回此方法调用的方法集合 (被调用者),返回前会剔除无效项
      *
      * @return 被调用的方法集合
      */
@@ -1142,7 +1172,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
         return this.callsSelf;
     }
 
-    // 如果此方法 (调用者)已从被调用者的调用者列表中移除，
+    // 如果此方法 (调用者)已从被调用者的调用者列表中移除,
     // 则从被调用方法 (被调用者)列表中移除对应项
     private void removeInvalidMethodsUsed() {
         methodsUsed.removeIf(methodUsed -> !methodUsed.getUseIn().contains(this));

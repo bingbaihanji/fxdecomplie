@@ -23,11 +23,13 @@ import java.util.List;
  * <p>内部接口供 {@link NativeWindowsTools} 和 {@code fx.win32} 包使用</p>
  */
 public final class Win32Api {
+
     private Win32Api() {
     }
 
     /** DWM API(dwmapi.dll)— 桌面窗口管理器 */
     public interface DwmApi extends Library {
+
         DwmApi INSTANCE = Native.load("dwmapi", DwmApi.class);
 
         /** 设置 DWM 窗口属性(如暗色模式 圆角 背景材质等) */
@@ -42,11 +44,15 @@ public final class Win32Api {
         /** 扩展窗口框架到客户区,用于启用 DWM 玻璃/阴影效果 */
         int DwmExtendFrameIntoClientArea(WinDef.HWND hwnd, MARGINS pMarInset);
 
-        /** DWM MARGINS 结构体：定义窗口非客户区扩展边距 */
+        /** DWM MARGINS 结构体:定义窗口非客户区扩展边距 */
         class MARGINS extends com.sun.jna.Structure {
+
             public int cxLeftWidth;
+
             public int cxRightWidth;
+
             public int cyTopHeight;
+
             public int cyBottomHeight;
 
             @Override
@@ -58,6 +64,7 @@ public final class Win32Api {
 
     /** User32 API(user32.dll)— 窗口操作扩展 */
     public interface User32Api extends User32 {
+
         User32Api INSTANCE = Native.load("user32", User32Api.class, W32APIOptions.DEFAULT_OPTIONS);
 
         /** 设置分层窗口透明度属性 */
@@ -167,11 +174,16 @@ public final class Win32Api {
 
         /** FLASHWINFO 结构体 */
         class FLASHWINFO extends com.sun.jna.Structure {
+
             public int cbSize;
+
             public HWND hwnd;
+
             public int dwFlags;
+
             /** 闪烁次数,0 表示持续直到窗口获得焦点 */
             public int uCount;
+
             /** 闪烁间隔(毫秒),0 为默认 */
             public int dwTimeout;
 
@@ -185,14 +197,20 @@ public final class Win32Api {
 
         /** WINDOWPLACEMENT 结构体 */
         class WINDOWPLACEMENT extends com.sun.jna.Structure {
+
             public int length;
+
             public int flags;
-            /** 当前显示状态：SW_SHOWNORMAL / SW_SHOWMAXIMIZED / SW_SHOWMINIMIZED */
+
+            /** 当前显示状态:SW_SHOWNORMAL / SW_SHOWMAXIMIZED / SW_SHOWMINIMIZED */
             public int showCmd;
+
             /** 最小化时窗口左上角位置 */
             public POINT ptMinPosition;
+
             /** 最大化时窗口左上角位置 */
             public POINT ptMaxPosition;
+
             /** 正常(恢复)状态下的窗口矩形 */
             public WinDef.RECT rcNormalPosition;
 
@@ -207,6 +225,7 @@ public final class Win32Api {
 
     /** Kernel32 API(kernel32.dll)— 进程信息 */
     public interface Kernel32Api extends Kernel32 {
+
         Kernel32Api INSTANCE = Native.load("kernel32", Kernel32Api.class, W32APIOptions.DEFAULT_OPTIONS);
 
         /** 获取当前进程 ID */

@@ -4,7 +4,15 @@ package com.bingbaihanji.fxdecomplie.util.collection;
 import com.bingbaihanji.fxdecomplie.util.concurrent.CountDown;
 import com.bingbaihanji.fxdecomplie.util.reflect.ReflectUtils;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -18,6 +26,7 @@ import java.util.stream.StreamSupport;
  * @author xDark
  */
 public final class Streams {
+
     private Streams() {
     }
 
@@ -56,6 +65,7 @@ public final class Streams {
     public static <T> Stream<T> interruptable(Stream<? extends T> stream) {
         Spliterator<? extends T> spliterator = stream.spliterator();
         return StreamSupport.stream(new Spliterators.AbstractSpliterator<>(spliterator.estimateSize(), spliterator.characteristics()) {
+
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
                 if (Thread.interrupted()) {
@@ -191,6 +201,7 @@ public final class Streams {
                                                        Deque<Iterator<T>> vertices, Set<T> visited) {
         vertices.push(Collections.singletonList(seed).iterator());
         return StreamSupport.stream(new Spliterators.AbstractSpliterator<>(Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.NONNULL) {
+
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
                 while (true) {

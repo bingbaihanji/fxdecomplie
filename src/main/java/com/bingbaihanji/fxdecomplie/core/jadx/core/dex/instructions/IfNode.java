@@ -17,7 +17,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.selec
 /**
  * 表示条件跳转指令节点 (if)
  * <p>
- * 继承自 {@link GotoNode}，包含一个比较操作符 ({@link IfOp})和两个参与比较的参数，
+ * 继承自 {@link GotoNode},包含一个比较操作符 ({@link IfOp})和两个参与比较的参数,
  * 并维护条件成立时跳转的 {@code thenBlock} 与条件不成立时进入的 {@code elseBlock}
  */
 public class IfNode extends GotoNode {
@@ -27,18 +27,22 @@ public class IfNode extends GotoNode {
             PrimitiveType.INT, PrimitiveType.BOOLEAN,
             PrimitiveType.OBJECT, PrimitiveType.ARRAY,
             PrimitiveType.BYTE, PrimitiveType.SHORT, PrimitiveType.CHAR);
+
     private static final ArgType NUMBERS_TYPE = ArgType.unknown(
             PrimitiveType.INT, PrimitiveType.BYTE, PrimitiveType.SHORT, PrimitiveType.CHAR);
+
     /** 条件比较操作符 (如 EQ NE LT GE 等) */
     protected IfOp op;
+
     /** 条件成立时跳转到的目标基本块 */
     private BlockNode thenBlock;
+
     /** 条件不成立时进入的基本块 */
     private BlockNode elseBlock;
 
     /**
      * 根据原始 DEX 指令数据构造条件跳转节点
-     * 若指令只有一个寄存器，则第二个参数默认为字面量 0 (与 0 比较)
+     * 若指令只有一个寄存器,则第二个参数默认为字面量 0 (与 0 比较)
      *
      * @param insn 原始 DEX 指令数据
      * @param op   条件比较操作符
@@ -70,7 +74,7 @@ public class IfNode extends GotoNode {
     }
 
     /**
-     * 内部构造方法，仅设置操作符和跳转目标，不添加参数
+     * 内部构造方法,仅设置操作符和跳转目标,不添加参数
      *
      * @param op           条件比较操作符
      * @param targetOffset 跳转目标偏移
@@ -82,7 +86,7 @@ public class IfNode extends GotoNode {
 
     /**
      * 根据操作符收窄参数的候选类型
-     * 相等/不等比较 (EQ/NE)允许更宽泛的类型 (含布尔 对象 数组等)，
+     * 相等/不等比较 (EQ/NE)允许更宽泛的类型 (含布尔 对象 数组等),
      * 其他数值比较仅允许数值类型
      *
      * @param op 条件比较操作符
@@ -102,7 +106,7 @@ public class IfNode extends GotoNode {
 
     /**
      * 反转条件
-     * 将操作符替换为其逻辑取反形式，并交换 thenBlock 与 elseBlock
+     * 将操作符替换为其逻辑取反形式,并交换 thenBlock 与 elseBlock
      */
     public void invertCondition() {
         op = op.invert();
@@ -112,7 +116,7 @@ public class IfNode extends GotoNode {
     }
 
     /**
-     * 规范化条件，将 'a != false' 改写为 'a == true'
+     * 规范化条件,将 'a != false' 改写为 'a == true'
      */
     public void normalize() {
         if (getOp() == IfOp.NE && getArg(1).isFalse()) {
@@ -135,7 +139,7 @@ public class IfNode extends GotoNode {
 
     /**
      * 根据当前基本块的后继块初始化 thenBlock 和 elseBlock
-     * 若只有一个后继块，则 thenBlock 与 elseBlock 相同
+     * 若只有一个后继块,则 thenBlock 与 elseBlock 相同
      *
      * @param curBlock 当前所在基本块
      */
@@ -181,7 +185,7 @@ public class IfNode extends GotoNode {
         return elseBlock;
     }
 
-    /** @return 跳转目标偏移 (若 thenBlock 已初始化则返回其起始偏移，否则返回原始 target) */
+    /** @return 跳转目标偏移 (若 thenBlock 已初始化则返回其起始偏移,否则返回原始 target) */
     @Override
     public int getTarget() {
         return thenBlock == null ? target : thenBlock.getStartOffset();

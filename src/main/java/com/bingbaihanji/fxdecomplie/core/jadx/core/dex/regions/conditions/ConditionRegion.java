@@ -15,6 +15,7 @@ public abstract class ConditionRegion extends AbstractRegion implements IConditi
 
     @Nullable
     private IfCondition condition;
+
     private List<BlockNode> conditionBlocks = Collections.emptyList();
 
     public ConditionRegion(IRegion parent) {

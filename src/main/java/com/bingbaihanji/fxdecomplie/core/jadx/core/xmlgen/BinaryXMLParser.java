@@ -16,36 +16,57 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Android 二进制 XML (AXML)解析器
  * <p>
  * 将编译后的二进制 XML (如 AndroidManifest.xml layout 等资源)解码还原为可读的文本 XML
- * 处理内容包括：字符串池 资源映射表 命名空间 元素与属性 CDATA 等各类数据块，
+ * 处理内容包括:字符串池 资源映射表 命名空间 元素与属性 CDATA 等各类数据块,
  * 并在解码过程中完成属性反混淆 资源引用还原以及类名注解附加等工作
  */
 public class BinaryXMLParser extends CommonBinaryParser {
+
     private static final Logger LOG = LoggerFactory.getLogger(BinaryXMLParser.class);
 
     private final RootNode rootNode;
+
     private final ManifestAttributes manifestAttributes;
+
     private final boolean attrNewLine;
 
     private final Map<Integer, String> resNames;
+
     private final Map<String, String> tagAttrDeobfNames = new HashMap<>();
+
     private Map<String, String> nsMap;
+
     private Set<String> nsMapGenerated;
+
     private Set<String> definedNamespaces;
+
     private ICodeWriter writer;
+
     private BinaryXMLStrings strings;
+
     private String currentTag = "ERROR";
+
     private boolean firstElement;
+
     private ValuesParser valuesParser;
+
     private boolean isLastEnd = true;
+
     private boolean isOneLine = true;
+
     private int namespaceDepth = 0;
+
     private @Nullable int[] resourceIds;
+
     private String appPackageName;
 
     private Map<String, ClassNode> classNameCache;
@@ -75,7 +96,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
     /**
      * 解析二进制 XML 输入流并生成可读的文本 XML
      * <p>
-     * 若输入流不是二进制 XML，则直接按普通文本资源加载
+     * 若输入流不是二进制 XML,则直接按普通文本资源加载
      *
      * @param inputStream 二进制 XML 输入流
      * @return 解码后的代码信息 (文本 XML)
@@ -119,7 +140,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
             int type = is.readInt16();
             switch (type) {
                 case RES_NULL_TYPE:
-                    // 空类型，无需任何处理
+                    // 空类型,无需任何处理
                     break;
                 case RES_STRING_POOL_TYPE:
                     strings = parseStringPoolNoType();
@@ -259,7 +280,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
         int elementBegLineNumber = is.readInt32();
         int comment = is.readInt32();
         int startNS = is.readInt32();
-        int startNSName = is.readInt32(); // 实际上是元素名称……
+        int startNSName = is.readInt32(); // 实际上是元素名称......
         if (!isLastEnd && !"ERROR".equals(currentTag)) {
             writer.add('>');
         }
@@ -382,8 +403,8 @@ public class BinaryXMLParser extends CommonBinaryParser {
                 attrName = "ns" + i;
                 if (!nsMapGenerated.contains(attrName) && !nsMap.containsValue(attrName)) {
                     nsMapGenerated.add(attrName);
-                    // 不将生成的值加入 nsMap，
-                    // 因为该 attrUrl 可能被相邻元素使用，但从未被真正定义
+                    // 不将生成的值加入 nsMap,
+                    // 因为该 attrUrl 可能被相邻元素使用,但从未被真正定义
                     break;
                 }
             }
@@ -398,8 +419,8 @@ public class BinaryXMLParser extends CommonBinaryParser {
     }
 
     private String getAttributeName(int id) {
-        // 根据 https://github.com/skylot/jadx/issues/1208 的结论：
-        // Android 似乎优先使用 AndroidResMap 中的条目，
+        // 根据 https://github.com/skylot/jadx/issues/1208 的结论:
+        // Android 似乎优先使用 AndroidResMap 中的条目,
         // 仅当其中不存在对应条目时才使用 XML 字符串池中的值
         if (resourceIds != null && 0 <= id && id < resourceIds.length) {
             int resId = resourceIds[id];

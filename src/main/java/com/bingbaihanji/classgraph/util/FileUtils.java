@@ -27,11 +27,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 文件工具类
  */
 public final class FileUtils {
+
     /**
-     * 文件缓冲区数组的最大大小比 {@link Integer#MAX_VALUE} 小 8 字节，
+     * 文件缓冲区数组的最大大小比 {@link Integer#MAX_VALUE} 小 8 字节,
      * 因为某些虚拟机在数组中保留头字
      */
     public static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+
     /** DirectByteBuffer.cleaner() 方法 */
     private static Method directByteBufferCleanerMethod;
 
@@ -43,16 +45,21 @@ public final class FileUtils {
     //
     //    /** jdk.incubator.foreign.MemorySegment.ofByteBuffer 方法(JDK 14+) */
     //    private static Method memorySegmentCloseMethod;
+
     /** Cleaner.clean() 方法 */
     private static Method cleanerCleanMethod;
+
     /** attachment() 方法 */
     private static Method attachmentMethod;
+
     /** Unsafe 对象 */
     private static Object theUnsafe;
+
     /** 类的静态字段是否已初始化 */
     private static AtomicBoolean initialized = new AtomicBoolean();
+
     /**
-     * 当前目录路径(仅在首次访问此字段时读取当前目录一次，
+     * 当前目录路径(仅在首次访问此字段时读取当前目录一次,
      * 因此不会反映当前目录的后续更改)
      */
     private static String currDirPath;
@@ -69,13 +76,13 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取当前目录(仅在首次调用时查看当前目录，然后缓存此值供将来读取)
+     * 获取当前目录(仅在首次调用时查看当前目录,然后缓存此值供将来读取)
      *
-     * @return 当前目录，以字符串形式返回
+     * @return 当前目录,以字符串形式返回
      */
     public static String currDirPath() {
         if (currDirPath == null) {
-            // user.dir 应该是 JVM 启动时的当前目录，
+            // user.dir 应该是 JVM 启动时的当前目录,
             // 这也是类路径元素相对于其解析的位置
             Path path = null;
             final String currDirPathStr = System.getProperty("user.dir");
@@ -87,7 +94,7 @@ public final class FileUtils {
                 }
             }
             if (path == null) {
-                // user.dir 很可能总是被设置的但万一没有设置，就尝试读取
+                // user.dir 很可能总是被设置的但万一没有设置,就尝试读取
                 // ClassGraph 首次被调用时的实际当前目录
                 try {
                     path = Paths.get("");
@@ -96,7 +103,7 @@ public final class FileUtils {
                 }
             }
 
-            // 以 ClassGraph 中规范化所有其他路径的相同方式规范化当前目录，
+            // 以 ClassGraph 中规范化所有其他路径的相同方式规范化当前目录,
             // 以保持一致性
             currDirPath = FastPathResolver.resolve(path == null ? "" : path.toString());
         }
@@ -106,16 +113,16 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 针对"zip slip"漏洞对相对路径进行清理：如果 URL 中发现 ".." 则移除路径段，
+     * 针对"zip slip"漏洞对相对路径进行清理:如果 URL 中发现 ".." 则移除路径段,
      * 但不允许导航到路径层次根目录之上将每个 "!" 字符视为新的路径层次根目录
      * 同时移除 "." 和空路径段("//")
      *
      * @param path
      *            要清理的路径
      * @param removeInitialSlash
-     *            如果为 true，则从返回路径的开头移除所有 '/' 字符
+     *            如果为 true,则从返回路径的开头移除所有 '/' 字符
      * @param removeFinalSlash
-     *            如果为 true，则从返回路径的末尾移除所有 '/' 字符
+     *            如果为 true,则从返回路径的末尾移除所有 '/' 字符
      * @return 清理后的路径
      */
     public static String sanitizeEntryPath(final String path, final boolean removeInitialSlash,
@@ -124,7 +131,7 @@ public final class FileUtils {
             return "";
         }
 
-        // 查找所有 '/' 和 '!' 字符位置，这些字符将路径分割为多个段
+        // 查找所有 '/' 和 '!' 字符位置,这些字符将路径分割为多个段
         boolean foundSegmentToSanitize = false;
         final int pathLen = path.length();
         final char[] pathChars = new char[pathLen];
@@ -151,7 +158,7 @@ public final class FileUtils {
             }
         }
 
-        // 处理 ".."、"." 和空路径段(如果发现任何)
+        // 处理 "..","." 和空路径段(如果发现任何)
         final boolean pathHasInitialSlash = pathChars[0] == '/';
         final boolean pathHasInitialSlashSlash = pathHasInitialSlash && pathLen > 1 && pathChars[1] == '/';
         final StringBuilder pathSanitized = new StringBuilder(pathLen + 16);
@@ -170,7 +177,7 @@ public final class FileUtils {
                         // 忽略空段 "//" 或等幂段 "/./"
                     } else if (segmentLen == 2 && pathChars[segmentStartIdx] == '.'
                             && pathChars[segmentStartIdx + 1] == '.') {
-                        // 遇到 ".." 时移除一个段，但不允许 ".." 超过层次结构的顶部
+                        // 遇到 ".." 时移除一个段,但不允许 ".." 超过层次结构的顶部
                         if (!currSectionSegments.isEmpty()) {
                             currSectionSegments.remove(currSectionSegments.size() - 1);
                         }
@@ -214,9 +221,9 @@ public final class FileUtils {
 
         int startIdx = 0;
         if (removeInitialSlash || !pathHasInitialSlash) {
-            // 如果需要移除前导 "/"，或者原始路径中本不存在前导斜杠，
+            // 如果需要移除前导 "/",或者原始路径中本不存在前导斜杠,
             // 则剥离前导 "/"(上面构建字符串的代码在每个段前都添加了 "/")
-            // 注意："/" 总是在 "!" 之后添加，因为 "jar:" URL 期望如此
+            // 注意:"/" 总是在 "!" 之后添加,因为 "jar:" URL 期望如此
             while (startIdx < pathSanitized.length() && pathSanitized.charAt(startIdx) == '/') {
                 startIdx++;
             }
@@ -233,7 +240,7 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 检查路径是否以 ".class" 扩展名结尾，忽略大小写
+     * 检查路径是否以 ".class" 扩展名结尾,忽略大小写
      *
      * @param path
      *            文件路径
@@ -281,11 +288,11 @@ public final class FileUtils {
     }
 
     /**
-     * 检查 {@link File} 是否存在、是普通文件且可读
+     * 检查 {@link File} 是否存在,是普通文件且可读
      *
      * @param file
      *            一个 {@link File}
-     * @return 如果文件存在、是普通文件且可读则返回 true
+     * @return 如果文件存在,是普通文件且可读则返回 true
      */
     public static boolean canReadAndIsFile(final File file) {
         try {
@@ -299,11 +306,11 @@ public final class FileUtils {
     }
 
     /**
-     * 检查 {@link Path} 是否存在、是普通文件且可读
+     * 检查 {@link Path} 是否存在,是普通文件且可读
      *
      * @param path
      *            一个 {@link Path}
-     * @return 如果文件存在、是普通文件且可读则返回 true
+     * @return 如果文件存在,是普通文件且可读则返回 true
      */
     public static boolean canReadAndIsFile(final Path path) {
         try {
@@ -331,13 +338,13 @@ public final class FileUtils {
     }
 
     /**
-     * 检查 {@link File} 是否可读：如果不存在、不是普通文件或无法读取，
+     * 检查 {@link File} 是否可读:如果不存在,不是普通文件或无法读取,
      * 则抛出 IOException
      *
      * @param file
      *            一个 {@link File}
      * @throws IOException
-     *             如果文件不存在、不是普通文件或无法读取
+     *             如果文件不存在,不是普通文件或无法读取
      */
     public static void checkCanReadAndIsFile(final File file) throws IOException {
         try {
@@ -353,13 +360,13 @@ public final class FileUtils {
     }
 
     /**
-     * 检查 {@link Path} 是否可读：如果不存在、不是普通文件或无法读取，
+     * 检查 {@link Path} 是否可读:如果不存在,不是普通文件或无法读取,
      * 则抛出 IOException
      *
      * @param path
      *            一个 {@link Path}
      * @throws IOException
-     *             如果路径不存在、不是普通文件或无法读取
+     *             如果路径不存在,不是普通文件或无法读取
      */
     public static void checkCanReadAndIsFile(final Path path) throws IOException {
         try {
@@ -380,11 +387,11 @@ public final class FileUtils {
     }
 
     /**
-     * 检查 {@link File} 是否存在、是目录且可读
+     * 检查 {@link File} 是否存在,是目录且可读
      *
      * @param file
      *            一个 {@link File}
-     * @return 如果文件存在、是目录且可读则返回 true
+     * @return 如果文件存在,是目录且可读则返回 true
      */
     public static boolean canReadAndIsDir(final File file) {
         try {
@@ -398,11 +405,11 @@ public final class FileUtils {
     }
 
     /**
-     * 检查 {@link Path} 是否存在、是目录且可读
+     * 检查 {@link Path} 是否存在,是目录且可读
      *
      * @param path
      *            一个 {@link Path}
-     * @return 如果文件存在、是目录且可读则返回 true
+     * @return 如果文件存在,是目录且可读则返回 true
      */
     public static boolean canReadAndIsDir(final Path path) {
         try {
@@ -430,13 +437,13 @@ public final class FileUtils {
     }
 
     /**
-     * 检查 {@link File} 是否可读：如果不存在、不是目录或无法读取，
+     * 检查 {@link File} 是否可读:如果不存在,不是目录或无法读取,
      * 则抛出 IOException
      *
      * @param file
      *            一个 {@link File}
      * @throws IOException
-     *             如果文件不存在、不是目录或无法读取
+     *             如果文件不存在,不是目录或无法读取
      */
     public static void checkCanReadAndIsDir(final File file) throws IOException {
         try {
@@ -484,7 +491,7 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取 clean() 方法、attachment() 方法和 theUnsafe 字段，在 doPrivileged 中调用
+     * 获取 clean() 方法,attachment() 方法和 theUnsafe 字段,在 doPrivileged 中调用
      */
     private static void lookupCleanMethodPrivileged() {
         if (VersionFinder.JAVA_MAJOR_VERSION < 9) {
@@ -506,8 +513,8 @@ public final class FileUtils {
                 // 忽略
             }
         } else if (VersionFinder.JAVA_MAJOR_VERSION < 24) {
-            // JDK 24+ 报告："A terminally deprecated method in sun.misc.Unsafe has been called"
-            // 如果使用了 Unsafe::invokeCleaner，除非使用直接内存映射而不是 FileChannel，
+            // JDK 24+ 报告:"A terminally deprecated method in sun.misc.Unsafe has been called"
+            // 如果使用了 Unsafe::invokeCleaner,除非使用直接内存映射而不是 FileChannel,
             // 否则我们实际上不需要 cleaner 方法(ClassGraph#enableMemoryMapping
             // 现在对 JDK 24+ 已禁用此功能)
             // 参见: https://github.com/classgraph/classgraph/issues/899
@@ -557,8 +564,8 @@ public final class FileUtils {
                     }
                     return false;
                 }
-                // 确保不清理重复项和切片，因为这可能导致对同一缓冲区进行重复清理尝试，
-                // 从而触发崩溃：
+                // 确保不清理重复项和切片,因为这可能导致对同一缓冲区进行重复清理尝试,
+                // 从而触发崩溃:
                 // "A fatal error has been detected by the Java Runtime Environment: EXCEPTION_ACCESS_VIOLATION"
                 // 参见: https://stackoverflow.com/a/31592947/3950982
                 if (attachmentMethod.invoke(byteBuffer) != null) {
@@ -634,7 +641,7 @@ public final class FileUtils {
                     return false;
                 }
             } else {
-                // TODO: 在 JDK 24+ 上，使用 Arena -- 参见 FileSlice
+                // TODO: 在 JDK 24+ 上,使用 Arena -- 参见 FileSlice
                 return false;
             }
         } catch (final ReflectiveOperationException | SecurityException e) {
@@ -662,6 +669,7 @@ public final class FileUtils {
             if (!initialized.get()) {
                 try {
                     reflectionUtils.doPrivileged(new Callable<Void>() {
+
                         @Override
                         public Void call() throws Exception {
                             lookupCleanMethodPrivileged();
@@ -675,6 +683,7 @@ public final class FileUtils {
             }
             try {
                 return reflectionUtils.doPrivileged(new Callable<Boolean>() {
+
                     @Override
                     public Boolean call() throws Exception {
                         return closeDirectByteBufferPrivileged(byteBuffer, log);
@@ -692,6 +701,7 @@ public final class FileUtils {
     public static FileAttributesGetter createCachedAttributesGetter() {
         final Map<Path, BasicFileAttributes> cache = new HashMap<>();
         return new FileAttributesGetter() {
+
             @Override
             public BasicFileAttributes get(final Path path) {
                 BasicFileAttributes attributes = cache.get(path);
@@ -709,6 +719,7 @@ public final class FileUtils {
             return Files.readAttributes(path, BasicFileAttributes.class);
         } catch (final IOException e) {
             return new BasicFileAttributes() {
+
                 @Override
                 public FileTime lastModifiedTime() {
                     return FileTime.fromMillis(path.toFile().lastModified());
@@ -758,6 +769,7 @@ public final class FileUtils {
     }
 
     public interface FileAttributesGetter {
+
         BasicFileAttributes get(Path path);
     }
 }

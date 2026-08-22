@@ -10,23 +10,36 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.*;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.CHANGED;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.REJECT;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.SAME;
 
 public class InvokeUpdateCallback implements ITypeUpdateCallback {
+
     private final TypeUpdate typeUpdate;
+
     private final TypeUpdateInfo updateInfo;
+
     private final BaseInvokeNode invoke;
+
     private final int argsCount;
+
     private final Set<ArgType> knownTypeVars;
+
     private final Supplier<ArgType> getReturnType;
+
     private final Function<Integer, ArgType> getArgType;
 
     private boolean isAssign;
+
     private boolean allSame = true;
+
     private int currentArg = -1;
 
     private InsnArg updateArg;
+
     private ArgType updateType;
+
     private boolean firstQueue = false;
 
     public InvokeUpdateCallback(TypeUpdate typeUpdate, TypeUpdateInfo updateInfo, BaseInvokeNode invoke, int argsCount,

@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * 代码导航控制器：Ctrl+Click 跳转声明 引用解析 类名/令牌到文件树节点的多策略查找
+ * 代码导航控制器:Ctrl+Click 跳转声明 引用解析 类名/令牌到文件树节点的多策略查找
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
+ * 从 MainWindow 拆分而来,通过 owner 访问共享状态与协作者 (Mediator 模式)
+ * 所有协作者均在调用时通过 owner 访问,以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */
@@ -284,7 +284,7 @@ public final class NavigationController {
         String targetToken = JavaSourceAnalyzer.sanitizeDeclarationToken(token);
         if (!targetToken.isBlank()) {
             String simpleToken = JavaSourceAnalyzer.tokenSimpleName(targetToken);
-            // 分两轮匹配：第一轮找有精确列位置的引用,第二轮找无列位置的引用
+            // 分两轮匹配:第一轮找有精确列位置的引用,第二轮找无列位置的引用
             // 这样字节码增强的引用(有 columnStart)优先于正则提取的引用(columnStart=-1)
             CodeMetadata.Reference bestWithColumn = null;
             int closestDistance = Integer.MAX_VALUE;
@@ -303,7 +303,7 @@ public final class NavigationController {
                 // 简单名匹配
                 if (JavaSourceAnalyzer.tokenSimpleName(normalized).equals(simpleToken)) {
                     if (ref.columnStart() >= 0) {
-                        // 有列位置的引用(来自字节码增强)：按距离选最近的
+                        // 有列位置的引用(来自字节码增强):按距离选最近的
                         int distance = column >= 0
                                 ? Math.abs(ref.columnStart() - column)
                                 : 0; // 无点击列信息时,取第一个有列位置的
@@ -312,7 +312,7 @@ public final class NavigationController {
                             bestWithColumn = ref;
                         }
                     } else if (fallbackNoColumn == null) {
-                        // 无列位置的引用(来自正则提取)：仅作为兜底
+                        // 无列位置的引用(来自正则提取):仅作为兜底
                         fallbackNoColumn = ref;
                     }
                 }
@@ -385,7 +385,7 @@ public final class NavigationController {
         return ClassNodeResolver.findNodeBySimpleNameInTree(workspace, token, currentClassName);
     }
 
-    /** 导航历史：后退 */
+    /** 导航历史:后退 */
     public void goBack() {
         WorkspaceView view = owner.tabManager().currentWorkspaceView();
         if (view == null || view.navigationService() == null) {
@@ -398,7 +398,7 @@ public final class NavigationController {
                         node, view.workspace(), pane));
     }
 
-    /** 导航历史：前进 */
+    /** 导航历史:前进 */
     public void goForward() {
         WorkspaceView view = owner.tabManager().currentWorkspaceView();
         if (view == null || view.navigationService() == null) {

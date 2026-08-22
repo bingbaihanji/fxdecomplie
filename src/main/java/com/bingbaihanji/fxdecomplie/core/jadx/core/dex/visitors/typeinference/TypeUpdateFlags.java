@@ -4,13 +4,21 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateFlags.FlagsEnum.*;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateFlags.FlagsEnum.ALLOW_WIDER;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateFlags.FlagsEnum.IGNORE_SAME;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateFlags.FlagsEnum.IGNORE_UNKNOWN;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateFlags.FlagsEnum.KEEP_GENERICS;
 
 public class TypeUpdateFlags {
+
     static final TypeUpdateFlags FLAGS_EMPTY = build();
+
     static final TypeUpdateFlags FLAGS_WIDER = build(ALLOW_WIDER);
+
     static final TypeUpdateFlags FLAGS_WIDER_IGNORE_SAME = build(ALLOW_WIDER, IGNORE_SAME);
+
     static final TypeUpdateFlags FLAGS_APPLY_DEBUG = build(ALLOW_WIDER, KEEP_GENERICS, IGNORE_UNKNOWN);
+
     private final Set<FlagsEnum> flags;
 
     private TypeUpdateFlags(Set<FlagsEnum> flags) {

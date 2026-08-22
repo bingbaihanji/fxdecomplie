@@ -13,21 +13,23 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 字段节点，表示 DEX 中的一个字段定义
+ * 字段节点,表示 DEX 中的一个字段定义
  * <p>
- * 继承自 {@link NotificationAttrNode}，实现了 {@link ICodeNode} 和 {@link IFieldInfoRef} 接口，
+ * 继承自 {@link NotificationAttrNode},实现了 {@link ICodeNode} 和 {@link IFieldInfoRef} 接口,
  * 提供字段的访问标志 类型 使用位置等信息的管理能力
  */
 public class FieldNode extends NotificationAttrNode implements ICodeNode, IFieldInfoRef {
 
     /** 字段所属的父类节点 */
     private final ClassNode parentClass;
+
     /** 字段的基本信息 (名称 类型描述符 所属类) */
     private final FieldInfo fieldInfo;
+
     /** 字段的访问标志 (public/private/protected/static/final 等) */
     private AccessInfo accFlags;
 
-    /** 字段的类型，可能在分析过程中被更新 (例如泛型擦除后的类型推断) */
+    /** 字段的类型,可能在分析过程中被更新 (例如泛型擦除后的类型推断) */
     private ArgType type;
 
     /** 使用了该字段的方法列表 */
@@ -64,7 +66,7 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
         return fieldNode;
     }
 
-    /** 卸载字段节点的属性，释放内存 */
+    /** 卸载字段节点的属性,释放内存 */
     public void unload() {
         unloadAttributes();
     }
@@ -111,12 +113,12 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
         return fieldInfo.getName();
     }
 
-    /** 获取字段别名 (重命名后的名称)，若未重命名则返回原始名称 */
+    /** 获取字段别名 (重命名后的名称),若未重命名则返回原始名称 */
     public String getAlias() {
         return fieldInfo.getAlias();
     }
 
-    /** 设置字段别名，用于重命名显示 */
+    /** 设置字段别名,用于重命名显示 */
     @Override
     public void rename(String alias) {
         fieldInfo.setAlias(alias);
@@ -163,7 +165,7 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
         useIn = ListUtils.safeAdd(useIn, mth);
     }
 
-    /** 返回节点类型名称，固定为 "field" */
+    /** 返回节点类型名称,固定为 "field" */
     @Override
     public String typeName() {
         return "field";
@@ -191,7 +193,7 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
         this.javaNode = javaNode;
     }
 
-    /** 返回注解类型，固定为 FIELD */
+    /** 返回注解类型,固定为 FIELD */
     @Override
     public AnnType getAnnType() {
         return AnnType.FIELD;

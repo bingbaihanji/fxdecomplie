@@ -6,9 +6,22 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.CodeFeaturesAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.CodeFeaturesAttr.CodeFeature;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfOp;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.SwitchInsn;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
@@ -22,7 +35,12 @@ import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * A switch(string) java code will be compiled to two switches in class code.
@@ -37,6 +55,7 @@ import java.util.*;
         runBefore = ReturnVisitor.class
 )
 public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionIterativeVisitor {
+
     private static final Integer DEFAULT_NUM_VALUE = -1;
 
     /**
@@ -63,7 +82,8 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
                 boolean isNE = ifNode.getOp() == IfOp.NE;
                 BlockNode thenBlock = getOnlyOneInsnBlock(isNE ? ifNode.getElseBlock() : ifNode.getThenBlock());
                 BlockNode elseBlock = getOnlyOneInsnBlock(isNE ? ifNode.getThenBlock() : ifNode.getElseBlock());
-                if (thenBlock == null || elseBlock == null || !ifNode.getArg(0).isRegister() || !ifNode.getArg(1).isLiteral()) {
+                if (thenBlock == null || elseBlock == null || !ifNode.getArg(0).isRegister() || !ifNode.getArg(1)
+                        .isLiteral()) {
                     return false;
                 }
                 RegisterArg tmpStrHashArg = (RegisterArg) ifNode.getArg(0);
@@ -109,7 +129,8 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
                 InsnArg strArg = strEqualsInsn.getArg(0);
                 InsnArg valArg = strEqualsInsn.getArg(1);
                 Object strValue = InsnUtils.getConstValueByArg(data.getMth().root(), valArg);
-                if (!data.getStrArg().equals(strArg) || !(strValue instanceof String) || strValue.hashCode() != hashcode) {
+                if (!data.getStrArg()
+                        .equals(strArg) || !(strValue instanceof String) || strValue.hashCode() != hashcode) {
                     return false;
                 }
                 boolean isCmpNE = (ifStrEqualsInsn.getOp() == IfOp.EQ) != ifStrEqualsInsn.getArg(1).isTrue();
@@ -327,7 +348,8 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
         if (ifInsn != null && ifInsn.getType() == InsnType.IF && ifInsn.getArgsCount() == 2) {
             InsnNode wrapped = InsnUtils.getWrappedInsn(ifInsn.getArg(0));
             return wrapped != null && wrapped.getType() == InsnType.INVOKE
-                    && "java.lang.String.equals(Ljava/lang/Object;)Z".equals(((InvokeNode) wrapped).getCallMth().getRawFullId());
+                    && "java.lang.String.equals(Ljava/lang/Object;)Z".equals(((InvokeNode) wrapped).getCallMth()
+                    .getRawFullId());
         }
         return false;
     }
@@ -412,17 +434,26 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
     }
 
     private static final class SwitchData {
+
         private final MethodNode mth;
+
         // first switch/if region
         private final IRegion part1Region;
+
         private SwitchStringType type = SwitchStringType.SWITCH_SWITCH;
+
         // second switch region, null if type is SINGLE_SWITCH
         private @Nullable SwitchRegion part2Region;
+
         // each case is a str in part1Region, with its num or code block
         private List<CaseData> cases;
+
         private List<SwitchRegion.CaseInfo> newCases;
+
         private RegisterArg numArg;
+
         private RegisterArg strArg;
+
         private InsnNode hashcodeInvokeInsn;
 
         private SwitchData(MethodNode mth, IRegion part1Region) {
@@ -496,8 +527,11 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
     }
 
     private static final class CaseData {
+
         private final Object strValue;
+
         private final BlockNode code;
+
         private final Integer codeNum;
 
         private CaseData(Object strValue, Integer codeNum, BlockNode code) {

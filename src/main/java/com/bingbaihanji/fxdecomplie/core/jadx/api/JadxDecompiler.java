@@ -16,7 +16,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.types.JadxPassTyp
 import com.bingbaihanji.fxdecomplie.core.jadx.api.utils.tasks.ITaskExecutor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.Jadx;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.SaveCode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.export.ExportGradle;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.export.OutDirs;
@@ -26,7 +30,6 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.events.JadxEventsImpl
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.DecompilerScheduler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.tasks.TaskExecutor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResourcesSaver;
@@ -39,17 +42,25 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Jadx 反编译器的核心入口类，提供加载 反编译和保存功能
+ * Jadx 反编译器的核心入口类,提供加载 反编译和保存功能
  * <p>
- * 实现了 {@link Closeable} 接口，支持 try-with-resources 自动释放资源
+ * 实现了 {@link Closeable} 接口,支持 try-with-resources 自动释放资源
  * <p>
- * Jadx API 使用示例：
+ * Jadx API 使用示例:
  *
  * <pre>
  * <code>
@@ -64,7 +75,7 @@ import java.util.stream.Collectors;
  * </code>
  * </pre>
  * <p>
- * 除了使用 save() 方法保存所有反编译结果外，也可以遍历反编译后的类逐个处理：
+ * 除了使用 save() 方法保存所有反编译结果外,也可以遍历反编译后的类逐个处理:
  *
  * <pre>
  * <code>
@@ -76,35 +87,49 @@ import java.util.stream.Collectors;
  * </pre>
  */
 public final class JadxDecompiler implements Closeable {
+
     /** 日志记录器 */
     private static final Logger LOG = LoggerFactory.getLogger(JadxDecompiler.class);
 
     /** 反编译参数配置 */
     private final JadxArgs args;
+
     /** 插件管理器 */
     private final JadxPluginManager pluginManager;
+
     /** 已加载的代码输入源列表 */
     private final List<ICodeLoader> loadedInputs = new ArrayList<>();
+
     /** ZIP 文件读取器 */
     private final ZipReader zipReader;
-    /** 反编译调度器，用于构建反编译批次 */
+
+    /** 反编译调度器,用于构建反编译批次 */
     private final IDecompileScheduler decompileScheduler = new DecompilerScheduler();
+
     /** 资源加载器 */
     private final ResourcesLoader resourcesLoader;
+
     /** 自定义代码加载器列表 */
     private final List<ICodeLoader> customCodeLoaders = new ArrayList<>();
+
     /** 自定义资源加载器列表 */
     private final List<CustomResourcesLoader> customResourcesLoaders = new ArrayList<>();
-    /** 自定义处理阶段映射表，按阶段类型分组存储 */
+
+    /** 自定义处理阶段映射表,按阶段类型分组存储 */
     private final Map<JadxPassType, List<JadxPass>> customPasses = new HashMap<>();
+
     /** 需要在关闭时释放的资源列表 */
     private final List<Closeable> closeableList = new ArrayList<>();
-    /** 根节点，包含所有已加载的类和资源信息 */
+
+    /** 根节点,包含所有已加载的类和资源信息 */
     private RootNode root;
+
     /** 反编译后的 Java 类列表 (缓存) */
     private List<JavaClass> classes;
+
     /** 资源文件列表 (缓存) */
     private List<ResourceFile> resources;
+
     /** 事件系统实现 */
     private IJadxEvents events = new JadxEventsImpl();
 
@@ -129,7 +154,7 @@ public final class JadxDecompiler implements Closeable {
     /**
      * 加载并初始化反编译器
      * <p>
-     * 执行流程：重置状态 -> 验证参数 -> 加载插件 -> 加载输入文件 -> 初始化根节点 ->
+     * 执行流程:重置状态 -> 验证参数 -> 加载插件 -> 加载输入文件 -> 初始化根节点 ->
      * 加载类和资源 -> 初始化类路径 -> 合并处理阶段 -> 运行预反编译阶段 -> 初始化各处理阶段
      */
     public void load() {
@@ -155,7 +180,7 @@ public final class JadxDecompiler implements Closeable {
     }
 
     /**
-     * 重新加载处理阶段和插件，但不重新处理类和输入文件
+     * 重新加载处理阶段和插件,但不重新处理类和输入文件
      * <p>
      * 适用于需要在不重新加载输入文件的情况下刷新插件和处理逻辑的场景
      */
@@ -173,7 +198,7 @@ public final class JadxDecompiler implements Closeable {
         loadFinished();
     }
 
-    /** 加载输入文件，通过插件和自定义代码加载器解析输入路径 */
+    /** 加载输入文件,通过插件和自定义代码加载器解析输入路径 */
     private void loadInputFiles() {
         loadedInputs.clear();
         List<Path> inputPaths = Utils.collectionMap(args.getInputFiles(), File::toPath);
@@ -197,7 +222,7 @@ public final class JadxDecompiler implements Closeable {
         }
     }
 
-    /** 重置反编译器状态，卸载插件并清空根节点 类列表和资源列表 */
+    /** 重置反编译器状态,卸载插件并清空根节点 类列表和资源列表 */
     private void reset() {
         unloadPlugins();
         root = null;
@@ -206,7 +231,7 @@ public final class JadxDecompiler implements Closeable {
         events.reset();
     }
 
-    /** 关闭反编译器，释放所有已加载的资源和临时文件 */
+    /** 关闭反编译器,释放所有已加载的资源和临时文件 */
     @Override
     public void close() {
         reset();
@@ -253,7 +278,7 @@ public final class JadxDecompiler implements Closeable {
         pluginManager.unloadResolved();
     }
 
-    /** 加载完成回调，触发加载后处理阶段的初始化 */
+    /** 加载完成回调,触发加载后处理阶段的初始化 */
     private void loadFinished() {
         LOG.debug("Load finished");
         List<JadxPass> list = customPasses.get(JadxAfterLoadPass.TYPE);
@@ -275,7 +300,7 @@ public final class JadxDecompiler implements Closeable {
         save(!args.isSkipSources(), !args.isSkipResources());
     }
 
-    /** 带进度回调的保存方法，按指定间隔报告进度 */
+    /** 带进度回调的保存方法,按指定间隔报告进度 */
     @SuppressWarnings("BusyWait")
     public void save(int intervalInMillis, ProgressListener listener) {
         try {
@@ -342,7 +367,7 @@ public final class JadxDecompiler implements Closeable {
         TaskExecutor executor = new TaskExecutor();
         executor.setThreadsCount(args.getThreadsCount());
         if (saveResources) {
-            // 先保存资源，因为反编译过程可能会中途停止或失败
+            // 先保存资源,因为反编译过程可能会中途停止或失败
             appendResourcesSaveTasks(executor, outDirs.getResOutDir());
         }
         if (saveSources) {
@@ -374,7 +399,7 @@ public final class JadxDecompiler implements Closeable {
         for (ResourceFile resourceFile : getResources()) {
             ResourceType resType = resourceFile.getType();
             if (resType == ResourceType.MANIFEST) {
-                // 已处理过，跳过
+                // 已处理过,跳过
                 continue;
             }
             String resOriginalName = resourceFile.getOriginalName();
@@ -384,7 +409,7 @@ public final class JadxDecompiler implements Closeable {
             }
             if (codeSources.contains(resOriginalName)) {
                 // 不输出代码源资源 (.dex .class 等)
-                // 不要信任文件扩展名，仅使用被设置为类输入的源
+                // 不要信任文件扩展名,仅使用被设置为类输入的源
                 continue;
             }
             tasks.add(new ResourcesSaver(this, outDir, resourceFile));
@@ -402,7 +427,7 @@ public final class JadxDecompiler implements Closeable {
             String inputFileName = cls.getInputFileName();
             if (inputFileName.endsWith(".class")) {
                 // 截断 .class 名称以获取源 .jar 文件
-                // 当前模板："<可选输入文件>:<.jar>:<完整类名>"
+                // 当前模板:"<可选输入文件>:<.jar>:<完整类名>"
                 // TODO: 添加属性以设置文件名或对资源名的引用
                 int endIdx = inputFileName.lastIndexOf(':');
                 if (endIdx != -1) {
@@ -519,7 +544,7 @@ public final class JadxDecompiler implements Closeable {
     }
 
     /**
-     * 内部 API，不稳定，不建议外部使用！
+     * 内部 API,不稳定,不建议外部使用!
      */
     @ApiStatus.Internal
     public RootNode getRoot() {
@@ -527,7 +552,7 @@ public final class JadxDecompiler implements Closeable {
     }
 
     /**
-     * 根据 ClassNode 获取对应的 JavaClass，不触发加载和反编译
+     * 根据 ClassNode 获取对应的 JavaClass,不触发加载和反编译
      */
     @ApiStatus.Internal
     synchronized JavaClass convertClassNode(ClassNode cls) {
@@ -600,7 +625,7 @@ public final class JadxDecompiler implements Closeable {
                 .orElse(null);
     }
 
-    // 如果类包含 DONT_GENERATE 标志，则返回其父类
+    // 如果类包含 DONT_GENERATE 标志,则返回其父类
     @Nullable
     public JavaClass searchJavaClassOrItsParentByOrigFullName(String fullName) {
         ClassNode node = getRoot().getClasses().stream()
@@ -773,6 +798,7 @@ public final class JadxDecompiler implements Closeable {
 
     /** 保存进度监听器接口 */
     public interface ProgressListener {
+
         /** 进度更新回调 */
         void progress(long done, long total);
     }

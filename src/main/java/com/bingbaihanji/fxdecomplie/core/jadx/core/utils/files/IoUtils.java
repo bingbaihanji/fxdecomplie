@@ -9,7 +9,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,23 +22,30 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * 精简的 I/O 工具方法，供 jadx 内部使用
+ * 精简的 I/O 工具方法,供 jadx 内部使用
  * <p>
- * 原 FileUtils 中可替换为 ByteUtils/JDK API 的方法已移除，
+ * 原 FileUtils 中可替换为 ByteUtils/JDK API 的方法已移除,
  * 此处仅保留目录管理 临时文件 文件名处理等 jadx 专属逻辑
  */
 public final class IoUtils {
-    /** 读取缓冲区大小：8KB */
+
+    /** 读取缓冲区大小:8KB */
     public static final int READ_BUFFER_SIZE = 8 * 1024;
+
     /** jadx 实例临时目录前缀 */
     public static final String JADX_TMP_INSTANCE_PREFIX = "jadx-instance-";
+
     /** jadx 临时文件前缀 */
     public static final String JADX_TMP_PREFIX = "jadx-tmp-";
 
     private static final Logger LOG = LoggerFactory.getLogger(IoUtils.class);
+
     private static final int MAX_FILENAME_LENGTH = 128;
+
     private static final int MAX_UNIQUE_ID_LENGTH = 3;
+
     private static final Object MKDIR_SYNC = new Object();
+
     private static Path tempRootDir = createTempRootDir();
 
     private IoUtils() {
@@ -146,6 +158,7 @@ public final class IoUtils {
             List<Path> files = new ArrayList<>();
             List<Path> directories = new ArrayList<>();
             Files.walkFileTree(dir, Collections.emptySet(), Integer.MAX_VALUE, new SimpleFileVisitor<>() {
+
                 @Override
                 public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) {
                     files.add(file);

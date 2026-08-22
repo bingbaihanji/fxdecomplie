@@ -22,22 +22,26 @@ import java.util.List;
 /**
  * 循环区域
  * <p>
- * 表示反编译过程中的循环结构 (如 for/while/do-while)，包含循环信息 条件头块 
+ * 表示反编译过程中的循环结构 (如 for/while/do-while),包含循环信息 条件头块 
  * 循环体以及可选的前置条件块当 {@code header} 为 null 时表示无限循环
  */
 public final class LoopRegion extends ConditionRegion {
 
     /** 循环信息 (循环的标识及相关元数据) */
     private final LoopInfo info;
+
     /** 条件是否位于循环末尾 (对应 do-while 形式的循环) */
     private final boolean conditionAtEnd;
+
     /** 循环条件头块 (无条件的无限循环时为 null) */
     private final @Nullable BlockNode header;
+
     // 每次循环时必须在条件之前执行的指令
     private @Nullable BlockNode preCondition;
 
     /** 循环体区域 */
     private IRegion body;
+
     /** 循环类型 (for/while/do-while 等) */
     private LoopType type;
 

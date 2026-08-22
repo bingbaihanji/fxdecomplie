@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * 表示 jadx 反编译过程中产生的错误信息
  * <p>
- * 此类封装了错误描述字符串和可选的异常原因，实现 {@link Comparable} 接口，
+ * 此类封装了错误描述字符串和可选的异常原因,实现 {@link Comparable} 接口,
  * 以便按错误描述进行排序和去重
  * </p>
  */
@@ -16,14 +16,15 @@ public class JadxError implements Comparable<JadxError> {
 
     /** 错误描述信息 */
     private final String error;
+
     /** 导致此错误的异常 (可为空) */
     private final Throwable cause;
 
     /**
      * 构造一个 JadxError 实例
      *
-     * @param error 错误描述，不能为空
-     * @param cause 导致错误的异常，可为空
+     * @param error 错误描述,不能为空
+     * @param cause 导致错误的异常,可为空
      */
     public JadxError(String error, Throwable cause) {
         this.error = Objects.requireNonNull(error);
@@ -42,7 +43,7 @@ public class JadxError implements Comparable<JadxError> {
     /**
      * 获取导致此错误的异常
      *
-     * @return 异常对象，可能为空
+     * @return 异常对象,可能为空
      */
     public Throwable getCause() {
         return cause;

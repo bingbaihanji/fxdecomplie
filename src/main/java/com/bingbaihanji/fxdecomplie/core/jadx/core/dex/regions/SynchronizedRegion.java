@@ -13,7 +13,9 @@ import java.util.List;
 public final class SynchronizedRegion extends AbstractRegion {
 
     private final InsnNode enterInsn;
+
     private final List<InsnNode> exitInsns = new ArrayList<>();
+
     private final Region region;
 
     public SynchronizedRegion(IRegion parent, InsnNode insn) {

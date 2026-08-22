@@ -7,7 +7,9 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class TypeInfo {
+
     private final Set<ITypeBound> bounds = new LinkedHashSet<>();
+
     private ArgType type = ArgType.UNKNOWN;
 
     @NotNull

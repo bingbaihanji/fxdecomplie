@@ -32,8 +32,8 @@ public final class MethodSignatureUtils {
     }
 
     /**
-     * 获取方法的完整标识：类全限定名#方法名(参数类型全限定名, ...)
-     * 例如：com.example.MyClass#doSomething(java.lang.String, int)
+     * 获取方法的完整标识:类全限定名#方法名(参数类型全限定名, ...)
+     * 例如:com.example.MyClass#doSomething(java.lang.String, int)
      */
     public static String buildFullMethodSignature(Method method) {
         Objects.requireNonNull(method, "method");
@@ -45,7 +45,7 @@ public final class MethodSignatureUtils {
 
     /**
      * 获取 JVM 字节码方法描述符
-     * 例如：(Ljava/lang/String;I)V
+     * 例如:(Ljava/lang/String;I)V
      */
     public static String getJvmMethodDescriptor(Method method) {
         Objects.requireNonNull(method, "method");

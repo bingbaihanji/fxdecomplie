@@ -6,7 +6,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.EdgeInsn
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LoopInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LoopLabelAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.Edge;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
@@ -17,9 +21,17 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.blocks.BlockSet;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.*;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.followEmptyPath;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getNextBlock;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.isPathExists;
 
 /*
  * Definitions:
@@ -36,8 +48,11 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.*;
  */
 
 final class LoopRegionMaker {
+
     private final MethodNode mth;
+
     private final RegionMaker regionMaker;
+
     private final IfRegionMaker ifMaker;
 
     LoopRegionMaker(MethodNode mth, RegionMaker regionMaker, IfRegionMaker ifMaker) {

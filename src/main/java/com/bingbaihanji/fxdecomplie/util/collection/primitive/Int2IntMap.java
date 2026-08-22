@@ -12,6 +12,7 @@ import java.util.Arrays;
 public class Int2IntMap extends AbstractIntKeyMap {
 
     // ---------- 字段 ----------
+
     /** 存储值(与键数组一一对应) */
     private int[] values;
 
@@ -230,6 +231,7 @@ public class Int2IntMap extends AbstractIntKeyMap {
      */
     @FunctionalInterface
     public interface IntIntConsumer {
+
         /**
          * 处理一对键值 
          *
@@ -244,6 +246,7 @@ public class Int2IntMap extends AbstractIntKeyMap {
      */
     @FunctionalInterface
     public interface IntIntFunction {
+
         /**
          * 根据键计算新值 
          *

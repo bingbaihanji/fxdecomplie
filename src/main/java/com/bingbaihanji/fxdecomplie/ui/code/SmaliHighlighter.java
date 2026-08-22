@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 /**
  * Smali 视图语法高亮器,用于 jadx 风格的 smali 输出
  *
- * <p>高亮元素：标题行(######) 注释(# 开头) smali 指令关键字
+ * <p>高亮元素:标题行(######) 注释(# 开头) smali 指令关键字
  * (.class/.method/.field/.registers 等) smali 风格操作码
  * (invoke-virtual/const/4/return-void 等) 字符串和数字</p>
  *
@@ -25,21 +25,35 @@ import java.util.regex.Pattern;
 final class SmaliHighlighter implements SyntaxDecorator {
 
     private static final Color DEFAULT_TEXT = Color.web("#9aa7b0");
+
     private static final Color DIRECTIVE = Color.web("#c586c0");
+
     private static final Color OPCODE = Color.web("#569cd6");
+
     private static final Color COMMENT = Color.web("#6a9955");
+
     private static final Color STRING = Color.web("#ce9178");
+
     private static final Color HEADER = Color.web("#4ec9b0");
+
     private static final Color NUMBER = Color.web("#b5cea8");
+
     private static final Color LABEL = Color.web("#dcdcaa");
 
     private static final StyleAttributeMap S_DEFAULT = builder(DEFAULT_TEXT);
+
     private static final StyleAttributeMap S_DIRECTIVE = builder(DIRECTIVE);
+
     private static final StyleAttributeMap S_OPCODE = builder(OPCODE);
+
     private static final StyleAttributeMap S_COMMENT = builder(COMMENT);
+
     private static final StyleAttributeMap S_STRING = builder(STRING);
+
     private static final StyleAttributeMap S_HEADER = builder(HEADER);
+
     private static final StyleAttributeMap S_NUMBER = builder(NUMBER);
+
     private static final StyleAttributeMap S_LABEL = builder(LABEL);
 
     /** smali 指令关键字(.class / .method / .field 等) */
@@ -170,7 +184,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
     }
 
     /**
-     * 对单行进行词法分析,按优先级匹配：注释 字符串 标签 指令 寄存器 数字 操作码 默认文本
+     * 对单行进行词法分析,按优先级匹配:注释 字符串 标签 指令 寄存器 数字 操作码 默认文本
      */
     private List<Token> tokenize(String line) {
         List<Token> tokens = new ArrayList<>();
@@ -282,9 +296,18 @@ final class SmaliHighlighter implements SyntaxDecorator {
     }
 
     /** 词法标记类型 */
-    private enum Kind {DIRECTIVE, OPCODE, COMMENT, STRING, HEADER, NUMBER, LABEL, DEFAULT}
+    private enum Kind {
+        DIRECTIVE,
+        OPCODE,
+        COMMENT,
+        STRING,
+        HEADER,
+        NUMBER,
+        LABEL,
+        DEFAULT
+    }
 
-    /** 词法标记：类型 + 文本片段 */
+    /** 词法标记:类型 + 文本片段 */
     private record Token(Kind kind, String text) {
     }
 }

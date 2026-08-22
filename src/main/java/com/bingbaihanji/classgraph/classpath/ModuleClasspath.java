@@ -1,15 +1,23 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
-import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.resource.LogicalZipFile;
+import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
+import com.bingbaihanji.classgraph.resource.Pool;
+import com.bingbaihanji.classgraph.resource.RecycleOnClose;
+import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
 import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.ProxyingInputStream;
+import com.bingbaihanji.classgraph.util.SingletonMap;
 import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceException;
 import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
+import com.bingbaihanji.classgraph.util.VersionFinder;
+import com.bingbaihanji.classgraph.util.WorkQueue;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,11 +40,14 @@ public class ModuleClasspath extends Classpath {
 
     /** 模块引用 */
     public final ModuleRef moduleRef;
+
     /** 所有资源路径 */
     private final Set<String> allResourcePaths = new HashSet<>();
+
     /** 从 {@link ModuleRef} 到模块的 {@link ModuleReaderProxy} 回收器的单例映射 */
     SingletonMap<ModuleRef, Pool<ModuleReaderProxy, IOException>, IOException> //
             moduleRefToModuleReaderProxyRecyclerMap;
+
     /** 模块读取器代理回收器 */
     private Pool<ModuleReaderProxy, IOException> moduleReaderProxyRecycler;
 
@@ -97,8 +108,10 @@ public class ModuleClasspath extends Classpath {
      */
     private Resource newResource(final String resourcePath) {
         return new Resource(this, /* length unknown */ -1L) {
-            /** 如果资源已打开，则为 true */
+
+            /** 如果资源已打开,则为 true */
             private final AtomicBoolean isOpen = new AtomicBoolean();
+
             /** 模块读取器代理 */
             private ModuleReaderProxy moduleReaderProxy;
 
@@ -136,7 +149,7 @@ public class ModuleClasspath extends Classpath {
                 checkCanOpen();
                 try {
                     moduleReaderProxy = moduleReaderProxyRecycler.acquire();
-                    // ModuleReader#read(String name) 内部调用：
+                    // ModuleReader#read(String name) 内部调用:
                     // InputStream is = open(name); return ByteBuffer.wrap(is.readAllBytes());
                     byteBuffer = moduleReaderProxy.read(resourcePath);
                     length = byteBuffer.remaining();
@@ -174,12 +187,13 @@ public class ModuleClasspath extends Classpath {
                     final Resource thisResource = this;
                     moduleReaderProxy = moduleReaderProxyRecycler.acquire();
                     inputStream = new ProxyingInputStream(moduleReaderProxy.open(resourcePath)) {
+
                         @Override
                         public void close() throws IOException {
                             // 关闭从 moduleReaderProxy 获取的包装后的 InputStream
                             super.close();
                             try {
-                                // 关闭 Resource，释放任何底层的 ByteBuffer 并回收
+                                // 关闭 Resource,释放任何底层的 ByteBuffer 并回收
                                 // moduleReaderProxy
                                 thisResource.close();
                             } catch (final Exception e) {
@@ -225,7 +239,7 @@ public class ModuleClasspath extends Classpath {
                         }
                         // 回收(打开的)ModuleReaderProxy 实例
                         moduleReaderProxyRecycler.recycle(moduleReaderProxy);
-                        // 不要调用 ModuleReaderProxy#close()，让 ModuleReaderProxy 在回收器中保持打开状态
+                        // 不要调用 ModuleReaderProxy#close(),让 ModuleReaderProxy 在回收器中保持打开状态
                         // 这里只需将引用设为 nullModuleReaderProxy 将由
                         // ModuleClasspath#close() 来关闭
                         moduleReaderProxy = null;
@@ -243,7 +257,7 @@ public class ModuleClasspath extends Classpath {
      *
      * @param relativePath
      *            要返回的 {@link Resource} 的相对路径
-     * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
+     * @return 给定相对路径的 {@link Resource},如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
     public Resource getResource(final String relativePath) {
@@ -273,7 +287,8 @@ public class ModuleClasspath extends Classpath {
         final boolean isModularJar = VersionFinder.JAVA_MAJOR_VERSION >= 9 && getModuleName() != null;
 
         try (RecycleOnClose<ModuleReaderProxy, IOException> moduleReaderProxyRecycleOnClose //
-                     = moduleReaderProxyRecycler.acquireRecycleOnClose()) {
+                     = moduleReaderProxyRecycler.acquireRecycleOnClose()
+        ) {
             // 在模块中查找被接受的文件
             List<String> resourceRelativePaths;
             try {
@@ -289,20 +304,20 @@ public class ModuleClasspath extends Classpath {
             String prevParentRelativePath = null;
             ScanConfigPathMatch prevParentMatchStatus = null;
             for (final String relativePath : resourceRelativePaths) {
-                // 来自 ModuleReader#find()："如果模块读取器可以确定该名称定位到一个目录，
-                // 则结果 URI 将以斜杠('/')结尾"但根据 ModuleReader#list() 的文档：
+                // 来自 ModuleReader#find():"如果模块读取器可以确定该名称定位到一个目录,
+                // 则结果 URI 将以斜杠('/')结尾"但根据 ModuleReader#list() 的文档:
                 // "元素流是否包含对应于模块中目录的名称取决于模块读取器的具体实现"
-                // 我们无法在不尝试打开资源的情况下检查资源是否为目录，除非 ModuleReader#list() 也决定
-                // 在对应于目录的资源路径末尾添加 "/"如果发现目录则跳过它们，
-                // 但如果无法跳过，我们将不得不接受在目录被误认为是资源文件时抛出一些 IOException
+                // 我们无法在不尝试打开资源的情况下检查资源是否为目录,除非 ModuleReader#list() 也决定
+                // 在对应于目录的资源路径末尾添加 "/"如果发现目录则跳过它们,
+                // 但如果无法跳过,我们将不得不接受在目录被误认为是资源文件时抛出一些 IOException
                 if (relativePath.endsWith("/")) {
                     continue;
                 }
 
-                // 模块中的路径不应以 "META-INF/versions/{version}/" 开头，因为模块
-                // 系统应该已经将这些前缀剥离如果发现了它们，则 jar 文件
-                // 必须包含类似 "META-INF/versions/{version}/META-INF/versions/{version}/" 的路径，这不可能
-                // 有效(META-INF 应仅存在于模块根中)，嵌套的版本化部分
+                // 模块中的路径不应以 "META-INF/versions/{version}/" 开头,因为模块
+                // 系统应该已经将这些前缀剥离如果发现了它们,则 jar 文件
+                // 必须包含类似 "META-INF/versions/{version}/META-INF/versions/{version}/" 的路径,这不可能
+                // 有效(META-INF 应仅存在于模块根中),嵌套的版本化部分
                 // 应该被忽略
                 if (!ScanConfig.enableMultiReleaseVersions
                         && relativePath.startsWith(LogicalZipFile.MULTI_RELEASE_PATH_PREFIX)) {
@@ -313,7 +328,7 @@ public class ModuleClasspath extends Classpath {
                     continue;
                 }
 
-                // 如果这是一个模块化 jar，则忽略默认包中除 "module-info.class" 之外的所有 class 文件，
+                // 如果这是一个模块化 jar,则忽略默认包中除 "module-info.class" 之外的所有 class 文件,
                 // 因为这些都是不允许的
                 if (isModularJar && relativePath.indexOf('/') < 0 && relativePath.endsWith(".class")
                         && !"module-info.class".equals(relativePath)) {
@@ -326,7 +341,7 @@ public class ModuleClasspath extends Classpath {
                 }
 
                 // 获取此资源相对路径的父目录的匹配状态(或重用上一次的
-                // 匹配状态以提高速度，如果目录名未更改的话)
+                // 匹配状态以提高速度,如果目录名未更改的话)
                 final int lastSlashIdx = relativePath.lastIndexOf('/');
                 final String parentRelativePath = lastSlashIdx < 0 ? "/"
                         : relativePath.substring(0, lastSlashIdx + 1);
@@ -357,8 +372,8 @@ public class ModuleClasspath extends Classpath {
                         addAcceptedResource(newResource(relativePath), parentMatchStatus,
                                 /* isClassfileOnly = */ false, subLog);
                     } else if (ScanConfig.enableClassInfo && "module-info.class".equals(relativePath)) {
-                        // 将模块描述符添加为被接受的 class 文件资源，以便对其进行扫描，
-                        // 但不要将其添加到 ScanResult 的资源列表中，因为它不在
+                        // 将模块描述符添加为被接受的 class 文件资源,以便对其进行扫描,
+                        // 但不要将其添加到 ScanResult 的资源列表中,因为它不在
                         // 被接受的包中 (#352)
                         addAcceptedResource(newResource(relativePath), parentMatchStatus,
                                 /* isClassfileOnly = */ true, subLog);
@@ -394,7 +409,7 @@ public class ModuleClasspath extends Classpath {
     /**
      * 从模块引用或模块描述符获取模块名称
      *
-     * @return 模块名称，如果模块没有名称则返回 null
+     * @return 模块名称,如果模块没有名称则返回 null
      */
     @Override
     public String getModuleName() {
@@ -408,7 +423,7 @@ public class ModuleClasspath extends Classpath {
     /**
      * 从模块引用或模块描述符获取模块名称
      *
-     * @return 模块名称，如果模块没有名称则返回空字符串
+     * @return 模块名称,如果模块没有名称则返回空字符串
      */
     private String getModuleNameOrEmpty() {
         final String moduleName = getModuleName();

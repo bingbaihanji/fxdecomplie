@@ -13,26 +13,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 类层次结构图，包含方法的附加信息
+ * 类层次结构图,包含方法的附加信息
  * <p>
- * 用于管理类的继承关系 接口实现关系，并提供方法详情查询功能
- * 支持从类集合文件加载类路径信息，以及添加应用程序自身的类
+ * 用于管理类的继承关系 接口实现关系,并提供方法详情查询功能
+ * 支持从类集合文件加载类路径信息,以及添加应用程序自身的类
  * </p>
  */
 public class ClspGraph {
+
     private static final Logger LOG = LoggerFactory.getLogger(ClspGraph.class);
+
     private static final Set<String> OBJECT_SINGLE_SET = Collections.singleton(JadxConsts.CLASS_OBJECT);
-    /** 根节点，包含整个反编译上下文的结构信息 */
+
+    /** 根节点,包含整个反编译上下文的结构信息 */
     private final RootNode root;
+
     /** 引用到但未在类图中找到的缺失类集合 */
     private final Set<String> missingClasses = new HashSet<>();
+
     /** 类全限定名到类路径信息 ({@link ClspClass})的映射 */
     private Map<String, ClspClass> nameMap;
+
     /** 类名到其所有父类型 (含祖先)集合的缓存 */
     private Map<String, Set<String>> superTypesCache;
+
     /** 类名到其所有实现类 (子类型)列表的缓存 */
     private Map<String, List<String>> implementsCache;
 
@@ -58,7 +71,7 @@ public class ClspGraph {
     }
 
     /**
-     * 将类集合添加到类路径中如果类路径尚未初始化，则进行初始化 如果已加载，则抛出异常
+     * 将类集合添加到类路径中如果类路径尚未初始化,则进行初始化 如果已加载,则抛出异常
      *
      * @param set 要添加的类集合
      * @throws JadxRuntimeException 如果类路径已经加载过
@@ -87,7 +100,7 @@ public class ClspGraph {
     }
 
     /**
-     * 初始化缓存，填充父类型缓存和接口实现缓存
+     * 初始化缓存,填充父类型缓存和接口实现缓存
      * 应在所有类添加完成后调用此方法
      */
     public void initCache() {
@@ -99,7 +112,7 @@ public class ClspGraph {
      * 检查指定全限定名的类是否已知 (已加载到类图中)
      *
      * @param fullName 类的全限定名
-     * @return 如果类已知则返回 {@code true}，否则返回 {@code false}
+     * @return 如果类已知则返回 {@code true},否则返回 {@code false}
      */
     public boolean isClsKnown(String fullName) {
         return nameMap.containsKey(fullName);
@@ -109,17 +122,17 @@ public class ClspGraph {
      * 根据类型参数获取类的详细信息
      *
      * @param type 类型参数
-     * @return 对应的 {@link ClspClass} 对象，如果未找到则返回 {@code null}
+     * @return 对应的 {@link ClspClass} 对象,如果未找到则返回 {@code null}
      */
     public ClspClass getClsDetails(ArgType type) {
         return nameMap.get(type.getObject());
     }
 
     /**
-     * 获取方法的详细信息首先在当前类中查找，如果未找到则在父类中深度搜索
+     * 获取方法的详细信息首先在当前类中查找,如果未找到则在父类中深度搜索
      *
      * @param methodInfo 方法信息
-     * @return 方法的详细信息，如果未找到则返回 {@code null}
+     * @return 方法的详细信息,如果未找到则返回 {@code null}
      */
     @Nullable
     public IMethodDetails getMethodDetails(MethodInfo methodInfo) {
@@ -141,7 +154,7 @@ public class ClspGraph {
                 }
             }
         }
-        // 未知方法，返回简单方法详情
+        // 未知方法,返回简单方法详情
         return new SimpleMethodDetails(methodInfo);
     }
 
@@ -179,7 +192,7 @@ public class ClspGraph {
      * 获取实现 (或继承)指定类型的所有类
      *
      * @param clsName 类型名
-     * @return 所有子类型的类名列表，若无则返回空列表
+     * @return 所有子类型的类名列表,若无则返回空列表
      */
     public List<String> getImplementations(String clsName) {
         List<String> list = implementsCache.get(clsName);
@@ -187,7 +200,7 @@ public class ClspGraph {
     }
 
     /**
-     * 填充接口实现缓存，建立“父类型 -&gt; 子类型列表”的映射
+     * 填充接口实现缓存,建立"父类型 -&gt; 子类型列表"的映射
      */
     private void fillImplementsCache() {
         Map<String, List<String>> map = new HashMap<>(nameMap.size());
@@ -225,11 +238,11 @@ public class ClspGraph {
     }
 
     /**
-     * 在指定类的父类型中递归搜索，返回第一个存在于祖先集合中的类型
+     * 在指定类的父类型中递归搜索,返回第一个存在于祖先集合中的类型
      *
      * @param anc 祖先类型集合
      * @param cls 待搜索其父类型的类
-     * @return 命中的公共父类型名，未找到则返回 {@code null}
+     * @return 命中的公共父类型名,未找到则返回 {@code null}
      */
     private String searchCommonParent(Set<String> anc, ClspClass cls) {
         for (ArgType p : cls.getParents()) {
@@ -252,7 +265,7 @@ public class ClspGraph {
      * 获取指定类的所有父类型 (包含直接与间接祖先 接口)
      *
      * @param clsName 类名
-     * @return 父类型名集合，若无则返回空集合
+     * @return 父类型名集合,若无则返回空集合
      */
     public Set<String> getSuperTypes(String clsName) {
         Set<String> result = superTypesCache.get(clsName);
@@ -260,7 +273,7 @@ public class ClspGraph {
     }
 
     /**
-     * 填充父类型缓存，为每个类计算其全部祖先类型集合
+     * 填充父类型缓存,为每个类计算其全部祖先类型集合
      * 针对空集合 单元素集合 (尤其是 Object)做了内存优化
      */
     private void fillSuperTypesCache() {
@@ -297,7 +310,7 @@ public class ClspGraph {
     }
 
     /**
-     * 递归收集指定类的所有父类型，结果写入 {@code result} 集合
+     * 递归收集指定类的所有父类型,结果写入 {@code result} 集合
      *
      * @param cls    起始类
      * @param result 用于收集父类型名的集合
@@ -324,7 +337,7 @@ public class ClspGraph {
      * 根据类型获取对应的类路径信息 若未找到则将其记录到缺失类集合中
      *
      * @param clsType 类型
-     * @return 对应的 {@link ClspClass}，未找到则返回 {@code null}
+     * @return 对应的 {@link ClspClass},未找到则返回 {@code null}
      */
     @Nullable
     private ClspClass getClspClass(ArgType clsType) {
@@ -337,7 +350,7 @@ public class ClspGraph {
 
     /**
      * 打印引用到但未找到的缺失类信息
-     * 以 WARN 级别输出缺失数量，在 DEBUG 级别下逐个列出类名
+     * 以 WARN 级别输出缺失数量,在 DEBUG 级别下逐个列出类名
      */
     public void printMissingClasses() {
         int count = missingClasses.size();

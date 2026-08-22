@@ -1,9 +1,8 @@
- 
 package com.bingbaihanji.classgraph.resource;
 
 /**
  * 一个可回收对象实例的 AutoCloseable 包装器通过在 try-with-resources 语句中调用
- * {@link Pool#acquireRecycleOnClose()} 获取，使得当 try 块退出时，获取的实例被回收
+ * {@link Pool#acquireRecycleOnClose()} 获取,使得当 try 块退出时,获取的实例被回收
  *
  * @param <T>
  *            要回收的类型
@@ -11,6 +10,7 @@ package com.bingbaihanji.classgraph.resource;
  *            获取可回收项时可能抛出的异常类型
  */
 public class RecycleOnClose<T, E extends Exception> implements AutoCloseable {
+
     /** 回收器 */
     private final Pool<T, E> Pool;
 
@@ -41,7 +41,7 @@ public class RecycleOnClose<T, E extends Exception> implements AutoCloseable {
         return instance;
     }
 
-    /** 回收一个实例如果该实例实现了 {@link Resettable}，则调用 {@link Resettable#reset()} */
+    /** 回收一个实例如果该实例实现了 {@link Resettable},则调用 {@link Resettable#reset()} */
     @Override
     public void close() {
         Pool.recycle(instance);

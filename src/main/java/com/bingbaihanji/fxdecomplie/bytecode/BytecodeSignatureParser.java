@@ -19,7 +19,7 @@ import java.util.List;
  * 精确的全限定类名映射 </p>
  *
  * <h3>原理</h3>
- * <p>字节码中的类签名存储了完整的泛型信息,例如：</p>
+ * <p>字节码中的类签名存储了完整的泛型信息,例如:</p>
  * <pre>
  * Lcom/baomidou/.mybatisplus/extension/service/impl/ServiceImpl&lt;Lcom/pig4cloud/domain/AjglMapper;Lcom/pig4cloud/domain/a;&gt;;
  * </pre>
@@ -54,7 +54,7 @@ public final class BytecodeSignatureParser {
     /**
      * 从 class 字节码中提取父类和接口的泛型类型参数,按 extends/implements 顺序排列
      *
-     * <p>返回列表的结构：第一个元素对应父类(superclass)的类型参数列表,
+     * <p>返回列表的结构:第一个元素对应父类(superclass)的类型参数列表,
      * 后续元素对应每个接口的类型参数列表 </p>
      *
      * @param classBytes class 文件原始字节
@@ -84,8 +84,11 @@ public final class BytecodeSignatureParser {
 
         /** 按父类型分组的类型参数列表([0]=superclass, [1..]=interfaces) */
         private final List<List<String>> typeArgumentsByOwner = new ArrayList<>();
+
         private String classSignature;
+
         private String superName;
+
         private List<String> interfaceNames;
 
         TypeArgumentExtractor() {
@@ -134,13 +137,13 @@ public final class BytecodeSignatureParser {
         /**
          * 解析类签名,提取父类和接口的类型参数
          *
-         * <p>类签名格式示例：</p>
+         * <p>类签名格式示例:</p>
          * <pre>
          * Lcom/baomidou/.../ServiceImpl&lt;Lcom/pig4cloud/domain/AjglMapper;Lcom/pig4cloud/domain/a;&gt;;
          * Ljava/lang/Object;
          * Lcom/pig4cloud/service/a;
          * </pre>
-         * <p>即：{@code <superclass_signature> <interface_signatures...>}</p>
+         * <p>即:{@code <superclass_signature> <interface_signatures...>}</p>
          */
         private void parseClassSignature(String sig) {
             int pos = 0;
@@ -174,7 +177,7 @@ public final class BytecodeSignatureParser {
         /**
          * 从指定位置解析一个带泛型参数的类引用,返回其类型参数列表
          *
-         * <p>格式：{@code Lpkg/ClassName<T1;T2;>;} 或 {@code Lpkg/ClassName;}</p>
+         * <p>格式:{@code Lpkg/ClassName<T1;T2;>;} 或 {@code Lpkg/ClassName;}</p>
          */
         private List<String> parseParameterizedClassRef(String sig, int start) {
             List<String> args = new ArrayList<>();
@@ -210,7 +213,7 @@ public final class BytecodeSignatureParser {
         /**
          * 解析尖括号内的类型参数列表
          *
-         * <p>格式：{@code Lcom/example/Foo;Lcom/example/Bar;T}</p>
+         * <p>格式:{@code Lcom/example/Foo;Lcom/example/Bar;T}</p>
          */
         private List<String> parseTypeArguments(String sig, int start) {
             List<String> args = new ArrayList<>();

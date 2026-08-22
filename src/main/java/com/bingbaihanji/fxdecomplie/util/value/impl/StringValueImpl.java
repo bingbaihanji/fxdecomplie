@@ -14,6 +14,7 @@ import java.util.Optional;
  * @author Matt Coley
  */
 public class StringValueImpl extends ObjectValueBoxImpl<String> implements StringValue {
+
     /**
      * @param nullness
      * 		值的空值状态

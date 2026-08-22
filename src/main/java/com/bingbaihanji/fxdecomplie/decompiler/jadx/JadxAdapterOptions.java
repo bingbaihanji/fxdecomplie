@@ -14,12 +14,17 @@ public record JadxAdapterOptions(
 ) {
 
     public static final String LOAD_WORKSPACE_DEPENDENCIES = "loadWorkspaceDependencies";
+
     public static final String WORKSPACE_DEPENDENCY_LIMIT = "workspaceDependencyLimit";
+
     public static final String WORKSPACE_DEPENDENCY_DEPTH = "workspaceDependencyDepth";
 
     private static final int DEFAULT_DEPENDENCY_LIMIT = 96;
+
     private static final int DEFAULT_DEPENDENCY_DEPTH = 1;
+
     private static final int MAX_DEPENDENCY_LIMIT = 512;
+
     private static final int MAX_DEPENDENCY_DEPTH = 3;
 
     public static JadxAdapterOptions from(Map<String, String> options) {

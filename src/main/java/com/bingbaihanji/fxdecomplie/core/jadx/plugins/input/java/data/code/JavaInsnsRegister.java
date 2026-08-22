@@ -3,7 +3,12 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.InsnIndexType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.Opcode;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.stack.StackValueType;
-import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.IJavaInsnDecoder;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.InvokeDecoder;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.LoadConstDecoder;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.LookupSwitchDecoder;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.TableSwitchDecoder;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.WideDecoder;
 import org.jetbrains.annotations.Nullable;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.stack.StackValueType.NARROW;
@@ -13,10 +18,15 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.att
 public class JavaInsnsRegister {
 
     public static final long FLOAT_ZERO = Float.floatToIntBits(0.0f);
+
     public static final long FLOAT_ONE = Float.floatToIntBits(1.0f);
+
     public static final long FLOAT_TWO = Float.floatToIntBits(2.0f);
+
     public static final long DOUBLE_ZERO = Double.doubleToLongBits(0.0d);
+
     public static final long DOUBLE_ONE = Double.doubleToLongBits(1.0d);
+
     private static final JavaInsnInfo[] INSN_INFO;
 
     static {
@@ -258,9 +268,11 @@ public class JavaInsnsRegister {
         register(arr, 0xb0, "areturn", 0, 1, Opcode.RETURN, s -> s.pop(0));
         register(arr, 0xb1, "return", 0, 0, Opcode.RETURN_VOID, null);
 
-        register(arr, 0xb2, "getstatic", 2, 1, Opcode.SGET, InsnIndexType.FIELD_REF, s -> s.idx(s.u2()).push(0, s.fieldType()));
+        register(arr, 0xb2, "getstatic", 2, 1, Opcode.SGET, InsnIndexType.FIELD_REF, s -> s.idx(s.u2())
+                .push(0, s.fieldType()));
         register(arr, 0xb3, "putstatic", 2, 1, Opcode.SPUT, InsnIndexType.FIELD_REF, s -> s.idx(s.u2()).pop(0));
-        register(arr, 0xb4, "getfield", 2, 2, Opcode.IGET, InsnIndexType.FIELD_REF, s -> s.idx(s.u2()).pop(1).push(0, s.fieldType()));
+        register(arr, 0xb4, "getfield", 2, 2, Opcode.IGET, InsnIndexType.FIELD_REF, s -> s.idx(s.u2()).pop(1)
+                .push(0, s.fieldType()));
         register(arr, 0xb5, "putfield", 2, 2, Opcode.IPUT, InsnIndexType.FIELD_REF, s -> s.idx(s.u2()).pop(0).pop(1));
 
         invoke(arr, 0xb6, "invokevirtual", 2, Opcode.INVOKE_VIRTUAL);
@@ -270,13 +282,17 @@ public class JavaInsnsRegister {
         invoke(arr, 0xba, "invokedynamic", 4, Opcode.INVOKE_CUSTOM);
 
         register(arr, 0xbb, "new", 2, 1, Opcode.NEW_INSTANCE, InsnIndexType.TYPE_REF, s -> s.idx(s.u2()).push(0));
-        register(arr, 0xbc, "newarray", 1, 2, Opcode.NEW_ARRAY, InsnIndexType.TYPE_REF, s -> s.idx(s.u1()).pop(1).push(0).lit(1));
-        register(arr, 0xbd, "anewarray", 2, 2, Opcode.NEW_ARRAY, InsnIndexType.TYPE_REF, s -> s.idx(s.u2()).pop(1).push(0).lit(1));
+        register(arr, 0xbc, "newarray", 1, 2, Opcode.NEW_ARRAY, InsnIndexType.TYPE_REF, s -> s.idx(s.u1()).pop(1)
+                .push(0).lit(1));
+        register(arr, 0xbd, "anewarray", 2, 2, Opcode.NEW_ARRAY, InsnIndexType.TYPE_REF, s -> s.idx(s.u2()).pop(1)
+                .push(0).lit(1));
         register(arr, 0xbe, "arraylength", 0, 2, Opcode.ARRAY_LENGTH, oneRegWithResult(NARROW));
         register(arr, 0xbf, "athrow", 0, 1, Opcode.THROW, s -> s.pop(0).clear());
 
-        register(arr, 0xc0, "checkcast", 2, 2, Opcode.CHECK_CAST, InsnIndexType.TYPE_REF, s -> s.idx(s.u2()).pop(1).push(0));
-        register(arr, 0xc1, "instanceof", 2, 2, Opcode.INSTANCE_OF, InsnIndexType.TYPE_REF, s -> s.idx(s.u2()).pop(1).push(0));
+        register(arr, 0xc0, "checkcast", 2, 2, Opcode.CHECK_CAST, InsnIndexType.TYPE_REF, s -> s.idx(s.u2()).pop(1)
+                .push(0));
+        register(arr, 0xc1, "instanceof", 2, 2, Opcode.INSTANCE_OF, InsnIndexType.TYPE_REF, s -> s.idx(s.u2()).pop(1)
+                .push(0));
 
         register(arr, 0xc2, "monitorenter", 0, 1, Opcode.MONITOR_ENTER, s -> s.pop(0));
         register(arr, 0xc3, "monitorexit", 0, 1, Opcode.MONITOR_EXIT, s -> s.pop(0));

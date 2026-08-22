@@ -3,7 +3,11 @@ package com.bingbaihanji.fxdecomplie.rename;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -55,7 +59,7 @@ public final class RenameDialog {
         javafx.scene.Node okButton = pane.lookupButton(ButtonType.OK);
         okButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
             String name = field.getText() == null ? "" : field.getText().trim();
-            // 校验1：名称不能为空
+            // 校验1:名称不能为空
             if (name.isEmpty()) {
                 errorLabel.setText(I18nUtil.getString("rename.name.required"));
                 errorLabel.setVisible(true);
@@ -64,7 +68,7 @@ public final class RenameDialog {
                 event.consume();
                 return;
             }
-            // 校验2：新名称不能与旧名称相同
+            // 校验2:新名称不能与旧名称相同
             if (name.equals(oldName)) {
                 errorLabel.setText(I18nUtil.getString("rename.same.name"));
                 errorLabel.setVisible(true);
@@ -73,7 +77,7 @@ public final class RenameDialog {
                 event.consume();
                 return;
             }
-            // 校验3：必须是合法的 Java 标识符
+            // 校验3:必须是合法的 Java 标识符
             if (!RenameService.isValidName(name)) {
                 errorLabel.setText(I18nUtil.getString("rename.invalid.identifier"));
                 errorLabel.setVisible(true);
@@ -89,7 +93,7 @@ public final class RenameDialog {
         });
         DialogHelper.applyNativeStyle(dialog);
 
-        // 结果转换器：再次校验确保 ButtonType.OK 返回有效名称
+        // 结果转换器:再次校验确保 ButtonType.OK 返回有效名称
         dialog.setResultConverter(btn -> {
             if (btn != ButtonType.OK) {
                 return null;

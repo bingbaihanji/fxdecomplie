@@ -20,14 +20,23 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public non-sealed interface ObjectValue extends ReValue {
+
     ObjectValue VAL_OBJECT = new ObjectValueImpl(Types.OBJECT_TYPE, Nullness.NOT_NULL);
+
     ObjectValue VAL_OBJECT_NULL = new ObjectValueImpl(Types.OBJECT_TYPE, Nullness.NULL);
+
     ObjectValue VAL_OBJECT_MAYBE_NULL = new ObjectValueImpl(Types.OBJECT_TYPE, Nullness.UNKNOWN);
+
     ObjectValue VAL_CLASS = new ObjectValueImpl(Types.CLASS_TYPE, Nullness.NOT_NULL);
+
     ObjectValue VAL_CLASS_NULL = new ObjectValueImpl(Types.CLASS_TYPE, Nullness.NULL);
+
     ObjectValue VAL_CLASS_MAYBE_NULL = new ObjectValueImpl(Types.CLASS_TYPE, Nullness.NULL);
+
     ObjectValue VAL_METHOD_TYPE = new ObjectValueImpl(Type.getObjectType("java/lang/invoke/MethodType"), Nullness.NOT_NULL);
+
     ObjectValue VAL_METHOD_HANDLE = new ObjectValueImpl(Type.getObjectType("java/lang/invoke/MethodType"), Nullness.NOT_NULL);
+
     ObjectValue VAL_JSR = new ObjectValueImpl(Type.VOID_TYPE, Nullness.NOT_NULL);
 
     /**

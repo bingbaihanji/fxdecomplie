@@ -12,7 +12,9 @@ import java.util.Objects;
 public class MethodInlineAttr extends PinnedAttribute {
 
     private static final MethodInlineAttr INLINE_NOT_NEEDED = new MethodInlineAttr(null, null);
+
     private final InsnNode insn;
+
     /**
      * Store method arguments register numbers to allow remap registers
      */

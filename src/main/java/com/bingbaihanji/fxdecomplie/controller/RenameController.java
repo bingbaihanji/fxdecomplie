@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.controller;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameEntry;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
@@ -19,9 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 
 /**
- * 光标处重命名控制器：光标处标识符/类重命名 类重命名目标推断 重命名后标签页与文件树刷新
+ * 光标处重命名控制器:光标处标识符/类重命名 类重命名目标推断 重命名后标签页与文件树刷新
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
+ * 从 MainWindow 拆分而来,通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 反混淆/ProGuard 映射/快照恢复已拆分至 {@link DeobfuscationController}
  *
  * @author bingbaihanji
@@ -320,7 +324,7 @@ public final class RenameController {
                             .applyRenames(currentVisibleSource, workspaceHash, openFile.fullPath());
                 } else if (RenameService.TYPE_CLASS
                         .equals(visibleEntry.type())) {
-                    // 类重命名：仅通过 applySingleRename 应用(有包上下文检查)
+                    // 类重命名:仅通过 applySingleRename 应用(有包上下文检查)
                     // 不使用 replaceVisibleIdentifier(会按简单名全局替换导致跨包误匹配)
                     renamedSource = RenameService
                             .applySingleRename(currentVisibleSource, visibleEntry,

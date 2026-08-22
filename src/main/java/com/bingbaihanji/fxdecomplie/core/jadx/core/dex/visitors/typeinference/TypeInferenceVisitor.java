@@ -4,10 +4,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.AnonymousClassAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.BaseInvokeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IndexInsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.PhiInsn;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.ConstructorInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IMethodDetails;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.utils.MethodUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExcHandlerAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
@@ -28,7 +41,7 @@ import java.util.Set;
 /**
  * 类型推断访问器
  * <p>
- * 为 SSA 变量计算最佳类型该访问器在 SSA 变换 常量内联和方法详情附加之后运行，
+ * 为 SSA 变量计算最佳类型该访问器在 SSA 变换 常量内联和方法详情附加之后运行,
  * 通过收集类型边界信息并进行类型传播来推断每个变量的最优类型
  * </p>
  */
@@ -42,9 +55,11 @@ import java.util.Set;
         }
 )
 public final class TypeInferenceVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(TypeInferenceVisitor.class);
 
     private RootNode root;
+
     private TypeUpdate typeUpdate;
 
     @Nullable
@@ -61,7 +76,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
     }
 
     /**
-     * 初始化类型推断访问器，设置根节点和类型更新器
+     * 初始化类型推断访问器,设置根节点和类型更新器
      */
     @Override
     public void init(RootNode root) {
@@ -70,8 +85,8 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
     }
 
     /**
-     * 对单个方法执行类型推断：先赋予不可变类型，再收集类型边界，最后进行类型传播
-     * 无代码的方法直接跳过 推断过程中的栈溢出或异常会作为错误附加到方法上，不会中断整体流程
+     * 对单个方法执行类型推断:先赋予不可变类型,再收集类型边界,最后进行类型传播
+     * 无代码的方法直接跳过 推断过程中的栈溢出或异常会作为错误附加到方法上,不会中断整体流程
      */
     @Override
     public void visit(MethodNode mth) {
@@ -93,7 +108,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
     }
 
     /**
-     * 收集初始类型边界信息，包括赋值边界和使用边界
+     * 收集初始类型边界信息,包括赋值边界和使用边界
      */
     void initTypeBounds(MethodNode mth) {
         List<SSAVar> ssaVars = mth.getSVars();
@@ -101,12 +116,13 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
         ssaVars.forEach(this::mergePhiBounds);
         if (false) {
             ssaVars.stream().sorted()
-                    .forEach(ssaVar -> LOG.debug("Type bounds for {}: {}", ssaVar.toShortString(), ssaVar.getTypeInfo().getBounds()));
+                    .forEach(ssaVar -> LOG.debug("Type bounds for {}: {}", ssaVar.toShortString(), ssaVar.getTypeInfo()
+                            .getBounds()));
         }
     }
 
     /**
-     * 执行类型传播：根据使用情况推测类型，并尝试将其设置到当前变量
+     * 执行类型传播:根据使用情况推测类型,并尝试将其设置到当前变量
      * 以及所有通过 {@link TypeUpdate#apply(MethodNode, SSAVar, ArgType)} 关联的指令
      */
     boolean runTypePropagation(MethodNode mth) {
@@ -252,7 +268,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 
             case CHECK_CAST:
                 if (insn.contains(AFlag.SOFT_CAST)) {
-                    // 忽略边界约束，将在类型更新时进行检查
+                    // 忽略边界约束,将在类型更新时进行检查
                 } else {
                     addBound(typeInfo, new TypeBoundCheckCastAssign(root, (IndexInsnNode) insn));
                 }
@@ -341,7 +357,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
             return new TypeBoundInvokeUse(root, invoke, regArg, argType);
         }
 
-        // 对于重写方法，使用原始声明类作为类型
+        // 对于重写方法,使用原始声明类作为类型
         if (methodDetails instanceof MethodNode) {
             MethodNode callMth = (MethodNode) methodDetails;
             ClassInfo declCls = methodUtils.getMethodOriginDeclClass(callMth);

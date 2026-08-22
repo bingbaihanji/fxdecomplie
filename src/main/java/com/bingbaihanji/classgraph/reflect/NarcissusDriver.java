@@ -34,24 +34,35 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
- * Narcissus 反射驱动(如果可用，则使用 <a href="https://github.com/toolfactory/narcissus">Narcissus</a> 库，
- * 通过 JNI 允许访问非公开字段和方法，绕过封装和可见性控制)
+ * Narcissus 反射驱动(如果可用,则使用 <a href="https://github.com/toolfactory/narcissus">Narcissus</a> 库,
+ * 通过 JNI 允许访问非公开字段和方法,绕过封装和可见性控制)
  */
 class NarcissusDriver extends ReflectionDriver {
+
     private final Class<?> narcissusClass;
+
     private final Method getDeclaredMethods;
+
     private final Method findClass;
+
     private final Method getDeclaredConstructors;
+
     private final Method getDeclaredFields;
+
     private final Method getField;
+
     private final Method setField;
+
     private final Method getStaticField;
+
     private final Method setStaticField;
+
     private final Method invokeMethod;
+
     private final Method invokeStaticMethod;
 
     NarcissusDriver() throws Exception {
-        // 通过反射加载 Narcissus 类，从而避免运行时依赖
+        // 通过反射加载 Narcissus 类,从而避免运行时依赖
         final StandardDriver drv = new StandardDriver();
         narcissusClass = drv.findClass("io.github.toolfactory.narcissus.Narcissus");
         if (!(Boolean) drv.getStaticField(drv.findStaticField(narcissusClass, "libraryLoaded"))) {

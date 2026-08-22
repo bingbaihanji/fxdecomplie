@@ -6,26 +6,35 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.EmptyBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 
 /**
  * 基于 {@link BitSet} 实现的 {@link BlockNode} 块集合
  * <p>
- * 每个块通过其在方法基本块列表中的位置 ({@link BlockNode#getPos()})映射到位图的一位，
+ * 每个块通过其在方法基本块列表中的位置 ({@link BlockNode#getPos()})映射到位图的一位,
  * 从而以极低的内存开销完成集合的增删查 交集 并集等操作
  */
 public class BlockSet implements Iterable<BlockNode> {
 
     /** 所属方法节点 */
     private final MethodNode mth;
-    /** 底层位图，每一位对应一个基本块的位置 */
+
+    /** 底层位图,每一位对应一个基本块的位置 */
     private final BitSet bs;
 
     /**
      * 构造块集合
      *
-     * @param mth 所属方法节点，用于确定位图大小和进行位置到块的映射
+     * @param mth 所属方法节点,用于确定位图大小和进行位置到块的映射
      */
     public BlockSet(MethodNode mth) {
         this.mth = mth;
@@ -264,18 +273,22 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * {@link BlockSet} 的迭代器实现，按位图中置位的位置顺序遍历对应的块
+     * {@link BlockSet} 的迭代器实现,按位图中置位的位置顺序遍历对应的块
      */
     private static final class BlockSetIterator implements Iterator<BlockNode> {
+
         /** 底层位图 */
         private final BitSet bs;
+
         /** 集合中块的总数量 */
         private final int size;
+
         /** 位置到块的映射列表 (方法的基本块列表) */
         private final List<BlockNode> blocks;
 
         /** 已返回元素的计数游标 */
         private int cursor;
+
         /** 下一次查找置位位的起始索引 */
         private int start;
 

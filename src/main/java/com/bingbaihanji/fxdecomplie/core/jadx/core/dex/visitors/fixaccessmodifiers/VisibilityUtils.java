@@ -84,6 +84,7 @@ class VisibilityUtils {
     }
 
     interface OnBadVisibilityCallback {
+
         void onBadVisibility(ICodeNode node, int expectedVisFlag);
     }
 }

@@ -9,13 +9,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * 高亮模型,用于管理十六进制视图中字节的前景色和背景色 
  * <p>
- * 支持两种颜色来源：
+ * 支持两种颜色来源:
  * <ul>
- *   <li><b>回调(Callback)</b>：动态计算颜色,适用于需要根据上下文(如地址、数据值)实时决定颜色的场景 </li>
- *   <li><b>区域(Region)</b>：静态范围着色,适用于已知固定区间需要统一颜色标记的场景 </li>
+ *   <li><b>回调(Callback)</b>:动态计算颜色,适用于需要根据上下文(如地址,数据值)实时决定颜色的场景 </li>
+ *   <li><b>区域(Region)</b>:静态范围着色,适用于已知固定区间需要统一颜色标记的场景 </li>
  * </ul>
  * 背景色支持多层叠加(通过透明度混合),前景色则按优先级(回调优先于区域)取第一个有效值 
- * 此外,可启用“灰色零字节”功能,将值为 0x00 的字节显示为灰色(半透明) 
+ * 此外,可启用"灰色零字节"功能,将值为 0x00 的字节显示为灰色(半透明) 
  * </p>
  *
  * @author BingBaiHanJi
@@ -27,8 +27,11 @@ public class HighlightModel {
 
     // ---------- 颜色来源列表(线程安全) ----------
     private final List<HighlightCallback> foregroundCallbacks = new CopyOnWriteArrayList<>();
+
     private final List<HighlightCallback> backgroundCallbacks = new CopyOnWriteArrayList<>();
+
     private final List<HighlightRegion> foregroundRegions = new CopyOnWriteArrayList<>();
+
     private final List<HighlightRegion> backgroundRegions = new CopyOnWriteArrayList<>();
 
     /** 模式颜色提供者(通常来自 {@link PatternModel}),用于背景色叠加 */
@@ -90,7 +93,7 @@ public class HighlightModel {
     /**
      * 获取指定地址和数据字节的前景色 
      * <p>
-     * 优先级：回调 > 前景区域 > 灰色零字节(若启用) > 空(默认颜色由渲染器决定) 
+     * 优先级:回调 > 前景区域 > 灰色零字节(若启用) > 空(默认颜色由渲染器决定) 
      * </p>
      *
      * @param address 地址
@@ -152,7 +155,7 @@ public class HighlightModel {
     /**
      * 设置模式颜色提供者(通常来自 {@link PatternModel}) 
      * <p>
-     * 提供的颜色将作为背景色的基础层,与其他背景来源(区域、回调)叠加混合 
+     * 提供的颜色将作为背景色的基础层,与其他背景来源(区域,回调)叠加混合 
      * </p>
      *
      * @param p 颜色提供者,可为 {@code null}
@@ -164,7 +167,7 @@ public class HighlightModel {
     /**
      * 获取指定地址的背景色(支持多层叠加混合) 
      * <p>
-     * 叠加顺序(从底层到上层)：
+     * 叠加顺序(从底层到上层):
      * <ol>
      *   <li>模式颜色提供者({@link PatternColorProvider})</li>
      *   <li>静态背景区域(按添加顺序)</li>
@@ -209,7 +212,7 @@ public class HighlightModel {
     // ---------- 属性访问 ----------
 
     /**
-     * 返回是否启用“灰色零字节”功能 
+     * 返回是否启用"灰色零字节"功能 
      *
      * @return {@code true} 表示零字节显示为灰色
      */
@@ -218,7 +221,7 @@ public class HighlightModel {
     }
 
     /**
-     * 设置是否启用“灰色零字节”功能 
+     * 设置是否启用"灰色零字节"功能 
      *
      * @param v {@code true} 启用,{@code false} 禁用
      */
@@ -227,9 +230,9 @@ public class HighlightModel {
     }
 
     /**
-     * 清除所有高亮(回调、区域、提供者不自动清除) 
+     * 清除所有高亮(回调,区域,提供者不自动清除) 
      * <p>
-     * 注意：此方法不会清除 {@link #patternProvider},如需清除需单独设置为 {@code null}
+     * 注意:此方法不会清除 {@link #patternProvider},如需清除需单独设置为 {@code null}
      * </p>
      */
     public void clearAll() {
@@ -249,6 +252,7 @@ public class HighlightModel {
      */
     @FunctionalInterface
     public interface HighlightCallback {
+
         /**
          * 计算指定地址和字节值对应的颜色 
          *
@@ -264,6 +268,7 @@ public class HighlightModel {
      */
     @FunctionalInterface
     public interface PatternColorProvider {
+
         /**
          * 获取指定地址对应的颜色(可能来自模型中的区域) 
          *
@@ -281,6 +286,7 @@ public class HighlightModel {
      * @param color   颜色
      */
     public record HighlightRegion(long address, long size, Color color) {
+
         /**
          * 判断指定地址是否位于该区域内 
          *

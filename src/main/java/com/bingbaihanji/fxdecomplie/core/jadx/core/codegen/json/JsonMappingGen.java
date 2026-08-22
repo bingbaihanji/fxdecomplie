@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JsonMappingGen {
+
     private static final Logger LOG = LoggerFactory.getLogger(JsonMappingGen.class);
 
     private static final ObjectMapper GSON = new ObjectMapper()

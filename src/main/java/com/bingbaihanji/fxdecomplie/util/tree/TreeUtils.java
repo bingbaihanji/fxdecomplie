@@ -1,6 +1,13 @@
 package com.bingbaihanji.fxdecomplie.util.tree;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,11 +54,11 @@ public final class TreeUtils {
      * 将扁平节点列表构建为树形结构
      *
      * <p>
-     * 算法流程：
+     * 算法流程:
      * <ol>
      * <li>收集所有节点 ID,用于判断"父节点是否存在"</li>
      * <li>建立 ID → 节点 的映射表</li>
-     * <li>遍历所有节点：若父 ID 为 null 或不在映射中 → 根节点  否则挂载到对应父节点下</li>
+     * <li>遍历所有节点:若父 ID 为 null 或不在映射中 → 根节点  否则挂载到对应父节点下</li>
      * </ol>
      * @param nodes 扁平节点列表
      * @param <N> 节点类型
@@ -257,7 +264,7 @@ public final class TreeUtils {
      * 树节点接口,实体实现此接口即可参与树构建
      *
      * <p>
-     * 符合 CRTP(Curiously Recurring Template Pattern)设计： 子类将自己作为类型参数传入,避免调用方手动强转
+     * 符合 CRTP(Curiously Recurring Template Pattern)设计: 子类将自己作为类型参数传入,避免调用方手动强转
      * </p>
      *
      * @param <T> 节点 ID 的类型(如 Long Integer String)

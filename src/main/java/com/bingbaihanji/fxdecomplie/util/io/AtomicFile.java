@@ -3,14 +3,19 @@ package com.bingbaihanji.fxdecomplie.util.io;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * 用于对文件执行原子操作的辅助类：先写入一个新文件,写入成功完成后将其重命名为原始文件
+ * 用于对文件执行原子操作的辅助类:先写入一个新文件,写入成功完成后将其重命名为原始文件
  * <p>
  * 原子文件通过确保文件在重命名为原始文件之前已完全写入并同步到磁盘来保证文件完整性
  * 之前这是通过先将原始文件重命名为备份文件来实现的,但这种方法无法处理文件首次创建的情况
@@ -20,10 +25,13 @@ import java.util.function.Consumer;
  * 调用者负责在访问文件时确保适当的互斥不变量
  */
 public final class AtomicFile {
+
     private static final Logger log = LoggerFactory.getLogger(AtomicFile.class);
 
     private final File baseFile;
+
     private final File newFile;
+
     private final File legacyBackupFile;
 
     /**
@@ -44,7 +52,7 @@ public final class AtomicFile {
      *
      * @param baseName  基础文件对象
      * @param commitTag 提交标签(用于日志,当前实现忽略该参数)
-     * @deprecated commitTag 参数未被使用，请使用 {@link #AtomicFile(File)}
+     * @deprecated commitTag 参数未被使用,请使用 {@link #AtomicFile(File)}
      */
     @Deprecated
     public AtomicFile(File baseName, String commitTag) {
@@ -130,7 +138,7 @@ public final class AtomicFile {
      * 现有文件将被新数据替换您<em>不得</em>直接关闭给定的 FileOutputStream,
      * 而应调用 {@link #finishWrite(FileOutputStream)} 或 {@link #failWrite(FileOutputStream)}
      * <p>
-     * 注意：如果另一个线程当前正在执行写入操作,此方法将简单地用当前线程正在写入的新文件
+     * 注意:如果另一个线程当前正在执行写入操作,此方法将简单地用当前线程正在写入的新文件
      * 替换该线程正在写入的内容 当另一个线程完成写入后,新的写入操作将不再安全(或会被丢失)
      * 您必须自行对 AtomicFile 的访问进行线程保护
      *

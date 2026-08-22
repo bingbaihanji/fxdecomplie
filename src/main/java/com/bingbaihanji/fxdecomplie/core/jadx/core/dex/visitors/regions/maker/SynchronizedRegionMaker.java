@@ -5,7 +5,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstClassNo
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SynchronizedRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.CleanRegions;
@@ -24,8 +28,11 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getNe
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.isPathExists;
 
 public class SynchronizedRegionMaker {
+
     private static final Logger LOG = LoggerFactory.getLogger(SynchronizedRegionMaker.class);
+
     private final MethodNode mth;
+
     private final RegionMaker regionMaker;
 
     SynchronizedRegionMaker(MethodNode mth, RegionMaker regionMaker) {

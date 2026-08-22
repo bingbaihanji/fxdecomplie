@@ -13,20 +13,22 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 从目标类出发 BFS 构建「聚焦」UML 类图（继承/实现层级）。
+ * 从目标类出发 BFS 构建「聚焦」UML 类图(继承/实现层级).
  *
- * <p>向上：父类链（GENERALIZATION）+ 接口及其父接口（REALIZATION），均带成员；
- * 向下：仅目标类的直接子类 / 目标接口的实现者，各带成员。
- * 字段类型补充为关联（ASSOCIATION），方法参数/返回值与注解补充为依赖（DEPENDENCY）。
- * JDK 类型不建节点；解析不到的类建「仅类名」标记框。</p>
+ * <p>向上:父类链(GENERALIZATION)+ 接口及其父接口(REALIZATION),均带成员;
+ * 向下:仅目标类的直接子类 / 目标接口的实现者,各带成员.
+ * 字段类型补充为关联(ASSOCIATION),方法参数/返回值与注解补充为依赖(DEPENDENCY).
+ * JDK 类型不建节点;解析不到的类建「仅类名」标记框.</p>
  */
 public final class UmlDiagramBuilder {
 
     /** 类节点数量上限 */
     public static final int MAX_CLASSES = 100;
+
     /** 关系展开深度上限 */
     public static final int MAX_DEPTH = 20;
-    /** 非继承关系只从目标附近展开，避免大工程图爆炸 */
+
+    /** 非继承关系只从目标附近展开,避免大工程图爆炸 */
     private static final int MAX_MEMBER_RELATION_DEPTH = 1;
 
     private UmlDiagramBuilder() {
@@ -34,12 +36,12 @@ public final class UmlDiagramBuilder {
     }
 
     /**
-     * 构建 UML 类图。
+     * 构建 UML 类图.
      *
-     * @param targetInternalName 目标类内部名称（如 com/example/OrderServiceImpl）
-     * @param targetBytes        目标类字节码，优先于索引读取
-     * @param index              工作区索引，可为 {@link WorkspaceIndex#EMPTY}
-     * @return 类图；目标不可解析返回 null
+     * @param targetInternalName 目标类内部名称(如 com/example/OrderServiceImpl)
+     * @param targetBytes        目标类字节码,优先于索引读取
+     * @param index              工作区索引,可为 {@link WorkspaceIndex#EMPTY}
+     * @return 类图;目标不可解析返回 null
      */
     public static UmlDiagram build(String targetInternalName, byte[] targetBytes, WorkspaceIndex index) {
         if (targetInternalName == null || targetInternalName.isBlank()) {
@@ -81,15 +83,15 @@ public final class UmlDiagramBuilder {
             }
             byName.put(name, uml);
             if (d >= MAX_DEPTH) {
-                continue; // 仅显示，不再向上/向下展开
+                continue; // 仅显示,不再向上/向下展开
             }
 
-            // 向上：父类链（继承）
+            // 向上:父类链(继承)
             if (uml.superName() != null && !UmlTypeNameUtil.isJdk(uml.superName())) {
                 addRelation(relations, seenRelations, name, uml.superName(), RelationType.GENERALIZATION, null, null);
                 enqueue(uml.superName(), d + 1, queued, queue, depth);
             }
-            // 向上：接口（实现，含父接口链）
+            // 向上:接口(实现,含父接口链)
             for (String itf : uml.interfaces()) {
                 if (UmlTypeNameUtil.isJdk(itf)) {
                     continue;
@@ -100,7 +102,7 @@ public final class UmlDiagramBuilder {
             if (d <= MAX_MEMBER_RELATION_DEPTH) {
                 addMemberRelations(uml, d, target, index, relations, seenRelations, queued, queue, depth);
             }
-            // 向下：仅目标类的直接子类/实现者
+            // 向下:仅目标类的直接子类/实现者
             if (index != null && d == 0) {
                 for (String child : index.subclassesByParent().getOrDefault(name, List.of())) {
                     if (UmlTypeNameUtil.isJdk(child) || child.equals(name)) {
@@ -248,18 +250,18 @@ public final class UmlDiagramBuilder {
         }
     }
 
-    /** 解析不到的类：仅类名标记框 */
+    /** 解析不到的类:仅类名标记框 */
     private static UmlClass marker(String internalName) {
         String simple = internalName;
         int idx = internalName.lastIndexOf('/');
         if (idx >= 0) {
             simple = internalName.substring(idx + 1);
         }
-        return new UmlClass(internalName, "", simple, ClassKind.CLASS, false, false,
+        return new UmlClass(internalName, "", simple, ClassKind.CLASS, false, false, false,
                 List.of(), List.of(), null, List.of(), List.of());
     }
 
-    /** 归一化为 JVM 内部名称：反斜杠转斜杠、点转斜杠（点分 FQCN → 内部名） */
+    /** 归一化为 JVM 内部名称:反斜杠转斜杠,点转斜杠(点分 FQCN → 内部名) */
     private static String normalize(String name) {
         return name.replace('\\', '/').replace('.', '/');
     }

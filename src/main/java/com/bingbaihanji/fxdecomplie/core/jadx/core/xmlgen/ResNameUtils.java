@@ -2,7 +2,9 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper.*;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper.isPrintableAsciiCodePoint;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper.isValidIdentifierPart;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper.isValidIdentifierStart;
 
 class ResNameUtils {
 

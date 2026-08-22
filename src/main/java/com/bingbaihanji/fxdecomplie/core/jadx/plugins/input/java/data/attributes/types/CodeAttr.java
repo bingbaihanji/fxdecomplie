@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.IJavaAttributeReader;
 
 public class CodeAttr implements IJavaAttribute {
+
     private final int offset;
 
     public CodeAttr(int offset) {

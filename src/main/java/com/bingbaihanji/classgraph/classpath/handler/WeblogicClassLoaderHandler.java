@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -9,6 +8,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
 
 /** 从 Weblogic ClassLoaders 提取类路径条目 */
 class WeblogicClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public WeblogicClassLoaderHandler() {
     }
@@ -20,7 +20,7 @@ class WeblogicClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -30,7 +30,7 @@ class WeblogicClassLoaderHandler implements ClassLoaderHandler {
                 "weblogic.utils.classloaders.GenericClassLoader")
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "weblogic.utils.classloaders.FilteringClassLoader")
-                // TODO：以下两个已知类加载器名称尚未测试，其字段/方法可能与上述类加载器不匹配
+                // TODO:以下两个已知类加载器名称尚未测试,其字段/方法可能与上述类加载器不匹配
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "weblogic.servlet.jsp.JspClassLoader")
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,

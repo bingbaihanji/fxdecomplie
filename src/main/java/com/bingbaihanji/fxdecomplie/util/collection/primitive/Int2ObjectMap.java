@@ -15,6 +15,7 @@ import java.util.function.IntFunction;
 public class Int2ObjectMap<V> extends AbstractIntKeyMap {
 
     // ---------- 字段 ----------
+
     /** 存储值(与键数组一一对应),元素类型为 Object,实际存储 V 类型 */
     private Object[] values;
 
@@ -89,7 +90,7 @@ public class Int2ObjectMap<V> extends AbstractIntKeyMap {
 
     /**
      * 根据键获取值,若键不存在则返回指定的默认值 
-     * 注意：默认值类型为 Object,但返回类型为 V,调用者需确保类型匹配 
+     * 注意:默认值类型为 Object,但返回类型为 V,调用者需确保类型匹配 
      *
      * @param key          键
      * @param defaultValue 默认值(可为 null)
@@ -224,6 +225,7 @@ public class Int2ObjectMap<V> extends AbstractIntKeyMap {
      */
     @FunctionalInterface
     public interface IntObjectConsumer<V> {
+
         /**
          * 处理一对键值 
          *

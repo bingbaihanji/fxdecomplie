@@ -11,6 +11,7 @@ import java.nio.file.Path;
  * </p>
  */
 public class SingleDirFilesGetter implements IJadxFilesGetter {
+
     /** 存放所有 jadx 文件的基础目录 */
     private final Path baseDir;
 

@@ -16,6 +16,7 @@ import java.util.List;
 public final class SwitchRegion extends AbstractRegion implements IBranchRegion {
 
     public static final Object DEFAULT_CASE_KEY = new Object() {
+
         @Override
         public String toString() {
             return "default";
@@ -88,7 +89,9 @@ public final class SwitchRegion extends AbstractRegion implements IBranchRegion 
     }
 
     public static final class CaseInfo {
+
         private final List<Object> keys;
+
         private final IContainer container;
 
         public CaseInfo(List<Object> keys, IContainer container) {

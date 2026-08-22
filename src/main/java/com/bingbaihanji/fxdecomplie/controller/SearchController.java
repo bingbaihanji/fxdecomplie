@@ -11,7 +11,14 @@ import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbaihanji.fxdecomplie.ui.search.*;
+import com.bingbaihanji.fxdecomplie.ui.search.BytecodeSearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.ClassSearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.CodeSearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.CommentSearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.IndexedMemberSearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.MethodSearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.ResourceSearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.SearchDialog;
 import com.bingbaihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
@@ -25,11 +32,11 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * 搜索与用法查找控制器：工作区搜索对话框 Find Usages 包搜索 
+ * 搜索与用法查找控制器:工作区搜索对话框 Find Usages 包搜索 
  * 全文源码缓存构建与工作区索引就绪等待
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
+ * 从 MainWindow 拆分而来,通过 owner 访问共享状态与协作者 (Mediator 模式)
+ * 所有协作者均在调用时通过 owner 访问,以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */
@@ -138,7 +145,8 @@ public final class SearchController {
         }
         withWorkspaceIndex(view.workspace(), index ->
                 FindUsageDialog.show(owner.stage(), index,
-                        (fullPath, lineNumber) -> owner.navigationController().openClassByPath(view, fullPath, lineNumber)));
+                        (fullPath, lineNumber) -> owner.navigationController()
+                                .openClassByPath(view, fullPath, lineNumber)));
     }
 
     /**
@@ -276,7 +284,8 @@ public final class SearchController {
                                 owner.navigationController().openClassByPath(view, fullPath, lineNumber);
                             }
                         },
-                        (node.getFullPath().endsWith(".class") ? node.getFullPath().substring(0, node.getFullPath().length() - 6) : node.getFullPath())));
+                        (node.getFullPath().endsWith(".class") ? node.getFullPath()
+                                .substring(0, node.getFullPath().length() - 6) : node.getFullPath())));
     }
 
     /** 提取节点所在的包路径作为搜索关键词并打开搜索对话框 */

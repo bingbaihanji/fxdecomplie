@@ -13,22 +13,27 @@ import java.util.Objects;
 /**
  * 类路径图中的方法节点
  * <p>
- * 表示在类路径图上解析到的一个方法，包含方法信息 参数类型 返回类型 
- * 泛型类型参数 异常抛出列表以及访问标志，实现 {@link IMethodDetails}
- * 以提供方法细节，并支持按方法信息排序
+ * 表示在类路径图上解析到的一个方法,包含方法信息 参数类型 返回类型 
+ * 泛型类型参数 异常抛出列表以及访问标志,实现 {@link IMethodDetails}
+ * 以提供方法细节,并支持按方法信息排序
  */
 public class ClspMethod implements IMethodDetails, Comparable<ClspMethod> {
 
     /** 方法信息 (名称 所属类 参数描述符等) */
     private final MethodInfo methodInfo;
+
     /** 方法参数类型列表 (可能包含泛型信息) */
     private final List<ArgType> argTypes;
+
     /** 方法返回类型 */
     private final ArgType returnType;
+
     /** 方法的泛型类型参数列表 */
     private final List<ArgType> typeParameters;
+
     /** 方法声明抛出的异常类型列表 */
     private final List<ArgType> throwList;
+
     /** 方法的访问标志 */
     private final int accFlags;
 

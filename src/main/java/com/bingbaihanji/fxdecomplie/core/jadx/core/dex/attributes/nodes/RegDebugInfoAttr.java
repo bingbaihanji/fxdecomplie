@@ -9,6 +9,7 @@ import java.util.Objects;
 public class RegDebugInfoAttr implements IJadxAttribute {
 
     private final ArgType type;
+
     private final String name;
 
     public RegDebugInfoAttr(ArgType type, String name) {

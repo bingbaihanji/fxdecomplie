@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 public class MergeCodeLoader implements ICodeLoader {
 
     private final List<ICodeLoader> codeLoaders;
+
     private final @Nullable Closeable closeable;
 
     public MergeCodeLoader(List<ICodeLoader> codeLoaders) {

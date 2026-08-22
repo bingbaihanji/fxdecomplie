@@ -12,6 +12,7 @@ import java.util.ListIterator;
  *            元素类型
  */
 public class LazyList<T> extends ArrayList<T> {
+
     /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 
@@ -152,13 +153,14 @@ public class LazyList<T> extends ArrayList<T> {
         }
     }
 
-    // 提供替换的迭代器，以避免一个正在尝试对空列表进行排序的线程
+    // 提供替换的迭代器,以避免一个正在尝试对空列表进行排序的线程
     // 导致另一个正在遍历空列表的线程抛出 ConcurrentModificationException (#334)
 
     @Override
     public Iterator<T> iterator() {
         final Iterator<T> iterator = super.iterator();
         return new Iterator<T>() {
+
             @Override
             public boolean hasNext() {
                 if (isEmpty()) {
@@ -188,6 +190,7 @@ public class LazyList<T> extends ArrayList<T> {
     public ListIterator<T> listIterator() {
         final ListIterator<T> iterator = super.listIterator();
         return new ListIterator<T>() {
+
             @Override
             public boolean hasNext() {
                 if (isEmpty()) {

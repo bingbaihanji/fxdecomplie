@@ -10,7 +10,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.MethodOv
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.RenameReasonAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +27,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public class RenameVisitor extends AbstractVisitor {
+
     private static final Pattern ANONYMOUS_CLASS_PATTERN = Pattern.compile("^\\d+$");
 
     private static void checkNames(RootNode root) {

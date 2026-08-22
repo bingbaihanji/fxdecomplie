@@ -31,7 +31,7 @@ public class CommentSearchProvider implements SearchProvider {
     }
 
     /**
-     * 基本搜索：遍历所有已反编译源码文件,仅搜索注释行中的关键字(不区分大小写)
+     * 基本搜索:遍历所有已反编译源码文件,仅搜索注释行中的关键字(不区分大小写)
      * 支持中断检测,以便搜索任务取消后立即停止
      */
     @Override
@@ -64,7 +64,7 @@ public class CommentSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.COMMENT;
     }
 
-    /** 高级搜索：支持正则 大小写 全词匹配等选项的注释搜索 */
+    /** 高级搜索:支持正则 大小写 全词匹配等选项的注释搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

@@ -2,9 +2,24 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithOp;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfOp;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.PhiInsn;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.Compare;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfCondition;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.ForEachLoop;
@@ -32,6 +47,7 @@ import java.util.List;
         runBefore = ProcessVariables.class
 )
 public class LoopRegionVisitor extends AbstractVisitor implements IRegionVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(LoopRegionVisitor.class);
 
     private static boolean processLoopRegion(MethodNode mth, LoopRegion loopRegion) {

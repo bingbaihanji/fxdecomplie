@@ -7,6 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 import java.util.List;
 
 public class ExceptionsAttr extends PinnedAttribute {
+
     private final List<String> list;
 
     public ExceptionsAttr(List<String> list) {

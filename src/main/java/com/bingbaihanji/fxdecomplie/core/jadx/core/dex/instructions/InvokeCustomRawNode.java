@@ -22,7 +22,9 @@ import java.util.List;
  * See {@link CustomRawCall} class for build details
  */
 public class InvokeCustomRawNode extends InvokeNode {
+
     private final InvokeNode resolve;
+
     private List<EncodedValue> callSiteValues;
 
     public InvokeCustomRawNode(InvokeNode resolve, MethodInfo mthInfo, InsnData insn, boolean isRange) {

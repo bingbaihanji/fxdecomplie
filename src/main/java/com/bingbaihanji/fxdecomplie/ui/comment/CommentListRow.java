@@ -18,6 +18,7 @@ public record CommentListRow(
         String time,
         com.bingbaihanji.fxdecomplie.model.CommentData commentData
 ) {
+
     /**
      * 从 CommentData 创建表格行
      *
@@ -25,13 +26,13 @@ public record CommentListRow(
      * @return 表格行展示对象
      */
     public static CommentListRow from(com.bingbaihanji.fxdecomplie.model.CommentData data) {
-        // 成员签名：为空时显示 "—"
+        // 成员签名:为空时显示 "—"
         String member = data.memberSignature() != null && !data.memberSignature().isBlank()
                 ? data.memberSignature() : "—"; // em dash
-        // 摘要：截取前 40 字符,超出加省略号
+        // 摘要:截取前 40 字符,超出加省略号
         String text = data.text() != null ? data.text() : "";
-        String summary = text.length() > 40 ? text.substring(0, 40) + "…" : text;
-        // 时间格式：取日期部分(前 10 字符)+ " by " + 作者
+        String summary = text.length() > 40 ? text.substring(0, 40) + "..." : text;
+        // 时间格式:取日期部分(前 10 字符)+ " by " + 作者
         String time = data.time() != null && !data.time().isBlank()
                 ? data.time().substring(0, Math.min(10, data.time().length())) + " by " + data.author()
                 : data.author();

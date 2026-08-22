@@ -12,13 +12,17 @@ import java.nio.charset.StandardCharsets;
 public class ParserStream extends InputStream {
 
     protected static final Charset STRING_CHARSET_UTF16 = StandardCharsets.UTF_16LE;
+
     protected static final Charset STRING_CHARSET_UTF8 = StandardCharsets.UTF_8;
 
     private static final int[] EMPTY_INT_ARRAY = new int[0];
+
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private final InputStream input;
+
     private long readPos = 0;
+
     private long markPos = 0;
 
     public ParserStream(@NotNull InputStream inputStream) {

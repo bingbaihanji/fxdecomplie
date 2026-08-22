@@ -19,10 +19,10 @@ import java.util.List;
  * 在 {@link javafx.scene.canvas.Canvas} 上渲染悬停工具提示,用于展示指定地址处的详细字节分析信息 
  * <p>
  * 该渲染器为静态工具类,通过 {@link #draw} 方法直接在给定的图形上下文中绘制一个信息框,
- * 内容包括地址、原始字节值、所在区域路径以及各数据分析器生成的标签-值对 
+ * 内容包括地址,原始字节值,所在区域路径以及各数据分析器生成的标签-值对 
  * </p>
  * <p>
- * 工具提示样式为深色半透明背景、青色边框,内部使用等宽字体,并自动调整位置以避免超出画布边界 
+ * 工具提示样式为深色半透明背景,青色边框,内部使用等宽字体,并自动调整位置以避免超出画布边界 
  * </p>
  *
  * @author BingBaiHanJi
@@ -98,12 +98,12 @@ public final class HexTooltipRenderer {
         // 构建工具提示的每一行
         var lines = new ArrayList<TooltipLine>();
 
-        // 第一行：地址信息
+        // 第一行:地址信息
         lines.add(new TooltipLine(
                 String.format("Addr: 0x%08X  (+0x%X)", address, address),
                 Color.rgb(0x88, 0xC0, 0xFF)));
 
-        // 第二行：原始字节值(十进制、二进制、ASCII 字符)
+        // 第二行:原始字节值(十进制,二进制,ASCII 字符)
         int rawByte = buf[0] & 0xFF;
         char ascii = (rawByte >= 32 && rawByte < 127) ? (char) rawByte : '·';
         lines.add(new TooltipLine(

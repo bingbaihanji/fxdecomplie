@@ -4,6 +4,7 @@ package com.bingbaihanji.classgraph.type;
  * 解析异常
  */
 public class ParseException extends Exception {
+
     /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 

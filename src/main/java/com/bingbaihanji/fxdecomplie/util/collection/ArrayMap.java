@@ -2,7 +2,12 @@ package com.bingbaihanji.fxdecomplie.util.collection;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -12,10 +17,10 @@ import java.util.function.BiFunction;
  * <p>
  * 本类是一个「key → value」映射结构,设计目标是在中小规模数据下比 {@link java.util.HashMap} 占用更少内存
  * 它参考 Android {@code android.util.ArrayMap} 的数据结构思想,公开方法签名尽量与其对齐,但实现完全基于
- * Java SE,不依赖 Android Lombok 或任何第三方库内部使用两个平行数组保存数据：
+ * Java SE,不依赖 Android Lombok 或任何第三方库内部使用两个平行数组保存数据:
  * <ul>
- * <li>{@code int[] hashes}：按升序保存各 key 的 hash</li>
- * <li>{@code Object[] array}：按 {@code key0,value0,key1,value1,...} 交错保存键和值</li>
+ * <li>{@code int[] hashes}:按升序保存各 key 的 hash</li>
+ * <li>{@code Object[] array}:按 {@code key0,value0,key1,value1,...} 交错保存键和值</li>
  * </ul>
  *
  * <p>
@@ -24,12 +29,12 @@ import java.util.function.BiFunction;
  * {@link java.util.HashMap} 仍是更好的选择
  *
  * <p>
- * <b>相较 Android 原版的现代化改造：</b>
+ * <b>相较 Android 原版的现代化改造:</b>
  * <ul>
  * <li>去掉了 {@code SimpleArrayMap} 基类,核心存储直接内聚到本类,与 Android 的单类结构一致</li>
  * <li>移除了全局静态数组缓存({@code mBaseCache} / {@code mTwiceBaseCache} 及其锁)
  * 该缓存是为 Android 受限堆减少 GC 而设计的,在 JVM 上属于反模式(锁竞争 内存滞留 线程安全隐患)</li>
- * <li>移除了 {@code identityHashCode} 模式：始终使用 {@link Object#hashCode()} / {@link Object#equals(Object)}</li>
+ * <li>移除了 {@code identityHashCode} 模式:始终使用 {@link Object#hashCode()} / {@link Object#equals(Object)}</li>
  * <li>移除了 Android 的 {@code Log} / {@code Slog} / {@code UtilConfig} / {@code ArrayUtils} 等平台依赖</li>
  * <li>引入 {@code modCount},视图迭代器具备真正的 fail-fast 能力</li>
  * <li>采用 1.5 倍扩容(复用 {@link ContainerHelpers}),并在删除后按需收缩数组</li>
@@ -386,8 +391,8 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      * 不小于当前最后一个 hash 时,直接追加到末尾,跳过二分定位 若顺序条件不满足,则退化为 {@link #put(Object, Object)}
      *
      * <p>
-     * <b>注意：</b>与 {@link #put(Object, Object)} 不同,本方法在追加分支<b>不做去重检查</b>,因此有可能写入重复 key
-     * 批量 append 之后可调用 {@link #validate()} 校验是否产生了重复 key与 Android 原版的区别是：这里在容量不足时会自动扩容,
+     * <b>注意:</b>与 {@link #put(Object, Object)} 不同,本方法在追加分支<b>不做去重检查</b>,因此有可能写入重复 key
+     * 批量 append 之后可调用 {@link #validate()} 校验是否产生了重复 key与 Android 原版的区别是:这里在容量不足时会自动扩容,
      * 而不是抛出「Array is full」
      *
      * @param key key
@@ -1003,6 +1008,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
     private MapCollections<K, V> getCollection() {
         if (this.collections == null) {
             this.collections = new MapCollections<>() {
+
                 @Override
                 int colGetSize() {
                     return ArrayMap.this.size;

@@ -2,7 +2,12 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.ExportConfig;
+import com.bingbaihanji.fxdecomplie.model.ExportResult;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +17,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -88,7 +99,7 @@ public final class ExportService {
     }
 
     /**
-     * 执行完整的导出流水线：过滤 反编译 写入目标(目录或 ZIP)
+     * 执行完整的导出流水线:过滤 反编译 写入目标(目录或 ZIP)
      *
      * @param nodes         可导出的文件节点列表(须在 FX 线程提取)
      * @param config        导出配置(格式 引擎 路径 冲突策略等)
@@ -274,7 +285,7 @@ public final class ExportService {
         ExportWriter.writeDecompiledToDir(items, decompiled, config, state, canceled);
     }
 
-    /** 将已反编译的内容写入 ZIP(顺序写入，ZipOutputStream 非线程安全) */
+    /** 将已反编译的内容写入 ZIP(顺序写入,ZipOutputStream 非线程安全) */
     private static void writeDecompiledToZip(List<FileTreeNode> items,
                                              Map<FileTreeNode, ExportContent> decompiled,
                                              ExportConfig config, ExportState state,
@@ -285,7 +296,8 @@ public final class ExportService {
         }
         Set<String> writtenEntries = new HashSet<>();
         try (ZipOutputStream zos = new ZipOutputStream(
-                new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
+                new BufferedOutputStream(Files.newOutputStream(zipPath)))
+        ) {
             for (FileTreeNode data : items) {
                 if (canceled != null && canceled.getAsBoolean()) {
                     state.errors.add("导出已取消");
@@ -506,16 +518,21 @@ public final class ExportService {
         return dot > 0 ? fileName.substring(dot) : "";
     }
 
-    /** 导出内容载体：包含相对路径和要写入的字节数据 */
+    /** 导出内容载体:包含相对路径和要写入的字节数据 */
     record ExportContent(String relativePath, byte[] bytes) {
     }
 
-    /** 导出进度状态跟踪器：记录总数 完成数 成功数和错误列表 */
+    /** 导出进度状态跟踪器:记录总数 完成数 成功数和错误列表 */
     static final class ExportState {
+
         final int totalFiles;
+
         final BiConsumer<String, Integer> onProgress;
+
         final List<String> errors = new ArrayList<>();
+
         int completed;
+
         int successCount;
 
         ExportState(int totalFiles, BiConsumer<String, Integer> onProgress) {

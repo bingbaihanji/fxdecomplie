@@ -6,12 +6,13 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 /**
  * 可动态注册任务数的倒计时同步器
  *
- * <p>与 {@link java.util.concurrent.CountDownLatch} 不同，本类允许在等待前后继续注册任务
- * 每次 {@link #release()} 会减少一个计数，计数归零时唤醒等待线程</p>
+ * <p>与 {@link java.util.concurrent.CountDownLatch} 不同,本类允许在等待前后继续注册任务
+ * 每次 {@link #release()} 会减少一个计数,计数归零时唤醒等待线程</p>
  *
  * @author xDark
  */
 public final class CountDown {
+
     private final Impl impl = new Impl();
 
     /**

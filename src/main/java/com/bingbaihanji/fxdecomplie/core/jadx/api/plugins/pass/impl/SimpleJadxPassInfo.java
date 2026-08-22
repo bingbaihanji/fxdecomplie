@@ -8,6 +8,7 @@ import java.util.List;
 public class SimpleJadxPassInfo implements JadxPassInfo {
 
     private final String name;
+
     private final String desc;
 
     public SimpleJadxPassInfo(String name) {

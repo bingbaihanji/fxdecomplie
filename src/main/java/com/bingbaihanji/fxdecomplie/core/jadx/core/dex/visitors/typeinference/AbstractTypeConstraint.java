@@ -12,6 +12,7 @@ import java.util.List;
 public abstract class AbstractTypeConstraint implements ITypeConstraint {
 
     protected final InsnNode insn;
+
     protected final List<SSAVar> relatedVars;
 
     public AbstractTypeConstraint(InsnNode insn, InsnArg arg) {

@@ -7,11 +7,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 以比 Java URL/URI 解析器更快(且比 Path 快得多)的方式，
- * 针对基础路径解析相对路径和 URL/URI，同时力求跨平台兼容，
+ * 以比 Java URL/URI 解析器更快(且比 Path 快得多)的方式,
+ * 针对基础路径解析相对路径和 URL/URI,同时力求跨平台兼容,
  * 并特别希望对 Windows 路径的各种奇怪形式具有良好的鲁棒性
  */
 public final class FastPathResolver {
+
     /** 匹配 URL 中的百分号编码字符 */
     private static final Pattern percentMatcher = Pattern.compile("(%[0-9a-fA-F][0-9a-fA-F])+");
 
@@ -26,7 +27,7 @@ public final class FastPathResolver {
     }
 
     /**
-     * 将反斜杠转换为正斜杠，可选择性移除尾部路径分隔符
+     * 将反斜杠转换为正斜杠,可选择性移除尾部路径分隔符
      *
      * @param path
      *            路径
@@ -35,7 +36,7 @@ public final class FastPathResolver {
      * @param endIdx
      *            结束索引
      * @param stripFinalSeparator
-     *            如果为 true，则移除尾部分隔符
+     *            如果为 true,则移除尾部分隔符
      * @param buf
      *            缓冲区
      */
@@ -72,7 +73,7 @@ public final class FastPathResolver {
     }
 
     /**
-     * 反转义连续的百分号编码，例如 "%20%43%20" -> " + "
+     * 反转义连续的百分号编码,例如 "%20%43%20" -> " + "
      *
      * @param path
      *            路径
@@ -106,7 +107,7 @@ public final class FastPathResolver {
     }
 
     /**
-     * 解析百分号编码，例如 "%20" -&gt; " "；将 '/' 或 '\\' 转换为 SEP；
+     * 解析百分号编码,例如 "%20" -&gt; " ";将 '/' 或 '\\' 转换为 SEP;
      * 如果存在则移除尾部分隔符字符
      *
      * @param path
@@ -137,7 +138,7 @@ public final class FastPathResolver {
                 }
                 translateSeparator(path, prevEndMatchIdx, len, /* stripFinalSeparator = */ true, buf);
             } else {
-                // 快速路径 -- 无 '%'，或 "http(s)://" 或 "jrt:" URL，或非 "file:" / 非 "jar:" URL
+                // 快速路径 -- 无 '%',或 "http(s)://" 或 "jrt:" URL,或非 "file:" / 非 "jar:" URL
                 translateSeparator(path, 0, len, /* stripFinalSeparator = */ true, buf);
                 return buf.toString();
             }
@@ -146,8 +147,8 @@ public final class FastPathResolver {
     }
 
     /**
-     * 从文件名 URI 中剥离任何 "jar:" 前缀，并将其转换为文件路径，
-     * 处理可能混用文件系统和 URI 约定的情况；将相对路径相对于 resolveBasePath 进行解析
+     * 从文件名 URI 中剥离任何 "jar:" 前缀,并将其转换为文件路径,
+     * 处理可能混用文件系统和 URI 约定的情况;将相对路径相对于 resolveBasePath 进行解析
      *
      * @param resolveBasePath
      *            基础路径
@@ -181,7 +182,7 @@ public final class FastPathResolver {
                 startIdx += 7;
                 // 将协议名强制转为小写
                 prefix += "http://";
-                // 将协议后的部分视为绝对路径，这样域名不会被当作相对于当前目录的目录
+                // 将协议后的部分视为绝对路径,这样域名不会被当作相对于当前目录的目录
                 isAbsolutePath = true;
                 // 不反转义百分号编码等
             } else if (relativePath.regionMatches(true, startIdx, "https://", 0, 8)) {
@@ -210,7 +211,7 @@ public final class FastPathResolver {
                     final String match = matcher.group();
                     startIdx += match.length();
                     prefix += match;
-                    // 将协议后的部分视为绝对路径，这样 URL 的其余部分不会被当作相对于当前目录的目录
+                    // 将协议后的部分视为绝对路径,这样 URL 的其余部分不会被当作相对于当前目录的目录
                     isAbsolutePath = true;
                 }
             }
@@ -242,7 +243,7 @@ public final class FastPathResolver {
             isAbsolutePath = true;
         }
 
-        // 规范化路径，然后添加任何 UNC 或 URL 前缀
+        // 规范化路径,然后添加任何 UNC 或 URL 前缀
         String pathStr = normalizePath(startIdx == 0 ? relativePath : relativePath.substring(startIdx),
                 isFileOrJarURL);
         if (!"/".equals(pathStr)) {
@@ -261,10 +262,10 @@ public final class FastPathResolver {
             }
         }
 
-        // 清理路径(解析 ".." 段、合并 "//" 双重分隔符等)
+        // 清理路径(解析 ".." 段,合并 "//" 双重分隔符等)
         String pathResolved;
         if (isAbsolutePath || resolveBasePath == null || resolveBasePath.isEmpty()) {
-            // 没有基础路径可供解析，或者路径是绝对路径或 http(s):// URL(忽略基础路径)
+            // 没有基础路径可供解析,或者路径是绝对路径或 http(s):// URL(忽略基础路径)
             pathResolved = FileUtils.sanitizeEntryPath(pathStr, /* removeInitialSlash = */ false,
                     /* removeFinalSlash = */ true);
         } else {
@@ -274,12 +275,12 @@ public final class FastPathResolver {
                     /* removeInitialSlash = */ false, /* removeFinalSlash = */ true);
         }
 
-        // 将任何前缀加回，例如 "https://"
+        // 将任何前缀加回,例如 "https://"
         return prefix.isEmpty() ? pathResolved : prefix + pathResolved;
     }
 
     /**
-     * 从文件名 URI 中剥离任何 "jar:" 前缀，并将其转换为文件路径，
+     * 从文件名 URI 中剥离任何 "jar:" 前缀,并将其转换为文件路径,
      * 处理可能混用文件系统和 URI 约定的情况如果 relativePathStr 是 "http(s):" 路径则返回 null
      *
      * @param pathStr

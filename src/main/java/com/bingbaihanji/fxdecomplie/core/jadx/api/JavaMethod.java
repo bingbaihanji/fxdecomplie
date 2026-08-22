@@ -16,12 +16,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 对方法节点 ({@link MethodNode})的对外封装，向 API 使用者提供方法的名称 
+ * 对方法节点 ({@link MethodNode})的对外封装,向 API 使用者提供方法的名称 
  * 参数 返回类型 引用关系等信息
  */
 public final class JavaMethod implements JavaNode {
+
     /** 被封装的底层方法节点 */
     private final MethodNode mth;
+
     /** 声明该方法的所属类 */
     private final JavaClass parent;
 
@@ -30,7 +32,7 @@ public final class JavaMethod implements JavaNode {
         this.mth = m;
     }
 
-    /** 获取方法名 (使用别名，可能经过反混淆重命名) */
+    /** 获取方法名 (使用别名,可能经过反混淆重命名) */
     @Override
     public String getName() {
         return mth.getAlias();
@@ -59,7 +61,7 @@ public final class JavaMethod implements JavaNode {
         return mth.getAccessFlags();
     }
 
-    /** 获取方法的参数类型列表，并尝试解析类别名 */
+    /** 获取方法的参数类型列表,并尝试解析类别名 */
     public List<ArgType> getArguments() {
         List<ArgType> infoArgTypes = mth.methodInfo().getArgumentsTypes();
         if (infoArgTypes.isEmpty()) {
@@ -70,7 +72,7 @@ public final class JavaMethod implements JavaNode {
                 type -> ArgType.tryToResolveClassAlias(mth.root(), type));
     }
 
-    /** 获取方法的返回类型，并尝试解析类别名 */
+    /** 获取方法的返回类型,并尝试解析类别名 */
     public ArgType getReturnType() {
         ArgType retType = mth.getReturnType();
         return ArgType.tryToResolveClassAlias(mth.root(), retType);
@@ -131,7 +133,7 @@ public final class JavaMethod implements JavaNode {
         return mth.getCodeStr();
     }
 
-    /** 移除方法的别名，恢复为原始名称 */
+    /** 移除方法的别名,恢复为原始名称 */
     @Override
     public void removeAlias() {
         this.mth.methodInfo().removeAlias();
@@ -153,7 +155,7 @@ public final class JavaMethod implements JavaNode {
     }
 
     /**
-     * 内部 API，不稳定！
+     * 内部 API,不稳定!
      */
     @ApiStatus.Internal
     public MethodNode getMethodNode() {

@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions;
 
 public class JadxRuntimeException extends RuntimeException {
+
     private static final long serialVersionUID = -7410848445429898248L;
 
     public JadxRuntimeException() {

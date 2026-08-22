@@ -8,7 +8,13 @@ import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A map which stores the information of how try edges correlate with each other.
@@ -17,7 +23,9 @@ import java.util.*;
 public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, BlockNode>> {
 
     private final List<Pair<TryEdge, TryEdge>> mergedEdges = new ArrayList<>();
+
     private final TryCatchBlockAttr tryCatch;
+
     private final Map<TryEdge, Map<TryEdge, BlockNode>> underlyingMap;
 
     public TryEdgeScopeGroupMap(MethodNode mth, TryCatchBlockAttr tryCatch, int initialCapacity) {
@@ -207,7 +215,8 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
                 if (keptEdge.isHandlerExit() && !tryCatch.getHandlers().contains(keptEdge.getExceptionHandler())) {
                     continue;
                 }
-                if (removedEdge.isHandlerExit() && !tryCatch.getHandlers().contains(removedEdge.getExceptionHandler())) {
+                if (removedEdge.isHandlerExit() && !tryCatch.getHandlers()
+                        .contains(removedEdge.getExceptionHandler())) {
                     continue;
                 }
 
@@ -320,8 +329,10 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
         List<Pair<TryEdgeScope, TryEdgeScope>> handlerPairs = new LinkedList<>();
         for (int i = 0; i < exceptionHandlers.size(); i++) {
             for (int j = i + 1; j < exceptionHandlers.size(); j++) {
-                TryEdgeScope a = new TryEdgeScope(exceptionHandlers.get(i).getKey(), exceptionHandlers.get(i).getValue());
-                TryEdgeScope b = new TryEdgeScope(exceptionHandlers.get(j).getKey(), exceptionHandlers.get(j).getValue());
+                TryEdgeScope a = new TryEdgeScope(exceptionHandlers.get(i).getKey(), exceptionHandlers.get(i)
+                        .getValue());
+                TryEdgeScope b = new TryEdgeScope(exceptionHandlers.get(j).getKey(), exceptionHandlers.get(j)
+                        .getValue());
                 handlerPairs.add(new Pair<>(a, b));
             }
         }

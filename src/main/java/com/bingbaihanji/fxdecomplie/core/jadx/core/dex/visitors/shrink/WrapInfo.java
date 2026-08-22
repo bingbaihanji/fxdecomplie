@@ -4,7 +4,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.Registe
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 
 final class WrapInfo {
+
     private final InsnNode insn;
+
     private final RegisterArg arg;
 
     WrapInfo(InsnNode assignInsn, RegisterArg arg) {

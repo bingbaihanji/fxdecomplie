@@ -46,7 +46,9 @@ public enum CommentStyle {
     JAVADOC_CONDENSED("/** ", " * ", " */");
 
     private final String start;
+
     private final String onNewLine;
+
     private final String end;
 
     CommentStyle(String start, String onNewLine, String end) {

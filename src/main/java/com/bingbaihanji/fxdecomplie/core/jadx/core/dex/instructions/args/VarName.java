@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args;
 
 public class VarName {
+
     private String name;
 
     public String getName() {

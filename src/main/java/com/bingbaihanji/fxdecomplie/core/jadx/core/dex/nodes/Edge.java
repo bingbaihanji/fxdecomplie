@@ -4,7 +4,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AttrNode;
 
 public class Edge extends AttrNode {
+
     private final BlockNode source;
+
     private final BlockNode target;
 
     public Edge(BlockNode source, BlockNode target) {

@@ -24,8 +24,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class InheritancePane extends VBox {
 
     private final TreeView<InheritanceNode> treeView;
+
     /** 加载代数计数器,用于丢弃已过期的异步加载结果 */
     private final AtomicLong loadGeneration = new AtomicLong();
+
     private OpenHandler openHandler;
 
     /** 构造继承层次面板,初始化标题标签和树形控件 */
@@ -42,6 +44,7 @@ public final class InheritancePane extends VBox {
         VBox.setVgrow(treeView, Priority.ALWAYS);
 
         treeView.setCellFactory(tv -> new TreeCell<>() {
+
             @Override
             protected void updateItem(InheritanceNode item, boolean empty) {
                 super.updateItem(item, empty);
@@ -150,6 +153,7 @@ public final class InheritancePane extends VBox {
     /** 树节点双击打开回调接口 */
     @FunctionalInterface
     public interface OpenHandler {
+
         void open(String className);
     }
 }

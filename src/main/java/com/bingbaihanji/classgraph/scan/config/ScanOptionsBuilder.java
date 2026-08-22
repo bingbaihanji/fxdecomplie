@@ -1,15 +1,18 @@
 package com.bingbaihanji.classgraph.scan.config;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * {@link ScanOptions} 的流式构造器。
+ * {@link ScanOptions} 的流式构造器.
  *
- * <p>线程不安全 — 每个构建过程使用一个实例。构建完成后调用 {@link #build()}
- * 生成不可变的 {@link ScanOptions}。</p>
+ * <p>线程不安全 — 每个构建过程使用一个实例.构建完成后调用 {@link #build()}
+ * 生成不可变的 {@link ScanOptions}.</p>
  *
- * <p>使用示例：
+ * <p>使用示例:
  * <pre>{@code
  * // 方式1: 直接设置
  * ScanOptions opts = new ScanOptionsBuilder()
@@ -33,9 +36,13 @@ import java.util.function.Consumer;
 public final class ScanOptionsBuilder {
 
     private ScanMetadataOptions metadata = ScanMetadataOptions.DEFAULT;
+
     private ScanClasspathOptions classpath = ScanClasspathOptions.DEFAULT;
+
     private ScanRuntimeOptions runtime = ScanRuntimeOptions.DEFAULT;
+
     private ScanFilters filters = ScanFilters.DEFAULT;
+
     private int maxThreads;
 
     // ─── 子配置构建器工厂 ───
@@ -96,7 +103,7 @@ public final class ScanOptionsBuilder {
         return this;
     }
 
-    // ─── 便捷方法（直接设置常用选项） ───
+    // ─── 便捷方法(直接设置常用选项) ───
 
     public ScanOptionsBuilder enableClassInfo(boolean v) {
         this.metadata = new MetadataBuilder(metadata).enableClassInfo(v).build();
@@ -184,12 +191,19 @@ public final class ScanOptionsBuilder {
 
     /** {@link ScanMetadataOptions} 的构建器 */
     public static final class MetadataBuilder {
+
         private boolean enableClassInfo;
+
         private boolean enableFieldInfo;
+
         private boolean enableMethodInfo;
+
         private boolean enableAnnotationInfo;
+
         private boolean enableStaticFinalValues;
+
         private boolean enableInterClassDeps;
+
         private boolean enableExternalClasses;
 
         MetadataBuilder(ScanMetadataOptions base) {
@@ -202,15 +216,42 @@ public final class ScanOptionsBuilder {
             this.enableExternalClasses = base.enableExternalClasses();
         }
 
-        public MetadataBuilder enableClassInfo(boolean v) { this.enableClassInfo = v; return this; }
-        public MetadataBuilder enableFieldInfo(boolean v) { this.enableFieldInfo = v; return this; }
-        public MetadataBuilder enableMethodInfo(boolean v) { this.enableMethodInfo = v; return this; }
-        public MetadataBuilder enableAnnotationInfo(boolean v) { this.enableAnnotationInfo = v; return this; }
-        public MetadataBuilder enableStaticFinalFieldConstantInitializerValues(boolean v) { this.enableStaticFinalValues = v; return this; }
-        public MetadataBuilder enableInterClassDependencies(boolean v) { this.enableInterClassDeps = v; return this; }
-        public MetadataBuilder enableExternalClasses(boolean v) { this.enableExternalClasses = v; return this; }
+        public MetadataBuilder enableClassInfo(boolean v) {
+            this.enableClassInfo = v;
+            return this;
+        }
 
-        /** 快捷方法：启用所有元数据 */
+        public MetadataBuilder enableFieldInfo(boolean v) {
+            this.enableFieldInfo = v;
+            return this;
+        }
+
+        public MetadataBuilder enableMethodInfo(boolean v) {
+            this.enableMethodInfo = v;
+            return this;
+        }
+
+        public MetadataBuilder enableAnnotationInfo(boolean v) {
+            this.enableAnnotationInfo = v;
+            return this;
+        }
+
+        public MetadataBuilder enableStaticFinalFieldConstantInitializerValues(boolean v) {
+            this.enableStaticFinalValues = v;
+            return this;
+        }
+
+        public MetadataBuilder enableInterClassDependencies(boolean v) {
+            this.enableInterClassDeps = v;
+            return this;
+        }
+
+        public MetadataBuilder enableExternalClasses(boolean v) {
+            this.enableExternalClasses = v;
+            return this;
+        }
+
+        /** 快捷方法:启用所有元数据 */
         public MetadataBuilder withAll() {
             this.enableClassInfo = true;
             this.enableFieldInfo = true;
@@ -224,24 +265,36 @@ public final class ScanOptionsBuilder {
 
         public ScanMetadataOptions build() {
             return new ScanMetadataOptions(enableClassInfo, enableFieldInfo,
-                enableMethodInfo, enableAnnotationInfo, enableStaticFinalValues,
-                enableInterClassDeps, enableExternalClasses);
+                    enableMethodInfo, enableAnnotationInfo, enableStaticFinalValues,
+                    enableInterClassDeps, enableExternalClasses);
         }
     }
 
     /** {@link ScanClasspathOptions} 的构建器 */
     public static final class ClasspathBuilder {
+
         private boolean scanJars = true;
+
         private boolean scanNestedJars = true;
+
         private boolean scanDirs = true;
+
         private boolean scanModules = true;
+
         private boolean enableSystemJarsAndModules;
+
         private Set<String> allowedURLSchemes;
+
         private List<Object> overrideClasspath;
+
         private int maxBufferedJarRAMSize = 64 * 1024 * 1024;
+
         private boolean enableMemoryMapping;
+
         private boolean enableMultiReleaseVersions;
+
         private boolean removeTemporaryFilesAfterScan;
+
         private boolean ignoreParentClassLoaders;
 
         ClasspathBuilder(ScanClasspathOptions base) {
@@ -251,9 +304,9 @@ public final class ScanOptionsBuilder {
             this.scanModules = base.scanModules();
             this.enableSystemJarsAndModules = base.enableSystemJarsAndModules();
             this.allowedURLSchemes = base.allowedURLSchemes().isEmpty() ? null
-                : new HashSet<>(base.allowedURLSchemes());
+                    : new HashSet<>(base.allowedURLSchemes());
             this.overrideClasspath = base.overrideClasspath().isEmpty() ? null
-                : new ArrayList<>(base.overrideClasspath());
+                    : new ArrayList<>(base.overrideClasspath());
             this.maxBufferedJarRAMSize = base.maxBufferedJarRAMSize();
             this.enableMemoryMapping = base.enableMemoryMapping();
             this.enableMultiReleaseVersions = base.enableMultiReleaseVersions();
@@ -261,65 +314,117 @@ public final class ScanOptionsBuilder {
             this.ignoreParentClassLoaders = base.ignoreParentClassLoaders();
         }
 
-        public ClasspathBuilder scanJars(boolean v) { this.scanJars = v; return this; }
-        public ClasspathBuilder scanNestedJars(boolean v) { this.scanNestedJars = v; return this; }
-        public ClasspathBuilder scanDirs(boolean v) { this.scanDirs = v; return this; }
-        public ClasspathBuilder scanModules(boolean v) { this.scanModules = v; return this; }
-        public ClasspathBuilder enableSystemJarsAndModules(boolean v) { this.enableSystemJarsAndModules = v; return this; }
-        public ClasspathBuilder enableMemoryMapping(boolean v) { this.enableMemoryMapping = v; return this; }
-        public ClasspathBuilder enableMultiReleaseVersions(boolean v) { this.enableMultiReleaseVersions = v; return this; }
-        public ClasspathBuilder removeTemporaryFilesAfterScan(boolean v) { this.removeTemporaryFilesAfterScan = v; return this; }
-        public ClasspathBuilder ignoreParentClassLoaders(boolean v) { this.ignoreParentClassLoaders = v; return this; }
-        public ClasspathBuilder maxBufferedJarRAMSize(int v) { this.maxBufferedJarRAMSize = v; return this; }
+        public ClasspathBuilder scanJars(boolean v) {
+            this.scanJars = v;
+            return this;
+        }
+
+        public ClasspathBuilder scanNestedJars(boolean v) {
+            this.scanNestedJars = v;
+            return this;
+        }
+
+        public ClasspathBuilder scanDirs(boolean v) {
+            this.scanDirs = v;
+            return this;
+        }
+
+        public ClasspathBuilder scanModules(boolean v) {
+            this.scanModules = v;
+            return this;
+        }
+
+        public ClasspathBuilder enableSystemJarsAndModules(boolean v) {
+            this.enableSystemJarsAndModules = v;
+            return this;
+        }
+
+        public ClasspathBuilder enableMemoryMapping(boolean v) {
+            this.enableMemoryMapping = v;
+            return this;
+        }
+
+        public ClasspathBuilder enableMultiReleaseVersions(boolean v) {
+            this.enableMultiReleaseVersions = v;
+            return this;
+        }
+
+        public ClasspathBuilder removeTemporaryFilesAfterScan(boolean v) {
+            this.removeTemporaryFilesAfterScan = v;
+            return this;
+        }
+
+        public ClasspathBuilder ignoreParentClassLoaders(boolean v) {
+            this.ignoreParentClassLoaders = v;
+            return this;
+        }
+
+        public ClasspathBuilder maxBufferedJarRAMSize(int v) {
+            this.maxBufferedJarRAMSize = v;
+            return this;
+        }
 
         public ClasspathBuilder addURLScheme(String scheme) {
-            if (this.allowedURLSchemes == null) this.allowedURLSchemes = new HashSet<>();
+            if (this.allowedURLSchemes == null) {
+                this.allowedURLSchemes = new HashSet<>();
+            }
             this.allowedURLSchemes.add(scheme);
             return this;
         }
 
         public ClasspathBuilder addClasspathOverride(Object path) {
-            if (this.overrideClasspath == null) this.overrideClasspath = new ArrayList<>();
+            if (this.overrideClasspath == null) {
+                this.overrideClasspath = new ArrayList<>();
+            }
             this.overrideClasspath.add(path);
             return this;
         }
 
         public ScanClasspathOptions build() {
             return new ScanClasspathOptions(scanJars, scanNestedJars, scanDirs,
-                scanModules, enableSystemJarsAndModules, allowedURLSchemes,
-                overrideClasspath, maxBufferedJarRAMSize, enableMemoryMapping,
-                enableMultiReleaseVersions, removeTemporaryFilesAfterScan,
-                ignoreParentClassLoaders);
+                    scanModules, enableSystemJarsAndModules, allowedURLSchemes,
+                    overrideClasspath, maxBufferedJarRAMSize, enableMemoryMapping,
+                    enableMultiReleaseVersions, removeTemporaryFilesAfterScan,
+                    ignoreParentClassLoaders);
         }
     }
 
     /** {@link ScanRuntimeOptions} 的构建器 */
     public static final class RuntimeBuilder {
+
         private List<ClassLoader> addedClassLoaders;
+
         private List<ClassLoader> overrideClassLoaders;
+
         private List<Object> addedModuleLayers;
+
         private List<Object> overrideModuleLayers;
+
         private List<Object> classpathElementFilters;
+
         private boolean initializeLoadedClasses;
+
         private boolean ignoreParentModuleLayers;
 
         RuntimeBuilder(ScanRuntimeOptions base) {
             this.addedClassLoaders = base.addedClassLoaders().isEmpty() ? null
-                : new ArrayList<>(base.addedClassLoaders());
+                    : new ArrayList<>(base.addedClassLoaders());
             this.overrideClassLoaders = base.overrideClassLoaders().isEmpty() ? null
-                : new ArrayList<>(base.overrideClassLoaders());
+                    : new ArrayList<>(base.overrideClassLoaders());
             this.addedModuleLayers = base.addedModuleLayers().isEmpty() ? null
-                : new ArrayList<>(base.addedModuleLayers());
+                    : new ArrayList<>(base.addedModuleLayers());
             this.overrideModuleLayers = base.overrideModuleLayers().isEmpty() ? null
-                : new ArrayList<>(base.overrideModuleLayers());
+                    : new ArrayList<>(base.overrideModuleLayers());
             this.classpathElementFilters = base.classpathElementFilters().isEmpty() ? null
-                : new ArrayList<>(base.classpathElementFilters());
+                    : new ArrayList<>(base.classpathElementFilters());
             this.initializeLoadedClasses = base.initializeLoadedClasses();
             this.ignoreParentModuleLayers = base.ignoreParentModuleLayers();
         }
 
         public RuntimeBuilder addClassLoader(ClassLoader cl) {
-            if (this.addedClassLoaders == null) this.addedClassLoaders = new ArrayList<>();
+            if (this.addedClassLoaders == null) {
+                this.addedClassLoaders = new ArrayList<>();
+            }
             this.addedClassLoaders.add(cl);
             return this;
         }
@@ -330,27 +435,41 @@ public final class ScanOptionsBuilder {
         }
 
         public RuntimeBuilder addModuleLayer(Object layer) {
-            if (this.addedModuleLayers == null) this.addedModuleLayers = new ArrayList<>();
+            if (this.addedModuleLayers == null) {
+                this.addedModuleLayers = new ArrayList<>();
+            }
             this.addedModuleLayers.add(layer);
             return this;
         }
 
-        public RuntimeBuilder initializeLoadedClasses(boolean v) { this.initializeLoadedClasses = v; return this; }
-        public RuntimeBuilder ignoreParentModuleLayers(boolean v) { this.ignoreParentModuleLayers = v; return this; }
+        public RuntimeBuilder initializeLoadedClasses(boolean v) {
+            this.initializeLoadedClasses = v;
+            return this;
+        }
+
+        public RuntimeBuilder ignoreParentModuleLayers(boolean v) {
+            this.ignoreParentModuleLayers = v;
+            return this;
+        }
 
         public ScanRuntimeOptions build() {
             return new ScanRuntimeOptions(addedClassLoaders, overrideClassLoaders,
-                addedModuleLayers, overrideModuleLayers, classpathElementFilters,
-                initializeLoadedClasses, ignoreParentModuleLayers);
+                    addedModuleLayers, overrideModuleLayers, classpathElementFilters,
+                    initializeLoadedClasses, ignoreParentModuleLayers);
         }
     }
 
     /** {@link ScanFilters} 的构建器 */
     public static final class FiltersBuilder {
+
         private boolean ignoreClassVisibility;
+
         private boolean ignoreFieldVisibility;
+
         private boolean ignoreMethodVisibility;
+
         private boolean disableRuntimeInvisibleAnnotations;
+
         private boolean extendScanningUpwardsToExternalClasses = true;
 
         FiltersBuilder(ScanFilters base) {
@@ -361,16 +480,35 @@ public final class ScanOptionsBuilder {
             this.extendScanningUpwardsToExternalClasses = base.extendScanningUpwardsToExternalClasses();
         }
 
-        public FiltersBuilder ignoreClassVisibility(boolean v) { this.ignoreClassVisibility = v; return this; }
-        public FiltersBuilder ignoreFieldVisibility(boolean v) { this.ignoreFieldVisibility = v; return this; }
-        public FiltersBuilder ignoreMethodVisibility(boolean v) { this.ignoreMethodVisibility = v; return this; }
-        public FiltersBuilder disableRuntimeInvisibleAnnotations(boolean v) { this.disableRuntimeInvisibleAnnotations = v; return this; }
-        public FiltersBuilder extendScanningUpwardsToExternalClasses(boolean v) { this.extendScanningUpwardsToExternalClasses = v; return this; }
+        public FiltersBuilder ignoreClassVisibility(boolean v) {
+            this.ignoreClassVisibility = v;
+            return this;
+        }
+
+        public FiltersBuilder ignoreFieldVisibility(boolean v) {
+            this.ignoreFieldVisibility = v;
+            return this;
+        }
+
+        public FiltersBuilder ignoreMethodVisibility(boolean v) {
+            this.ignoreMethodVisibility = v;
+            return this;
+        }
+
+        public FiltersBuilder disableRuntimeInvisibleAnnotations(boolean v) {
+            this.disableRuntimeInvisibleAnnotations = v;
+            return this;
+        }
+
+        public FiltersBuilder extendScanningUpwardsToExternalClasses(boolean v) {
+            this.extendScanningUpwardsToExternalClasses = v;
+            return this;
+        }
 
         public ScanFilters build() {
             return new ScanFilters(ignoreClassVisibility, ignoreFieldVisibility,
-                ignoreMethodVisibility, disableRuntimeInvisibleAnnotations,
-                extendScanningUpwardsToExternalClasses);
+                    ignoreMethodVisibility, disableRuntimeInvisibleAnnotations,
+                    extendScanningUpwardsToExternalClasses);
         }
     }
 }

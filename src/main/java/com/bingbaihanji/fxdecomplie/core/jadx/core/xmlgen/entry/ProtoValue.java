@@ -3,10 +3,15 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry;
 import java.util.List;
 
 public class ProtoValue {
+
     private String parent;
+
     private String name;
+
     private String value;
+
     private int type;
+
     private List<ProtoValue> namedValues;
 
     public ProtoValue(String value) {

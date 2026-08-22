@@ -8,7 +8,13 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -24,11 +30,17 @@ import java.util.function.Consumer;
 public final class CommentListPane extends VBox {
 
     private final TableView<CommentData> table = new TableView<>();
+
     private final ObservableList<CommentData> allRows = FXCollections.observableArrayList();
+
     private final TextField filterField = new TextField();
+
     private Consumer<Integer> onJumpToLine;
+
     private Runnable onDelete;
+
     private String workspaceHash;
+
     private String className;
 
     /**
@@ -36,7 +48,7 @@ public final class CommentListPane extends VBox {
      */
     public CommentListPane() {
         setPadding(new Insets(4));
-        // 过滤器输入框：监听文本变化实时过滤
+        // 过滤器输入框:监听文本变化实时过滤
         filterField.setPromptText(I18nUtil.getString("comment.filterPrompt"));
         filterField.textProperty().addListener((obs, o, n) -> applyFilter());
         VBox.setMargin(filterField, new Insets(0, 0, 4, 0));
@@ -63,7 +75,7 @@ public final class CommentListPane extends VBox {
         TableColumn<CommentData, String> summaryCol = new TableColumn<>(I18nUtil.getString("comment.column.summary"));
         summaryCol.setCellValueFactory(c -> javafx.beans.binding.Bindings.createStringBinding(() -> {
             String t = c.getValue().text();
-            return t != null && t.length() > 40 ? t.substring(0, 40) + "…" : t != null ? t : "";
+            return t != null && t.length() > 40 ? t.substring(0, 40) + "..." : t != null ? t : "";
         }));
 
         // 时间/作者列
@@ -76,7 +88,7 @@ public final class CommentListPane extends VBox {
 
         table.getColumns().addAll(lineCol, memberCol, summaryCol, timeCol);
 
-        // 行工厂：双击行跳转到对应行号
+        // 行工厂:双击行跳转到对应行号
         table.setRowFactory(tv -> {
             TableRow<CommentData> row = new TableRow<>();
             row.setOnMouseClicked(e -> {
@@ -87,7 +99,7 @@ public final class CommentListPane extends VBox {
             return row;
         });
 
-        // 右键菜单：删除选中注释,后台线程执行后刷新列表
+        // 右键菜单:删除选中注释,后台线程执行后刷新列表
         MenuItem delItem = new MenuItem(I18nUtil.getString("comment.delete"));
         delItem.setOnAction(e -> {
             CommentData sel = table.getSelectionModel().getSelectedItem();

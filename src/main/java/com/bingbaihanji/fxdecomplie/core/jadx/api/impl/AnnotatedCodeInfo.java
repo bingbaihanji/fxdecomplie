@@ -10,6 +10,7 @@ import java.util.Map;
 public class AnnotatedCodeInfo implements ICodeInfo {
 
     private final String code;
+
     private final ICodeMetadata metadata;
 
     public AnnotatedCodeInfo(String code, Map<Integer, Integer> lineMapping, Map<Integer, ICodeAnnotation> annotations) {

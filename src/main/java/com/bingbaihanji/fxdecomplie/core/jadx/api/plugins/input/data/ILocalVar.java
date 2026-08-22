@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data;
 import org.jetbrains.annotations.Nullable;
 
 public interface ILocalVar {
+
     String getName();
 
     int getRegNum();

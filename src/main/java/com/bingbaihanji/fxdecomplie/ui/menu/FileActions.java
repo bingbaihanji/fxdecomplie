@@ -9,6 +9,7 @@ import java.util.List;
  * @date 2026-06-17
  */
 public interface FileActions {
+
     /** 打开 JAR/ZIP/Class 文件 */
     void openFile();
 

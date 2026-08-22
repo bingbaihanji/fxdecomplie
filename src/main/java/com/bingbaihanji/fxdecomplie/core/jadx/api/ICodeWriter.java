@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.Map;
 
 /**
- * 代码写入器接口，用于构建反编译后的代码输出
+ * 代码写入器接口,用于构建反编译后的代码输出
  * <p>
  * 该接口提供了向输出缓冲区追加文本 管理缩进级别 
  * 附加元数据注解以及将最终结果生成为 {@link ICodeInfo} 的方法
@@ -26,31 +26,31 @@ public interface ICodeWriter {
     /**
      * 开始新的一行 (不含内容)
      *
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter startLine();
 
     /**
-     * 以指定字符作为行首内容，开始新的一行
+     * 以指定字符作为行首内容,开始新的一行
      *
      * @param c 行首字符
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter startLine(char c);
 
     /**
-     * 以指定字符串作为行首内容，开始新的一行
+     * 以指定字符串作为行首内容,开始新的一行
      *
      * @param str 行首字符串
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter startLine(String str);
 
     /**
-     * 开始新的一行，并关联源码行号
+     * 开始新的一行,并关联源码行号
      *
      * @param sourceLine 对应的源码行号
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter startLineWithNum(int sourceLine);
 
@@ -58,7 +58,7 @@ public interface ICodeWriter {
      * 追加多行字符串内容
      *
      * @param str 要追加的多行字符串
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter addMultiLine(String str);
 
@@ -66,7 +66,7 @@ public interface ICodeWriter {
      * 在当前行追加字符串内容
      *
      * @param str 要追加的字符串
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter add(String str);
 
@@ -74,7 +74,7 @@ public interface ICodeWriter {
      * 在当前行追加单个字符
      *
      * @param c 要追加的字符
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter add(char c);
 
@@ -82,21 +82,21 @@ public interface ICodeWriter {
      * 将另一个代码写入器的内容追加到当前输出中
      *
      * @param code 要合并的另一个代码写入器
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter add(ICodeWriter code);
 
     /**
-     * 插入一个换行符，结束当前行并开始新的一行
+     * 插入一个换行符,结束当前行并开始新的一行
      *
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter newLine();
 
     /**
      * 向当前行追加缩进空格 (缩进量由当前缩进级别决定)
      *
-     * @return 当前写入器实例，便于链式调用
+     * @return 当前写入器实例,便于链式调用
      */
     ICodeWriter addIndent();
 
@@ -167,7 +167,7 @@ public interface ICodeWriter {
     void attachSourceLine(int sourceLine);
 
     /**
-     * 完成代码写入操作，生成最终的 {@link ICodeInfo} 结果
+     * 完成代码写入操作,生成最终的 {@link ICodeInfo} 结果
      *
      * @return 包含所有写入内容和元数据的代码信息对象
      */

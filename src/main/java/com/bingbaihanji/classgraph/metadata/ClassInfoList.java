@@ -10,20 +10,29 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
- * 一个<i>去重后</i>(已去重)的 {@link ClassInfo} 对象列表，同时存储了可达类(通过给定的类关系获得，可以是直接关系或间接路径)
- * 和直接相关类(仅通过直接关系可达的类)(默认情况下，将 {@link ClassInfoList} 作为 {@link List} 访问时
- * 只返回可达类；通过调用 {@link #directOnly()} 可以获取直接相关类)
+ * 一个<i>去重后</i>(已去重)的 {@link ClassInfo} 对象列表,同时存储了可达类(通过给定的类关系获得,可以是直接关系或间接路径)
+ * 和直接相关类(仅通过直接关系可达的类)(默认情况下,将 {@link ClassInfoList} 作为 {@link List} 访问时
+ * 只返回可达类;通过调用 {@link #directOnly()} 可以获取直接相关类)
  *
  * <p>
  * ClassGraph 返回的大多数 {@link ClassInfoList} 对象按 {@link ClassInfo#getName()} 的值进行字典序排序
- * 一个例外是由 {@link ClassInfo#getSuperclasses()} 返回的类，它们按类层次结构的升序排列
+ * 一个例外是由 {@link ClassInfo#getSuperclasses()} 返回的类,它们按类层次结构的升序排列
  */
 public class ClassInfoList extends InfoList<ClassInfo> {
+
     /** 一个不可修改的空 {@link ClassInfoList} */
     public static final ClassInfoList EMPTY_LIST = new ClassInfoList();
+
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
@@ -33,15 +42,16 @@ public class ClassInfoList extends InfoList<ClassInfo> {
 
     /** 是否按名称排序 */
     private final boolean sortByName;
+
     /** 直接相关类 */
-    // 注意：此字段标记为 transient 以满足 Scrutinizer 的要求，因为此类扩展了 ArrayList(ArrayList 是
-    // Serializable 的)，因此所有字段都必须是可序列化的(而 Set 是一个接口，不是 Serializable)
-    // 将此字段标记为 transient 意味着直接关系将在序列化时丢失，但 Serializable 接口
+    // 注意:此字段标记为 transient 以满足 Scrutinizer 的要求,因为此类扩展了 ArrayList(ArrayList 是
+    // Serializable 的),因此所有字段都必须是可序列化的(而 Set 是一个接口,不是 Serializable)
+    // 将此字段标记为 transient 意味着直接关系将在序列化时丢失,但 Serializable 接口
     // 如今已不再广泛使用
     private transient Set<ClassInfo> directlyRelatedClasses;
 
     /**
-     * 构造一个可修改的 {@link ClassInfo} 对象列表，包含可达类(通过传递闭包获得)和直接相关类(在图中一步之遥)
+     * 构造一个可修改的 {@link ClassInfo} 对象列表,包含可达类(通过传递闭包获得)和直接相关类(在图中一步之遥)
      *
      * @param reachableClasses
      *            可达类
@@ -55,11 +65,11 @@ public class ClassInfoList extends InfoList<ClassInfo> {
         super(reachableClasses);
         this.sortByName = sortByName;
         if (sortByName) {
-            // 在构造函数中调用 CollectionUtils.sortIfNotEmpty(this) 有点冒险，
-            // 但父类构造函数已经调用完毕，所以应该没问题 :-)
+            // 在构造函数中调用 CollectionUtils.sortIfNotEmpty(this) 有点冒险,
+            // 但父类构造函数已经调用完毕,所以应该没问题 :-)
             CollectionUtils.sortIfNotEmpty(this);
         }
-        // 如果未提供 directlyRelatedClasses，则假定所有可达类都是直接相关的
+        // 如果未提供 directlyRelatedClasses,则假定所有可达类都是直接相关的
         this.directlyRelatedClasses = directlyRelatedClasses == null ? reachableClasses : directlyRelatedClasses;
     }
 
@@ -78,7 +88,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 构造一个可修改的 {@link ClassInfo} 对象列表，其中每个类都是直接相关的
+     * 构造一个可修改的 {@link ClassInfo} 对象列表,其中每个类都是直接相关的
      *
      * @param reachableClasses
      *            可达类
@@ -99,7 +109,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 给定一个大小提示，构造一个新的空的可修改的 {@link ClassInfo} 对象列表
+     * 给定一个大小提示,构造一个新的空的可修改的 {@link ClassInfo} 对象列表
      *
      * @param sizeHint
      *            大小提示
@@ -111,10 +121,10 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 给定一个初始的 {@link ClassInfo} 对象列表，构造一个新的可修改的空 {@link ClassInfoList}
+     * 给定一个初始的 {@link ClassInfo} 对象列表,构造一个新的可修改的空 {@link ClassInfoList}
      *
      * <p>
-     * 如果传入的 {@link Collection} 不是 {@link Set}，则 {@link ClassInfo} 对象在被添加到返回的列表之前
+     * 如果传入的 {@link Collection} 不是 {@link Set},则 {@link ClassInfo} 对象在被添加到返回的列表之前
      * 会先进行去重(通过将其添加到 Set 中)返回列表中的 {@link ClassInfo} 对象将按名称排序
      *
      * @param classInfoCollection
@@ -139,26 +149,26 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 将此 {@link ClassInfo} 对象列表转换为 {@code Class<?>} 对象列表，将列表中的每一项强制转换为
+     * 将此 {@link ClassInfo} 对象列表转换为 {@code Class<?>} 对象列表,将列表中的每一项强制转换为
      * 所请求的超类或接口类型会导致类加载器加载每个 {@link ClassInfo} 对象命名的类(如果尚未加载的话)
      *
      * <p>
-     * <b>重要说明：</b>由于 {@code superclassOrInterfaceType} 是一个已加载类的类引用，
+     * <b>重要说明:</b>由于 {@code superclassOrInterfaceType} 是一个已加载类的类引用,
      * 因此至关重要的是 {@code superclassOrInterfaceType} 必须由此 {@code ClassInfo} 对象所引用的类
-     * 所使用的同一个类加载器加载，否则类转换将失败
+     * 所使用的同一个类加载器加载,否则类转换将失败
      *
      * @param <T>
      *            超类或接口
      * @param superclassOrInterfaceType
      *            用于将每个加载的类强制转换到的超类或接口类引用
      * @param ignoreExceptions
-     *            如果为 true，则忽略类加载期间或尝试将生成的 {@code Class<?>} 引用强制转换到
+     *            如果为 true,则忽略类加载期间或尝试将生成的 {@code Class<?>} 引用强制转换到
      *            所请求类型时抛出的任何异常或错误——而是跳过该元素(即返回的列表可能包含比输入列表更少的项)
-     *            如果为 false，则在类无法加载或无法强制转换到所请求类型时抛出
+     *            如果为 false,则在类无法加载或无法强制转换到所请求类型时抛出
      *            {@link IllegalArgumentException}
      * @return 与此列表中每个 {@link ClassInfo} 对象对应的已加载的 {@code Class<?>} 对象
      * @throws IllegalArgumentException
-     *             如果 ignoreExceptions 为 false，并且在尝试加载或强制转换任何类时抛出了异常或错误
+     *             如果 ignoreExceptions 为 false,并且在尝试加载或强制转换任何类时抛出了异常或错误
      */
     public <T> List<Class<T>> loadClasses(final Class<T> superclassOrInterfaceType,
                                           final boolean ignoreExceptions) {
@@ -177,13 +187,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 将此 {@link ClassInfo} 对象列表转换为 {@code Class<?>} 对象列表，将列表中的每一项强制转换为
+     * 将此 {@link ClassInfo} 对象列表转换为 {@code Class<?>} 对象列表,将列表中的每一项强制转换为
      * 所请求的超类或接口类型会导致类加载器加载每个 {@link ClassInfo} 对象命名的类(如果尚未加载的话)
      *
      * <p>
-     * <b>重要说明：</b>由于 {@code superclassOrInterfaceType} 是一个已加载类的类引用，
+     * <b>重要说明:</b>由于 {@code superclassOrInterfaceType} 是一个已加载类的类引用,
      * 因此至关重要的是 {@code superclassOrInterfaceType} 必须由此 {@code ClassInfo} 对象所引用的类
-     * 所使用的同一个类加载器加载，否则类转换将失败
+     * 所使用的同一个类加载器加载,否则类转换将失败
      *
      * @param <T>
      *            超类或接口
@@ -202,13 +212,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * 每个 {@link ClassInfo} 对象命名的类(如果尚未加载的话)
      *
      * @param ignoreExceptions
-     *            如果为 true，则忽略类加载期间抛出的任何异常或错误如果类加载期间抛出了异常或错误，
-     *            则不会将对应的 {@link ClassInfo} 对象的 {@code Class<?>} 引用添加到输出类中，
-     *            因此返回的列表可能包含比输入列表更少的项如果为 false，则在类无法加载时抛出
+     *            如果为 true,则忽略类加载期间抛出的任何异常或错误如果类加载期间抛出了异常或错误,
+     *            则不会将对应的 {@link ClassInfo} 对象的 {@code Class<?>} 引用添加到输出类中,
+     *            因此返回的列表可能包含比输入列表更少的项如果为 false,则在类无法加载时抛出
      *            {@link IllegalArgumentException}
      * @return 与此列表中每个 {@link ClassInfo} 对象对应的已加载的 {@code Class<?>} 对象
      * @throws IllegalArgumentException
-     *             如果 ignoreExceptions 为 false，并且在尝试加载任何类时抛出了异常或错误
+     *             如果 ignoreExceptions 为 false,并且在尝试加载任何类时抛出了异常或错误
      */
     public List<Class<?>> loadClasses(final boolean ignoreExceptions) {
         if (this.isEmpty()) {
@@ -241,8 +251,8 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取直接相关的类列表，而非通过多步可达的类例如，如果此 {@link ClassInfoList} 是通过查询
-     * 某个给定类的所有超类生成的，那么 {@link #directOnly()} 将只返回该类的直接超类
+     * 获取直接相关的类列表,而非通过多步可达的类例如,如果此 {@link ClassInfoList} 是通过查询
+     * 某个给定类的所有超类生成的,那么 {@link #directOnly()} 将只返回该类的直接超类
      *
      * @return 直接相关类的列表
      */
@@ -251,8 +261,8 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 反序列化时恢复 directlyRelatedClasses 字段，避免 {@link #directOnly()} 抛出 NPE。
-     * 由于直接关系在序列化时已经丢失，这里保守地将所有可达类视为直接相关。
+     * 反序列化时恢复 directlyRelatedClasses 字段,避免 {@link #directOnly()} 抛出 NPE.
+     * 由于直接关系在序列化时已经丢失,这里保守地将所有可达类视为直接相关.
      */
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
@@ -288,7 +298,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @return 此 {@link ClassInfoList} 与其他列表的交集
      */
     public ClassInfoList intersect(final ClassInfoList... others) {
-        // 将第一个不按名称排序的 ClassInfoList 放在列表头部，
+        // 将第一个不按名称排序的 ClassInfoList 放在列表头部,
         // 以便在交集中保留其顺序 (#238)
         final ArrayDeque<ClassInfoList> intersectionOrder = new ArrayDeque<>();
         intersectionOrder.add(this);
@@ -317,11 +327,11 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 求此 {@link ClassInfoList} 与另一个 {@link ClassInfoList} 的差集，即 (this \ other)
+     * 求此 {@link ClassInfoList} 与另一个 {@link ClassInfoList} 的差集,即 (this \ other)
      *
      * @param other
      *            要从此列表中减去的另一个 {@link ClassInfoList}
-     * @return 此 {@link ClassInfoList} 与另一个的差集，即 (this \ other)
+     * @return 此 {@link ClassInfoList} 与另一个的差集,即 (this \ other)
      */
     public ClassInfoList exclude(final ClassInfoList other) {
         final Set<ClassInfo> reachableClassesDifference = new LinkedHashSet<>(this);
@@ -338,7 +348,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      *
      * @param className
      *            类名
-     * @return 如果此列表包含具有给定名称的 {@link ClassInfo} 对象，则返回 true
+     * @return 如果此列表包含具有给定名称的 {@link ClassInfo} 对象,则返回 true
      */
     public boolean containsName(final String className) {
         for (final ClassInfo ci : this) {
@@ -371,12 +381,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含标准类(非接口或注解的类)
+     * 过滤此 {@link ClassInfoList},仅包含标准类(非接口或注解的类)
      *
-     * @return 过滤后的列表，仅包含标准类
+     * @return 过滤后的列表,仅包含标准类
      */
     public ClassInfoList getStandardClasses() {
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return ci.isStandardClass();
@@ -387,12 +398,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含非注解的接口另见 {@link #getInterfacesAndAnnotations()}
+     * 过滤此 {@link ClassInfoList},仅包含非注解的接口另见 {@link #getInterfacesAndAnnotations()}
      *
-     * @return 过滤后的列表，仅包含接口
+     * @return 过滤后的列表,仅包含接口
      */
     public ClassInfoList getInterfaces() {
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return ci.isInterface();
@@ -401,12 +413,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含接口和注解(注解是接口，可以被实现)另见 {@link #getInterfaces()}
+     * 过滤此 {@link ClassInfoList},仅包含接口和注解(注解是接口,可以被实现)另见 {@link #getInterfaces()}
      *
-     * @return 过滤后的列表，仅包含接口
+     * @return 过滤后的列表,仅包含接口
      */
     public ClassInfoList getInterfacesAndAnnotations() {
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return ci.isInterfaceOrAnnotation();
@@ -415,12 +428,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含已实现的接口，即非注解接口，或已被某个类实现的注解
+     * 过滤此 {@link ClassInfoList},仅包含已实现的接口,即非注解接口,或已被某个类实现的注解
      *
-     * @return 过滤后的列表，仅包含已实现的接口
+     * @return 过滤后的列表,仅包含已实现的接口
      */
     public ClassInfoList getImplementedInterfaces() {
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return ci.isImplementedInterface();
@@ -429,12 +443,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含注解
+     * 过滤此 {@link ClassInfoList},仅包含注解
      *
-     * @return 过滤后的列表，仅包含注解
+     * @return 过滤后的列表,仅包含注解
      */
     public ClassInfoList getAnnotations() {
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return ci.isAnnotation();
@@ -443,12 +458,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含 {@link Enum} 类
+     * 过滤此 {@link ClassInfoList},仅包含 {@link Enum} 类
      *
-     * @return 过滤后的列表，仅包含枚举
+     * @return 过滤后的列表,仅包含枚举
      */
     public ClassInfoList getEnums() {
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return ci.isEnum();
@@ -457,12 +473,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含 {@code record} 类
+     * 过滤此 {@link ClassInfoList},仅包含 {@code record} 类
      *
-     * @return 过滤后的列表，仅包含 {@code record} 类
+     * @return 过滤后的列表,仅包含 {@code record} 类
      */
     public ClassInfoList getRecords() {
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return ci.isRecord();
@@ -471,14 +488,14 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 过滤此 {@link ClassInfoList}，仅包含可赋值给所请求类 assignableToClass 的类
+     * 过滤此 {@link ClassInfoList},仅包含可赋值给所请求类 assignableToClass 的类
      * (即 assignableToClass 是列表元素的超类或已实现的接口)
      *
      * @param superclassOrInterface
      *            要过滤的超类或接口
-     * @return 过滤后的列表，仅包含那些对应的 {@code Class<?>} 引用满足
+     * @return 过滤后的列表,仅包含那些对应的 {@code Class<?>} 引用满足
      *         {@code assignableToClassRef.isAssignableFrom(listItemClassRef)} 为 true 的类
-     *         如果没有类可赋值给所请求的类，则返回空列表
+     *         如果没有类可赋值给所请求的类,则返回空列表
      * @throws IllegalArgumentException
      *             如果 classInfo 为 null
      */
@@ -497,6 +514,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
         allAssignableFromClasses.add(superclassOrInterface);
 
         return filter(new ClassInfoFilter() {
+
             @Override
             public boolean accept(final ClassInfo ci) {
                 return allAssignableFromClasses.contains(ci);
@@ -505,20 +523,20 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
      * sizeX 和 sizeY 参数是要求 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
-     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
+     * 在使用此方法之前,必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
      *
      * @param sizeX
      *            GraphViz 布局宽度(英寸)
      * @param sizeY
      *            GraphViz 布局高度(英寸)
      * @param includeExternalClasses
-     *            如果为 true，并且扫描前调用了 {@link ClassGraph#withExternalClasses()}，则在依赖图中显示
+     *            如果为 true,并且扫描前调用了 {@link ClassGraph#withExternalClasses()},则在依赖图中显示
      *            "外部类"(未被接受的类)
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFileFromInterClassDependencies(final float sizeX, final float sizeY,
@@ -538,13 +556,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
      * sizeX 和 sizeY 参数是要求 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
-     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
+     * 在使用此方法之前,必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
      *
      * <p>
      * 等效于以 (10.5f, 8f, ScanConfig.enableExternalClasses) 参数调用
-     * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)}，
+     * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)},
      * 其中 ScanConfig.enableExternalClasses 在扫描前调用了
      * {@link ClassGraph#withExternalClasses()} 时为 true
      *
@@ -554,7 +572,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      *            GraphViz 布局高度(英寸)
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFileFromInterClassDependencies(final float sizeX, final float sizeY) {
@@ -571,19 +589,19 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
      * sizeX 和 sizeY 参数是要求 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
-     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
+     * 在使用此方法之前,必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
      *
      * <p>
      * 等效于以 (10.5f, 8f, ScanConfig.enableExternalClasses) 参数调用
-     * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)}，
+     * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)},
      * 其中 ScanConfig.enableExternalClasses 在扫描前调用了
      * {@link ClassGraph#withExternalClasses()} 时为 true
      *
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFileFromInterClassDependencies() {
@@ -600,12 +618,12 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 已弃用：请改用 {@link #generateGraphVizDotFileFromInterClassDependencies()}
+     * 已弃用:请改用 {@link #generateGraphVizDotFileFromInterClassDependencies()}
      *
      * @deprecated 请改用 {@link #generateGraphVizDotFileFromInterClassDependencies()}
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     @Deprecated
@@ -614,22 +632,22 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化sizeX 和 sizeY 参数是要求 GraphViz
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化sizeX 和 sizeY 参数是要求 GraphViz
      * 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
      *
      * <p>
-     * 要显示非公共类，请在扫描前调用 {@link ClassGraph#withoutClassVisibilityFilter()}
+     * 要显示非公共类,请在扫描前调用 {@link ClassGraph#withoutClassVisibilityFilter()}
      *
      * <p>
-     * 要显示字段，请在扫描前调用 {@link ClassGraph#withFieldInfo()}要显示非公共字段，
+     * 要显示字段,请在扫描前调用 {@link ClassGraph#withFieldInfo()}要显示非公共字段,
      * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * <p>
-     * 要显示方法，请在扫描前调用 {@link ClassGraph#withMethodInfo()}要显示非公共方法，
+     * 要显示方法,请在扫描前调用 {@link ClassGraph#withMethodInfo()}要显示非公共方法,
      * 还须在扫描前调用 {@link ClassGraph#withoutMethodVisibilityFilter()}
      *
      * <p>
-     * 要显示注解，请在扫描前调用 {@link ClassGraph#withAnnotationInfo()}要显示非公共注解，
+     * 要显示注解,请在扫描前调用 {@link ClassGraph#withAnnotationInfo()}要显示非公共注解,
      * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}(注解没有独立的可见性修饰符)
      *
      * @param sizeX
@@ -637,21 +655,21 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @param sizeY
      *            GraphViz 布局高度(英寸)
      * @param showFields
-     *            如果为 true，在图中类节点内显示字段
+     *            如果为 true,在图中类节点内显示字段
      * @param showFieldTypeDependencyEdges
-     *            如果为 true，显示类与其字段类型之间的边
+     *            如果为 true,显示类与其字段类型之间的边
      * @param showMethods
-     *            如果为 true，在图中类节点内显示方法
+     *            如果为 true,在图中类节点内显示方法
      * @param showMethodTypeDependencyEdges
-     *            如果为 true，显示类与其方法的返回类型和/或参数类型之间的边
+     *            如果为 true,显示类与其方法的返回类型和/或参数类型之间的边
      * @param showAnnotations
-     *            如果为 true，在图中显示注解
+     *            如果为 true,在图中显示注解
      * @param useSimpleNames
-     *            是否在类型签名中对类使用简单名称(如果为 true，则在方法和字段类型签名中
+     *            是否在类型签名中对类使用简单名称(如果为 true,则在方法和字段类型签名中
      *            从类名中去除包名)
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile(final float sizeX, final float sizeY, final boolean showFields,
@@ -673,22 +691,22 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化sizeX 和 sizeY 参数是要求 GraphViz
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化sizeX 和 sizeY 参数是要求 GraphViz
      * 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
      *
      * <p>
-     * 要显示非公共类，请在扫描前调用 {@link ClassGraph#withoutClassVisibilityFilter()}
+     * 要显示非公共类,请在扫描前调用 {@link ClassGraph#withoutClassVisibilityFilter()}
      *
      * <p>
-     * 要显示字段，请在扫描前调用 {@link ClassGraph#withFieldInfo()}要显示非公共字段，
+     * 要显示字段,请在扫描前调用 {@link ClassGraph#withFieldInfo()}要显示非公共字段,
      * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * <p>
-     * 要显示方法，请在扫描前调用 {@link ClassGraph#withMethodInfo()}要显示非公共方法，
+     * 要显示方法,请在扫描前调用 {@link ClassGraph#withMethodInfo()}要显示非公共方法,
      * 还须在扫描前调用 {@link ClassGraph#withoutMethodVisibilityFilter()}
      *
      * <p>
-     * 要显示注解，请在扫描前调用 {@link ClassGraph#withAnnotationInfo()}要显示非公共注解，
+     * 要显示注解,请在扫描前调用 {@link ClassGraph#withAnnotationInfo()}要显示非公共注解,
      * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}(注解没有独立的可见性修饰符)
      *
      * <p>
@@ -699,18 +717,18 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @param sizeY
      *            GraphViz 布局高度(英寸)
      * @param showFields
-     *            如果为 true，在图中类节点内显示字段
+     *            如果为 true,在图中类节点内显示字段
      * @param showFieldTypeDependencyEdges
-     *            如果为 true，显示类与其字段类型之间的边
+     *            如果为 true,显示类与其字段类型之间的边
      * @param showMethods
-     *            如果为 true，在图中类节点内显示方法
+     *            如果为 true,在图中类节点内显示方法
      * @param showMethodTypeDependencyEdges
-     *            如果为 true，显示类与其方法的返回类型和/或参数类型之间的边
+     *            如果为 true,显示类与其方法的返回类型和/或参数类型之间的边
      * @param showAnnotations
-     *            如果为 true，在图中显示注解
+     *            如果为 true,在图中显示注解
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile(final float sizeX, final float sizeY, final boolean showFields,
@@ -721,14 +739,14 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化
      *
      * <p>
-     * 如果已通过 {@link ClassGraph#withMethodInfo()}、{@link ClassGraph#withFieldInfo()} 和
-     * {@link ClassGraph#withAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
+     * 如果已通过 {@link ClassGraph#withMethodInfo()},{@link ClassGraph#withFieldInfo()} 和
+     * {@link ClassGraph#withAnnotationInfo()} 启用了方法,字段和注解,则会显示它们
      *
      * <p>
-     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()}、
+     * 仅显示公共类,方法和字段,除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()},
      * {@link ClassGraph#withoutMethodVisibilityFilter()} 和/或 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * @param sizeX
@@ -737,7 +755,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      *            GraphViz 布局高度(英寸)
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile(final float sizeX, final float sizeY) {
@@ -747,19 +765,19 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化
      *
      * <p>
-     * 如果已通过 {@link ClassGraph#withMethodInfo()}、{@link ClassGraph#withFieldInfo()} 和
-     * {@link ClassGraph#withAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
+     * 如果已通过 {@link ClassGraph#withMethodInfo()},{@link ClassGraph#withFieldInfo()} 和
+     * {@link ClassGraph#withAnnotationInfo()} 启用了方法,字段和注解,则会显示它们
      *
      * <p>
-     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()}、
+     * 仅显示公共类,方法和字段,除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()},
      * {@link ClassGraph#withoutMethodVisibilityFilter()} 和/或 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile() {
@@ -769,14 +787,14 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 生成并保存一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
+     * 生成并保存一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化
      *
      * <p>
-     * 如果已通过 {@link ClassGraph#withMethodInfo()}、{@link ClassGraph#withFieldInfo()} 和
-     * {@link ClassGraph#withAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
+     * 如果已通过 {@link ClassGraph#withMethodInfo()},{@link ClassGraph#withFieldInfo()} 和
+     * {@link ClassGraph#withAnnotationInfo()} 启用了方法,字段和注解,则会显示它们
      *
      * <p>
-     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()}、
+     * 仅显示公共类,方法和字段,除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()},
      * {@link ClassGraph#withoutMethodVisibilityFilter()} 和/或 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * @param file
@@ -784,7 +802,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @throws IOException
      *             如果文件无法保存
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者扫描前未调用
      *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public void generateGraphVizDotFile(final File file) throws IOException {
@@ -824,17 +842,18 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     /**
-     * 使用一个将 {@link ClassInfo} 对象映射为布尔值的谓词来过滤 {@link ClassInfoList}，
+     * 使用一个将 {@link ClassInfo} 对象映射为布尔值的谓词来过滤 {@link ClassInfoList},
      * 为列表中谓词为 true 的所有项生成另一个 {@link ClassInfoList}
      */
     @FunctionalInterface
     public interface ClassInfoFilter {
+
         /**
          * 是否允许某个 {@link ClassInfo} 列表项通过过滤器
          *
          * @param classInfo
          *            要过滤的 {@link ClassInfo} 项
-         * @return 是否允许该项通过过滤器如果为 true，则该项被复制到输出列表；如果为 false，则被排除
+         * @return 是否允许该项通过过滤器如果为 true,则该项被复制到输出列表;如果为 false,则被排除
          */
         boolean accept(ClassInfo classInfo);
     }

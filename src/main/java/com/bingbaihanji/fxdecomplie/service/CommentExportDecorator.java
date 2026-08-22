@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  * 导出源码时插入持久化注释的装饰器
  *
- * <p>匹配策略：sourceHash+optionsHash 精确匹配 → 成员签名定位 → 行号降级</p>
+ * <p>匹配策略:sourceHash+optionsHash 精确匹配 → 成员签名定位 → 行号降级</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21

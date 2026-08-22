@@ -6,7 +6,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -62,9 +70,10 @@ public final class DeobfuscatePreviewDialog {
         suggestions.forEach(entry -> selected.put(entry,
                 new javafx.beans.property.SimpleBooleanProperty(true)));
 
-        // 自定义单元格：每行一个 CheckBox,绑定选中状态
+        // 自定义单元格:每行一个 CheckBox,绑定选中状态
         ListView<RenameEntry> listView = new ListView<>(filteredItems);
         listView.setCellFactory(lv -> new ListCell<>() {
+
             private final CheckBox checkBox = new CheckBox();
 
             @Override
@@ -92,7 +101,7 @@ public final class DeobfuscatePreviewDialog {
         filterField.textProperty().addListener((obs, oldValue, newValue) ->
                 filteredItems.setPredicate(entry -> matchesFilter(entry, newValue)));
 
-        // 工具栏按钮：全选 全不选 选择/清除可见 清除常见短名
+        // 工具栏按钮:全选 全不选 选择/清除可见 清除常见短名
         Button selectAll = new Button(I18nUtil.getString("deobfuscate.all"));
         selectAll.setOnAction(e -> items.forEach(item -> selected.get(item).set(true)));
         Button selectNone = new Button(I18nUtil.getString("deobfuscate.none"));
@@ -138,7 +147,7 @@ public final class DeobfuscatePreviewDialog {
         return slash < 0 ? className : className.substring(slash + 1);
     }
 
-    /** 过滤匹配：在类型 类名 旧名 新名中搜索关键字(忽略大小写) */
+    /** 过滤匹配:在类型 类名 旧名 新名中搜索关键字(忽略大小写) */
     private static boolean matchesFilter(RenameEntry entry, String filter) {
         if (entry == null || filter == null || filter.isBlank()) {
             return true;

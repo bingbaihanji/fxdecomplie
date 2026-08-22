@@ -5,11 +5,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import java.io.File;
 
 /**
- * 反编译输出目录配置，封装源码输出目录和资源输出目录
+ * 反编译输出目录配置,封装源码输出目录和资源输出目录
  */
 public class OutDirs {
+
     /** 源码输出目录 */
     private final File srcOutDir;
+
     /** 资源输出目录 */
     private final File resOutDir;
 
@@ -39,7 +41,7 @@ public class OutDirs {
     }
 
     /**
-     * 确保源码和资源输出目录存在，不存在则自动创建
+     * 确保源码和资源输出目录存在,不存在则自动创建
      */
     public void makeDirs() {
         IoUtils.makeDirs(srcOutDir);

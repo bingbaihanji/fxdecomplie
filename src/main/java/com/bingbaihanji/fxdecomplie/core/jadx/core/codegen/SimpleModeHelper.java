@@ -13,13 +13,18 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks.BlockSpli
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class SimpleModeHelper {
 
     private final MethodNode mth;
 
     private final BitSet startLabel;
+
     private final BitSet endGoto;
 
     public SimpleModeHelper(MethodNode mth) {

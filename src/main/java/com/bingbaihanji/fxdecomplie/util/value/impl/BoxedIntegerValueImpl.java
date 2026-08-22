@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class BoxedIntegerValueImpl extends ObjectValueBoxImpl<Integer> {
+
     private static final Type TYPE = Type.getType(Integer.class);
 
     /**

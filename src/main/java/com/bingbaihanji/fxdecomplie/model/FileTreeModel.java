@@ -5,12 +5,15 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 纯 POJO 文件树节点，替代 javafx TreeItem 用于 model/service 层，
+ * 纯 POJO 文件树节点,替代 javafx TreeItem 用于 model/service 层,
  * 使这两层不再依赖 JavaFXUI 层通过转换器将其构建为 TreeItem
  */
 public final class FileTreeModel {
+
     private final FileTreeNode value;
+
     private final List<FileTreeModel> children = new ArrayList<>();
+
     private boolean expanded;
 
     public FileTreeModel(FileTreeNode value) {

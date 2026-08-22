@@ -6,14 +6,19 @@ import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * 复制引用工具类 — 实现类似 IntelliJ IDEA "Copy Reference"(Ctrl+Alt+Shift+C)功能 
  *
- * <p>根据光标位置智能生成引用字符串：
+ * <p>根据光标位置智能生成引用字符串:
  * <ul>
  *   <li>光标在类名上 → 全限定类名,如 {@code com.example.MyClass}</li>
  *   <li>光标在字段上 → 完整字段引用,如 {@code com.example.MyClass#myField}</li>
@@ -27,42 +32,42 @@ import java.util.regex.Pattern;
  */
 public final class CopyReferenceHelper {
 
-    /** 匹配 import 语句：import 可选 static,包路径.类名; */
+    /** 匹配 import 语句:import 可选 static,包路径.类名; */
     private static final Pattern IMPORT_PATTERN = Pattern.compile(
             "^\\s*import\\s+(?:static\\s+)?([\\w.]+(?:\\.[A-Z_$][\\w$]*)*)\\s*(?:\\.[A-Z_$][\\w$]*)?\\s*;");
 
 
     /**
-     * 匹配源文件后缀名，用于识别 .class 或 .java 文件
+     * 匹配源文件后缀名,用于识别 .class 或 .java 文件
      */
     private static final Pattern SOURCE_SUFFIX_PATTERN = Pattern.compile("\\.(class|java)$");
 
     /**
-     * 匹配注解使用语法(单行)，包括注解名及可选的括号内参数
-     * 例如：@Override @SuppressWarnings("unchecked") 等
+     * 匹配注解使用语法(单行),包括注解名及可选的括号内参数
+     * 例如:@Override @SuppressWarnings("unchecked") 等
      * 不处理嵌套注解或复杂表达式
      */
     private static final Pattern ANNOTATION_PATTERN = Pattern.compile("@\\w+(?:\\s*\\([^)]*\\))?\\s*");
 
     /**
-     * 构造函数声明的模板模式，用于匹配给定类名的构造函数定义
+     * 构造函数声明的模板模式,用于匹配给定类名的构造函数定义
      * 实际使用时需通过 String.format(CONSTRUCTOR_PATTERN_TEMPLATE, className) 生成
-     * 模式匹配：可选的访问修饰符(public/protected/private)+ 类名 + 左括号及后续内容
-     * 例如："public MyClass(" 或 "MyClass("
+     * 模式匹配:可选的访问修饰符(public/protected/private)+ 类名 + 左括号及后续内容
+     * 例如:"public MyClass(" 或 "MyClass("
      */
     private static final Pattern CONSTRUCTOR_PATTERN_TEMPLATE = Pattern.compile(
             "(?:(?:public|protected|private)\\s+)?%s\\s*\\(.*");
 
     /**
      * 包含 Java 所有原始类型(primitive type)的名称
-     * 用于判断一个类型名称是否为基本类型，从而避免不必要的导入处理
+     * 用于判断一个类型名称是否为基本类型,从而避免不必要的导入处理
      */
     private static final Set<String> PRIMITIVE_TYPES = Set.of(
             "boolean", "byte", "short", "int", "long", "float", "double", "char", "void");
 
     /**
      * 包含 java.lang 包中常用的类 接口 异常 错误等类型的简单名称
-     * 这些类型默认由编译器自动导入，因此在分析导入依赖时可忽略它们
+     * 这些类型默认由编译器自动导入,因此在分析导入依赖时可忽略它们
      * 集合覆盖了核心类型(String, Object) 包装类 常用工具类以及常见异常和错误
      */
     private static final Set<String> JAVA_LANG_TYPES = Set.of(
@@ -165,7 +170,7 @@ public final class CopyReferenceHelper {
             return fqn;
         }
 
-        // 4. 其他位置：路径:行号
+        // 4. 其他位置:路径:行号
         return internalPath + ".java:" + lineNumber;
     }
 
@@ -268,7 +273,7 @@ public final class CopyReferenceHelper {
      */
     private static String resolveOneParam(String paramText, Map<String, String> importMap,
                                           String currentPackage) {
-        // 去除注解：@Foo @Foo("bar") @Foo(value = "bar")
+        // 去除注解:@Foo @Foo("bar") @Foo(value = "bar")
         String cleaned = ANNOTATION_PATTERN.matcher(paramText).replaceAll("").trim();
         // 去除参数名(最后一个空格后的单词),处理 varargs "..."
         int lastSpace = cleaned.lastIndexOf(' ');
@@ -324,11 +329,11 @@ public final class CopyReferenceHelper {
 
     /**
      * 将单个简单类名解析为全限定名 
-     * 优先级：import 映射 > java.lang 自动导入 > 当前包 > 原始名称 
+     * 优先级:import 映射 > java.lang 自动导入 > 当前包 > 原始名称 
      */
     private static String resolveSimpleName(String simpleName, Map<String, String> importMap,
                                             String currentPackage) {
-        // 原始类型：不改动
+        // 原始类型:不改动
         if (isPrimitive(simpleName)) {
             return simpleName;
         }
@@ -438,7 +443,7 @@ public final class CopyReferenceHelper {
 
     /**
      * 判断该行是否为构造方法声明 
-     * 构造方法格式：{@code (public|protected|private)? ClassName(},无返回类型 
+     * 构造方法格式:{@code (public|protected|private)? ClassName(},无返回类型 
      */
     private static boolean isConstructorLine(String line, String className) {
         if (line == null || className == null || className.isEmpty()) {

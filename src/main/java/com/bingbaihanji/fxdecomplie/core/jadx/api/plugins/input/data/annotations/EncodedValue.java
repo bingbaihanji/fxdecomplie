@@ -8,9 +8,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 import java.util.Objects;
 
 public class EncodedValue extends PinnedAttribute {
+
     public static final EncodedValue NULL = new EncodedValue(EncodedType.ENCODED_NULL, "null");
 
     private final EncodedType type;
+
     private final Object value;
 
     public EncodedValue(EncodedType type, Object value) {

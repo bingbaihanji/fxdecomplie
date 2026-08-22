@@ -1,27 +1,49 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data;
 
 public class AccessFlags {
+
     public static final int PUBLIC = 0x1;
+
     public static final int PRIVATE = 0x2;
+
     public static final int PROTECTED = 0x4;
+
     public static final int STATIC = 0x8;
+
     public static final int FINAL = 0x10;
+
     public static final int SYNCHRONIZED = 0x20;
+
     public static final int SUPER = 0x20;
+
     public static final int VOLATILE = 0x40;
+
     public static final int BRIDGE = 0x40;
+
     public static final int TRANSIENT = 0x80;
+
     public static final int VARARGS = 0x80;
+
     public static final int NATIVE = 0x100;
+
     public static final int INTERFACE = 0x200;
+
     public static final int ABSTRACT = 0x400;
+
     public static final int STRICT = 0x800;
+
     public static final int SYNTHETIC = 0x1000;
+
     public static final int ANNOTATION = 0x2000;
+
     public static final int ENUM = 0x4000;
+
     public static final int MODULE = 0x8000;
+
     public static final int CONSTRUCTOR = 0x10000;
+
     public static final int DECLARED_SYNCHRONIZED = 0x20000;
+
     public static final int DATA = 0x40000;
 
     public static boolean hasFlag(int flags, int flagValue) {

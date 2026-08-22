@@ -22,7 +22,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.tryca
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.utils.JavaClassParseException;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -32,8 +38,11 @@ public class JavaCodeReader implements ICodeReader {
             JavaAttrType.LINE_NUMBER_TABLE,
             JavaAttrType.LOCAL_VAR_TABLE,
             JavaAttrType.LOCAL_VAR_TYPE_TABLE);
+
     private final JavaClassData clsData;
+
     private final DataReader reader;
+
     private final int codeOffset;
 
     public JavaCodeReader(JavaClassData clsData, int offset) {

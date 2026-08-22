@@ -2,11 +2,23 @@ package com.bingbaihanji.fxdecomplie.ui.graph;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LookupSwitchInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TableSwitchInsnNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 方法级控制流图(CFG)分析器,基于 ASM Tree API 划分基本块并生成 DOT 格式
@@ -19,6 +31,7 @@ import java.util.*;
 public final class CfgAnalyzer {
 
     private static final Logger log = LoggerFactory.getLogger(CfgAnalyzer.class);
+
     private static final int MAX_BLOCKS = 200;
 
     private CfgAnalyzer() {
@@ -70,9 +83,9 @@ public final class CfgAnalyzer {
     /**
      * 对指定方法执行基本块划分并生成 DOT 格式的控制流图
      *
-     * <p>算法步骤：</p>
+     * <p>算法步骤:</p>
      * <ol>
-     *   <li>标记基本块起始位置(leaders)：方法入口 异常处理器入口 跳转目标 跳转后继</li>
+     *   <li>标记基本块起始位置(leaders):方法入口 异常处理器入口 跳转目标 跳转后继</li>
      *   <li>根据 leaders 将指令序列划分为基本块</li>
      *   <li>分析基本块末尾指令确定控制流边(无条件跳转 条件跳转 switch 异常边)</li>
      *   <li>组装 DOT 字符串输出</li>
@@ -203,12 +216,12 @@ public final class CfgAnalyzer {
                     edges.add(new Edge(bb.id, dfltTo, "default", "dashed"));
                 }
             } else if (last instanceof JumpInsnNode jmp) {
-                // 条件跳转：true 分支
+                // 条件跳转:true 分支
                 Integer to = labelToBlock.get(jmp.label);
                 if (to != null) {
                     edges.add(new Edge(bb.id, to, "true", "dashed"));
                 }
-                // false 分支：下一块
+                // false 分支:下一块
                 if (bb.id + 1 < blocks.size()) {
                     edges.add(new Edge(bb.id, bb.id + 1, "false", "dashed"));
                 }
@@ -313,12 +326,16 @@ public final class CfgAnalyzer {
      * 内部不含跳转目标(除入口外)和跳转指令(除出口外)</p>
      */
     private static class BasicBlock {
+
         /** 基本块编号(从 0 开始) */
         final int id;
+
         /** 起始指令在 InsnList 中的索引 */
         final int startIdx;
+
         /** 结束指令在 InsnList 中的索引 */
         final int endIdx;
+
         /** 该基本块内所有指令的可读文本行 */
         final List<String> lines;
 

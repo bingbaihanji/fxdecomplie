@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 /**
  * 代码视图顶层容器,管理底部标签切换与分屏勾选框
  *
- * <p>内部组件：EditorSearchBar(Ctrl+F 激活)→ 内容区(CodeContentDeck)
+ * <p>内部组件:EditorSearchBar(Ctrl+F 激活)→ 内容区(CodeContentDeck)
  * 分屏由外部 SplitEditorPane 管理,本类仅提供勾选框并回调外部</p>
  *
  * @author bingbaihanji
@@ -19,36 +19,49 @@ import java.util.function.Consumer;
 public class CodeViewPanel extends VBox {
 
     private final CodeContentDeck deck;
+
     private final EditorSearchBar searchBar;
+
     private final CheckBox splitToggle;
+
     private int defaultFontSize = 14;
+
     /** 用户配置的原始字号(用于 resetZoom 恢复) */
     private int originalFontSize = 14;
+
     private String fontFamily = "Consolas";
+
     private boolean lineNumbersEnabled = true;
+
     private CodeViewContext contextMenuContext;
+
     private CodeActionHandler contextMenuHandler;
+
     /** 分屏开关回调(true=开启, false=关闭) */
     private Consumer<Boolean> onSplitToggled;
+
     /** Ctrl+; 快捷键处理器引用(用于先移除再添加,防止重复注册) */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> commentKeyHandler;
+
     private jfx.incubator.scene.control.richtext.CodeArea commentKeyArea;
+
     /** Ctrl+F 文件内查找处理器引用 */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> findKeyHandler;
+
     private jfx.incubator.scene.control.richtext.CodeArea findKeyArea;
 
-    /** 便捷构造器：使用默认 SourcePanel 字体和行号 */
+    /** 便捷构造器:使用默认 SourcePanel 字体和行号 */
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
         this(sourceCode, classBytes, null, "Consolas", 14, true);
     }
 
-    /** 便捷构造器：指定 SourcePanel,字体和行号使用默认值 */
+    /** 便捷构造器:指定 SourcePanel,字体和行号使用默认值 */
     public CodeViewPanel(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel) {
         this(sourceCode, classBytes, sourcePanel, "Consolas", 14, true);
     }
 
     /**
-     * 完整参数构造器：指定源码 字节码 SourcePanel 字体族 字号和行号开关
+     * 完整参数构造器:指定源码 字节码 SourcePanel 字体族 字号和行号开关
      *
      * @param sourceCode          反编译源码文本
      * @param classBytes          类文件原始字节码
@@ -172,7 +185,7 @@ public class CodeViewPanel extends VBox {
             e.consume();
         });
 
-        // Ctrl+; 快捷键：先移除旧处理器再添加,防止重复调用时堆积
+        // Ctrl+; 快捷键:先移除旧处理器再添加,防止重复调用时堆积
         commentKeyArea = area;
         commentKeyHandler = e -> {
             if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.SEMICOLON) {

@@ -6,7 +6,12 @@ import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -49,8 +54,10 @@ public class GraphDialog extends Dialog<Void> {
 
     /** 弹窗默认宽度 */
     private static final int DEFAULT_WIDTH = 820;
+
     /** 弹窗默认高度 */
     private static final int DEFAULT_HEIGHT = 640;
+
     /** DOT 源码 TextArea 的暗色主题样式 */
     private static final String DOT_STYLE =
             "-fx-control-inner-background:#1e1e1e;-fx-text-fill:#d4d4d4;"
@@ -59,12 +66,16 @@ public class GraphDialog extends Dialog<Void> {
 
     /** 内容区域(StackPane),承载 TextArea / 图形 / 加载提示 */
     private StackPane contentStack;
+
     /** DOT 源码文本区(懒初始化) */
     private TextArea dotArea;
+
     /** 当前图形视图节点(DotGraphRenderer 返回的 ScrollPane 或空图提示) */
     private Node currentGraphView;
+
     /** Graph / DOT 切换按钮 */
     private ToggleButton viewToggle;
+
     /** 底部状态标签(DOT 源码 / JavaFX 图形 / 错误信息) */
     private Label statusLabel;
 
@@ -96,7 +107,7 @@ public class GraphDialog extends Dialog<Void> {
     }
 
     /**
-     * 便捷方法：创建并立即显示带 DOT 内容的弹窗
+     * 便捷方法:创建并立即显示带 DOT 内容的弹窗
      *
      * @param owner 父窗口
      * @param title 弹窗标题
@@ -143,7 +154,7 @@ public class GraphDialog extends Dialog<Void> {
 
     // ======================== 内部视图切换 ========================
 
-    /** 弹窗共享初始化：布局 样式 事件绑定 */
+    /** 弹窗共享初始化:布局 样式 事件绑定 */
     private void init(javafx.stage.Window owner, String title) {
         if (owner != null) {
             initOwner(owner);
@@ -297,9 +308,9 @@ public class GraphDialog extends Dialog<Void> {
     }
 
     /**
-     * 切换按钮回调：在图形视图和 DOT 源码视图之间切换
+     * 切换按钮回调:在图形视图和 DOT 源码视图之间切换
      *
-     * <p>只有两个视图都存在时切换才有意义：当前显示图形 → 切到 DOT 源码 
+     * <p>只有两个视图都存在时切换才有意义:当前显示图形 → 切到 DOT 源码 
      * 当前显示 DOT → 切回图形</p>
      */
     private void toggleView() {

@@ -13,15 +13,20 @@ import java.util.List;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getBlockByOffset;
 
 public class SwitchInsn extends TargetInsnNode {
+
     private final int dataTarget;
+
     private final boolean packed; // type of switch insn, if true can contain filler keys
+
     @Nullable
     private SwitchData switchData;
 
     private int def; // next instruction
 
     private Object[] modifiedKeys;
+
     private BlockNode[] targetBlocks;
+
     private BlockNode defTargetBlock;
 
     public SwitchInsn(InsnArg arg, int dataTarget, boolean packed) {

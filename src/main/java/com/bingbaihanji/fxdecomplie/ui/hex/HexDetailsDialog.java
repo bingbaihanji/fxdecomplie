@@ -5,7 +5,12 @@ import com.bingbaihanji.fxdecomplie.ui.hex.analyzer.DataAnalyzer;
 import com.bingbaihanji.fxdecomplie.ui.hex.model.PatternModel;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.GridPane;
@@ -19,11 +24,11 @@ import java.util.List;
  * 十六进制详情对话框,用于展示指定地址处的详细字节信息 
  * <p>
  * 该类为工具类,提供静态方法 {@link #show} 弹出一个模态对话框,
- * 内容包括当前地址的偏移量、原始字节值、选区范围、所在区域路径、
- * 数据预览、结构区域列表以及数据分析器生成的解释值 
+ * 内容包括当前地址的偏移量,原始字节值,选区范围,所在区域路径,
+ * 数据预览,结构区域列表以及数据分析器生成的解释值 
  * </p>
  * <p>
- * 对话框提供“复制详情”按钮,可将所有信息以文本形式复制到系统剪贴板 
+ * 对话框提供"复制详情"按钮,可将所有信息以文本形式复制到系统剪贴板 
  * </p>
  *
  * @author bingbaihanji

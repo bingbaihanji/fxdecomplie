@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -11,16 +10,21 @@ import com.bingbaihanji.classgraph.util.LogNode;
 import java.io.File;
 import java.lang.reflect.Array;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
- * 从 JBoss ClassLoader 提取类路径条目参见：
+ * 从 JBoss ClassLoader 提取类路径条目参见:
  *
  * <p>
  * https://github.com/jboss-modules/jboss-modules/blob/master/src/main/java/org/jboss/modules/ModuleClassLoader.java
  */
 class JBossClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public JBossClassLoaderHandler() {
     }
@@ -44,7 +48,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
         if (resourceLoader == null) {
             return;
         }
-        // PathResourceLoader 有 root 字段，它是一个 Path 对象
+        // PathResourceLoader 有 root 字段,它是一个 Path 对象
         final Object root = classpathOrderOut.reflectionUtils.getFieldVal(false, resourceLoader, "root");
 
         classpathOrderOut.addClasspathEntry(loadJarPathFromClassicVFS(root, classpathOrderOut), classLoader,
@@ -57,7 +61,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 使用 JBoss VFS 机制从给定的根对象返回 JAR 文件的绝对路径这适用于包含以下更改的 JBoss/Wildfly 版本：
+     * 使用 JBoss VFS 机制从给定的根对象返回 JAR 文件的绝对路径这适用于包含以下更改的 JBoss/Wildfly 版本:
      * <a href="https://issues.redhat.com/browse/WFLY-18544">WFLY-18544</a>
      * <a href="https://issues.redhat.com/browse/JBEAP-25879">JBEAP-25879</a>
      * <a href="https://issues.redhat.com/browse/JBEAP-25677">JBEAP-25677</a>
@@ -66,7 +70,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
      *            用于获取 JAR 路径的根对象
      * @param classpathOrderOut
      *            用于更新类路径顺序的 ClasspathOrder 对象
-     * @return JAR 文件的 {@link File}，如果找不到路径则返回 null
+     * @return JAR 文件的 {@link File},如果找不到路径则返回 null
      */
     private static File loadJarPathFromNewVFS(final Object root, final ClasspathOrder classpathOrderOut) {
         if (root == null) {
@@ -87,7 +91,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
         if (fileSystem == null) {
             return null;
         }
-        // 现在访问挂载源，即用于创建挂载的文件
+        // 现在访问挂载源,即用于创建挂载的文件
         final File mountSource = (File) classpathOrderOut.reflectionUtils.invokeMethod(false, fileSystem,
                 "getMountSource");
         if (mountSource == null) {
@@ -98,35 +102,35 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 获取 JBoss VFS 类的访问权限如果根对象来自 org.jboss.vfs，则首先从根对象的类加载器尝试加载 VFS
-     * 如果根对象不是来自 org.jboss.vfs，则尝试从当前线程类加载器加载 VFS
-     * 从当前线程上下文加载 VFS 可能没有必要，因为这意味着根对象不是来自 org.jboss.vfs，
-     * VFS 在这里没有帮助……但作为防御性方法，我们仍在此处尝试获取 VFS 访问权限
+     * 获取 JBoss VFS 类的访问权限如果根对象来自 org.jboss.vfs,则首先从根对象的类加载器尝试加载 VFS
+     * 如果根对象不是来自 org.jboss.vfs,则尝试从当前线程类加载器加载 VFS
+     * 从当前线程上下文加载 VFS 可能没有必要,因为这意味着根对象不是来自 org.jboss.vfs,
+     * VFS 在这里没有帮助......但作为防御性方法,我们仍在此处尝试获取 VFS 访问权限
      *
      * @param root
      *            JBoss VFS 的根 VirtualFile用于通过根的类加载器加载 VFS不能为 null
-     * @return 表示 JBoss VFS 类的 Class 对象，如果找不到则返回 null
+     * @return 表示 JBoss VFS 类的 Class 对象,如果找不到则返回 null
      */
     private static Class<?> getJBossVFSAccess(final Object root) {
         Class<?> jbossVFS = null;
         // 我们需要访问 org.jboss.vfs 的 'VFS' 类
         try {
             if (root.getClass().getName().contains("org.jboss.vfs")) {
-                // 首先，尝试根对象的类加载器由于根对象来自 org.jboss.vfs，
+                // 首先,尝试根对象的类加载器由于根对象来自 org.jboss.vfs,
                 // 我们很可能可以从此类加载器获取 org.jboss.vfs.VFS 的访问权限
                 final ClassLoader vfsRootClassloader = root.getClass().getClassLoader();
                 jbossVFS = loadJBossVFS(vfsRootClassloader);
             } else {
-                // 对于非 org.jboss.vfs 对象，使用当前线程
+                // 对于非 org.jboss.vfs 对象,使用当前线程
                 jbossVFS = loadJBossVFS(Thread.currentThread().getContextClassLoader());
             }
         } catch (final ClassNotFoundException e) {
             try {
-                // 由于上一个方法失败，尝试从当前线程的类加载器加载 JBoss VFS 访问权限
-                // 如果上一个方法已经使用了当前线程的类加载器，它将再次失败……
+                // 由于上一个方法失败,尝试从当前线程的类加载器加载 JBoss VFS 访问权限
+                // 如果上一个方法已经使用了当前线程的类加载器,它将再次失败......
                 jbossVFS = loadJBossVFS(Thread.currentThread().getContextClassLoader());
             } catch (final ClassNotFoundException e1) {
-                // 吞掉异常如果没有 VFS 存在，我们无法做任何事情……
+                // 吞掉异常如果没有 VFS 存在,我们无法做任何事情......
             }
         }
         return jbossVFS;
@@ -138,7 +142,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
 
     /**
      * 使用"经典"VFS 读取机制从给定的根对象返回 JAR 文件的绝对路径
-     * 这适用于以下更改之前的 JBoss/Wildfly 版本：
+     * 这适用于以下更改之前的 JBoss/Wildfly 版本:
      * <a href="https://issues.redhat.com/browse/WFLY-18544">WFLY-18544</a>
      * <a href="https://issues.redhat.com/browse/JBEAP-25879">JBEAP-25879</a>
      * <a href="https://issues.redhat.com/browse/JBEAP-25677">JBEAP-25677</a>
@@ -147,7 +151,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
      *            用于获取 JAR 路径的根对象
      * @param classpathOrderOut
      *            用于更新类路径顺序的 ClasspathOrder 对象
-     * @return JAR 文件的 {@link File} 或 {@link Path}，如果找不到 VFS 路径则返回 null
+     * @return JAR 文件的 {@link File} 或 {@link Path},如果找不到 VFS 路径则返回 null
      */
     private static Object loadJarPathFromClassicVFS(final Object root, final ClasspathOrder classpathOrderOut) {
         if (root == null) {
@@ -212,11 +216,11 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
                 "getResourceLoaders");
         if (vfsResourceLoaders != null) {
             for (int i = 0, n = Array.getLength(vfsResourceLoaders); i < n; i++) {
-                // 类型：JarFileResourceLoader(用于 JAR)、VFSResourceLoader(用于解压的 JAR)、
+                // 类型:JarFileResourceLoader(用于 JAR),VFSResourceLoader(用于解压的 JAR),
                 // PathResourceLoader(用于资源目录)或 NativeLibraryResourceLoader
-                // (用于通常不存在的原生库"lib/"目录，这些目录与它们可能从中提取的 JAR 文件相邻)
+                // (用于通常不存在的原生库"lib/"目录,这些目录与它们可能从中提取的 JAR 文件相邻)
                 final Object resourceLoader = Array.get(vfsResourceLoaders, i);
-                // 可以完全跳过 NativeLibraryResourceLoader 实例，但测试它们的存在似乎只增加了约 3% 的总扫描时间
+                // 可以完全跳过 NativeLibraryResourceLoader 实例,但测试它们的存在似乎只增加了约 3% 的总扫描时间
                 // if (!resourceLoader.getClass().getSimpleName().equals("NativeLibraryResourceLoader")) {
                 handleResourceLoader(resourceLoader, moduleLoader, classpathOrderOut, ScanConfig, log);
                 //}
@@ -231,7 +235,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -275,7 +279,8 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
         final Object callerModuleLoader = classpathOrder.reflectionUtils.invokeMethod(false, module,
                 "getCallerModuleLoader");
         final Set<Object> visitedModules = new HashSet<>();
-        @SuppressWarnings("unchecked") final Map<Object, Object> moduleMap = (Map<Object, Object>) classpathOrder.reflectionUtils
+        @SuppressWarnings("unchecked")
+        final Map<Object, Object> moduleMap = (Map<Object, Object>) classpathOrder.reflectionUtils
                 .getFieldVal(false, callerModuleLoader, "moduleMap");
         final Set<Entry<Object, Object>> moduleMapEntries = moduleMap != null ? moduleMap.entrySet()
                 : Collections.<Entry<Object, Object>>emptySet();
@@ -287,7 +292,8 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
             handleRealModule(realModule, visitedModules, classLoader, classpathOrder, ScanConfig, log);
         }
         // 类型 Map<String, List<LocalLoader>>
-        @SuppressWarnings("unchecked") final Map<String, List<?>> pathsMap = (Map<String, List<?>>) classpathOrder.reflectionUtils
+        @SuppressWarnings("unchecked")
+        final Map<String, List<?>> pathsMap = (Map<String, List<?>>) classpathOrder.reflectionUtils
                 .invokeMethod(false, module, "getPaths");
         for (final Entry<String, List<?>> ent : pathsMap.entrySet()) {
             for (final Object /* ModuleClassLoader$1 */ localLoader : ent.getValue()) {

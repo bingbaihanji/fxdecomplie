@@ -95,6 +95,7 @@ public class CodeUtils {
         }
         // skip nested nodes DEF/END until first unpaired END annotation (end of this method)
         Integer end = codeInfo.getCodeMetadata().searchDown(mth.getDefPosition() + 1, new BiFunction<>() {
+
             int nested = 0;
 
             @Override

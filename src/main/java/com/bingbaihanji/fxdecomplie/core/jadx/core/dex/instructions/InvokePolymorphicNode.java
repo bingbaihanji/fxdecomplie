@@ -7,7 +7,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
 
 public class InvokePolymorphicNode extends InvokeNode {
+
     private final IMethodProto proto;
+
     private final MethodInfo baseCallRef;
 
     public InvokePolymorphicNode(MethodInfo callMth, InsnData insn, IMethodProto proto, MethodInfo baseRef, boolean isRange) {

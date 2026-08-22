@@ -28,9 +28,9 @@ import java.util.Map;
 
 
 /**
- * 反混淆与 ProGuard 映射控制器：自动反混淆扫描与预览 ProGuard 映射导入/导出 重命名快照恢复
+ * 反混淆与 ProGuard 映射控制器:自动反混淆扫描与预览 ProGuard 映射导入/导出 重命名快照恢复
  * <p>
- * 从 RenameController 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
+ * 从 RenameController 拆分而来,通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 与 RenameController 共用 {@code owner.refreshWorkspaceTree(...)} 刷新文件树
  *
  * @author bingbaihanji
@@ -45,7 +45,7 @@ public final class DeobfuscationController {
         this.owner = owner;
     }
 
-    /** 自动反混淆：后台扫描混淆名称,在 FX 线程弹出预览对话框 */
+    /** 自动反混淆:后台扫描混淆名称,在 FX 线程弹出预览对话框 */
     public void deobfuscate() {
         WorkspaceView view = owner.tabManager().currentWorkspaceView();
         if (view == null) {
@@ -214,7 +214,7 @@ public final class DeobfuscationController {
         owner.statusBar().setFilePath("Rename snapshot restored, " + reloadTabs + " tabs reloaded");
     }
 
-    /** 反混淆/重命名后统一刷新：清缓存 + 重载已开标签 + 刷新文件树@return 受影响的标签数 */
+    /** 反混淆/重命名后统一刷新:清缓存 + 重载已开标签 + 刷新文件树@return 受影响的标签数 */
     private int reloadAndRefreshAfterRename(Workspace workspace) {
         workspace.clearSourceSearchCaches();
         int changed = reloadOpenTabsAfterDeobfuscate(workspace);

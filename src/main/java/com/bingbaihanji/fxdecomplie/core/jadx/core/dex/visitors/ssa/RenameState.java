@@ -8,9 +8,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import java.util.Arrays;
 
 final class RenameState {
+
     private final MethodNode mth;
+
     private final BlockNode block;
+
     private final SSAVar[] vars;
+
     private final int[] versions;
 
     private RenameState(MethodNode mth, BlockNode block, SSAVar[] vars, int[] versions) {

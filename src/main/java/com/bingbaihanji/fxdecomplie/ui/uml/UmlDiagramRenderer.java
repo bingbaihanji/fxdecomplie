@@ -31,37 +31,51 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 纯 JavaFX 渲染 {@link UmlDiagram}：分栏类框（标题 + 包名 + 字段 + 方法）、
- * 按关系类型区分的箭头、Ctrl+滚轮缩放。层级采用入度拓扑分层，继承根在上、子类在下。
+ * 纯 JavaFX 渲染 {@link UmlDiagram}:分栏类框(标题 + 包名 + 字段 + 方法),
+ * 按关系类型区分的箭头,Ctrl+滚轮缩放.层级采用入度拓扑分层,继承根在上,子类在下.
  */
 public final class UmlDiagramRenderer {
 
     private static final double MARGIN = 48;
+
     private static final double LEVEL_GAP = 72;
+
     private static final double ROW_GAP = 34;
+
     private static final double MIN_BOX_W = 190;
+
     private static final double MIN_BOX_H = 60;
+
     private static final double MAX_NODE_W = 360;
+
     private static final double MAX_NODE_H = 380;
+
     private static final double CHAR_W = 7.0;
+
     private static final double LINE_H = 18.0;
+
     private static final double NODE_PAD_W = 48;
+
     private static final double NODE_PAD_H = 36;
+
     private static final double MIN_ZOOM = 0.2;
+
     private static final double MAX_ZOOM = 3.0;
+
     private static final double ZOOM_STEP = 0.1;
+
     private static final double EDGE_ARROW = 9;
+
     private static final int MAX_COLS = 7;
+
     private static final int MAX_VISIBLE_FIELDS = 10;
+
     private static final int MAX_VISIBLE_METHODS = 16;
+
     private static final int MAX_MEMBER_CHARS = 96;
 
     private UmlDiagramRenderer() {
         throw new AssertionError("utility class");
-    }
-
-    /** 渲染结果：可交互 ScrollPane + 画布 Pane（用于快照导出）+ 适配窗口回调 */
-    public record UmlView(ScrollPane scrollPane, Pane canvas, Runnable fitToViewport) {
     }
 
     public static UmlView create(UmlDiagram diagram, UmlTheme theme) {
@@ -74,7 +88,7 @@ public final class UmlDiagramRenderer {
             center.setStyle("-fx-background-color:" + theme.background() + ";");
             ScrollPane scroll = new ScrollPane(center);
             scroll.setPannable(true);
-            return new UmlView(scroll, canvas, () -> {});
+            return new UmlView(scroll, canvas, () -> {}, () -> 1.0, () -> 0, () -> 0);
         }
 
         Map<String, LayoutBox> layout = layout(diagram, theme);
@@ -122,7 +136,7 @@ public final class UmlDiagramRenderer {
             if (!event.isControlDown() && !event.isMetaDown()) {
                 return;
             }
-            controller.zoomBy(event.getDeltaY());
+            controller.zoomBy(event.getDeltaY(), event.getX(), event.getY());
             event.consume();
         });
         final boolean[] fitted = {false};
@@ -137,10 +151,9 @@ public final class UmlDiagramRenderer {
             controller.fitToWindow();
         });
         Runnable fit = controller::fitToWindow;
-        return new UmlView(scroll, canvas, fit);
+        return new UmlView(scroll, canvas, fit,
+                controller::currentZoom, controller::contentWidth, controller::contentHeight);
     }
-
-    // ======================== 布局 ========================
 
     private static Map<String, LayoutBox> layout(UmlDiagram diagram, UmlTheme theme) {
         Map<String, Integer> levels = computeLevels(diagram);
@@ -211,6 +224,8 @@ public final class UmlDiagramRenderer {
         return result;
     }
 
+    // ======================== 布局 ========================
+
     private static int columnsFor(int count) {
         if (count <= 1) {
             return 1;
@@ -221,7 +236,7 @@ public final class UmlDiagramRenderer {
         return Math.min(MAX_COLS, (int) Math.ceil(Math.sqrt(count * 1.8)));
     }
 
-    /** 入度拓扑分层：入度为 0 的节点（叶子/无被引用的类）在 level 0；layout 中 level 越高越靠上，使父类位于画布上方 */
+    /** 入度拓扑分层:入度为 0 的节点(叶子/无被引用的类)在 level 0;layout 中 level 越高越靠上,使父类位于画布上方 */
     private static Map<String, Integer> computeLevels(UmlDiagram diagram) {
         Map<String, Integer> indegree = new HashMap<>();
         Map<String, List<String>> outgoing = new HashMap<>();
@@ -281,8 +296,6 @@ public final class UmlDiagramRenderer {
         }
         return levels;
     }
-
-    // ======================== 类框渲染 ========================
 
     private static Node createClassBox(UmlClass cls, UmlTheme theme, double width) {
         VBox box = new VBox();
@@ -373,6 +386,8 @@ public final class UmlDiagramRenderer {
         return box;
     }
 
+    // ======================== 类框渲染 ========================
+
     private static String titleText(UmlClass cls) {
         return switch (cls.kind()) {
             case INTERFACE -> "I " + cls.simpleName();
@@ -402,12 +417,18 @@ public final class UmlDiagramRenderer {
         return icon;
     }
 
-    private static Label kindBadge(UmlClass cls, UmlTheme theme) {
-        String text = switch (cls.kind()) {
+    private static String kindBadgeText(UmlClass cls) {
+        return switch (cls.kind()) {
             case RECORD -> "record";
-            case CLASS -> cls.isAbstract() ? "abstract" : "";
-            default -> "";
+            case INTERFACE -> "interface";
+            case ENUM -> "enum";
+            case ANNOTATION -> "annotation";
+            case CLASS -> cls.isAbstract() ? "abstract" : cls.isFinal() ? "final class" : "class";
         };
+    }
+
+    private static Label kindBadge(UmlClass cls, UmlTheme theme) {
+        String text = kindBadgeText(cls);
         if (text.isEmpty()) {
             return null;
         }
@@ -562,15 +583,21 @@ public final class UmlDiagramRenderer {
         return text.substring(0, Math.max(0, maxChars - 3)) + "...";
     }
 
-    // ======================== 尺寸估算 ========================
-
     private static double boxWidth(UmlClass cls) {
         int longest = 0;
         for (String line : visibleBoxTextLines(cls)) {
             longest = Math.max(longest, line.length());
         }
-        return Math.clamp(longest * CHAR_W + NODE_PAD_W, MIN_BOX_W, MAX_NODE_W);
+        double textW = longest * CHAR_W + NODE_PAD_W;
+        // badge 宽度:9px 字体 × 字符数 + 左右 padding 8 + border 2
+        double badgeW = kindBadgeText(cls).length() * 5.4 + 10;
+        // 标题行最小宽度 = 图标(10) + gap(6) + 类名 + gap(6) + badge
+        String title = titleText(cls);
+        double titleW = 10 + 6 + title.length() * 7.5 + 6 + badgeW;
+        return Math.clamp(Math.max(textW, titleW), MIN_BOX_W, MAX_NODE_W);
     }
+
+    // ======================== 尺寸估算 ========================
 
     private static double boxHeight(UmlClass cls) {
         double w = boxWidth(cls);
@@ -616,8 +643,6 @@ public final class UmlDiagramRenderer {
         }
         return lines;
     }
-
-    // ======================== 关系渲染 ========================
 
     private static void drawRelation(Pane pane, LayoutBox from, LayoutBox to,
                                      UmlRelation r, UmlTheme theme, int relationIndex) {
@@ -682,6 +707,8 @@ public final class UmlDiagramRenderer {
         }
     }
 
+    // ======================== 关系渲染 ========================
+
     private static List<Point2D> hierarchyPath(Point2D start, Point2D end, int relationIndex) {
         double offset = laneOffset(relationIndex, 16);
         double midY = (start.getY() + end.getY()) / 2.0 + offset;
@@ -731,7 +758,7 @@ public final class UmlDiagramRenderer {
         pane.getChildren().add(line);
     }
 
-    /** 空心三角（继承/实现箭头） */
+    /** 空心三角(继承/实现箭头) */
     private static void hollowArrow(Pane pane, Point2D start, Point2D end, String color) {
         double angle = Math.atan2(end.getY() - start.getY(), end.getX() - start.getX());
         double arrow = 11;
@@ -749,7 +776,7 @@ public final class UmlDiagramRenderer {
         pane.getChildren().add(tri);
     }
 
-    /** 实心小三角（依赖箭头） */
+    /** 实心小三角(依赖箭头) */
     private static void filledArrow(Pane pane, Point2D start, Point2D end, String color) {
         double angle = Math.atan2(end.getY() - start.getY(), end.getX() - start.getX());
         double cos = Math.cos(angle);
@@ -764,16 +791,45 @@ public final class UmlDiagramRenderer {
         pane.getChildren().add(tri);
     }
 
+    /** 渲染结果:可交互 ScrollPane + 画布 Pane(用于快照导出)+ 适配窗口回调 + 缩放/尺寸查询 */
+    public record UmlView(ScrollPane scrollPane, Pane canvas, Runnable fitToViewport,
+                          java.util.function.DoubleSupplier zoomSupplier,
+                          java.util.function.DoubleSupplier contentWidthSupplier,
+                          java.util.function.DoubleSupplier contentHeightSupplier) {
+
+        /** 当前缩放比 */
+        public double currentZoom() {
+            return zoomSupplier.getAsDouble();
+        }
+
+        /** 原始内容宽度(未缩放) */
+        public double contentWidth() {
+            return contentWidthSupplier.getAsDouble();
+        }
+
+        /** 原始内容高度(未缩放) */
+        public double contentHeight() {
+            return contentHeightSupplier.getAsDouble();
+        }
+    }
+
     // ======================== 交互 ========================
 
-    /** 缩放/适配控制器：画布 = max(内容×缩放, 视口)，内容居中；大图可滚动 */
+    /** 缩放/适配控制器:画布 = max(内容×缩放, 视口),内容居中;大图可滚动 */
     private static final class ZoomController {
+
         private final ScrollPane scroll;
+
         private final Group group;
+
         private final Pane canvas;
+
         private final double contentW;
+
         private final double contentH;
+
         private final Scale scale = new Scale(1.0, 1.0, 0, 0);
+
         private double zoom = 1.0;
 
         ZoomController(ScrollPane scroll, Group group, Pane canvas, double contentW, double contentH) {
@@ -785,7 +841,19 @@ public final class UmlDiagramRenderer {
             this.group.getTransforms().setAll(scale);
         }
 
-        /** 整图适配：缩放到整图可见并居中 */
+        double currentZoom() {
+            return zoom;
+        }
+
+        double contentWidth() {
+            return contentW;
+        }
+
+        double contentHeight() {
+            return contentH;
+        }
+
+        /** 整图适配:缩放到整图可见并居中 */
         void fitToWindow() {
             double vw = scroll.getViewportBounds().getWidth();
             double vh = scroll.getViewportBounds().getHeight();
@@ -796,20 +864,43 @@ public final class UmlDiagramRenderer {
             if (!Double.isFinite(fit) || fit <= 0) {
                 return;
             }
-            fit = Math.min(fit, 1.0);       // 不放大
+            fit = Math.min(fit, 2.0);       // 允许适度放大,小图也能获得高清导出基础
             fit = Math.max(fit, MIN_ZOOM);  // 保底可读
             applyZoom(fit);
             scroll.setHvalue(0.5);
             scroll.setVvalue(0.5);
         }
 
-        /** Ctrl+滚轮缩放（简单可靠的从原点缩放） */
-        void zoomBy(double deltaY) {
+        /** Ctrl+滚轮缩放,保持鼠标下方的点不动 */
+        void zoomBy(double deltaY, double mouseX, double mouseY) {
             double next = Math.clamp(zoom + (deltaY > 0 ? ZOOM_STEP : -ZOOM_STEP), MIN_ZOOM, MAX_ZOOM);
             if (Math.abs(next - zoom) < 0.0001) {
                 return;
             }
+            double oldZoom = zoom;
+            double oldCw = canvas.getWidth();
+            double oldCh = canvas.getHeight();
+            double oldGx = group.getLayoutX();
+            double oldGy = group.getLayoutY();
+            double vw = scroll.getViewportBounds().getWidth();
+            double vh = scroll.getViewportBounds().getHeight();
+
             applyZoom(next);
+
+            // 保持鼠标下方的点不动:计算缩放导致的画布偏移,补偿到滚动位置
+            double newCw = canvas.getWidth();
+            double newCh = canvas.getHeight();
+            double groupDx = group.getLayoutX() - oldGx + (newCw - oldCw) / 2.0;
+            double groupDy = group.getLayoutY() - oldGy + (newCh - oldCh) / 2.0;
+            double contentFactor = next / oldZoom - 1.0;
+            double oldGroupCx = oldGx + mouseX * oldZoom;
+            double oldGroupCy = oldGy + mouseY * oldZoom;
+            double canvasShiftX = groupDx + oldGroupCx * contentFactor;
+            double canvasShiftY = groupDy + oldGroupCy * contentFactor;
+            double hRange = Math.max(1, newCw - vw);
+            double vRange = Math.max(1, newCh - vh);
+            scroll.setHvalue(Math.clamp(scroll.getHvalue() + canvasShiftX / hRange, 0, 1));
+            scroll.setVvalue(Math.clamp(scroll.getVvalue() + canvasShiftY / vRange, 0, 1));
         }
 
         private void applyZoom(double next) {
@@ -828,6 +919,7 @@ public final class UmlDiagramRenderer {
     }
 
     private record LayoutBox(Node box, double x, double y, double width, double height) {
+
         Point2D center() {
             return new Point2D(x + width / 2.0, y + height / 2.0);
         }

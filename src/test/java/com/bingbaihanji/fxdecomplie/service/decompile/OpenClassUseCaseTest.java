@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("OpenClassUseCase")
 class OpenClassUseCaseTest {
 
-    /** 内存缓存实现，用于测试 */
+    /** 内存缓存实现,用于测试 */
     static final class InMemoryCacheStore implements CodeCacheStore {
         private final Map<String, String> store = new ConcurrentHashMap<>();
 

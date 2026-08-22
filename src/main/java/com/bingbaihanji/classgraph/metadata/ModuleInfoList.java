@@ -1,10 +1,10 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import java.util.Collection;
 
 /** {@link ModuleInfo} 对象列表 */
 public class ModuleInfoList extends InfoList<ModuleInfo> {
+
     /** 序列化版本 UID */
     private static final long serialVersionUID = 1L;
 
@@ -55,17 +55,18 @@ public class ModuleInfoList extends InfoList<ModuleInfo> {
     }
 
     /**
-     * 使用将 {@link ModuleInfo} 对象映射为布尔值的谓词过滤 {@link ModuleInfoList}，
+     * 使用将 {@link ModuleInfo} 对象映射为布尔值的谓词过滤 {@link ModuleInfoList},
      * 为列表中谓词为 true 的所有项生成另一个 {@link ModuleInfoList}
      */
     @FunctionalInterface
     public interface ModuleInfoFilter {
+
         /**
          * 是否允许 {@link ModuleInfo} 列表项通过过滤器
          *
          * @param moduleInfo
          *            要过滤的 {@link ModuleInfo} 项
-         * @return 是否允许该项通过过滤器如果为 true，则将其复制到输出列表；如果为 false，则将其排除
+         * @return 是否允许该项通过过滤器如果为 true,则将其复制到输出列表;如果为 false,则将其排除
          */
         boolean accept(ModuleInfo moduleInfo);
     }

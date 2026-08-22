@@ -6,7 +6,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import java.util.Objects;
 
 public class BlockInsnPair {
+
     private final IBlock block;
+
     private final InsnNode insn;
 
     public BlockInsnPair(IBlock block, InsnNode insn) {

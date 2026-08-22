@@ -12,6 +12,7 @@ public class AttrList<T> implements IJadxAttribute {
     private static final int MAX_ATTRLIST_LENGTH = 300;
 
     private final IJadxAttrType<AttrList<T>> type;
+
     private final List<T> list;
 
     public AttrList(IJadxAttrType<AttrList<T>> type, List<T> attrList) {

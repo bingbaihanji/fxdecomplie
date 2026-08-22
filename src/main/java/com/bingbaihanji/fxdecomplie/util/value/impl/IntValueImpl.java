@@ -15,6 +15,7 @@ import java.util.OptionalInt;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class IntValueImpl implements IntValue {
+
     private final OptionalInt value;
 
     /**

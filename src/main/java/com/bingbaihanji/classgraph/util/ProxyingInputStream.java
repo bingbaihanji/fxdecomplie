@@ -6,19 +6,24 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 
 /**
- * 一个代理 {@link InputStream} 实现，可以为 JDK 7 编译，
+ * 一个代理 {@link InputStream} 实现,可以为 JDK 7 编译,
  * 但通过反射支持 JDK 8 中添加的方法
  */
 public class ProxyingInputStream extends InputStream {
+
     private static Method readAllBytes;
+
     private static Method readNBytes1;
+
     private static Method readNBytes3;
+
     private static Method skipNBytes;
+
     private static Method transferTo;
 
     static {
         // 通过反射使用 JDK 7 中不存在的 InputStream 方法
-        // TODO 一旦要求 JDK 8，切换到直接方法调用，并加回缺失的 @Override 注解
+        // TODO 一旦要求 JDK 8,切换到直接方法调用,并加回缺失的 @Override 注解
         try {
             readAllBytes = InputStream.class.getDeclaredMethod("readAllBytes");
         } catch (NoSuchMethodException | SecurityException e1) {
@@ -49,7 +54,7 @@ public class ProxyingInputStream extends InputStream {
     private InputStream inputStream;
 
     /**
-     * 一个代理 {@link InputStream} 实现，可以为 JDK 7 编译，
+     * 一个代理 {@link InputStream} 实现,可以为 JDK 7 编译,
      * 但通过反射支持 JDK 8 中添加的方法
      *
      * @param inputStream
@@ -74,7 +79,7 @@ public class ProxyingInputStream extends InputStream {
         return inputStream.read(b, off, len);
     }
 
-    // 没有 @Override，因为 JDK 7 中不存在此方法
+    // 没有 @Override,因为 JDK 7 中不存在此方法
     @Override
     public byte[] readAllBytes() throws IOException {
         if (readAllBytes == null) {
@@ -87,7 +92,7 @@ public class ProxyingInputStream extends InputStream {
         }
     }
 
-    // 没有 @Override，因为 JDK 7 中不存在此方法
+    // 没有 @Override,因为 JDK 7 中不存在此方法
     @Override
     public byte[] readNBytes(final int len) throws IOException {
         if (readNBytes1 == null) {
@@ -100,7 +105,7 @@ public class ProxyingInputStream extends InputStream {
         }
     }
 
-    // 没有 @Override，因为 JDK 7 中不存在此方法
+    // 没有 @Override,因为 JDK 7 中不存在此方法
     @Override
     public int readNBytes(final byte[] b, final int off, final int len) throws IOException {
         if (readNBytes3 == null) {
@@ -138,7 +143,7 @@ public class ProxyingInputStream extends InputStream {
         return inputStream.skip(n);
     }
 
-    // 没有 @Override，因为 JDK 7 中不存在此方法
+    // 没有 @Override,因为 JDK 7 中不存在此方法
     @Override
     public void skipNBytes(final long n) throws IOException {
         if (skipNBytes == null) {
@@ -151,7 +156,7 @@ public class ProxyingInputStream extends InputStream {
         }
     }
 
-    // 没有 @Override，因为 JDK 7 中不存在此方法
+    // 没有 @Override,因为 JDK 7 中不存在此方法
     @Override
     public long transferTo(final OutputStream out) throws IOException {
         if (transferTo == null) {

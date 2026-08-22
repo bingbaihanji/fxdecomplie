@@ -3,18 +3,29 @@ package com.bingbaihanji.fxdecomplie.util.i18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.Objects;
+import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 国际化语言环境上下文(单例 线程安全)
  * <p>
  * 负责管理当前语言环境 资源包加载以及语言变化通知
- * 加载优先级：外部文件(JAR 同级目录)→ classpath
- * 语言回退链：zh_CN_Variant → zh_CN → zh → root
+ * 加载优先级:外部文件(JAR 同级目录)→ classpath
+ * 语言回退链:zh_CN_Variant → zh_CN → zh → root
  * </p>
  *
  * <h3>使用方式</h3>
@@ -37,9 +48,12 @@ public final class I18nContext {
 
     /** 默认资源文件基名 */
     public static final String DEFAULT_BASE_NAME = "language/language";
-    /** 系统属性 key：覆盖默认资源文件基名 */
+
+    /** 系统属性 key:覆盖默认资源文件基名 */
     public static final String SYS_PROP_BASE_NAME = "i18n.base.name";
+
     private static final Logger log = LoggerFactory.getLogger(I18nContext.class);
+
     /** 常用语言列表(按需扩展) */
     private static final Locale[] COMMON_LOCALES = {
             Locale.SIMPLIFIED_CHINESE,
@@ -56,17 +70,23 @@ public final class I18nContext {
             new Locale("ar"),
             new Locale("ru"),
     };
+
     private static volatile I18nContext instance;
+
     /** 资源文件基名(如 "language/language") */
     private final String baseName;
+
     /** 语言变化监听器 */
     private final Set<Runnable> localeChangeListeners = new CopyOnWriteArraySet<>();
+
     /** 可刷新组件(语言切换时自动更新文本) */
     private final Set<I18nRefreshable> refreshable = new CopyOnWriteArraySet<>();
+
     /** 当前语言环境 */
     private volatile Locale currentLocale;
 
     // ======================== 构造 ========================
+
     /** 当前资源包 */
     private volatile ResourceBundle resourceBundle;
 
@@ -253,8 +273,8 @@ public final class I18nContext {
     /**
      * 加载资源包(含语言回退链)
      * <p>
-     * 回退顺序示例(locale=zh_CN_xxx)：zh_CN_xxx → zh_CN → zh → root
-     * 每个候选语言：先查外部文件,再查 classpath
+     * 回退顺序示例(locale=zh_CN_xxx):zh_CN_xxx → zh_CN → zh → root
+     * 每个候选语言:先查外部文件,再查 classpath
      * </p>
      */
     private ResourceBundle loadResourceBundle(String baseName, Locale locale) {
@@ -326,7 +346,8 @@ public final class I18nContext {
         File file = getExternalResourceFile(resourceName);
         if (file != null && file.isFile()) {
             try (InputStream in = new FileInputStream(file);
-                 InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+                 InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)
+            ) {
                 return new PropertyResourceBundle(reader);
             } catch (IOException e) {
                 log.warn("读取外部资源文件失败: {}", file.getAbsolutePath(), e);

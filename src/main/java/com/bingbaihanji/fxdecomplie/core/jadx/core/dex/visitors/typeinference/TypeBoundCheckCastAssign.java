@@ -11,7 +11,9 @@ import org.jetbrains.annotations.Nullable;
  * Such casts will be removed later.
  */
 public final class TypeBoundCheckCastAssign implements ITypeBoundDynamic {
+
     private final RootNode root;
+
     private final IndexInsnNode insn;
 
     public TypeBoundCheckCastAssign(RootNode root, IndexInsnNode insn) {

@@ -1,11 +1,18 @@
- 
 package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.classpath.ModulePathInfo;
 import com.bingbaihanji.classgraph.classpath.SystemJarFinder;
-import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.FieldInfo;
+import com.bingbaihanji.classgraph.metadata.MethodParam;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
+import com.bingbaihanji.classgraph.metadata.PackageInfo;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.AutoCloseableExecutorService;
+import com.bingbaihanji.classgraph.util.InterruptionChecker;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.VersionFinder;
 
 import java.io.File;
 import java.io.InputStream;
@@ -16,17 +23,24 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Pattern;
 
 /**
- * 超快速、超轻量级的 Java 类路径和模块路径扫描器通过直接解析 ClassParser 二进制格式(而非反射)来扫描类路径和/或模块路径中的 ClassParser
+ * 超快速,超轻量级的 Java 类路径和模块路径扫描器通过直接解析 ClassParser 二进制格式(而非反射)来扫描类路径和/或模块路径中的 ClassParser
  *
  * <p>
- * 文档：<a href= "https://github.com/classgraph/classgraph/wiki">
+ * 文档:<a href= "https://github.com/classgraph/classgraph/wiki">
  * https://github.com/classgraph/classgraph/wiki</a>
  */
 public class ClassGraph {
+
     /**
      * 扫描时使用的默认工作线程数此数值在配备 SSD 的较新笔记本电脑上扫描大型类路径时取得了最佳效果
      */
@@ -34,37 +48,41 @@ public class ClassGraph {
             // 始终至少使用 2 个线程进行扫描
             2, //
             (int) Math.ceil(
-                    // I/O 线程数(上限为 4，因为大多数 I/O 设备的扩展性不会超过此值)
+                    // I/O 线程数(上限为 4,因为大多数 I/O 设备的扩展性不会超过此值)
                     Math.min(4.0, Runtime.getRuntime().availableProcessors() * 0.75) +
-                            // 扫描线程数(高于可用处理器数，因为某些线程可能会被阻塞)
+                            // 扫描线程数(高于可用处理器数,因为某些线程可能会被阻塞)
                             Runtime.getRuntime().availableProcessors() * 1.25) //
     );
+
     /**
-     * 如果在 JDK 16+ 上运行，JDK 会强制执行强封装，如果类加载器未通过公共方法或字段公开类路径，
+     * 如果在 JDK 16+ 上运行,JDK 会强制执行强封装,如果类加载器未通过公共方法或字段公开类路径,
      * 则 ClassGraph 可能无法从类加载器中读取类路径
      *
      * <p>
-     * 要启用此问题的变通方案，请先以任何方式与 ClassGraph 交互之前，将此静态字段设置为
-     * {@link CircumventEncapsulationMethod#NARCISSUS}，并在类路径或模块路径上包含
+     * 要启用此问题的变通方案,请先以任何方式与 ClassGraph 交互之前,将此静态字段设置为
+     * {@link CircumventEncapsulationMethod#NARCISSUS},并在类路径或模块路径上包含
      * <a href="https://github.com/toolfactory/narcissus">Narcissus</a> 库
      *
      * <p>
-     * Narcissus 使用 JNI 来绕过封装和字段/方法访问控制Narcissus 使用原生代码库，
-     * 目前仅针对 Linux x86/x64、Windows x86/x64 和 Mac OS X x64 编译
+     * Narcissus 使用 JNI 来绕过封装和字段/方法访问控制Narcissus 使用原生代码库,
+     * 目前仅针对 Linux x86/x64,Windows x86/x64 和 Mac OS X x64 编译
      */
     public static CircumventEncapsulationMethod CIRCUMVENT_ENCAPSULATION = CircumventEncapsulationMethod.NONE;
+
     private final ReflectionUtils reflectionUtils;
+
     /** 扫描规范 */
     ScanConfig ScanConfig = new ScanConfig();
+
     /**
-     * 如果非 null，则在扫描时记录日志
+     * 如果非 null,则在扫描时记录日志
      */
     private LogNode topLevelLog;
 
     /** 构造一个 ClassGraph 实例 */
     public ClassGraph() {
         reflectionUtils = new ReflectionUtils();
-        // 初始化 ScanResult，如果这是第一次调用 ClassGraph 构造函数
+        // 初始化 ScanResult,如果这是第一次调用 ClassGraph 构造函数
         ScanResult.init(reflectionUtils);
     }
 
@@ -82,7 +100,7 @@ public class ClassGraph {
     /**
      * 获取 ClassGraph 的版本号
      *
-     * @return ClassGraph 版本号，如果无法确定则返回 "unknown"
+     * @return ClassGraph 版本号,如果无法确定则返回 "unknown"
      */
     public static String getVersion() {
         return VersionFinder.getVersion();
@@ -103,10 +121,10 @@ public class ClassGraph {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 如果 verbose 为 true，则开启详细日志记录到 System.err
+     * 如果 verbose 为 true,则开启详细日志记录到 System.err
      *
      * @param verbose
-     *            如果为 true，则启用详细日志记录
+     *            如果为 true,则启用详细日志记录
      * @return this(用于方法链式调用)
      */
     public ClassGraph verbose(final boolean verbose) {
@@ -479,15 +497,15 @@ public class ClassGraph {
     }
 
     /**
-     * 使用自定义路径覆盖自动检测的类路径，路径元素由 File.pathSeparatorChar 分隔
+     * 使用自定义路径覆盖自动检测的类路径,路径元素由 File.pathSeparatorChar 分隔
      * 使系统 ClassLoader 和 java.class.path 系统属性被忽略同时使模块不被扫描
      *
      * <p>
-     * 如果调用了此方法，则仅扫描提供的类路径，即会导致 ClassLoader 以及 java.class.path
+     * 如果调用了此方法,则仅扫描提供的类路径,即会导致 ClassLoader 以及 java.class.path
      * 系统属性被忽略
      *
      * @param overrideClasspath
-     *            用于扫描的自定义类路径，路径元素由 File.pathSeparatorChar 分隔
+     *            用于扫描的自定义类路径,路径元素由 File.pathSeparatorChar 分隔
      * @return this(用于方法链式调用)
      */
     public ClassGraph overrideClasspath(final String overrideClasspath) {
@@ -507,10 +525,10 @@ public class ClassGraph {
      * 同时使模块不被扫描
      *
      * <p>
-     * 适用于任何类型的 Iterable，其 toString() 方法解析为类路径元素字符串，例如 String、File 或 Path
+     * 适用于任何类型的 Iterable,其 toString() 方法解析为类路径元素字符串,例如 String,File 或 Path
      *
      * @param overrideClasspaths
-     *            用于扫描的自定义类路径，路径元素由 File.pathSeparatorChar 分隔
+     *            用于扫描的自定义类路径,路径元素由 File.pathSeparatorChar 分隔
      * @return this(用于方法链式调用)
      */
     public ClassGraph overrideClasspath(final Iterable<?> overrideClasspaths) {
@@ -528,10 +546,10 @@ public class ClassGraph {
      * 同时使模块不被扫描
      *
      * <p>
-     * 适用于任何成员类型的数组，其 toString() 方法解析为类路径元素字符串，例如 String、File 或 Path
+     * 适用于任何成员类型的数组,其 toString() 方法解析为类路径元素字符串,例如 String,File 或 Path
      *
      * @param overrideClasspaths
-     *            用于扫描的自定义类路径，路径元素由 File.pathSeparatorChar 分隔
+     *            用于扫描的自定义类路径,路径元素由 File.pathSeparatorChar 分隔
      * @return this(用于方法链式调用)
      */
     public ClassGraph overrideClasspath(final Object... overrideClasspaths) {
@@ -548,7 +566,7 @@ public class ClassGraph {
      * 添加类路径元素过滤器提供的 ClasspathFilter 在传入的路径字符串是您想要扫描的路径时应返回 true
      *
      * @param classpathElementFilter
-     *            要使用的过滤器函数如果应扫描该类路径元素路径，此函数应返回 true；否则返回 false
+     *            要使用的过滤器函数如果应扫描该类路径元素路径,此函数应返回 true;否则返回 false
      * @return this(用于方法链式调用)
      */
     public ClassGraph filterClasspaths(final ClasspathFilter classpathElementFilter) {
@@ -562,7 +580,7 @@ public class ClassGraph {
      * 添加类路径元素过滤器提供的 ClasspathFilter 在传入的 {@link URL} 是您想要扫描的 URL 时应返回 true
      *
      * @param classpathElementURLFilter
-     *            要使用的过滤器函数如果应扫描该类路径元素 {@link URL}，此函数应返回 true；否则返回 false
+     *            要使用的过滤器函数如果应扫描该类路径元素 {@link URL},此函数应返回 true;否则返回 false
      * @return this(用于方法链式调用)
      */
     public ClassGraph filterClasspathsByURL(final ClasspathURLFilter classpathElementURLFilter) {
@@ -574,8 +592,8 @@ public class ClassGraph {
      * 向要扫描的 ClassLoader 列表中添加一个 ClassLoader
      *
      * <p>
-     * 如果同时调用了 {@link #overrideClasspath(String)}，或者在此方法之前调用了
-     * {@link #overrideClassLoaders(ClassLoader...)}，则此调用将被忽略
+     * 如果同时调用了 {@link #overrideClasspath(String)},或者在此方法之前调用了
+     * {@link #overrideClassLoaders(ClassLoader...)},则此调用将被忽略
      *
      * @param classLoader
      *            要扫描的额外 ClassLoader
@@ -588,11 +606,11 @@ public class ClassGraph {
 
     /**
      * 完全覆盖(并忽略)系统 ClassLoader 和 java.class.path 系统属性同时使模块不被扫描
-     * 请注意，您可能希望将此方法与 {@link #withoutParentClassLoaders()} 一起使用，
+     * 请注意,您可能希望将此方法与 {@link #withoutParentClassLoaders()} 一起使用,
      * 以便仅从您在 `overrideClassLoaders` 参数中指定的类加载器(而非其父类加载器)中提取类路径 URL
      *
      * <p>
-     * 如果调用了 {@link #overrideClasspath(String)}，则此调用将被忽略
+     * 如果调用了 {@link #overrideClasspath(String)},则此调用将被忽略
      *
      * @param overrideClassLoaders
      *            用于替代自动检测的 ClassLoader 进行扫描的 ClassLoader
@@ -623,15 +641,15 @@ public class ClassGraph {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 向要扫描的 ModuleLayer 列表中添加一个 ModuleLayer如果您定义了自己的 ModuleLayer，
-     * 但扫描代码并未在该自定义 ModuleLayer 中运行，请使用此方法
+     * 向要扫描的 ModuleLayer 列表中添加一个 ModuleLayer如果您定义了自己的 ModuleLayer,
+     * 但扫描代码并未在该自定义 ModuleLayer 中运行,请使用此方法
      *
      * <p>
-     * 如果在此方法之前调用了 {@link #overrideModuleLayers(Object...)}，则此调用将被忽略
+     * 如果在此方法之前调用了 {@link #overrideModuleLayers(Object...)},则此调用将被忽略
      *
      * @param moduleLayer
      *            要扫描的额外 ModuleLayer(参数类型为 {@link Object} 是为了与 JDK 7 和 JDK 8
-     *            保持向后兼容，但实际参数应为 ModuleLayer 类型)
+     *            保持向后兼容,但实际参数应为 ModuleLayer 类型)
      * @return this(用于方法链式调用)
      */
     public ClassGraph addModuleLayer(final Object moduleLayer) {
@@ -640,14 +658,14 @@ public class ClassGraph {
     }
 
     /**
-     * 完全覆盖(并忽略)可见的 ModuleLayer，转而扫描请求的 ModuleLayer
+     * 完全覆盖(并忽略)可见的 ModuleLayer,转而扫描请求的 ModuleLayer
      *
      * <p>
-     * 如果调用了 overrideClasspath()，则此调用将被忽略
+     * 如果调用了 overrideClasspath(),则此调用将被忽略
      *
      * @param overrideModuleLayers
      *            用于替代自动检测的 ModuleLayer 进行扫描的 ModuleLayer
-     *            (参数类型为 {@link Object}[] 是为了与 JDK 7 和 JDK 8 保持向后兼容，
+     *            (参数类型为 {@link Object}[] 是为了与 JDK 7 和 JDK 8 保持向后兼容,
      *            但实际参数应为 ModuleLayer[] 类型)
      * @return this(用于方法链式调用)
      */
@@ -768,14 +786,14 @@ public class ClassGraph {
     }
 
     /**
-     * 扫描一个或多个特定包，但不会递归扫描子包，除非子包自身也被接受
+     * 扫描一个或多个特定包,但不会递归扫描子包,除非子包自身也被接受
      *
      * <p>
-     * 注意：自动调用 {@link #withClassInfo()}——如果您只需要扫描资源，
+     * 注意:自动调用 {@link #withClassInfo()}——如果您只需要扫描资源,
      * 请改用 {@link #filterPathsNonRecursive(String...)}
      *
      * <p>
-     * 这对于扫描包根("")而不递归扫描 jar、目录或模块中的所有内容特别有用
+     * 这对于扫描包根("")而不递归扫描 jar,目录或模块中的所有内容特别有用
      *
      * @param packageNames
      *            要扫描的包的全限定名称(使用 '.' 作为分隔符)不能包含 glob 通配符({@code '*'})
@@ -789,7 +807,7 @@ public class ClassGraph {
             if (packageNameNormalized.contains("*")) {
                 throw new IllegalArgumentException("Cannot use a glob wildcard here: " + packageNameNormalized);
             }
-            // 接受包，但不接受子包
+            // 接受包,但不接受子包
             ScanConfig.packageAcceptReject.addToAccept(packageNameNormalized);
             ScanConfig.pathAcceptReject.addToAccept(Filter.packageNameToPath(packageNameNormalized) + "/");
             if (packageNameNormalized.isEmpty()) {
@@ -813,13 +831,13 @@ public class ClassGraph {
     }
 
     /**
-     * 扫描一个或多个特定路径，但不会递归扫描子目录或嵌套路径，除非它们自身也被接受
+     * 扫描一个或多个特定路径,但不会递归扫描子目录或嵌套路径,除非它们自身也被接受
      *
      * <p>
-     * 这对于扫描包根("")而不递归扫描 jar、目录或模块中的所有内容特别有用
+     * 这对于扫描包根("")而不递归扫描 jar,目录或模块中的所有内容特别有用
      *
      * @param paths
-     *            要扫描的路径，相对于类路径元素的包根(使用 '/' 作为分隔符)不能包含 glob 通配符({@code '*'})
+     *            要扫描的路径,相对于类路径元素的包根(使用 '/' 作为分隔符)不能包含 glob 通配符({@code '*'})
      * @return this(用于方法链式调用)
      */
     public ClassGraph acceptPathsNonRecursive(final String... paths) {
@@ -828,7 +846,7 @@ public class ClassGraph {
                 throw new IllegalArgumentException("Cannot use a glob wildcard here: " + path);
             }
             final String pathNormalized = Filter.normalizePath(path);
-            // 接受路径，但不接受子目录/嵌套路径
+            // 接受路径,但不接受子目录/嵌套路径
             ScanConfig.packageAcceptReject.addToAccept(Filter.pathToPackageName(pathNormalized));
             ScanConfig.pathAcceptReject.addToAccept(pathNormalized + "/");
             if (pathNormalized.isEmpty()) {
@@ -842,7 +860,7 @@ public class ClassGraph {
      * 请改用 {@link #filterPathsNonRecursive(String...)}
      *
      * @param paths
-     *            要扫描的路径，相对于类路径元素的包根(使用 '/' 作为分隔符)不能包含 glob 通配符({@code '*'})
+     *            要扫描的路径,相对于类路径元素的包根(使用 '/' 作为分隔符)不能包含 glob 通配符({@code '*'})
      * @return this(用于方法链式调用)
      * @deprecated 请改用 {@link #filterPathsNonRecursive(String...)}
      */
@@ -1092,13 +1110,13 @@ public class ClassGraph {
      * 将 lib 或 ext jar 添加到接受或拒绝列表
      *
      * @param accept
-     *            如果为 true，则添加到接受列表；否则添加到拒绝列表
+     *            如果为 true,则添加到接受列表;否则添加到拒绝列表
      * @param jarLeafNames
      *            要接受的 jar 叶子名称
      */
     private void acceptOrRejectLibOrExtJars(final boolean accept, final String... jarLeafNames) {
         if (jarLeafNames.length == 0) {
-            // 如果未提供 jar 叶子名称，则接受或拒绝所有 lib 或 ext jar
+            // 如果未提供 jar 叶子名称,则接受或拒绝所有 lib 或 ext jar
             for (final String libOrExtJar : SystemJarFinder.getJreLibOrExtJars()) {
                 acceptOrRejectLibOrExtJars(accept, JarUtils.leafName(libOrExtJar));
             }
@@ -1127,7 +1145,7 @@ public class ClassGraph {
                         topLevelLog.log("Could not find lib or ext jar matching wildcard: " + jarLeafName);
                     }
                 } else {
-                    // 无通配符，如果存在则直接接受或拒绝指定的 jar
+                    // 无通配符,如果存在则直接接受或拒绝指定的 jar
                     boolean found = false;
                     for (final String libOrExtJarPath : SystemJarFinder.getJreLibOrExtJars()) {
                         final String libOrExtJarLeafName = JarUtils.leafName(libOrExtJarPath);
@@ -1281,7 +1299,7 @@ public class ClassGraph {
      * 基于资源路径接受类路径元素仅扫描包含匹配接受条件的资源路径的类路径元素
      *
      * @param resourcePaths
-     *            资源路径，其中任何一个必须存在于类路径元素中才能使该类路径元素被扫描
+     *            资源路径,其中任何一个必须存在于类路径元素中才能使该类路径元素被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
      */
@@ -1297,7 +1315,7 @@ public class ClassGraph {
      * 请改用 {@link #filterClasspathsContainingResourcePath(String...)}
      *
      * @param resourcePaths
-     *            资源路径，其中任何一个必须存在于类路径元素中才能使该类路径元素被扫描
+     *            资源路径,其中任何一个必须存在于类路径元素中才能使该类路径元素被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
      * @deprecated 请改用 {@link #filterClasspathsContainingResourcePath(String...)}
@@ -1311,7 +1329,7 @@ public class ClassGraph {
      * 基于资源路径拒绝类路径元素包含匹配拒绝条件的资源路径的类路径元素将不会被扫描
      *
      * @param resourcePaths
-     *            资源路径，如果其中任何一个存在于类路径元素中，则该类路径元素将不会被扫描
+     *            资源路径,如果其中任何一个存在于类路径元素中,则该类路径元素将不会被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
      */
@@ -1327,7 +1345,7 @@ public class ClassGraph {
      * 请改用 {@link #excludeClasspathsContainingResourcePath(String...)}
      *
      * @param resourcePaths
-     *            资源路径，如果其中任何一个存在于类路径元素中，则该类路径元素将不会被扫描
+     *            资源路径,如果其中任何一个存在于类路径元素中,则该类路径元素将不会被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
      * @deprecated 请改用 {@link #excludeClasspathsContainingResourcePath(String...)}
@@ -1339,13 +1357,13 @@ public class ClassGraph {
 
     /**
      * 启用从远程("http:"/"https:")URL(或自定义方案的 URL)获取类路径元素
-     * 等效于：
+     * 等效于:
      *
      * <p>
      * {@code new ClassGraph().enableURLScheme("http").enableURLScheme("https");}
      *
      * <p>
-     * 默认情况下禁用从 http(s) URL 扫描，因为这可能存在安全漏洞，
+     * 默认情况下禁用从 http(s) URL 扫描,因为这可能存在安全漏洞,
      * 因为随后可以使用 {@link ClassInfo#loadClass} 加载下载的 jar 中的类
      *
      * @return this(用于方法链式调用)
@@ -1358,10 +1376,10 @@ public class ClassGraph {
 
     /**
      * 启用从具有指定 URL 方案的 {@link URL} 连接获取类路径元素
-     * (也适用于任何已定义的自定义 URL 方案，只要它们超过两个字符，以免与 Windows 驱动器号冲突)
+     * (也适用于任何已定义的自定义 URL 方案,只要它们超过两个字符,以免与 Windows 驱动器号冲突)
      *
      * @param scheme
-     *            URL 方案字符串，例如 "resource" 用于自定义的 "resource:" URL 方案
+     *            URL 方案字符串,例如 "resource" 用于自定义的 "resource:" URL 方案
      * @return this(用于方法链式调用)
      */
     public ClassGraph enableURLScheme(final String scheme) {
@@ -1392,25 +1410,25 @@ public class ClassGraph {
     }
 
     /**
-     * 外部 jar 内被压缩(deflated，即压缩而非存储)的内部(嵌套)jar 在被解压时，
-     * 在解压后必须溢出到磁盘而非存储在 RAM 支持的 {@link ByteBuffer} 中以便读取内部 jar 的条目之前，
-     * 该内部 jar 的最大大小(请注意，需要将嵌套 jar 解压到 RAM 或磁盘以便读取的情况很少见，
-     * 因为通常将一个 jarfile 添加到另一个 jarfile 时会存储(store)内部 jar 而非压缩(deflate)它，
-     * 因为压缩 jarfile 通常不会产生进一步的压缩收益如果内部 jar 是存储的而非压缩的，
-     * 则其 zip 条目可以直接使用 ClassGraph 自己的 zipfile 中央目录解析器读取，
+     * 外部 jar 内被压缩(deflated,即压缩而非存储)的内部(嵌套)jar 在被解压时,
+     * 在解压后必须溢出到磁盘而非存储在 RAM 支持的 {@link ByteBuffer} 中以便读取内部 jar 的条目之前,
+     * 该内部 jar 的最大大小(请注意,需要将嵌套 jar 解压到 RAM 或磁盘以便读取的情况很少见,
+     * 因为通常将一个 jarfile 添加到另一个 jarfile 时会存储(store)内部 jar 而非压缩(deflate)它,
+     * 因为压缩 jarfile 通常不会产生进一步的压缩收益如果内部 jar 是存储的而非压缩的,
+     * 则其 zip 条目可以直接使用 ClassGraph 自己的 zipfile 中央目录解析器读取,
      * 该解析器可以使用文件切片直接从存储的嵌套 jar 中提取条目)
      *
      * <p>
      * 这也是从 {@code http://} 或 {@code https://} 类路径 {@link URL} 下载 jar 到 RAM 的最大大小
-     * 一旦从 {@link URL} 的 {@link InputStream} 读取了这么多字节，则 RAM 内容将溢出到磁盘上的临时文件，
-     * 其余内容将下载到临时文件中(这也很少见，因为通常没有 {@code http://} 或 {@code https://} 类路径条目)
+     * 一旦从 {@link URL} 的 {@link InputStream} 读取了这么多字节,则 RAM 内容将溢出到磁盘上的临时文件,
+     * 其余内容将下载到临时文件中(这也很少见,因为通常没有 {@code http://} 或 {@code https://} 类路径条目)
      *
      * <p>
-     * 默认值：64MB(即尽可能避免写入磁盘)如果上述任一罕见情况发生，
+     * 默认值:64MB(即尽可能避免写入磁盘)如果上述任一罕见情况发生,
      * 设置较低的 max RAM size 值将减少 ClassGraph 的内存使用
      *
      * @param maxBufferedJarRAMSize
-     *            用于压缩的内部 jar 或下载的 jar 的最大 RAM 大小这是每个 jar 的限制，而非整个类路径的限制
+     *            用于压缩的内部 jar 或下载的 jar 的最大 RAM 大小这是每个 jar 的限制,而非整个类路径的限制
      * @return this(用于方法链式调用)
      */
     public ClassGraph setMaxBufferedJarRAMSize(final int maxBufferedJarRAMSize) {
@@ -1419,9 +1437,9 @@ public class ClassGraph {
     }
 
     /**
-     * 如果为 true，则使用 {@link MappedByteBuffer} 而非 {@link FileChannel} API 来打开文件，
-     * 这对于包含许多大型 jarfile 的大型类路径可能更快，但会占用虚拟内存空间
-     * 目前在 Java 24+ 上不可用，因为 Unsafe API 已被弃用
+     * 如果为 true,则使用 {@link MappedByteBuffer} 而非 {@link FileChannel} API 来打开文件,
+     * 这对于包含许多大型 jarfile 的大型类路径可能更快,但会占用虚拟内存空间
+     * 目前在 Java 24+ 上不可用,因为 Unsafe API 已被弃用
      *
      * @return this(用于方法链式调用)
      */
@@ -1435,7 +1453,7 @@ public class ClassGraph {
     }
 
     /**
-     * 如果为 true，则使用多版本路径前缀提供多版本资源的所有版本，
+     * 如果为 true,则使用多版本路径前缀提供多版本资源的所有版本,
      * 而非仅提供运行 JVM 会选择的那一个版本隐式禁用 {@link #withClassInfo()} 及其所有依赖功能
      *
      * @return this(用于方法链式调用)
@@ -1461,9 +1479,9 @@ public class ClassGraph {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 通过调用 {@link #verbose()} 启用日志记录，然后将日志记录器设置为"实时日志记录模式"，
-     * 在此模式下，日志条目会立即写入 stderr，而非仅在扫描完成后才写入
-     * 有助于识别扫描陷入循环、某个扫描步骤耗时远超预期等问题
+     * 通过调用 {@link #verbose()} 启用日志记录,然后将日志记录器设置为"实时日志记录模式",
+     * 在此模式下,日志条目会立即写入 stderr,而非仅在扫描完成后才写入
+     * 有助于识别扫描陷入循环,某个扫描步骤耗时远超预期等问题
      *
      * @return this(用于方法链式调用)
      */
@@ -1474,14 +1492,14 @@ public class ClassGraph {
     }
 
     /**
-     * 异步扫描类路径，在成功时调用 {@link ScanResultProcessor} 回调，
+     * 异步扫描类路径,在成功时调用 {@link ScanResultProcessor} 回调,
      * 在失败时调用 {@link FailureHandler} 回调
      *
      * @param executorService
      *            用于调度工作线程任务的自定义 {@link ExecutorService}
      * @param numParallelTasks
      *            在类路径扫描最密集的 CPU 阶段将工作分解为的并行任务数
-     *            理想情况下，ExecutorService 至少应具有这么多可用线程
+     *            理想情况下,ExecutorService 至少应具有这么多可用线程
      * @param scanResultProcessor
      *            扫描成功时运行的 {@link ScanResultProcessor} 回调
      * @param failureHandler
@@ -1490,20 +1508,21 @@ public class ClassGraph {
     public void scanAsync(final ExecutorService executorService, final int numParallelTasks,
                           final ScanResultProcessor scanResultProcessor, final FailureHandler failureHandler) {
         if (scanResultProcessor == null) {
-            // 如果 scanResultProcessor 为 null，扫描完成后将不会执行任何操作，ScanResult 将直接丢失
+            // 如果 scanResultProcessor 为 null,扫描完成后将不会执行任何操作,ScanResult 将直接丢失
             throw new IllegalArgumentException("scanResultProcessor cannot be null");
         }
         if (failureHandler == null) {
-            // 下面丢弃了 launchAsyncScan 返回的 Future<ScanObject> 对象的结果，
-            // 因此我们强制要求添加 FailureHandler，以免异常被静默吞掉
+            // 下面丢弃了 launchAsyncScan 返回的 Future<ScanObject> 对象的结果,
+            // 因此我们强制要求添加 FailureHandler,以免异常被静默吞掉
             throw new IllegalArgumentException("failureHandler cannot be null");
         }
-        // 使用 execute() 而非 submit()，因为使用了 ScanResultProcessor 和 FailureHandler
+        // 使用 execute() 而非 submit(),因为使用了 ScanResultProcessor 和 FailureHandler
         executorService.execute(new Runnable() {
+
             @Override
             public void run() {
                 try {
-                    // 调用扫描器，但忽略返回的 ScanResult
+                    // 调用扫描器,但忽略返回的 ScanResult
                     new Scanner(/* performScan = */ true, ScanConfig, executorService, numParallelTasks,
                             scanResultProcessor, failureHandler, reflectionUtils, topLevelLog).call();
                 } catch (final InterruptedException | CancellationException | ExecutionException e) {
@@ -1515,17 +1534,17 @@ public class ClassGraph {
     }
 
     /**
-     * 异步扫描类路径以查找匹配的文件，返回一个 {@code Future<ScanResult>}
-     * 您应在 try-with-resources 语句中赋值返回的 {@link ScanResult}，或在使用完毕后手动关闭它
+     * 异步扫描类路径以查找匹配的文件,返回一个 {@code Future<ScanResult>}
+     * 您应在 try-with-resources 语句中赋值返回的 {@link ScanResult},或在使用完毕后手动关闭它
      *
      * @param performScan
-     *            如果为 true，则执行扫描如果为 false，则仅获取类路径
+     *            如果为 true,则执行扫描如果为 false,则仅获取类路径
      * @param executorService
      *            用于调度工作线程任务的自定义 {@link ExecutorService}
      * @param numParallelTasks
      *            在类路径扫描最密集的 CPU 阶段将工作分解为的并行任务数
-     *            理想情况下，ExecutorService 至少应具有这么多可用线程
-     * @return 一个 {@code Future<ScanResult>}，当使用 get() 解析后，
+     *            理想情况下,ExecutorService 至少应具有这么多可用线程
+     * @return 一个 {@code Future<ScanResult>},当使用 get() 解析后,
      *         返回表示扫描结果的新 {@link ScanResult} 对象
      */
     private Future<ScanResult> scanAsync(final boolean performScan, final ExecutorService executorService,
@@ -1534,9 +1553,10 @@ public class ClassGraph {
             return executorService.submit(new Scanner(performScan, ScanConfig, executorService, numParallelTasks,
                     /* scanResultProcessor = */ null, /* failureHandler = */ null, reflectionUtils, topLevelLog));
         } catch (final InterruptedException e) {
-            // 在 Scanner 构造函数执行期间被中断(具体来说是被 getModuleOrder() 中断，
+            // 在 Scanner 构造函数执行期间被中断(具体来说是被 getModuleOrder() 中断,
             // 这不太可能实际被中断——但此异常需要被捕获)
             return executorService.submit(new Callable<ScanResult>() {
+
                 @Override
                 public ScanResult call() throws Exception {
                     throw e;
@@ -1548,15 +1568,15 @@ public class ClassGraph {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 异步扫描类路径以查找匹配的文件，返回一个 {@code Future<ScanResult>}
-     * 您应在 try-with-resources 语句中赋值返回的 {@link ScanResult}，或在使用完毕后手动关闭它
+     * 异步扫描类路径以查找匹配的文件,返回一个 {@code Future<ScanResult>}
+     * 您应在 try-with-resources 语句中赋值返回的 {@link ScanResult},或在使用完毕后手动关闭它
      *
      * @param executorService
      *            用于调度工作线程任务的自定义 {@link ExecutorService}
      * @param numParallelTasks
      *            在类路径扫描最密集的 CPU 阶段将工作分解为的并行任务数
-     *            理想情况下，ExecutorService 至少应具有这么多可用线程
-     * @return 一个 {@code Future<ScanResult>}，当使用 get() 解析后，
+     *            理想情况下,ExecutorService 至少应具有这么多可用线程
+     * @return 一个 {@code Future<ScanResult>},当使用 get() 解析后,
      *         返回表示扫描结果的新 {@link ScanResult} 对象
      */
     public Future<ScanResult> scanAsync(final ExecutorService executorService, final int numParallelTasks) {
@@ -1566,27 +1586,27 @@ public class ClassGraph {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 使用请求的 {@link ExecutorService} 和请求的并行度扫描类路径，
-     * 阻塞直到扫描完成您应在 try-with-resources 语句中赋值返回的 {@link ScanResult}，
+     * 使用请求的 {@link ExecutorService} 和请求的并行度扫描类路径,
+     * 阻塞直到扫描完成您应在 try-with-resources 语句中赋值返回的 {@link ScanResult},
      * 或在使用完毕后手动关闭它
      *
      * @param executorService
      *            用于调度工作线程任务的自定义 {@link ExecutorService}
-     *            此 {@link ExecutorService} 应按 FIFO 顺序启动任务以避免扫描期间死锁，
+     *            此 {@link ExecutorService} 应按 FIFO 顺序启动任务以避免扫描期间死锁,
      *            即确保使用 {@link LinkedBlockingQueue} 作为其任务队列构造 {@link ExecutorService}
      *            (这是 {@link Executors#newFixedThreadPool(int)} 的默认设置)
      * @param numParallelTasks
      *            在类路径扫描最密集的 CPU 阶段将工作分解为的并行任务数
-     *            理想情况下，ExecutorService 至少应具有这么多可用线程
+     *            理想情况下,ExecutorService 至少应具有这么多可用线程
      * @return 表示扫描结果的 {@link ScanResult} 对象
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public ScanResult scan(final ExecutorService executorService, final int numParallelTasks) {
         try {
             // 启动扫描并等待完成
 
-            // 返回 scanResult，然后阻塞等待结果
+            // 返回 scanResult,然后阻塞等待结果
             final ScanResult scanResult = scanAsync(executorService, numParallelTasks).get();
 
             //    // 通过序列化然后反序列化 ScanResult 来测试序列化/反序列化
@@ -1600,7 +1620,7 @@ public class ClassGraph {
             //        scanResult = scanResultFromJson;
             //    }
 
-            // 生成的 scanResult 不能为 null，但检查 null 以使 SpotBugs 满意
+            // 生成的 scanResult 不能为 null,但检查 null 以使 SpotBugs 满意
             if (scanResult == null) {
                 throw new NullPointerException();
             }
@@ -1614,14 +1634,14 @@ public class ClassGraph {
     }
 
     /**
-     * 使用请求的线程数扫描类路径，阻塞直到扫描完成您应在 try-with-resources 语句中赋值返回的
-     * {@link ScanResult}，或在使用完毕后手动关闭它
+     * 使用请求的线程数扫描类路径,阻塞直到扫描完成您应在 try-with-resources 语句中赋值返回的
+     * {@link ScanResult},或在使用完毕后手动关闭它
      *
      * @param numThreads
      *            要启动的工作线程数
      * @return 表示扫描结果的 {@link ScanResult} 对象
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public ScanResult scan(final int numThreads) {
         try (AutoCloseableExecutorService executorService = new AutoCloseableExecutorService(numThreads)) {
@@ -1630,12 +1650,12 @@ public class ClassGraph {
     }
 
     /**
-     * 扫描类路径，阻塞直到扫描完成您应在 try-with-resources 语句中赋值返回的
-     * {@link ScanResult}，或在使用完毕后手动关闭它
+     * 扫描类路径,阻塞直到扫描完成您应在 try-with-resources 语句中赋值返回的
+     * {@link ScanResult},或在使用完毕后手动关闭它
      *
      * @return 表示扫描结果的 {@link ScanResult} 对象
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public ScanResult scan() {
         return scan(DEFAULT_NUM_WORKER_THREADS);
@@ -1648,14 +1668,14 @@ public class ClassGraph {
      *            执行器服务
      * @return 表示扫描结果的 {@link ScanResult} 对象(仅可用于确定类路径)
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     ScanResult getClasspathScanResult(final AutoCloseableExecutorService executorService) {
         try {
             final ScanResult scanResult = scanAsync(/* performScan = */ false, executorService,
                     DEFAULT_NUM_WORKER_THREADS).get();
 
-            // 生成的 scanResult 不能为 null，但检查 null 以使 SpotBugs 满意
+            // 生成的 scanResult 不能为 null,但检查 null 以使 SpotBugs 满意
             if (scanResult == null) {
                 throw new NullPointerException();
             }
@@ -1669,30 +1689,31 @@ public class ClassGraph {
     }
 
     /**
-     * 返回类路径上所有唯一 File 对象(表示目录或 zip/jarfile)的列表，
+     * 返回类路径上所有唯一 File 对象(表示目录或 zip/jarfile)的列表,
      * 按类加载器解析顺序排列不存在为文件或目录的类路径元素不会包含在返回的列表中
      *
-     * @return 一个 {@code List<File>}，包含类路径上唯一的目录和 jarfile，按类路径解析顺序排列
+     * @return 一个 {@code List<File>},包含类路径上唯一的目录和 jarfile,按类路径解析顺序排列
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public List<File> getClasspathFiles() {
         try (AutoCloseableExecutorService executorService = new AutoCloseableExecutorService(
-                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)) {
+                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)
+        ) {
             return scanResult.getClasspathFiles();
         }
     }
 
     /**
-     * 返回类路径上所有唯一 File 对象(表示目录或 zip/jarfile)的列表，
-     * 按类加载器解析顺序排列，以类路径字符串形式返回不存在为文件或目录的类路径元素不会包含在返回的列表中
-     * 请注意，返回的字符串仅包含基本文件，不包含包根或 jar 内的嵌套 jar，
+     * 返回类路径上所有唯一 File 对象(表示目录或 zip/jarfile)的列表,
+     * 按类加载器解析顺序排列,以类路径字符串形式返回不存在为文件或目录的类路径元素不会包含在返回的列表中
+     * 请注意,返回的字符串仅包含基本文件,不包含包根或 jar 内的嵌套 jar,
      * 因为路径分隔符(':')在 Linux 和 Mac OS X 上与 URL 方案分隔符(也是 ':')冲突
      * 调用 {@link #getClasspathURIs()} 以获取类路径元素和模块的完整 URI
      *
-     * @return 一个类路径字符串，包含类路径上唯一的目录和 jarfile，按类路径解析顺序排列
+     * @return 一个类路径字符串,包含类路径上唯一的目录和 jarfile,按类路径解析顺序排列
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public String getClasspath() {
         return JarUtils.pathElementsToPathStr(getClasspathFiles());
@@ -1702,29 +1723,31 @@ public class ClassGraph {
      * 返回所有唯一 {@link URI} 对象(表示目录/jar 类路径元素和模块)的有序列表
      * 表示不存在 jarfile 或目录的类路径元素不会包含在返回的列表中
      *
-     * @return 唯一的类路径元素和模块，作为 {@link URI} 对象列表
+     * @return 唯一的类路径元素和模块,作为 {@link URI} 对象列表
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public List<URI> getClasspathURIs() {
         try (AutoCloseableExecutorService executorService = new AutoCloseableExecutorService(
-                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)) {
+                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)
+        ) {
             return scanResult.getClasspathURIs();
         }
     }
 
     /**
      * 返回所有唯一 {@link URL} 对象(表示目录/jar 类路径元素和模块)的有序列表
-     * 表示不存在 jarfile 或目录的类路径元素，以及位置未知(null)或具有 {@code jrt:} 位置 URI 方案的模块，
+     * 表示不存在 jarfile 或目录的类路径元素,以及位置未知(null)或具有 {@code jrt:} 位置 URI 方案的模块,
      * 不会包含在返回的列表中
      *
-     * @return 唯一的类路径元素和模块，作为 {@link URL} 对象列表
+     * @return 唯一的类路径元素和模块,作为 {@link URL} 对象列表
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public List<URL> getClasspathURLs() {
         try (AutoCloseableExecutorService executorService = new AutoCloseableExecutorService(
-                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)) {
+                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)
+        ) {
             return scanResult.getClasspathURLs();
         }
     }
@@ -1736,27 +1759,28 @@ public class ClassGraph {
      *
      * @return 所有可见模块的 {@link ModuleRef} 引用列表
      * @throws ScanException
-     *             如果任何工作线程抛出未捕获的异常，或扫描被中断
+     *             如果任何工作线程抛出未捕获的异常,或扫描被中断
      */
     public List<ModuleRef> getModules() {
         try (AutoCloseableExecutorService executorService = new AutoCloseableExecutorService(
-                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)) {
+                DEFAULT_NUM_WORKER_THREADS); ScanResult scanResult = getClasspathScanResult(executorService)
+        ) {
             return scanResult.getModules();
         }
     }
 
     /**
-     * 获取通过 {@code --module-path}、{@code --add-modules}、
-     * {@code --patch-module}、{@code --add-exports}、{@code --add-opens} 和 {@code --add-reads}
+     * 获取通过 {@code --module-path},{@code --add-modules},
+     * {@code --patch-module},{@code --add-exports},{@code --add-opens} 和 {@code --add-reads}
      * 在命令行上提供的模块路径信息
      *
      * <p>
-     * 请注意，返回的 {@link ModulePathInfo} 对象不包括传统类路径或系统模块的类路径条目
-     * 使用 {@link #getModules()} 获取所有可见模块，包括匿名模块、自动模块和系统模块
+     * 请注意,返回的 {@link ModulePathInfo} 对象不包括传统类路径或系统模块的类路径条目
+     * 使用 {@link #getModules()} 获取所有可见模块,包括匿名模块,自动模块和系统模块
      *
      * <p>
-     * 此外，{@link ModulePathInfo#addExports} 和 {@link ModulePathInfo#addOpens} 不会包含扫描期间
-     * 遇到的 jarfile 清单文件中的 {@code Add-Exports} 或 {@code Add-Opens} 条目，
+     * 此外,{@link ModulePathInfo#addExports} 和 {@link ModulePathInfo#addOpens} 不会包含扫描期间
+     * 遇到的 jarfile 清单文件中的 {@code Add-Exports} 或 {@code Add-Opens} 条目,
      * 除非您通过调用 {@link ScanResult#getModulePathInfo()} 而非在 {@link ClassGraph#scan()}
      * 之前调用 {@link ClassGraph#getModulePathInfo()} 来获取 {@link ModulePathInfo}
      *
@@ -1772,14 +1796,14 @@ public class ClassGraph {
      */
     public static enum CircumventEncapsulationMethod {
         /**
-         * 使用反射 API 和 {@link AccessibleObject#setAccessible(boolean)} 尝试获取对私有类路径字段或方法的访问权限，
+         * 使用反射 API 和 {@link AccessibleObject#setAccessible(boolean)} 尝试获取对私有类路径字段或方法的访问权限,
          * 以确定类路径
          */
         NONE,
 
         /**
          * 使用 <a href="https://github.com/toolfactory/narcissus">Narcissus</a> 库尝试获取对私有类加载器
-         * 字段或方法的访问权限，以确定类路径
+         * 字段或方法的访问权限,以确定类路径
          */
         NARCISSUS,
     }
@@ -1789,15 +1813,16 @@ public class ClassGraph {
      */
     @FunctionalInterface
     public interface ClasspathFilter {
+
         /**
          * 是否将给定的类路径元素包含在扫描中
          *
          * @param classpathElementPathStr
-         *            类路径元素的路径字符串，已标准化为路径分隔符为 '/'
-         *            这通常是一个文件路径，但也可能是 URL，或者可能是嵌套 jar 的路径，
-         *            其中路径按 Java 约定使用 '!' 分隔如果类路径中存在 "jar:" 和/或 "file:" 前缀，
+         *            类路径元素的路径字符串,已标准化为路径分隔符为 '/'
+         *            这通常是一个文件路径,但也可能是 URL,或者可能是嵌套 jar 的路径,
+         *            其中路径按 Java 约定使用 '!' 分隔如果类路径中存在 "jar:" 和/或 "file:" 前缀,
          *            则这些前缀将已从开头剥离
-         * @return 如果传入的路径字符串是您想要扫描的路径，则返回 true
+         * @return 如果传入的路径字符串是您想要扫描的路径,则返回 true
          */
         boolean includeClasspath(String classpathElementPathStr);
     }
@@ -1808,12 +1833,13 @@ public class ClassGraph {
      */
     @FunctionalInterface
     public interface ClasspathURLFilter {
+
         /**
          * 是否将给定的类路径元素包含在扫描中
          *
          * @param classpathElementURL
          *            类路径元素的 {@link URL}
-         * @return 如果您想要扫描该 {@link URL}，则返回 true
+         * @return 如果您想要扫描该 {@link URL},则返回 true
          */
         boolean includeClasspath(URL classpathElementURL);
     }
@@ -1821,6 +1847,7 @@ public class ClassGraph {
     /** 用于处理成功异步扫描结果的回调 */
     @FunctionalInterface
     public interface ScanResultProcessor {
+
         /**
          * 在扫描完成后处理异步扫描的结果
          *
@@ -1833,6 +1860,7 @@ public class ClassGraph {
     /** 用于处理异步扫描期间失败的回调 */
     @FunctionalInterface
     public interface FailureHandler {
+
         /**
          * 在异步扫描期间扫描失败时调用
          *

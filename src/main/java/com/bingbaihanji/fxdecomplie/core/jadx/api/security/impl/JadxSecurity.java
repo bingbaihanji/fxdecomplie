@@ -23,9 +23,13 @@ import java.util.regex.Pattern;
 import static com.bingbaihanji.fxdecomplie.core.jadx.api.security.JadxSecurityFlag.SECURE_ZIP_READER;
 
 public class JadxSecurity implements IJadxSecurity {
+
     private static final Logger LOG = LoggerFactory.getLogger(JadxSecurity.class);
+
     private static final Pattern SANITIZE_GRADLE_PATTERN = Pattern.compile("[;'\"${}/:>?*|\\[\\]\\\\]");
+
     private final Set<JadxSecurityFlag> flags;
+
     private final IJadxZipSecurity zipSecurity;
 
     public JadxSecurity(Set<JadxSecurityFlag> flags) {
@@ -111,10 +115,12 @@ public class JadxSecurity implements IJadxSecurity {
     }
 
     private static final class SimpleDBFHolder {
+
         private static final DocumentBuilderFactory INSTANCE = DocumentBuilderFactory.newInstance();
     }
 
     private static final class SecureDBFHolder {
+
         private static final DocumentBuilderFactory INSTANCE = buildSecureDBF();
 
         private static DocumentBuilderFactory buildSecureDBF() {

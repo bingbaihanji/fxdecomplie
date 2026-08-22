@@ -5,10 +5,10 @@ import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 
 /**
- * 特权操作调用处理器 — 用于在 AccessController.doPrivileged 上下文中执行操作。
+ * 特权操作调用处理器 — 用于在 AccessController.doPrivileged 上下文中执行操作.
  *
- * <p>从 {@code StandardDriver} 和 {@code ReflectionUtils} 中提取，
- * 消除重复代码。</p>
+ * <p>从 {@code StandardDriver} 和 {@code ReflectionUtils} 中提取,
+ * 消除重复代码.</p>
  *
  * @param <T> 操作的返回类型
  */
@@ -17,7 +17,7 @@ public final class PrivilegedActionInvocationHandler<T> implements InvocationHan
     private final Callable<T> callable;
 
     /**
-     * 构造函数。
+     * 构造函数.
      *
      * @param callable 要在特权上下文中执行的操作
      */

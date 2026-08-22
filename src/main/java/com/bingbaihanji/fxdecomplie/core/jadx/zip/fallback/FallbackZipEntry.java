@@ -7,7 +7,9 @@ import java.io.InputStream;
 import java.util.zip.ZipEntry;
 
 public class FallbackZipEntry implements IZipEntry {
+
     private final FallbackZipParser parser;
+
     private final ZipEntry zipEntry;
 
     public FallbackZipEntry(FallbackZipParser parser, ZipEntry zipEntry) {

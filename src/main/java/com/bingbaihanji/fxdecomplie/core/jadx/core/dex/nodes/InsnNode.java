@@ -5,29 +5,41 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LineAttrNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * DEX 指令节点，表示反编译过程中的单条指令
- * 继承自 {@link LineAttrNode}，包含指令类型 结果寄存器 参数列表和偏移量等信息
+ * DEX 指令节点,表示反编译过程中的单条指令
+ * 继承自 {@link LineAttrNode},包含指令类型 结果寄存器 参数列表和偏移量等信息
  */
 public class InsnNode extends LineAttrNode {
+
     /** 指令类型 */
     protected final InsnType insnType;
+
     /** 指令的参数列表 */
     private final List<InsnArg> arguments;
-    /** 指令在字节码中的偏移量，-1 表示未设置 */
+
+    /** 指令在字节码中的偏移量,-1 表示未设置 */
     protected int offset;
-    /** 结果寄存器参数 (指令的赋值目标)，可能为 null */
+
+    /** 结果寄存器参数 (指令的赋值目标),可能为 null */
     private RegisterArg result;
 
     /**
@@ -104,7 +116,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 将参数绑定到当前指令，并更新 SSA 变量的使用信息
+     * 将参数绑定到当前指令,并更新 SSA 变量的使用信息
      *
      * @param arg 需要绑定的参数
      */
@@ -131,16 +143,16 @@ public class InsnNode extends LineAttrNode {
     /**
      * 获取指令的结果寄存器参数
      *
-     * @return 结果寄存器参数，可能为 null
+     * @return 结果寄存器参数,可能为 null
      */
     public RegisterArg getResult() {
         return result;
     }
 
     /**
-     * 设置指令的结果寄存器参数如果结果参数关联了 SSA 变量，则更新其赋值信息
+     * 设置指令的结果寄存器参数如果结果参数关联了 SSA 变量,则更新其赋值信息
      *
-     * @param res 结果寄存器参数，可为 null
+     * @param res 结果寄存器参数,可为 null
      */
     public void setResult(@Nullable RegisterArg res) {
         this.result = res;
@@ -260,7 +272,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 从指令中移除指定索引位置的参数，并解绑其变量使用信息
+     * 从指令中移除指定索引位置的参数,并解绑其变量使用信息
      *
      * @param index 要移除的参数索引
      * @return 被移除的参数
@@ -276,7 +288,7 @@ public class InsnNode extends LineAttrNode {
      * 获取指定参数在参数列表中的索引 (通过引用比较)
      *
      * @param arg 要查找的参数
-     * @return 参数索引，未找到则返回 -1
+     * @return 参数索引,未找到则返回 -1
      */
     public int getArgIndex(InsnArg arg) {
         int count = getArgsCount();
@@ -497,7 +509,7 @@ public class InsnNode extends LineAttrNode {
      *
      * @param visitor 指令访问函数
      * @param <R>     返回值类型
-     * @return 首个非 null 的访问结果，若全部为 null 则返回 null
+     * @return 首个非 null 的访问结果,若全部为 null 则返回 null
      */
     @Nullable
     public <R> R visitInsns(Function<InsnNode, R> visitor) {
@@ -518,7 +530,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 递归访问所有参数 (包括内部指令的参数)，但不访问包装参数本身
+     * 递归访问所有参数 (包括内部指令的参数),但不访问包装参数本身
      *
      * @param visitor 参数访问器
      */
@@ -533,12 +545,12 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 递归访问所有参数 (包括内部指令的参数)，但不访问包装参数本身
+     * 递归访问所有参数 (包括内部指令的参数),但不访问包装参数本身
      * 访问器返回非 null 值时终止访问并返回该值
      *
      * @param visitor 参数访问函数
      * @param <R>     返回值类型
-     * @return 首个非 null 的访问结果，若全部为 null 则返回 null
+     * @return 首个非 null 的访问结果,若全部为 null 则返回 null
      */
     @Nullable
     public <R> R visitArgs(Function<InsnArg, R> visitor) {
@@ -558,10 +570,10 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * “软”相等比较：不比较参数，只比较指令类型和参数数量等指令自身的特征
+     * "软"相等比较:不比较参数,只比较指令类型和参数数量等指令自身的特征
      *
      * @param other 另一条指令
-     * @return 如果两条指令“软相等”则返回 true
+     * @return 如果两条指令"软相等"则返回 true
      */
     public boolean isSame(InsnNode other) {
         if (this == other) {
@@ -593,7 +605,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * “硬”相等比较：比较所有参数 (包括结果和参数列表)
+     * "硬"相等比较:比较所有参数 (包括结果和参数列表)
      *
      * @param other 另一条指令
      * @return 如果两条指令完全相等则返回 true
@@ -639,10 +651,10 @@ public class InsnNode extends LineAttrNode {
     /**
      * 复制 InsnNode 对象
      * <br>
-     * 注意：无法复制带结果参数的指令
+     * 注意:无法复制带结果参数的指令
      *  (同一个 SSA 变量不能用于两个不同的赋值)
      * <br>
-     * 推荐使用以下方法：
+     * 推荐使用以下方法:
      * <ul>
      * <li>{@link #copyWithoutResult()} 明确表示不需要结果
      * <li>{@link #copy(RegisterArg)} 提供新的结果参数
@@ -653,7 +665,8 @@ public class InsnNode extends LineAttrNode {
      */
     public InsnNode copy() {
         if (this.getClass() != InsnNode.class) {
-            throw new JadxRuntimeException("Copy method not implemented in insn class " + this.getClass().getSimpleName());
+            throw new JadxRuntimeException("Copy method not implemented in insn class " + this.getClass()
+                    .getSimpleName());
         }
         return copyCommonParams(new InsnNode(insnType, getArgsCount()));
     }
@@ -670,7 +683,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制指令并保留结果参数，但要求结果参数未关联 SSA 变量
+     * 复制指令并保留结果参数,但要求结果参数未关联 SSA 变量
      *
      * @return 不带 SSA 的复制指令
      * @throws JadxRuntimeException 当结果参数已关联 SSA 变量时抛出
@@ -700,7 +713,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制指令，并为结果参数创建新的 SSA 变量参见 {@link #copy()}
+     * 复制指令,并为结果参数创建新的 SSA 变量参见 {@link #copy()}
      *
      * @param mth 所属方法节点
      * @return 复制得到的指令
@@ -770,7 +783,7 @@ public class InsnNode extends LineAttrNode {
 
     /**
      * 从源指令继承元数据 (源码行 代码注释 偏移量等)
-     * 对 RETURN 指令做特殊处理：合成指令会重写偏移量和注释
+     * 对 RETURN 指令做特殊处理:合成指令会重写偏移量和注释
      *
      * @param sourceInsn 源指令
      */
@@ -790,7 +803,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 仅按对象标识 (引用)比较，计算哈希码
+     * 仅按对象标识 (引用)比较,计算哈希码
      */
     @SuppressWarnings("EmptyMethod")
     @Override
@@ -807,7 +820,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 追加参数内容，若行过长则换行
+     * 追加参数内容,若行过长则换行
      *
      * @param sb 目标字符串构建器
      * @return 如果参数发生了换行则返回 true

@@ -14,9 +14,11 @@ public final class JavaSourceAnalyzer {
     /** 用于解析 Java 源码中 import 语句的正则 */
     public static final Pattern IMPORT_PATTERN = Pattern.compile(
             "^\\s*import\\s+(static\\s+)?([\\w.$]+|[\\w.]+\\.\\*)\\s*;\\s*$");
+
     /** 预编译: 判断前缀是否以类/接口/枚举/record 关键字结尾 */
     public static final Pattern DECL_KEYWORD_END_PATTERN =
             Pattern.compile("(^|\\s)(class|interface|enum|record)\\s*$");
+
     /** 预编译: 判断前缀是否以 @interface 结尾 */
     public static final Pattern ANN_INTERFACE_PATTERN =
             Pattern.compile("(^|\\s)@\\s*interface\\s*$");

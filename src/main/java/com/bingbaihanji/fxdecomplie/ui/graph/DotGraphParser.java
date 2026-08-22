@@ -10,16 +10,16 @@ import java.util.regex.Pattern;
 /**
  * 解析 {@link GraphService} 生成的 DOT 子集,产出结构化图形数据
  *
- * <p>支持的 DOT 语法子集：</p>
+ * <p>支持的 DOT 语法子集:</p>
  * <ul>
  *   <li>digraph 声明 rankdir(LR / BT)</li>
  *   <li>含引号或裸标识符的节点(id [key=value, ...])</li>
  *   <li>边(a -> b)</li>
- *   <li>属性：label fillcolor fontcolor</li>
+ *   <li>属性:label fillcolor fontcolor</li>
  *   <li>全局 label(用于方法图截断提示等)</li>
  * </ul>
  *
- * <p>不支持的语法(会被忽略)：subgraph HTML label record shape port 等</p>
+ * <p>不支持的语法(会被忽略):subgraph HTML label record shape port 等</p>
  *
  * @author bingbaihanji
  * @date 2026-06-22
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 final class DotGraphParser {
 
     /**
-     * DOT 标识符：双引号字符串(支持反斜杠转义)或裸字母数字标识符
+     * DOT 标识符:双引号字符串(支持反斜杠转义)或裸字母数字标识符
      * group(1)=引号内容, group(2)=裸标识符
      */
     private static final String ID = "(?:\"((?:\\\\.|[^\"\\\\])*)\"|([A-Za-z_][A-Za-z0-9_]*))";
@@ -36,11 +36,11 @@ final class DotGraphParser {
     private static final Pattern RANK_DIR =
             Pattern.compile("\\brankdir\\s*=\\s*([A-Za-z]+)");
 
-    /** 匹配边语句：a -> b */
+    /** 匹配边语句:a -> b */
     private static final Pattern EDGE =
             Pattern.compile("^\\s*" + ID + "\\s*->\\s*" + ID + ".*$");
 
-    /** 匹配节点语句：id [attr1=val1, attr2=val2, ...]用非贪婪 (.*?) 避免跨多个方括号误匹配 */
+    /** 匹配节点语句:id [attr1=val1, attr2=val2, ...]用非贪婪 (.*?) 避免跨多个方括号误匹配 */
     private static final Pattern NODE =
             Pattern.compile("^\\s*" + ID + "\\s*\\[(.*?)]\\s*;?\\s*$");
 
@@ -131,7 +131,7 @@ final class DotGraphParser {
             }
         }
 
-        // 二次扫描：若仍未找到 graphLabel,检查整段 DOT 开头的 label(方法图场景)
+        // 二次扫描:若仍未找到 graphLabel,检查整段 DOT 开头的 label(方法图场景)
         if (graphLabel.isBlank()) {
             Matcher labelMatcher = GRAPH_LABEL.matcher(dot);
             if (labelMatcher.find() && !dot.substring(0, labelMatcher.start()).contains("[")) {

@@ -7,7 +7,11 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 最小化的 class 文件解析器,用于元数据路径,
@@ -22,7 +26,7 @@ public final class ClassFileParser {
 
     private static final Logger log = LoggerFactory.getLogger(ClassFileParser.class);
 
-    /** class 文件的魔数标识：0xCAFEBABE */
+    /** class 文件的魔数标识:0xCAFEBABE */
     private static final int CLASS_MAGIC = 0xCAFEBABE;
 
     /** 工具类不可实例化 */
@@ -48,7 +52,7 @@ public final class ClassFileParser {
     /**
      * 解析 class 文件字节数组,提取基本元数据
      * <p>
-     * 解析流程：魔数校验 → 版本号 → 常量池 → 访问标志 → 类名/父类/接口 → 字段/方法列表
+     * 解析流程:魔数校验 → 版本号 → 常量池 → 访问标志 → 类名/父类/接口 → 字段/方法列表
      * 方法体 属性表等详细内容不会被解析,仅跳过
      *
      * @param bytes class 文件原始字节
@@ -140,7 +144,7 @@ public final class ClassFileParser {
     /**
      * 将 class 文件主版本号转换为对应的 Java 版本号
      * <p>
-     * 转换公式：Java 版本 = 主版本号 - 44(JDK 1.0 = 45,JDK 1.1 = 45,...)
+     * 转换公式:Java 版本 = 主版本号 - 44(JDK 1.0 = 45,JDK 1.1 = 45,...)
      * 对于主版本号小于 45 的情况(理论上不存在),直接返回原值
      *
      * @param majorVersion class 文件主版本号
@@ -247,7 +251,7 @@ public final class ClassFileParser {
 
     /**
      * 跳过属性表,不解析属性内容
-     * 每个属性结构为：2 字节名称索引 + 4 字节长度 + N 字节数据
+     * 每个属性结构为:2 字节名称索引 + 4 字节长度 + N 字节数据
      *
      * @param in 数据输入流
      */

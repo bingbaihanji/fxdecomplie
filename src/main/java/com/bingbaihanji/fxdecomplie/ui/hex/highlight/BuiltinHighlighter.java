@@ -11,8 +11,8 @@ import com.bingbaihanji.fxdecomplie.ui.hex.model.PatternModel;
  * 添加区域({@link PatternModel.Region})来标记不同逻辑部分 
  * </p>
  * <p>
- * 例如：{@link JavaBytecodeHighlighter} 可识别 Java 类文件(魔数 0xCAFEBABE),
- * 并高亮 magic、版本、常量池、字段、方法等结构 
+ * 例如:{@link JavaBytecodeHighlighter} 可识别 Java 类文件(魔数 0xCAFEBABE),
+ * 并高亮 magic,版本,常量池,字段,方法等结构 
  * </p>
  *
  * @author BingBaiHanJi
@@ -31,7 +31,7 @@ public interface BuiltinHighlighter {
     /**
      * 检测给定的数据提供者是否匹配此高亮器支持的数据格式 
      * <p>
-     * 通常检查文件头部的魔数、签名等特征字节 
+     * 通常检查文件头部的魔数,签名等特征字节 
      * </p>
      *
      * @param provider 数据提供者,用于读取数据
@@ -42,7 +42,7 @@ public interface BuiltinHighlighter {
     /**
      * 对匹配的数据执行高亮操作,向模式模型中添加区域(Region) 
      * <p>
-     * 实现应解析数据结构,为每个逻辑段创建带颜色、名称和描述的
+     * 实现应解析数据结构,为每个逻辑段创建带颜色,名称和描述的
      * {@link PatternModel.Region} 对象,并添加到模型中 
      * </p>
      *

@@ -14,14 +14,19 @@ import java.util.Set;
 
 /** 数组类型签名 */
 public class ArrayType extends ReferenceType {
+
     /** 数组类型的原始类型签名字符串 */
     private final String typeSignatureStr;
-    /** 嵌套类型(另一个 {@link ArrayType}，或基础元素类型) */
+
+    /** 嵌套类型(另一个 {@link ArrayType},或基础元素类型) */
     private final TypeSignature nestedType;
-    /** 人类可读的类名，例如 "java.lang.String[]" */
+
+    /** 人类可读的类名,例如 "java.lang.String[]" */
     private String className;
+
     /** 数组类信息 */
     private ArrayClassInfo arrayClassInfo;
+
     /** 元素类 */
     private Class<?> elementClassRef;
 
@@ -84,7 +89,7 @@ public class ArrayType extends ReferenceType {
     }
 
     /**
-     * 获取原始数组类型签名字符串，例如 "[[I"
+     * 获取原始数组类型签名字符串,例如 "[[I"
      *
      * @return 原始数组类型签名字符串
      */
@@ -121,7 +126,7 @@ public class ArrayType extends ReferenceType {
     }
 
     /**
-     * 获取嵌套类型如果此数组有 2 个或更多维度，则为少一个维度的另一个 {@link ArrayType}；
+     * 获取嵌套类型如果此数组有 2 个或更多维度,则为少一个维度的另一个 {@link ArrayType};
      * 否则返回元素类型
      *
      * @return 嵌套类型
@@ -146,10 +151,10 @@ public class ArrayType extends ReferenceType {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取此数组类型上的类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     * 获取此数组类型上的类型注解的 {@link AnnotationInfo} 对象列表,如果没有则返回 null
      *
      * @see #getNestedType() 如果需要读取数组类型内部(嵌套)维度上的类型注解
-     * @return 此数组类型上的类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     * @return 此数组类型上的类型注解的 {@link AnnotationInfo} 对象列表,如果没有则返回 null
      */
     @Override
     public AnnotationInfoList getTypeAnnotationInfo() {
@@ -176,7 +181,7 @@ public class ArrayType extends ReferenceType {
     }
 
     /**
-     * 返回数组类的 {@link ArrayClassInfo} 实例，并向上转型为其父类
+     * 返回数组类的 {@link ArrayClassInfo} 实例,并向上转型为其父类
      *
      * @return {@link ArrayClassInfo} 实例
      */
@@ -184,14 +189,14 @@ public class ArrayType extends ReferenceType {
         if (arrayClassInfo == null) {
             if (scanResult != null) {
                 final String clsName = getClassName();
-                // 如果 scanResult 可用，则使用 scanResult.classNameToClassInfo 缓存 ArrayClassInfo 实例
+                // 如果 scanResult 可用,则使用 scanResult.classNameToClassInfo 缓存 ArrayClassInfo 实例
                 arrayClassInfo = (ArrayClassInfo) scanResult.classNameToClassInfo.get(clsName);
                 if (arrayClassInfo == null) {
                     scanResult.classNameToClassInfo.put(clsName, arrayClassInfo = new ArrayClassInfo(this));
                     arrayClassInfo.setScanResult(this.scanResult);
                 }
             } else {
-                // scanResult 尚不可用，为此类型创建一个未缓存的 ArrayClassInfo 实例
+                // scanResult 尚不可用,为此类型创建一个未缓存的 ArrayClassInfo 实例
                 arrayClassInfo = new ArrayClassInfo(this);
             }
         }
@@ -224,7 +229,7 @@ public class ArrayType extends ReferenceType {
     }
 
     /**
-     * 获取最内层数组元素类型的 {@code Class<?>} 引用如果类尚未加载，会导致 ClassLoader 加载它
+     * 获取最内层数组元素类型的 {@code Class<?>} 引用如果类尚未加载,会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
      *            是否忽略异常
@@ -240,7 +245,7 @@ public class ArrayType extends ReferenceType {
                 if (scanResult != null) {
                     elementClassRef = elementTypeSignature.loadClass(ignoreExceptions);
                 } else {
-                    // 回退方案，如果 scanResult 未设置
+                    // 回退方案,如果 scanResult 未设置
                     final String elementTypeName = elementTypeSignature.getClassName();
                     try {
                         elementClassRef = Class.forName(elementTypeName);
@@ -257,7 +262,7 @@ public class ArrayType extends ReferenceType {
     }
 
     /**
-     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载，会导致 ClassLoader 加载它
+     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载,会导致 ClassLoader 加载它
      *
      * @return 数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
@@ -266,12 +271,12 @@ public class ArrayType extends ReferenceType {
     }
 
     /**
-     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载,
      * 会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
      *            是否忽略异常
-     * @return 类引用，如果 ignoreExceptions 为 true 且在加载类时发生了异常或错误，则返回 null
+     * @return 类引用,如果 ignoreExceptions 为 true 且在加载类时发生了异常或错误,则返回 null
      * @throws IllegalArgumentException
      *             如果 ignoreExceptions 为 false 且加载类时出现问题
      */
@@ -293,7 +298,7 @@ public class ArrayType extends ReferenceType {
                 throw new IllegalArgumentException(
                         "Could not load array element class " + getElementTypeSignature());
             }
-            // 创建目标维度数的数组，每个维度大小为零
+            // 创建目标维度数的数组,每个维度大小为零
             final Object eltArrayInstance = Array.newInstance(eltClassRef, new int[getNumDimensions()]);
             // 从数组实例获取类引用
             classRef = eltArrayInstance.getClass();
@@ -304,7 +309,7 @@ public class ArrayType extends ReferenceType {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载,
      * 会导致 ClassLoader 加载它
      *
      * @return 类引用

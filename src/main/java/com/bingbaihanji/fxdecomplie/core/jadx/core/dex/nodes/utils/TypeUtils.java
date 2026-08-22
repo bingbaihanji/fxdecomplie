@@ -15,7 +15,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.isEmpty;
@@ -24,12 +30,13 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.notEmpty;
 /**
  * 类型工具类
  * <p>
- * 提供泛型类型相关的辅助能力，包括获取类的泛型参数 解析类型变量 
+ * 提供泛型类型相关的辅助能力,包括获取类的泛型参数 解析类型变量 
  * 展开类型变量的边界 以及在实例类型与泛型声明之间进行类型变量替换等
  * 主要服务于反编译过程中的泛型还原与类型推断
  * </p>
  */
 public class TypeUtils {
+
     private final RootNode root;
 
     public TypeUtils(RootNode rootNode) {
@@ -80,15 +87,15 @@ public class TypeUtils {
         if (typeVar.isGenericType()) {
             map.put(typeVar, arg.getType());
         }
-        // TODO: 解析内层类型变量：将 'List<T> -> List<String>' 解析为 'T -> String'
+        // TODO: 解析内层类型变量:将 'List<T> -> List<String>' 解析为 'T -> String'
     }
 
     /**
      * 获取指定类型对应类声明的泛型类型参数列表
-     * 优先从已解析的 {@link ClassNode} 获取，否则回退到类路径信息 {@link ClspClass}
+     * 优先从已解析的 {@link ClassNode} 获取,否则回退到类路径信息 {@link ClspClass}
      *
      * @param type 目标类型
-     * @return 泛型类型参数列表，若无泛型参数则返回空列表
+     * @return 泛型类型参数列表,若无泛型参数则返回空列表
      */
     public List<ArgType> getClassGenerics(ArgType type) {
         ClassNode classNode = root.resolveClass(type);
@@ -124,11 +131,11 @@ public class TypeUtils {
     }
 
     /**
-     * 在类的上下文中展开类型中的类型变量，为其补充已知的边界 (extends)信息
+     * 在类的上下文中展开类型中的类型变量,为其补充已知的边界 (extends)信息
      *
      * @param cls  提供类型变量上下文的类
      * @param type 待展开的类型
-     * @return 展开后的类型 (原对象，可能被就地修改)
+     * @return 展开后的类型 (原对象,可能被就地修改)
      */
     public ArgType expandTypeVariables(ClassNode cls, ArgType type) {
         if (type.containsTypeVariable()) {
@@ -138,11 +145,11 @@ public class TypeUtils {
     }
 
     /**
-     * 在方法的上下文中展开类型中的类型变量，为其补充已知的边界 (extends)信息
+     * 在方法的上下文中展开类型中的类型变量,为其补充已知的边界 (extends)信息
      *
      * @param mth  提供类型变量上下文的方法
      * @param type 待展开的类型
-     * @return 展开后的类型 (原对象，可能被就地修改)
+     * @return 展开后的类型 (原对象,可能被就地修改)
      */
     public ArgType expandTypeVariables(MethodNode mth, ArgType type) {
         if (type.containsTypeVariable()) {
@@ -199,7 +206,7 @@ public class TypeUtils {
     }
 
     /**
-     * 在当前方法中查找未知的类型变量，仅返回第一个
+     * 在当前方法中查找未知的类型变量,仅返回第一个
      *
      * @return 未知的类型变量 若未找到则返回 {@code null}
      */
@@ -228,7 +235,7 @@ public class TypeUtils {
     /**
      * 使用实例类型中的实际类型替换 {@code typeWithGeneric} 中的泛型类型
      * <br>
-     * 示例：
+     * 示例:
      * <ul>
      * <li>{@code instanceType: Set<String>}
      * <li>{@code typeWithGeneric: Iterator<E>}
@@ -246,7 +253,7 @@ public class TypeUtils {
 
     /**
      * 使用实例类型中的实际类型替换 {@code typeWithGeneric} 中的泛型类型
-     * 相比 {@link #replaceClassGenerics(ArgType, ArgType)}，可单独指定提供泛型映射的源类型
+     * 相比 {@link #replaceClassGenerics(ArgType, ArgType)},可单独指定提供泛型映射的源类型
      *
      * @param instanceType      携带实际泛型实参的实例类型
      * @param genericSourceType 提供类型变量映射的源类型
@@ -274,7 +281,7 @@ public class TypeUtils {
 
     /**
      * 构建泛型类型的类型变量到实际类型的映射
-     * 例如对 {@code Map<String, Integer>}，返回 {@code K -> String, V -> Integer}
+     * 例如对 {@code Map<String, Integer>},返回 {@code K -> String, V -> Integer}
      *
      * @param clsType 携带实际泛型实参的类型
      * @return 类型变量到实际类型的映射 无法构建时返回空映射
@@ -309,7 +316,7 @@ public class TypeUtils {
     }
 
     /**
-     * 根据方法调用指令，构建其类型变量到实际类型的映射
+     * 根据方法调用指令,构建其类型变量到实际类型的映射
      * 映射来源包括返回值以及各实参与形参类型的对应关系
      *
      * @param invokeInsn 方法调用指令
@@ -322,15 +329,17 @@ public class TypeUtils {
         }
         Map<ArgType, ArgType> map = new HashMap<>(1 + invokeInsn.getArgsCount());
         addTypeVarMapping(map, mthDetails.getReturnType(), invokeInsn.getResult());
-        int argCount = Math.min(mthDetails.getArgTypes().size(), invokeInsn.getArgsCount() - invokeInsn.getFirstArgOffset());
+        int argCount = Math.min(mthDetails.getArgTypes()
+                .size(), invokeInsn.getArgsCount() - invokeInsn.getFirstArgOffset());
         for (int i = 0; i < argCount; i++) {
-            addTypeVarMapping(map, mthDetails.getArgTypes().get(i), invokeInsn.getArg(i + invokeInsn.getFirstArgOffset()));
+            addTypeVarMapping(map, mthDetails.getArgTypes()
+                    .get(i), invokeInsn.getArg(i + invokeInsn.getFirstArgOffset()));
         }
         return map;
     }
 
     /**
-     * 根据方法调用的实参类型，替换方法泛型返回类型中的类型变量
+     * 根据方法调用的实参类型,替换方法泛型返回类型中的类型变量
      *
      * @param invokeInsn      方法调用指令
      * @param details         方法详情
@@ -361,7 +370,7 @@ public class TypeUtils {
     }
 
     /**
-     * 依据给定的类型变量映射，递归替换类型中的所有类型变量
+     * 依据给定的类型变量映射,递归替换类型中的所有类型变量
      * 支持数组 通配符 外层泛型以及带泛型实参的类型等结构
      *
      * @param replaceType 待替换的类型
@@ -446,8 +455,8 @@ public class TypeUtils {
     }
 
     /**
-     * 遍历指定类型的所有父类型 (父类与接口)，对每一对 (子类型, 父类型) 调用回调
-     * 已解析的类委托给 {@link ClassNode#visitSuperTypes}，否则基于类路径信息递归遍历
+     * 遍历指定类型的所有父类型 (父类与接口),对每一对 (子类型, 父类型) 调用回调
+     * 已解析的类委托给 {@link ClassNode#visitSuperTypes},否则基于类路径信息递归遍历
      *
      * @param type     起始类型
      * @param consumer 接收 (子类型, 父类型) 的回调

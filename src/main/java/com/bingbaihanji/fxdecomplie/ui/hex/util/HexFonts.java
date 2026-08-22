@@ -7,6 +7,7 @@ import java.io.InputStream;
 public final class HexFonts {
 
     public static final String FIRA_CODE_LIGHT_RESOURCE = "/ttf/FiraCode-Light.ttf";
+
     private static final double DEFAULT_SIZE = 13.0;
 
     private HexFonts() {

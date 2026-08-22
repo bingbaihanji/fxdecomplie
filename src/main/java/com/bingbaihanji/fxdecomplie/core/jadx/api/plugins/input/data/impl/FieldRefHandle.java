@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public class FieldRefHandle implements IMethodHandle {
 
     private final IFieldRef fieldRef;
+
     private final MethodHandleType type;
 
     public FieldRefHandle(MethodHandleType type, IFieldRef fieldRef) {

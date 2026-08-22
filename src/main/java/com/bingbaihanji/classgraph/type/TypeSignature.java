@@ -13,10 +13,11 @@ import java.util.Set;
 
 /**
  * 引用类型或基本类型的类型签名子类包括 {@link ReferenceType}
- * (其子类为 {@link ClassRef}、{@link TypeVar} 和 {@link ArrayType})和
+ * (其子类为 {@link ClassRef},{@link TypeVar} 和 {@link ArrayType})和
  * {@link BaseType}
  */
 public abstract class TypeSignature extends HierarchicalType {
+
     /** 构造函数 */
     protected TypeSignature() {
         // 空
@@ -104,9 +105,9 @@ public abstract class TypeSignature extends HierarchicalType {
     }
 
     /**
-     * 获取此类型上的任何类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     * 获取此类型上的任何类型注解的 {@link AnnotationInfo} 对象列表,如果没有则返回 null
      *
-     * @return 此类型上的任何类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     * @return 此类型上的任何类型注解的 {@link AnnotationInfo} 对象列表,如果没有则返回 null
      */
     @Override
     public AnnotationInfoList getTypeAnnotationInfo() {
@@ -114,11 +115,11 @@ public abstract class TypeSignature extends HierarchicalType {
     }
 
     /**
-     * 比较基本类型，忽略泛型类型参数
+     * 比较基本类型,忽略泛型类型参数
      *
      * @param other
      *            要比较的另一个 {@link TypeSignature}
-     * @return 如果两个 {@link TypeSignature} 对象相等(忽略类型参数)，则返回 true
+     * @return 如果两个 {@link TypeSignature} 对象相等(忽略类型参数),则返回 true
      */
     public abstract boolean equalsIgnoringTypeParams(final TypeSignature other);
 

@@ -27,11 +27,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 工作区/文件/项目生命周期控制器：打开文件/目录/项目 保存项目 
+ * 工作区/文件/项目生命周期控制器:打开文件/目录/项目 保存项目 
  * 关闭工作区 保存当前文件 树中定位 快速打开类 最近文件 新窗口及异步工作区加载
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
+ * 从 MainWindow 拆分而来,通过 owner 访问共享状态与协作者 (Mediator 模式)
+ * 所有协作者均在调用时通过 owner 访问,以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */
@@ -39,7 +39,7 @@ public final class WorkspaceController {
 
     private static final Logger log = LoggerFactory.getLogger(WorkspaceController.class);
 
-    /** 正在加载中的文件路径集合，防止重复提交加载任务 */
+    /** 正在加载中的文件路径集合,防止重复提交加载任务 */
     private final Set<String> loadingPaths = ConcurrentHashMap.newKeySet();
 
     private final MainWindow owner;
@@ -282,7 +282,7 @@ public final class WorkspaceController {
     void loadFile(File file) {
         String absPath = file.getAbsolutePath();
         if (!loadingPaths.add(absPath)) {
-            log.debug("重复加载请求，忽略: {}", absPath);
+            log.debug("重复加载请求,忽略: {}", absPath);
             return;
         }
         log.info("loadFile: {} (size={}, isDir={})", absPath,

@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BinaryXMLStrings {
+
     public static final String INVALID_STRING_PLACEHOLDER = "⟨STRING_DECODE_ERROR⟩";
+
     private final int stringCount;
 
     private final long stringsStart;

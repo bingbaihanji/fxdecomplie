@@ -17,6 +17,7 @@ public final class TextFileDecorator implements SyntaxDecorator {
 
     /** 默认前景色 */
     private static final Color LIGHT_TEXT = Color.web("#9aa7b0");
+
     /** 浅色文本样式 */
     private static final StyleAttributeMap DEFAULT_STYLE = StyleAttributeMap.builder()
             .setTextColor(LIGHT_TEXT).build();

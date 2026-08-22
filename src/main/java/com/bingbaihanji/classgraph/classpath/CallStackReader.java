@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
@@ -15,6 +14,7 @@ import java.util.concurrent.Callable;
 
 /** 用于查找唯一有序类路径元素的类 */
 class CallStackReader {
+
     ReflectionUtils reflectionUtils;
 
     /**
@@ -27,11 +27,11 @@ class CallStackReader {
     /**
      * 通过 StackWalker API 获取调用栈(JRE 9+)
      *
-     * @return 调用栈，如果无法获取则返回 null
+     * @return 调用栈,如果无法获取则返回 null
      */
     private static Class<?>[] getCallStackViaStackWalker() {
         try {
-            //    // 通过反射实现以下内容，以保证 JDK7 兼容性：
+            //    // 通过反射实现以下内容,以保证 JDK7 兼容性:
             //    List<Class<?>> stackFrameClasses = new ArrayList<>();
             //    StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE)
             //            .forEach(sf -> stackFrameClasses.add(sf.getDeclaringClass()));
@@ -51,10 +51,11 @@ class CallStackReader {
                     // Consumer<StackFrame> 的 InvocationHandler 代理
                     Proxy.newProxyInstance(consumerClass.getClassLoader(), new Class<?>[]{consumerClass},
                             new InvocationHandler() {
+
                                 @Override
                                 public Object invoke(final Object proxy, final Method method, final Object[] args)
                                         throws Throwable {
-                                    // Consumer<StackFrame> 只有一个方法：void accept(StackFrame)
+                                    // Consumer<StackFrame> 只有一个方法:void accept(StackFrame)
                                     final Class<?> declaringClass = (Class<?>) stackFrameGetDeclaringClassMethod
                                             .invoke(args[0]);
                                     stackFrameClasses.add(declaringClass);
@@ -78,7 +79,7 @@ class CallStackReader {
      */
     private static Class<?>[] getCallStackViaSecurityManager(final LogNode log) {
         try {
-            // 通过反射调用方法，因为 SecurityManager 在 JDK 17 中已被弃用
+            // 通过反射调用方法,因为 SecurityManager 在 JDK 17 中已被弃用
             final Class<?> securityManagerClass = Class.forName("java.lang.SecurityManager");
             Object securityManager = null;
             for (final Constructor<?> constructor : securityManagerClass.getDeclaredConstructors()) {
@@ -95,7 +96,7 @@ class CallStackReader {
                 return null;
             }
         } catch (final Throwable t) {
-            // 如果当前 SecurityManager 不允许 RuntimePermission("createSecurityManager")，
+            // 如果当前 SecurityManager 不允许 RuntimePermission("createSecurityManager"),
             // 则创建 SecurityManager 可能会失败
             if (log != null) {
                 log.log("Exception while trying to obtain call stack via SecurityManager", t);
@@ -116,7 +117,7 @@ class CallStackReader {
     Class<?>[] getClassContext(final LogNode log) {
         Class<?>[] callStack = null;
 
-        // 对于 JRE 9+，使用 StackWalker 获取调用栈
+        // 对于 JRE 9+,使用 StackWalker 获取调用栈
         if (VersionFinder.JAVA_MAJOR_VERSION == 9 //
                 || VersionFinder.JAVA_MAJOR_VERSION == 10 //
                 || (VersionFinder.JAVA_MAJOR_VERSION == 11 //
@@ -126,17 +127,18 @@ class CallStackReader {
                 || (VersionFinder.JAVA_MAJOR_VERSION == 12 && VersionFinder.JAVA_MINOR_VERSION == 0
                 && (VersionFinder.JAVA_SUB_VERSION < 2
                 || (VersionFinder.JAVA_SUB_VERSION == 2 && VersionFinder.JAVA_IS_EA_VERSION)))) {
-            // 不要触发导致 JVM 崩溃的 StackWalker 错误，该错误在 JDK 13 中修复，
-            // 并向后移植到 12.0.2 和 11.0.4(可能在 JDK 9 引入 StackWalker 时引入)：
+            // 不要触发导致 JVM 崩溃的 StackWalker 错误,该错误在 JDK 13 中修复,
+            // 并向后移植到 12.0.2 和 11.0.4(可能在 JDK 9 引入 StackWalker 时引入):
             // https://github.com/classgraph/classgraph/issues/341
             // https://bugs.openjdk.java.net/browse/JDK-8210457
             // -- 穿透处理
         } else {
             // 通过 StackWalker 获取调用栈
-            // 使用 doPrivileged 调用 -- 参见：
+            // 使用 doPrivileged 调用 -- 参见:
             // http://mail.openjdk.java.net/pipermail/jigsaw-dev/2018-October/013974.html
             try {
                 callStack = reflectionUtils.doPrivileged(new Callable<Class<?>[]>() {
+
                     @Override
                     public Class<?>[] call() throws Exception {
                         return getCallStackViaStackWalker();
@@ -147,11 +149,12 @@ class CallStackReader {
             }
         }
 
-        // 对于 JRE 7 和 8，使用 SecurityManager 获取调用栈(不要在 JDK 9+ 上使用此方法，
-        // 因为它会导致反射非法访问警告，参见 #663)
+        // 对于 JRE 7 和 8,使用 SecurityManager 获取调用栈(不要在 JDK 9+ 上使用此方法,
+        // 因为它会导致反射非法访问警告,参见 #663)
         if (VersionFinder.JAVA_MAJOR_VERSION < 9 && (callStack == null || callStack.length == 0)) {
             try {
                 callStack = reflectionUtils.doPrivileged(new Callable<Class<?>[]>() {
+
                     @Override
                     public Class<?>[] call() throws Exception {
                         return getCallStackViaSecurityManager(log);
@@ -162,7 +165,7 @@ class CallStackReader {
             }
         }
 
-        // 作为回退方案，使用 getStackTrace() 尝试获取调用栈
+        // 作为回退方案,使用 getStackTrace() 尝试获取调用栈
         if (callStack == null || callStack.length == 0) {
             StackTraceElement[] stackTrace = null;
             try {

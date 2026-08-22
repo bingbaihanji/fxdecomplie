@@ -6,7 +6,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AttrList;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LoopInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LoopLabelAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBranchRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IConditionRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.TryCatchRegion;
@@ -20,7 +27,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -610,6 +621,7 @@ public class RegionUtils {
 
     public static void visitBlocks(MethodNode mth, IContainer container, Consumer<IBlock> visitor) {
         DepthRegionTraversal.traverse(mth, container, new AbstractRegionVisitor() {
+
             @Override
             public void processBlock(MethodNode mth, IBlock block) {
                 visitor.accept(block);
@@ -619,6 +631,7 @@ public class RegionUtils {
 
     public static void visitBlockNodes(MethodNode mth, IContainer container, Consumer<BlockNode> visitor) {
         DepthRegionTraversal.traverse(mth, container, new AbstractRegionVisitor() {
+
             @Override
             public void processBlock(MethodNode mth, IBlock block) {
                 if (block instanceof BlockNode) {
@@ -630,6 +643,7 @@ public class RegionUtils {
 
     public static void visitRegions(MethodNode mth, IContainer container, Predicate<IRegion> visitor) {
         DepthRegionTraversal.traverse(mth, container, new AbstractRegionVisitor() {
+
             @Override
             public boolean enterRegion(MethodNode mth, IRegion region) {
                 return visitor.test(region);
@@ -650,6 +664,7 @@ public class RegionUtils {
     // Add a flag to all blocks in a region
     public static void addToAll(MethodNode mth, IContainer container, AFlag flag) {
         RegionUtils.visitBlocks(mth, container, new Consumer<IBlock>() {
+
             @Override
             public void accept(IBlock t) {
                 t.add(flag);

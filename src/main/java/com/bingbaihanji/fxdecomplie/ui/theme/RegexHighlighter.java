@@ -60,25 +60,35 @@ public class RegexHighlighter implements SyntaxDecorator {
 
     /** 默认/通用样式 */
     private final StyleAttributeMap styleDefault;
+
     /** 关键字样式 */
     private final StyleAttributeMap styleKeyword;
+
     /** 字符串样式 */
     private final StyleAttributeMap styleString;
+
     /** 注释样式 */
     private final StyleAttributeMap styleComment;
+
     /** 注解样式 */
     private final StyleAttributeMap styleAnnotation;
+
     /** 数字样式 */
     private final StyleAttributeMap styleNumber;
+
     /** 字段/属性样式 */
     private final StyleAttributeMap styleField;
+
     /** 方法参数样式 */
     private final StyleAttributeMap styleParameter;
+
     /** 方法名样式 */
     private final StyleAttributeMap styleMethod;
+
     /** 类型/类名样式 */
     private final StyleAttributeMap styleType;
-    /** 跨段落块注释状态：true 表示当前处于 /* ... * / 块注释中 */
+
+    /** 跨段落块注释状态:true 表示当前处于 /* ... * / 块注释中 */
     private volatile boolean inBlockComment;
 
     /** 使用内置默认暗色主题构造高亮器 */
@@ -253,7 +263,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         if (inBlockComment) {
             int closeIdx = text.indexOf("*/");
             if (closeIdx >= 0) {
-                // 块注释在本行结束：从行首到 */ 后(含 */)为注释
+                // 块注释在本行结束:从行首到 */ 后(含 */)为注释
                 int closeEnd = closeIdx + 2;
                 builder.addSegment(text.substring(0, closeEnd), styleComment);
                 lastEnd = closeEnd;

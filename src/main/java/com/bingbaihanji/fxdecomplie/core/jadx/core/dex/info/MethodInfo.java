@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 方法信息类，表示 DEX 字节码中的一个方法
+ * 方法信息类,表示 DEX 字节码中的一个方法
  * 包含方法名称 返回类型 参数类型 所属类等元数据信息
  * 支持方法别名机制和方法签名生成
  */
@@ -20,20 +20,26 @@ public final class MethodInfo implements Comparable<MethodInfo> {
 
     /** 方法原始名称 */
     private final String name;
+
     /** 返回类型 */
     private final ArgType retType;
+
     /** 参数类型列表 */
     private final List<ArgType> argTypes;
+
     /** 声明该方法的类信息 */
     private final ClassInfo declClass;
-    /** 方法短标识，格式为：方法名(参数签名)返回值签名 */
+
+    /** 方法短标识,格式为:方法名(参数签名)返回值签名 */
     private final String shortId;
-    /** 原始完整标识，包含类的原始全限定名 */
+
+    /** 原始完整标识,包含类的原始全限定名 */
     private final String rawFullId;
+
     /** 预计算的哈希值 */
     private final int hash;
 
-    /** 方法别名，用于反混淆后显示的名称 */
+    /** 方法别名,用于反混淆后显示的名称 */
     private String alias;
 
     /**
@@ -57,7 +63,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
 
     /**
      * 从方法引用创建或获取已缓存的方法信息
-     * 使用唯一ID进行缓存查找，避免重复解析相同方法
+     * 使用唯一ID进行缓存查找,避免重复解析相同方法
      *
      * @param root      根节点
      * @param methodRef 方法引用
@@ -119,11 +125,11 @@ public final class MethodInfo implements Comparable<MethodInfo> {
 
     /**
      * 生成方法短标识
-     * 格式为：方法名(参数1签名参数2签名...)返回值签名
+     * 格式为:方法名(参数1签名参数2签名...)返回值签名
      *
      * @param name     方法名称
      * @param argTypes 参数类型列表
-     * @param retType  返回类型，为 null 时省略返回类型签名
+     * @param retType  返回类型,为 null 时省略返回类型签名
      * @return 方法短标识字符串
      */
     public static String makeShortId(String name, List<ArgType> argTypes, @Nullable ArgType retType) {
@@ -165,7 +171,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
 
     /**
      * 判断指定方法是否为当前方法的重载方法
-     * 重载方法具有相同名称和参数数量，但参数类型不同
+     * 重载方法具有相同名称和参数数量,但参数类型不同
      *
      * @param otherMthInfo 待比较的方法信息
      * @return 如果是重载方法返回 true
@@ -181,29 +187,29 @@ public final class MethodInfo implements Comparable<MethodInfo> {
         return name;
     }
 
-    /** 获取方法的完整名称，格式为：类全限定名.方法名 */
+    /** 获取方法的完整名称,格式为:类全限定名.方法名 */
     public String getFullName() {
         return declClass.getFullName() + '.' + name;
     }
 
-    /** 获取方法的别名完整名称，格式为：类别名全限定名.方法别名 */
+    /** 获取方法的别名完整名称,格式为:类别名全限定名.方法别名 */
     public String getAliasFullName() {
         return declClass.getAliasFullName() + '.' + alias;
     }
 
-    /** 获取方法的完整标识，格式为：类全限定名.方法短标识 */
+    /** 获取方法的完整标识,格式为:类全限定名.方法短标识 */
     public String getFullId() {
         return declClass.getFullName() + '.' + shortId;
     }
 
-    /** 获取原始完整标识，包含类的原始全限定名 */
+    /** 获取原始完整标识,包含类的原始全限定名 */
     public String getRawFullId() {
         return rawFullId;
     }
 
     /**
-     * 获取方法短标识，包含方法名和签名
-     * 格式为：方法名(参数签名)返回值签名
+     * 获取方法短标识,包含方法名和签名
+     * 格式为:方法名(参数签名)返回值签名
      */
     public String getShortId() {
         return shortId;
@@ -253,7 +259,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
         this.alias = alias;
     }
 
-    /** 移除别名，将别名恢复为原始方法名 */
+    /** 移除别名,将别名恢复为原始方法名 */
     public void removeAlias() {
         this.alias = name;
     }
@@ -295,7 +301,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
 
     /**
      * 比较两个方法信息的顺序
-     * 先按声明类比较，声明类相同时再按方法短标识比较
+     * 先按声明类比较,声明类相同时再按方法短标识比较
      */
     @Override
     public int compareTo(MethodInfo other) {
@@ -306,7 +312,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
         return shortId.compareTo(other.shortId);
     }
 
-    /** 返回方法的可读字符串表示，格式为：类全限定名.方法名(参数类型列表):返回类型 */
+    /** 返回方法的可读字符串表示,格式为:类全限定名.方法名(参数类型列表):返回类型 */
     @Override
     public String toString() {
         return declClass.getFullName() + '.' + name

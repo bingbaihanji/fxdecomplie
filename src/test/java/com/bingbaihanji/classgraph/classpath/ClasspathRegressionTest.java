@@ -23,7 +23,7 @@ import java.util.jar.JarOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Classpath 层回归测试 — JAR classpath + 重复 class 遮蔽规则。
+ * Classpath 层回归测试 — JAR classpath + 重复 class 遮蔽规则.
  */
 @DisplayName("Classpath Regression")
 class ClasspathRegressionTest {
@@ -159,7 +159,7 @@ class ClasspathRegressionTest {
         @Test
         @DisplayName("reports correct scan statistics")
         void reportsCorrectStatistics() throws Exception {
-            // 编译所有相关类（需要一起编译以解析跨类引用）
+            // 编译所有相关类(需要一起编译以解析跨类引用)
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/P.java",
                 "package com.example; public class P {}");

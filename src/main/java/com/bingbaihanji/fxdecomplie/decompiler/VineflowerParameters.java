@@ -81,6 +81,7 @@ public final class VineflowerParameters {
                     "engine.vineflower.ind", "engine.vineflower.ind.help",
                     Category.ADVANCED, null)
     );
+
     /** Vineflower 参数短键到英文可读标签的映射,供 UI 设置面板显示 */
     public static final Map<String, String> KEY_LABELS = Map.ofEntries(
             Map.entry("din", "Decompile Inner"),

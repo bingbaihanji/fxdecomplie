@@ -3,12 +3,13 @@ package com.bingbaihanji.fxdecomplie.util.value;
 import java.util.function.Function;
 
 /**
- * 与 {@link Function} 类似，但允许抛出异常
+ * 与 {@link Function} 类似,但允许抛出异常
  *
  * @author xDark
  */
 @FunctionalInterface
 public interface UncheckedFunction<T, R> extends Function<T, R> {
+
     /**
      * 将受检异常伪装为非受检异常向外抛出
      *

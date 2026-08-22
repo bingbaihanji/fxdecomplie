@@ -7,6 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import java.util.Set;
 
 public class MethodThrowsAttr extends PinnedAttribute {
+
     private final Set<String> list;
 
     private boolean visited;

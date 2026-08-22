@@ -13,13 +13,17 @@ import java.util.BitSet;
 import java.util.List;
 
 public class LiveVarAnalysis {
+
     private static final Logger LOG = LoggerFactory.getLogger(LiveVarAnalysis.class);
 
     private final MethodNode mth;
 
     private BitSet[] uses;
+
     private BitSet[] defs;
+
     private BitSet[] liveIn;
+
     private BitSet[] assignBlocks;
 
     public LiveVarAnalysis(MethodNode mth) {

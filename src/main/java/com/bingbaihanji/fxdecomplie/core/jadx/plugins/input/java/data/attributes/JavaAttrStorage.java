@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attribute
 import org.jetbrains.annotations.Nullable;
 
 public class JavaAttrStorage {
+
     public static final JavaAttrStorage EMPTY = new JavaAttrStorage();
 
     private final IJavaAttribute[] map = new IJavaAttribute[JavaAttrType.size()];

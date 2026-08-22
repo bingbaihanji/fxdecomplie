@@ -3,8 +3,11 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.impl;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldRef;
 
 public class JadxFieldRef implements IFieldRef {
+
     private String parentClassType;
+
     private String name;
+
     private String type;
 
     public JadxFieldRef() {

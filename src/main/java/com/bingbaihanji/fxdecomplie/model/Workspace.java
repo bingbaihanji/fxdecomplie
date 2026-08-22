@@ -3,7 +3,11 @@ package com.bingbaihanji.fxdecomplie.model;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -19,26 +23,37 @@ public class Workspace implements AutoCloseable {
 
     /** 全源码搜索缓存单工作区内存上限(200MB) */
     private static final long MAX_SOURCE_SEARCH_CACHE_BYTES = 200_000_000L;
+
     /** 工作区显示名称(如 demo.jar) */
     private final String name;
+
     /** 源文件或目录 */
     private final File sourceFile;
+
     /** 文件树根节点 */
     private final FileTreeModel treeRoot;
+
     /** 是否为归档文件(JAR/ZIP) */
     private final boolean isArchive;
+
     /** 工作区加载时的内容指纹,用于反编译缓存键 */
     private final String contentStamp;
+
     /** 完整索引是否已经被显式请求构建 */
     private final AtomicBoolean indexBuildStarted = new AtomicBoolean();
+
     /** 工作区级源码搜索缓存,按引擎和选项分组 */
     private final ConcurrentMap<String, Map<String, String>> sourceSearchCaches = new ConcurrentHashMap<>();
+
     /** 当前 sourceSearchCaches 中所有条目的估算字节数 */
     private long sourceSearchCacheBytes;
+
     /** 工作区索引,用于全局搜索 字节码搜索和后续分析 */
     private volatile WorkspaceIndex index;
+
     /** 异步索引构建结果,供 UI 等待,避免在 JavaFX 线程兜底同步构建 */
     private volatile CompletableFuture<WorkspaceIndex> indexFuture = new CompletableFuture<>();
+
     /** 轻量路径索引,只保存文件树节点引用,不读取 class 字节 */
     private volatile Map<String, FileTreeNode> nodesByFullPath;
 
@@ -297,7 +312,7 @@ public class Workspace implements AutoCloseable {
     /**
      * 基于 sourceFile 比较工作区实例
      * <p>
-     * <b>设计意图</b>：同一源文件的多个 Workspace 实例在集合中视为相等，
+     * <b>设计意图</b>:同一源文件的多个 Workspace 实例在集合中视为相等,
      * 仅在 {@link #hashCode()} 和 {@link #equals(Object)} 中使用 sourceFile
      * 此设计基于"一个源头文件 = 一个工作区"的语义约定
      * </p>

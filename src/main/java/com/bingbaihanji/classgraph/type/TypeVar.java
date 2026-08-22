@@ -6,10 +6,15 @@ import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
 import com.bingbaihanji.classgraph.metadata.ClassInfo;
 import com.bingbaihanji.classgraph.scan.ScanResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /** 一个类型变量签名 */
 public final class TypeVar extends TypeRef {
+
     /** 类型变量名称 */
     private final String name;
 
@@ -63,7 +68,7 @@ public final class TypeVar extends TypeRef {
             final TypeVar TypeVar = new TypeVar(TypeParser.currToken(),
                     definingClassName);
 
-            // 将类型变量签名保存在解析器状态中，以便方法和类类型签名可以链接到类型签名
+            // 将类型变量签名保存在解析器状态中,以便方法和类类型签名可以链接到类型签名
             @SuppressWarnings("unchecked")
             List<TypeVar> TypeVars = (List<TypeVar>) TypeParser.getState();
             if (TypeVars == null) {
@@ -89,10 +94,10 @@ public final class TypeVar extends TypeRef {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 在定义方法和/或封闭类的类型形参中查找类型变量(例如 "T")，并返回具有相同名称的
+     * 在定义方法和/或封闭类的类型形参中查找类型变量(例如 "T"),并返回具有相同名称的
      * 类型形参(例如 "T extends com.xyz.Cls")
      *
-     * @return 类型形参(例如 "T extends com.xyz.Cls"，或者如果类型形参没有任何边界，则为简单的 "T")
+     * @return 类型形参(例如 "T extends com.xyz.Cls",或者如果类型形参没有任何边界,则为简单的 "T")
      * @throws IllegalArgumentException
      *             如果在定义方法或封闭类中找不到与类型变量同名的类型形参
      */
@@ -110,7 +115,7 @@ public final class TypeVar extends TypeRef {
                 }
             }
         }
-        // 如果失败，尝试根据包含类解析类型变量
+        // 如果失败,尝试根据包含类解析类型变量
         if (getClassName() != null) {
             final ClassInfo containingClassInfo = getClassInfo();
             if (containingClassInfo == null) {
@@ -132,8 +137,8 @@ public final class TypeVar extends TypeRef {
                 }
             }
         }
-        // 如果失败，则这是一个无法解析的类型变量
-        // 返回一个仅设置了名称的新的 TypeParam，没有类或接口边界(#706)
+        // 如果失败,则这是一个无法解析的类型变量
+        // 返回一个仅设置了名称的新的 TypeParam,没有类或接口边界(#706)
         final TypeParam TypeParam = new TypeParam(name, null,
                 Collections.<ReferenceType>emptyList());
         TypeParam.setScanResult(scanResult);
@@ -155,7 +160,7 @@ public final class TypeVar extends TypeRef {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 返回 definingClassName，以便 getClassInfo() 返回包含类的 {@link ClassInfo} 对象
+     * 返回 definingClassName,以便 getClassInfo() 返回包含类的 {@link ClassInfo} 对象
      *
      * @return 定义类名
      */
@@ -172,7 +177,7 @@ public final class TypeVar extends TypeRef {
      */
     @Override
     public void findReferencedClassNames(final Set<String> refdClassNames) {
-        // 解析后的类型变量中存在的所有类名都必须存在于封闭方法或类中，
+        // 解析后的类型变量中存在的所有类名都必须存在于封闭方法或类中,
         // 因此不需要在解析后的类型变量中查找类引用
     }
 
@@ -215,7 +220,7 @@ public final class TypeVar extends TypeRef {
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
         if (other instanceof ClassRef) {
             if ("java.lang.Object".equals(((ClassRef) other).className)) {
-                // java.lang.Object 可以与任何类型协调，因此它可以与任何类型变量协调
+                // java.lang.Object 可以与任何类型协调,因此它可以与任何类型变量协调
                 return true;
             }
             // 根据包含类的类型形参解析类型变量
@@ -223,19 +228,19 @@ public final class TypeVar extends TypeRef {
             try {
                 TypeParam = resolve();
             } catch (final IllegalArgumentException e) {
-                // 如果无法解析对应的类型形参：
+                // 如果无法解析对应的类型形参:
                 // 未知类型变量始终可以与具体类协调
                 return true;
             }
             if (TypeParam.classBound == null
                     && (TypeParam.interfaceBounds == null || TypeParam.interfaceBounds.isEmpty())) {
-                // 如果类型形参没有边界，则仅假定类型变量可以通过类型推断与类协调
+                // 如果类型形参没有边界,则仅假定类型变量可以通过类型推断与类协调
                 return true;
             }
             if (TypeParam.classBound != null) {
                 if (TypeParam.classBound instanceof ClassRef) {
                     if (TypeParam.classBound.equals(other)) {
-                        // T extends X，且 X == other
+                        // T extends X,且 X == other
                         return true;
                     }
                 } else if (TypeParam.classBound instanceof TypeVar) {
@@ -249,7 +254,7 @@ public final class TypeVar extends TypeRef {
                 for (final ReferenceType interfaceBound : TypeParam.interfaceBounds) {
                     if (interfaceBound instanceof ClassRef) {
                         if (interfaceBound.equals(other)) {
-                            // T implements X，且 X == other
+                            // T implements X,且 X == other
                             return true;
                         }
                     } else if (interfaceBound instanceof TypeVar) {
@@ -260,21 +265,21 @@ public final class TypeVar extends TypeRef {
                     }
                 }
             }
-            // 类型变量有一个具体的边界，该边界不能与 'other' 协调
-            // (我们不遵循类层次结构将边界与类引用进行比较，
-            // 因为编译器在类型擦除期间只应使用边界，而不是类层次结构中的其他类)
+            // 类型变量有一个具体的边界,该边界不能与 'other' 协调
+            // (我们不遵循类层次结构将边界与类引用进行比较,
+            // 因为编译器在类型擦除期间只应使用边界,而不是类层次结构中的其他类)
             return false;
         }
-        // 技术上讲，我认为由于捕获的原因，类型变量永远不会彼此相等，
+        // 技术上讲,我认为由于捕获的原因,类型变量永远不会彼此相等,
         // 但这里仅比较变量名称是否相等
-        // (通常不应触发此逻辑，因为我们目前只比较类型擦除后的签名与非类型擦除的签名)
+        // (通常不应触发此逻辑,因为我们目前只比较类型擦除后的签名与非类型擦除的签名)
         return this.equals(other);
     }
 
     /**
      * 返回类型变量及其类型边界(如果有)(例如 "X extends xyz.Cls")
      * 你可以通过调用 {@link #resolve()} 来获取结构化形式
-     * 如果没有类型边界，或者类型边界未知(即 {@link #resolve()} 返回 null)，则仅返回类型变量
+     * 如果没有类型边界,或者类型边界未知(即 {@link #resolve()} 返回 null),则仅返回类型变量
      *
      * @return 字符串表示
      */

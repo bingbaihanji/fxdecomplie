@@ -17,24 +17,45 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IndexInsnNod
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.ConstructorInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.CheckRegions;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.IfRegionVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrinkVisitor;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockInsnPair;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils.*;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils.checkInsnType;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils.getSingleArg;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils.getWrappedInsn;
 
 @JadxVisitor(
         name = "EnumVisitor",
@@ -51,9 +72,11 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils.*;
         }
 )
 public class EnumVisitor extends AbstractVisitor {
+
     private static final String ENUM_SUPER_CONSTRUCTOR_ID = "java.lang.Enum.<init>(Ljava/lang/String;I)V";
 
     private MethodInfo enumValueOfMth;
+
     private MethodInfo cloneMth;
 
     private static void fixAccessFlags(ClassNode cls) {
@@ -279,7 +302,8 @@ public class EnumVisitor extends AbstractVisitor {
             valuesCandidates.removeIf(f -> !f.getAccessFlags().isSynthetic());
         }
         if (valuesCandidates.size() > 1) {
-            Optional<FieldNode> valuesOpt = valuesCandidates.stream().filter(f -> "$VALUES".equals(f.getName())).findAny();
+            Optional<FieldNode> valuesOpt = valuesCandidates.stream().filter(f -> "$VALUES".equals(f.getName()))
+                    .findAny();
             if (valuesOpt.isPresent()) {
                 valuesCandidates.clear();
                 valuesCandidates.add(valuesOpt.get());
@@ -770,11 +794,17 @@ public class EnumVisitor extends AbstractVisitor {
     }
 
     private static class EnumData {
+
         final ClassNode cls;
+
         final MethodNode classInitMth;
+
         final List<BlockNode> staticBlocks;
+
         final List<InsnNode> toRemove = new ArrayList<>();
+
         FieldNode valuesField;
+
         InsnNode valuesInitInsn;
 
         public EnumData(ClassNode cls, MethodNode classInitMth, List<BlockNode> staticBlocks) {

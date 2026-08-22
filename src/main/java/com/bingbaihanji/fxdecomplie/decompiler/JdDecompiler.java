@@ -52,6 +52,7 @@ public class JdDecompiler implements Decompiler {
                 : null;
 
         Loader loader = new Loader() {
+
             @Override
             public boolean canLoad(String internalName) {
                 return internalName.equals(normalizedName)
@@ -112,7 +113,9 @@ public class JdDecompiler implements Decompiler {
 
     /** JD-Core Printer 实现 — 将反编译输出追加到 StringBuilder */
     private static final class JdPrinter implements Printer {
+
         private final StringBuilder builder;
+
         private int indent;
 
         JdPrinter(StringBuilder builder) {

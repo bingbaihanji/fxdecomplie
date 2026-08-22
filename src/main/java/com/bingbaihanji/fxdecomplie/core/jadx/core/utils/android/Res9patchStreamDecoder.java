@@ -32,6 +32,7 @@ import java.io.OutputStream;
 public class Res9patchStreamDecoder {
 
     private static final int NP_CHUNK_TYPE = 0x6e705463; // npTc
+
     private static final int NP_COLOR = 0xff000000;
 
     public boolean decode(InputStream in, OutputStream out) {
@@ -105,11 +106,17 @@ public class Res9patchStreamDecoder {
     }
 
     private static class NinePatch {
+
         public final int padLeft;
+
         public final int padRight;
+
         public final int padTop;
+
         public final int padBottom;
+
         public final int[] xDivs;
+
         public final int[] yDivs;
 
         public NinePatch(int padLeft, int padRight, int padTop, int padBottom,

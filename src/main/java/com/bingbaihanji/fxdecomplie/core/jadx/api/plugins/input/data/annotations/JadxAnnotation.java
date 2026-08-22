@@ -3,8 +3,11 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotation
 import java.util.Map;
 
 public class JadxAnnotation implements IAnnotation {
+
     private final AnnotationVisibility visibility;
+
     private final String type;
+
     private final Map<String, EncodedValue> values;
 
     public JadxAnnotation(AnnotationVisibility visibility, String type, Map<String, EncodedValue> values) {

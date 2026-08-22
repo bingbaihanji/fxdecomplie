@@ -50,12 +50,16 @@ public class RandomAccessFileChannelReader implements RandomAccessReader {
 
     /** 切片长度 */
     private final long sliceLength;
+
     /** 临时数组 */
     private final byte[] scratchArr = new byte[8];
+
     /** 临时字节缓冲区 */
     private final ByteBuffer scratchByteBuf = ByteBuffer.wrap(scratchArr);
+
     /** 可复用的字节缓冲区 */
     private ByteBuffer reusableByteBuffer;
+
     /** UTF-8 字节数组 */
     private byte[] utf8Bytes;
 
@@ -108,11 +112,11 @@ public class RandomAccessFileChannelReader implements RandomAccessReader {
                 throw new IOException("Read index out of bounds");
             }
             if (reusableByteBuffer == null || reusableByteBuffer.array() != dstArr) {
-                // 如果 reusableByteBuffer 未设置，或包装的是前一次操作的其他数组，
+                // 如果 reusableByteBuffer 未设置,或包装的是前一次操作的其他数组,
                 // 则用新的 ByteBuffer 包装 dstArr
                 reusableByteBuffer = ByteBuffer.wrap(dstArr);
             }
-            // 读入 reusableByteBuffer，其后备数组为 dstArr
+            // 读入 reusableByteBuffer,其后备数组为 dstArr
             return read(srcOffset, reusableByteBuffer, dstArrStart, numBytes);
 
         } catch (BufferUnderflowException | IndexOutOfBoundsException e) {
@@ -184,7 +188,7 @@ public class RandomAccessFileChannelReader implements RandomAccessReader {
     @Override
     public String readString(final long offset, final int numBytes, final boolean replaceSlashWithDot,
                              final boolean stripLSemicolon) throws IOException {
-        // 如果前一次调用时 UTF8 缓冲区数组非空且足够大，则复用它
+        // 如果前一次调用时 UTF8 缓冲区数组非空且足够大,则复用它
         if (utf8Bytes == null || utf8Bytes.length < numBytes) {
             utf8Bytes = new byte[numBytes];
         }

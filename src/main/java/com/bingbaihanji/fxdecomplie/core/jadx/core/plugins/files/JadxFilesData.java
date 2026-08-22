@@ -7,9 +7,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import java.nio.file.Path;
 
 public class JadxFilesData implements IJadxFiles {
+
     private static final String PLUGINS_DATA_DIR = "plugins-data";
 
     private final JadxPluginInfo pluginInfo;
+
     private final IJadxFilesGetter filesGetter;
 
     public JadxFilesData(JadxPluginInfo pluginInfo, IJadxFilesGetter filesGetter) {

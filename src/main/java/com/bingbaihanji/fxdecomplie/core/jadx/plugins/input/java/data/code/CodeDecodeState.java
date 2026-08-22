@@ -15,15 +15,23 @@ import java.util.Set;
 
 @SuppressWarnings("UnusedReturnValue")
 public class CodeDecodeState {
+
     private final JavaClassData clsData;
+
     private final DataReader reader;
+
     private final int maxStack;
+
     private final Set<Integer> excHandlers;
+
     private final StackMapTableAttr stackMapTable;
+
     private final Map<Integer, StackState> jumpStack = new HashMap<>(); // save current stack for jump target
 
     private JavaInsnData insn;
+
     private StackState stack;
+
     private boolean excHandler;
 
     public CodeDecodeState(JavaClassData clsData, DataReader reader, int maxStack,

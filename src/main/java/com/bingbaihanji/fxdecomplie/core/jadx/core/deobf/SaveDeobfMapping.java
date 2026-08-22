@@ -15,18 +15,19 @@ import java.nio.file.Path;
 /**
  * 保存反混淆映射的访问器
  * <p>
- * 在处理根节点时，根据配置将反混淆重命名映射写入文件 (文本格式)，
+ * 在处理根节点时,根据配置将反混淆重命名映射写入文件 (文本格式),
  * 或在开启 JSON 输出时额外导出 JSON 格式的映射
  * </p>
  */
 public class SaveDeobfMapping extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(SaveDeobfMapping.class);
 
     /**
      * 初始化时根据参数配置保存反混淆映射
      * <p>
-     * 当开启反混淆或未开启 JSON 输出时，保存文本格式映射文件 
-     * 当开启 JSON 输出时，额外导出 JSON 格式映射
+     * 当开启反混淆或未开启 JSON 输出时,保存文本格式映射文件 
+     * 当开启 JSON 输出时,额外导出 JSON 格式映射
      * </p>
      *
      * @param root AST 根节点
@@ -46,9 +47,9 @@ public class SaveDeobfMapping extends AbstractVisitor {
     /**
      * 将反混淆映射保存到文件
      * <p>
-     * 根据 {@link GeneratedRenamesMappingFileMode} 决定是否写入：
+     * 根据 {@link GeneratedRenamesMappingFileMode} 决定是否写入:
      * 当模式不需要写入时直接返回 当模式为 READ_OR_SAVE 且映射文件已存在时也跳过写入
-     * 否则清空并重新填充映射后保存，保存失败时记录错误日志
+     * 否则清空并重新填充映射后保存,保存失败时记录错误日志
      * </p>
      *
      * @param root AST 根节点

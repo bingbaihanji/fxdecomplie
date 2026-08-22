@@ -34,12 +34,12 @@ public class MethodSearchProvider implements SearchProvider {
             "instanceof", "import", "package");
 
     /**
-     * 方法声明正则模式：
+     * 方法声明正则模式:
      * - 可选注解(@Override 等)
      * - 可选修饰符(public/static/final 等)
      * - 可选类型参数(如 <T>)
      * - 可选返回类型(如 List<String>)
-     * - 捕获组1：方法名
+     * - 捕获组1:方法名
      * - 方法名后跟 (
      */
     private static final String METHOD_DECL_PATTERN =
@@ -59,7 +59,7 @@ public class MethodSearchProvider implements SearchProvider {
             METHOD_DECL_PATTERN, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
     /**
-     * 基本搜索：用正则匹配方法声明,提取方法名与关键字比较(不区分大小写)
+     * 基本搜索:用正则匹配方法声明,提取方法名与关键字比较(不区分大小写)
      * 自动过滤 if/while/for 等非方法关键字的误匹配
      */
     @Override
@@ -98,7 +98,7 @@ public class MethodSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.METHOD;
     }
 
-    /** 高级搜索：支持正则 大小写 全词匹配等选项的方法名搜索 */
+    /** 高级搜索:支持正则 大小写 全词匹配等选项的方法名搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

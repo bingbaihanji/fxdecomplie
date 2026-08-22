@@ -8,7 +8,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.SwitchInsn;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion.CaseInfo;
@@ -26,11 +31,19 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class SwitchRegionMaker {
+
     private static final Logger LOG = LoggerFactory.getLogger(SwitchRegionMaker.class);
+
     private final MethodNode mth;
+
     private final RegionMaker regionMaker;
 
     SwitchRegionMaker(MethodNode mth, RegionMaker regionMaker) {
@@ -58,6 +71,7 @@ public final class SwitchRegionMaker {
         BlockSet caseBlocks = new BlockSet(mth);
         RegionUtils.visitBlockNodes(mth, caseContainer, caseBlocks::add);
         DepthRegionTraversal.traverse(mth, caseContainer, new AbstractRegionVisitor() {
+
             @Override
             public void leaveRegion(MethodNode mth, IRegion region) {
                 boolean insertBreak = false;

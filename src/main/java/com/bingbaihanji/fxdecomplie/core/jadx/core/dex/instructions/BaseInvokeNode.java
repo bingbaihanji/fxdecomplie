@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class BaseInvokeNode extends InsnNode {
+
     public BaseInvokeNode(InsnType type, int argsCount) {
         super(type, argsCount);
     }

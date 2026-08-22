@@ -15,7 +15,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.Jadx;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodeGenUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.DecompileModeOverrideAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.JadxError;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.JumpInfo;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.MethodOverrideAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.MethodReplaceAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.SkipMethodArgsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.AccessInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstStringNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
@@ -40,24 +45,30 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.FallbackOption.*;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.FallbackOption.BLOCK_DUMP;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.FallbackOption.COMMENTED_DUMP;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.FallbackOption.FALLBACK_MODE;
 
 /**
  * 方法代码生成器
  * <p>
- * 负责将 {@link MethodNode} 生成为 Java 源码文本，包括方法定义 (修饰符 返回类型 方法名 
+ * 负责将 {@link MethodNode} 生成为 Java 源码文本,包括方法定义 (修饰符 返回类型 方法名 
  * 参数列表 throws 注解等)与方法体方法体根据反编译模式 (AUTO/RESTRUCTURE/SIMPLE/FALLBACK)
- * 采用不同的生成策略，并在生成失败时回退到指令转储 (fallback dump)
+ * 采用不同的生成策略,并在生成失败时回退到指令转储 (fallback dump)
  */
 public class MethodGen {
+
     private static final Logger LOG = LoggerFactory.getLogger(MethodGen.class);
 
     /** 当前正在生成的方法节点 */
     private final MethodNode mth;
+
     /** 所属类的代码生成器 */
     private final ClassGen classGen;
+
     /** 注解生成器 */
     private final AnnotationGen annotationGen;
+
     /** 变量/参数名称生成器 */
     private final NameGen nameGen;
 
@@ -133,7 +144,7 @@ public class MethodGen {
     }
 
     /**
-     * 获取基本块对应的标签名，形如 {@code L<cId>}
+     * 获取基本块对应的标签名,形如 {@code L<cId>}
      */
     public static String getLabelName(BlockNode block) {
         return String.format("L%d", block.getCId());
@@ -151,7 +162,7 @@ public class MethodGen {
     }
 
     /**
-     * 获取指令偏移量对应的标签名，负偏移使用 {@code LB_} 前缀
+     * 获取指令偏移量对应的标签名,负偏移使用 {@code LB_} 前缀
      */
     public static String getLabelName(int offset) {
         if (offset < 0) {
@@ -289,7 +300,8 @@ public class MethodGen {
         }
         if (false) {
             code.startLine("// related by override: ");
-            code.add(Utils.listToString(overrideAttr.getRelatedMthNodes(), ", ", m -> m.getParentClass().getFullName()));
+            code.add(Utils.listToString(overrideAttr.getRelatedMthNodes(), ", ", m -> m.getParentClass()
+                    .getFullName()));
         }
     }
 
@@ -358,9 +370,9 @@ public class MethodGen {
     /**
      * 根据反编译模式生成方法体指令代码
      * <p>
-     * 支持四种模式：
+     * 支持四种模式:
      * <ul>
-     *   <li>AUTO —— 自动选择：回退模式或无区域 (region)时走指令转储，否则用区域模式</li>
+     *   <li>AUTO —— 自动选择:回退模式或无区域 (region)时走指令转储,否则用区域模式</li>
      *   <li>RESTRUCTURE —— 使用区域重组 (RegionGen)生成</li>
      *   <li>SIMPLE —— 简化模式 (基本块行号生成)</li>
      *   <li>FALLBACK —— 原始指令转储模式</li>
@@ -405,7 +417,7 @@ public class MethodGen {
     /**
      * 使用区域重组 (RegionGen)生成方法体指令
      * <p>
-     * 若生成过程中发生栈溢出或异常，则记录错误并回退到指令转储
+     * 若生成过程中发生栈溢出或异常,则记录错误并回退到指令转储
      *
      * @param code 代码写入器
      * @throws CodegenException 需要重启代码生成时抛出
@@ -482,7 +494,7 @@ public class MethodGen {
     }
 
     /**
-     * 转储方法指令：以注释形式输出回退指令，并生成一条抛出
+     * 转储方法指令:以注释形式输出回退指令,并生成一条抛出
      * {@code UnsupportedOperationException("Method not decompiled...")} 的语句
      *
      * @param code 代码写入器
@@ -505,7 +517,7 @@ public class MethodGen {
     }
 
     /**
-     * 生成回退模式的方法代码：重新加载原始指令并逐条转储
+     * 生成回退模式的方法代码:重新加载原始指令并逐条转储
      *
      * @param code           代码写入器
      * @param fallbackOption 回退选项 (回退模式 / 块转储 / 注释转储)

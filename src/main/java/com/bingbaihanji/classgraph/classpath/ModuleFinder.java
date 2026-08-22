@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
@@ -7,16 +6,27 @@ import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /** 用于查找可见模块的类 */
 public class ModuleFinder {
+
     private final ReflectionUtils reflectionUtils;
+
     /** 系统模块引用 */
     private List<ModuleRef> systemModuleRefs;
+
     /** 非系统模块引用 */
     private List<ModuleRef> nonSystemModuleRefs;
-    /** 如果为 true，则必须强制扫描 {@code java.class.path}，因为存在匿名模块层 */
+
+    /** 如果为 true,则必须强制扫描 {@code java.class.path},因为存在匿名模块层 */
     private boolean forceScanJavaClassPath;
 
     // -------------------------------------------------------------------------------------------------------------
@@ -102,7 +112,7 @@ public class ModuleFinder {
     /**
      * 获取系统模块的 {@link ModuleRef} 包装器
      *
-     * @return 系统模块的 {@link ModuleRef} 包装器，如果没有找到模块则返回 null(例如在 JDK 7 或 8 上)
+     * @return 系统模块的 {@link ModuleRef} 包装器,如果没有找到模块则返回 null(例如在 JDK 7 或 8 上)
      */
     public List<ModuleRef> getSystemModuleRefs() {
         return systemModuleRefs;
@@ -111,7 +121,7 @@ public class ModuleFinder {
     /**
      * 获取非系统模块的 {@link ModuleRef} 包装器
      *
-     * @return 非系统模块的 {@link ModuleRef} 包装器，如果没有找到模块则返回 null(例如在 JDK 7 或 8 上)
+     * @return 非系统模块的 {@link ModuleRef} 包装器,如果没有找到模块则返回 null(例如在 JDK 7 或 8 上)
      */
     public List<ModuleRef> getNonSystemModuleRefs() {
         return nonSystemModuleRefs;
@@ -122,7 +132,7 @@ public class ModuleFinder {
     /**
      * 强制扫描 java class path
      *
-     * @return 如果为 true，则必须强制扫描 {@code java.class.path}，因为存在匿名模块层
+     * @return 如果为 true,则必须强制扫描 {@code java.class.path},因为存在匿名模块层
      */
     public boolean forceScanJavaClassPath() {
         return forceScanJavaClassPath;
@@ -133,7 +143,7 @@ public class ModuleFinder {
      *
      * <p>
      * (JDK(截至 10.0.0.1)在 ModuleLayer#layers() 和 Configuration#configurations()
-     * 中使用了一种有问题的(非拓扑的)DFS 排序来解析层，但当我向 Jigsaw 邮件列表报告此错误时，
+     * 中使用了一种有问题的(非拓扑的)DFS 排序来解析层,但当我向 Jigsaw 邮件列表报告此错误时,
      * Alan 没有看出问题所在)
      *
      * @param layer
@@ -150,7 +160,8 @@ public class ModuleFinder {
                                 final Set<Object> /* Set<ModuleLayer> */ parentLayers,
                                 final Deque<Object> /* Deque<ModuleLayer> */ layerOrderOut) {
         if (layerVisited.add(layer)) {
-            @SuppressWarnings("unchecked") final List<Object> /* List<ModuleLayer> */ parents = (List<Object>) reflectionUtils
+            @SuppressWarnings("unchecked")
+            final List<Object> /* List<ModuleLayer> */ parents = (List<Object>) reflectionUtils
                     .invokeMethod(/* throwException = */ true, layer, "parents");
             if (parents != null) {
                 parentLayers.addAll(parents);
@@ -195,7 +206,7 @@ public class ModuleFinder {
             }
         }
 
-        // 如果 ScanConfig.ignoreParentModuleLayers 为 true，则从层顺序中移除父层
+        // 如果 ScanConfig.ignoreParentModuleLayers 为 true,则从层顺序中移除父层
         List<Object> /* List<ModuleLayer> */ layerOrderFinal;
         if (ScanConfig.ignoreParentModuleLayers) {
             layerOrderFinal = new ArrayList<>();
@@ -216,7 +227,8 @@ public class ModuleFinder {
                     .invokeMethod(/* throwException = */ true, layer, "configuration");
             if (configuration != null) {
                 // 从层配置中获取 ModuleReference
-                @SuppressWarnings("unchecked") final Set<Object> /* Set<ResolvedModule> */ modules = (Set<Object>) reflectionUtils
+                @SuppressWarnings("unchecked")
+                final Set<Object> /* Set<ResolvedModule> */ modules = (Set<Object>) reflectionUtils
                         .invokeMethod(/* throwException = */ true, configuration, "modules");
                 if (modules != null) {
                     final List<ModuleRef> modulesInLayer = new ArrayList<>();
@@ -245,7 +257,7 @@ public class ModuleFinder {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取所有层中所有可见的 ModuleReference，给定一个栈帧 {@code Class<?>} 引用数组
+     * 获取所有层中所有可见的 ModuleReference,给定一个栈帧 {@code Class<?>} 引用数组
      *
      * @param callStack
      *            调用栈
@@ -270,14 +282,14 @@ public class ModuleFinder {
                     if (layer != null) {
                         layers.add(layer);
                     } else if (scanNonSystemModules) {
-                        // getLayer() 对未命名模块返回 null -- 如果返回了 null 则仍将其添加到列表，
+                        // getLayer() 对未命名模块返回 null -- 如果返回了 null 则仍将其添加到列表,
                         // 以便我们可以从 java.class.path 获取类
                         forceScanJavaClassPath = true;
                     }
                 }
             }
         }
-        // 添加引导层中的系统模块，如果它们尚未在堆栈跟踪中找到
+        // 添加引导层中的系统模块,如果它们尚未在堆栈跟踪中找到
         Class<?> moduleLayerClass = null;
         try {
             moduleLayerClass = Class.forName("java.lang.ModuleLayer");
@@ -290,9 +302,9 @@ public class ModuleFinder {
             if (bootLayer != null) {
                 layers.add(bootLayer);
             } else if (scanNonSystemModules) {
-                // getLayer() 对未命名模块返回 null -- 如果返回了 null 则仍将其添加到列表，
+                // getLayer() 对未命名模块返回 null -- 如果返回了 null 则仍将其添加到列表,
                 // 以便我们可以从 java.class.path 获取类(我不确定引导层是否真的可能
-                // 为 null，但这里是为了完整性)
+                // 为 null,但这里是为了完整性)
                 forceScanJavaClassPath = true;
             }
         }

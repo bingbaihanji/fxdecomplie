@@ -2,11 +2,16 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.conditions;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IDeobfCondition;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 
 public class DeobfLengthCondition implements IDeobfCondition {
 
     private int minLength;
+
     private int maxLength;
 
     @Override

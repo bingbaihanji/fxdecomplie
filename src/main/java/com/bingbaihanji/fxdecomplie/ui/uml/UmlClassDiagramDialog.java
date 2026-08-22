@@ -8,7 +8,17 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Pos;
 import javafx.scene.SnapshotParameters;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -17,6 +27,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Scale;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import org.slf4j.Logger;
@@ -28,23 +39,32 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 /**
- * UML 类图弹窗：加载态 → 渲染画布，底部工具栏提供亮/暗主题切换、PNG 导出、PlantUML 导出。
+ * UML 类图弹窗:加载态 → 渲染画布,底部工具栏提供亮/暗主题切换,PNG 导出,PlantUML 导出.
  */
 public class UmlClassDiagramDialog extends Dialog<Void> {
 
     private static final Logger log = LoggerFactory.getLogger(UmlClassDiagramDialog.class);
 
     private static final int DEFAULT_WIDTH = 880;
+
     private static final int DEFAULT_HEIGHT = 660;
 
     private final StackPane contentStack = new StackPane();
+
     private final Label statusLabel = new Label();
+
     private final ToggleGroup themeGroup = new ToggleGroup();
+
     private final javafx.stage.Window ownerWindow;
 
+    private final ComboBox<Double> scaleCombo = new ComboBox<>();
+
     private UmlDiagram currentDiagram;
+
     private UmlTheme currentTheme = UmlTheme.DARK;
+
     private Pane diagramCanvas;
+
     private UmlDiagramRenderer.UmlView currentView;
 
     public UmlClassDiagramDialog(javafx.stage.Window owner, String title) {
@@ -93,10 +113,18 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
         Button exportPuml = new Button(I18nUtil.getString("uml.exportPuml"));
         exportPuml.setOnAction(e -> exportPuml());
 
+        Label scaleLabel = new Label(I18nUtil.getString("uml.export.scale"));
+        scaleLabel.setStyle("-fx-text-fill:#808080;-fx-font-size:11px;");
+        scaleCombo.getItems().addAll(1.0, 2.0, 3.0);
+        scaleCombo.setValue(2.0);
+        scaleCombo.setPrefWidth(64);
+        scaleCombo.setStyle("-fx-font-size:11px;");
+
         statusLabel.setStyle("-fx-text-fill:#808080;-fx-font-size:11px;");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox bar = new HBox(6, light, dark, new Separator(), fitButton, exportPng, exportPuml, spacer, statusLabel);
+        HBox bar = new HBox(6, light, dark, new Separator(), fitButton,
+                exportPng, scaleLabel, scaleCombo, exportPuml, spacer, statusLabel);
         bar.setStyle("-fx-padding:4px 8px;-fx-background-color:#252526;");
         bar.setMinHeight(30);
         bar.setAlignment(Pos.CENTER_LEFT);
@@ -118,7 +146,31 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
         showLoading(I18nUtil.getString("uml.loading"));
     }
 
-    /** 显示已构建的类图（FX 线程） */
+    private static void runOnFx(Runnable action) {
+        if (Platform.isFxApplicationThread()) {
+            action.run();
+        } else {
+            Platform.runLater(action);
+        }
+    }
+
+    /** 从 canvas 递归查找第一个 Group(包含类图内容的容器) */
+    private static javafx.scene.Group findGroup(javafx.scene.Parent canvas) {
+        for (javafx.scene.Node child : canvas.getChildrenUnmodifiable()) {
+            if (child instanceof javafx.scene.Group g) {
+                return g;
+            }
+            if (child instanceof javafx.scene.Parent p) {
+                javafx.scene.Group found = findGroup(p);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** 显示已构建的类图(FX 线程) */
     public void showDiagram(UmlDiagram diagram) {
         runOnFx(() -> {
             currentDiagram = diagram;
@@ -126,7 +178,7 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
         });
     }
 
-    /** 显示纯文本消息（FX 线程） */
+    /** 显示纯文本消息(FX 线程) */
     public void showMessage(String msg) {
         runOnFx(() -> showMsg(msg));
     }
@@ -168,19 +220,36 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
     }
 
     private void exportPng() {
-        if (diagramCanvas == null) {
+        if (diagramCanvas == null || currentView == null) {
             return;
         }
-        double w = diagramCanvas.getWidth();
-        double h = diagramCanvas.getHeight();
-        if (w <= 0 || h <= 0) {
+        double exportScale = scaleCombo.getValue();
+        if (exportScale <= 0) {
+            exportScale = 2.0;
+        }
+
+        // 以原始内容尺寸计算导出分辨率(不受当前缩放影响)
+        double contentW = currentView.contentWidth();
+        double contentH = currentView.contentHeight();
+        if (contentW <= 0 || contentH <= 0) {
             return;
         }
-        // 画布过大时快照会整数溢出(ByteBuffer capacity) — 提示先缩小
-        if (w * h > 40_000_000) {
-            statusLabel.setText(I18nUtil.getString("uml.export.tooLarge"));
-            return;
+        long outW = Math.round(contentW * exportScale);
+        long outH = Math.round(contentH * exportScale);
+        // 整数溢出保护:WritableImage 内部用 int 安全检查
+        if (outW > 16384 || outH > 16384 || outW * outH > 100_000_000) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.CONFIRMATION);
+            alert.setTitle(I18nUtil.getString("uml.exportPng"));
+            alert.setHeaderText(I18nUtil.getString("uml.export.tooLarge.confirm",
+                    String.valueOf(outW), String.valueOf(outH)));
+            alert.initOwner(ownerWindow);
+            if (alert.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL)
+                    != javafx.scene.control.ButtonType.OK) {
+                return;
+            }
         }
+
         FileChooser chooser = new FileChooser();
         chooser.setTitle(I18nUtil.getString("uml.exportPng"));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG 图片", "*.png"));
@@ -188,7 +257,36 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
         if (file == null) {
             return;
         }
+
+        // 临时放大 canvas 和 Group 以导出分辨率渲染,snapshot 完毕后恢复
+        double origZoom = currentView.currentZoom();
+        javafx.scene.control.ScrollPane scroll = currentView.scrollPane();
+        double origH = scroll.getHvalue();
+        double origV = scroll.getVvalue();
+        double vpW = scroll.getViewportBounds().getWidth();
+        double vpH = scroll.getViewportBounds().getHeight();
+        javafx.scene.Group group = findGroup(diagramCanvas);
+
         try {
+            // 1. 将 Group 缩放设为导出倍率(内容填满导出 canvas)
+            double scaledW = contentW * exportScale;
+            double scaledH = contentH * exportScale;
+            if (group != null) {
+                group.getTransforms().setAll(new Scale(exportScale, exportScale, 0, 0));
+                group.setLayoutX(0);
+                group.setLayoutY(0);
+            }
+
+            // 2. 将 canvas 设为导出尺寸
+            diagramCanvas.setMinSize(scaledW, scaledH);
+            diagramCanvas.setPrefSize(scaledW, scaledH);
+            diagramCanvas.setMaxSize(scaledW, scaledH);
+
+            // 3. 强制布局更新
+            diagramCanvas.applyCss();
+            diagramCanvas.layout();
+
+            // 4. 快照(canvas 以导出分辨率渲染,内容填满整张图)
             SnapshotParameters params = new SnapshotParameters();
             params.setFill(Color.web(currentTheme.background()));
             WritableImage image = diagramCanvas.snapshot(params, null);
@@ -198,6 +296,28 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
             log.error("导出 PNG 失败", e);
             statusLabel.setText(I18nUtil.getString("uml.export.failed",
                     e.getMessage() == null ? "" : e.getMessage()));
+        } finally {
+            // 恢复 Group 缩放和居中
+            if (group != null) {
+                group.getTransforms().setAll(new Scale(origZoom, origZoom, 0, 0));
+            }
+
+            // 恢复 canvas 尺寸(与 ZoomController.applyZoom 逻辑一致)
+            double restoreW = Math.max(contentW * origZoom, vpW > 0 ? vpW : contentW * origZoom);
+            double restoreH = Math.max(contentH * origZoom, vpH > 0 ? vpH : contentH * origZoom);
+            diagramCanvas.setMinSize(restoreW, restoreH);
+            diagramCanvas.setPrefSize(restoreW, restoreH);
+            diagramCanvas.setMaxSize(restoreW, restoreH);
+
+            // Group 居中
+            if (group != null) {
+                group.setLayoutX((restoreW - contentW * origZoom) / 2.0);
+                group.setLayoutY((restoreH - contentH * origZoom) / 2.0);
+            }
+
+            // 恢复滚动位置
+            scroll.setHvalue(origH);
+            scroll.setVvalue(origV);
         }
     }
 
@@ -220,14 +340,6 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
             log.error("导出 .puml 失败", e);
             statusLabel.setText(I18nUtil.getString("uml.export.failed",
                     e.getMessage() == null ? "" : e.getMessage()));
-        }
-    }
-
-    private static void runOnFx(Runnable action) {
-        if (Platform.isFxApplicationThread()) {
-            action.run();
-        } else {
-            Platform.runLater(action);
         }
     }
 }

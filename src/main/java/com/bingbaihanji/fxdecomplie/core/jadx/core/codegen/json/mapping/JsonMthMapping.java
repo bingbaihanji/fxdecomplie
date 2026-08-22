@@ -1,9 +1,13 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.mapping;
 
 public class JsonMthMapping {
+
     private String signature;
+
     private String name;
+
     private String alias;
+
     private String offset;
 
     public String getSignature() {

@@ -10,8 +10,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** 基本类型(byte、char、double、float、int、long、short、boolean 或 void)的类型签名 */
+/** 基本类型(byte,char,double,float,int,long,short,boolean 或 void)的类型签名 */
 public class BaseType extends TypeSignature {
+
     /** 用于表示基本类型的类型签名字符 */
     private final char typeSignatureChar;
 
@@ -46,8 +47,8 @@ public class BaseType extends TypeSignature {
      * 以字符串形式获取类型名称
      *
      * @param typeChar
-     *            类型字符，例如 'I'
-     * @return 类型名称，例如 "int"，如果没有匹配则返回 null
+     *            类型字符,例如 'I'
+     * @return 类型名称,例如 "int",如果没有匹配则返回 null
      */
     static String getTypeStr(final char typeChar) {
         switch (typeChar) {
@@ -78,8 +79,8 @@ public class BaseType extends TypeSignature {
      * 以字符串形式获取类型名称
      *
      * @param typeStr
-     *            类型字符，例如 "int"
-     * @return 类型字符，例如 'I'，如果没有匹配则返回 '\0'
+     *            类型字符,例如 "int"
+     * @return 类型字符,例如 'I',如果没有匹配则返回 '\0'
      */
     public static char getTypeChar(final String typeStr) {
         switch (typeStr) {
@@ -110,8 +111,8 @@ public class BaseType extends TypeSignature {
      * 根据类型字符获取对应的类型
      *
      * @param typeChar
-     *            类型字符，例如 'I'
-     * @return 类型类，例如 int.class，如果没有匹配则返回 null
+     *            类型字符,例如 'I'
+     * @return 类型类,例如 int.class,如果没有匹配则返回 null
      */
     static Class<?> getType(final char typeChar) {
         switch (typeChar) {
@@ -182,9 +183,9 @@ public class BaseType extends TypeSignature {
     }
 
     /**
-     * 获取用于表示类型的类型签名字符，例如 'I' 表示 int
+     * 获取用于表示类型的类型签名字符,例如 'I' 表示 int
      *
-     * @return 类型签名字符，作为一个单字符 String
+     * @return 类型签名字符,作为一个单字符 String
      */
     public char getTypeSignatureChar() {
         return typeSignatureChar;
@@ -193,7 +194,7 @@ public class BaseType extends TypeSignature {
     /**
      * 以字符串形式获取类型名称
      *
-     * @return 类型名称，例如 "int"、"float" 或 "void"
+     * @return 类型名称,例如 "int","float" 或 "void"
      */
     public String getTypeStr() {
         return getTypeStr(typeSignatureChar);
@@ -204,7 +205,7 @@ public class BaseType extends TypeSignature {
     /**
      * 获取类型
      *
-     * @return 基本类型的类，例如 int.class、float.class 或 void.class
+     * @return 基本类型的类,例如 int.class,float.class 或 void.class
      */
     public Class<?> getType() {
         return getType(typeSignatureChar);
@@ -237,7 +238,8 @@ public class BaseType extends TypeSignature {
             throw new IllegalArgumentException("Primitive class " + getTypeStr() + " cannot be cast to "
                     + superclassOrInterfaceType.getName());
         }
-        @SuppressWarnings("unchecked") final Class<T> classT = (Class<T>) type;
+        @SuppressWarnings("unchecked")
+        final Class<T> classT = (Class<T>) type;
         return classT;
     }
 
@@ -267,7 +269,7 @@ public class BaseType extends TypeSignature {
      */
     @Override
     public void findReferencedClassNames(final Set<String> refdClassNames) {
-        // 不添加 byte.class、int.class 等
+        // 不添加 byte.class,int.class 等
     }
 
     /* (non-Javadoc)
@@ -276,10 +278,10 @@ public class BaseType extends TypeSignature {
     @Override
     public void setScanResult(final ScanResult scanResult) {
         // 不为 BaseType 对象设置 ScanResult(#419)
-        // 不需要 ScanResult，因为此类不通过 ScanResult 进行类加载
-        // 此外，每个基本类型的 BaseType 特定实例被赋值给此类中的静态字段，
-        // 这些字段在此类的所有使用中共享，因此不应包含任何特定于某个 ScanResult 的值
-        // 从不同的扫描过程设置 ScanResult 将导致 scanResult 字段仅反映最近一次扫描的结果，
+        // 不需要 ScanResult,因为此类不通过 ScanResult 进行类加载
+        // 此外,每个基本类型的 BaseType 特定实例被赋值给此类中的静态字段,
+        // 这些字段在此类的所有使用中共享,因此不应包含任何特定于某个 ScanResult 的值
+        // 从不同的扫描过程设置 ScanResult 将导致 scanResult 字段仅反映最近一次扫描的结果,
         // 并且对该扫描的引用将阻止垃圾回收
     }
 

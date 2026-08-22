@@ -10,17 +10,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 变量信息节点，表示反编译代码中的一个局部变量引用
- * 实现 {@link ICodeNodeRef} 接口，用于在代码元数据中标识变量的定义与引用位置
+ * 变量信息节点,表示反编译代码中的一个局部变量引用
+ * 实现 {@link ICodeNodeRef} 接口,用于在代码元数据中标识变量的定义与引用位置
  */
 public class VarNode implements ICodeNodeRef {
 
     private final MethodNode mth;
+
     private final int reg;
+
     private final int ssa;
+
     private final ArgType type;
+
     private final VarRef varRef;
+
     private @Nullable String name;
+
     private int defPos;
 
     /**
@@ -82,7 +88,7 @@ public class VarNode implements ICodeNodeRef {
 
     /**
      * 根据方法节点与 SSA 变量获取对应的变量节点
-     * 若变量为 this 引用则返回 null 否则优先返回代码变量中缓存的变量节点，
+     * 若变量为 this 引用则返回 null 否则优先返回代码变量中缓存的变量节点,
      * 不存在时创建新节点并写入缓存
      *
      * @param mth    方法节点
@@ -159,7 +165,7 @@ public class VarNode implements ICodeNodeRef {
     /**
      * 获取变量名称
      *
-     * @return 变量名称，可能为 null
+     * @return 变量名称,可能为 null
      */
     @Nullable
     public String getName() {

@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 public class MethodVisitor extends AbstractVisitor {
 
     private final String name;
+
     private final Consumer<MethodNode> visitor;
 
     public MethodVisitor(String name, Consumer<MethodNode> visitor) {

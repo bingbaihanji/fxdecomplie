@@ -9,15 +9,23 @@ import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.util.LogNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /** 类类型签名(在 ClassParser 文档中称为"ClassSignature") */
 public final class ClassType extends HierarchicalType {
 
     /** 类类型参数 */
     final List<TypeParam> TypeParams;
+
     /** 类信息 */
     private final ClassInfo classInfo;
+
     /** 超类类型 */
     private final ClassRef superclassSignature;
 
@@ -25,8 +33,8 @@ public final class ClassType extends HierarchicalType {
     private final List<ClassRef> superinterfaceSignatures;
 
     /**
-     * throws 签名(通常为 null)这些仅出现在 Scala 类中，当类标记了 {@code @throws} 时出现，
-     * 它们违反了 ClassParser 规范(#495)，但我们仍然解析它们
+     * throws 签名(通常为 null)这些仅出现在 Scala 类中,当类标记了 {@code @throws} 时出现,
+     * 它们违反了 ClassParser 规范(#495),但我们仍然解析它们
      */
     private final List<TypeRef> throwsSignatures;
 
@@ -44,7 +52,7 @@ public final class ClassType extends HierarchicalType {
      * @param superinterfaceSignatures
      *            超接口签名
      * @param throwsSignatures
-     *            throws 签名(这些实际上是无效的，但可能由 Scala 添加：#495)通常为 null
+     *            throws 签名(这些实际上是无效的,但可能由 Scala 添加:#495)通常为 null
      */
     public ClassType(final ClassInfo classInfo, final List<TypeParam> TypeParams,
                      final ClassRef superclassSignature,
@@ -114,7 +122,7 @@ public final class ClassType extends HierarchicalType {
     public static ClassType parse(final String typeDescriptor, final ClassInfo classInfo) throws ParseException {
         final TypeParser TypeParser = new TypeParser(typeDescriptor);
         // 定义类名用于使用定义类的类型描述符解析类型变量
-        // 但这里我们正在解析定义类的类型描述符，所以它不可能包含指向自身的变量 => 直接使用 null 作为定义类名
+        // 但这里我们正在解析定义类的类型描述符,所以它不可能包含指向自身的变量 => 直接使用 null 作为定义类名
         final String definingClassNameNull = null;
         final List<TypeParam> TypeParams = TypeParam.parseList(TypeParser, definingClassNameNull);
         final ClassRef superclassSignature = ClassRef.parse(TypeParser,
@@ -141,12 +149,12 @@ public final class ClassType extends HierarchicalType {
         if (TypeParser.peek() == '^') {
             // 此类型签名的末尾存在非法的 "throws" 后缀
             // Scala 在将某个类标记为 "@throws" 时会添加这些后缀(#495)
-            // 具有此类类型签名的类会被 javac 和 javap 拒绝，如果在子类上调用
+            // 具有此类类型签名的类会被 javac 和 javap 拒绝,如果在子类上调用
             // getClass().getGenericSuperclass() 会抛出 GenericSignatureFormatError
-            // 但由于类型擦除，JVM 会忽略类型签名，而 Scala 似乎依赖这一点 --
-            // 或者至少 Scala 团队从未注意到这个问题，因为这些类在纯 Scala 环境中可以正常运行
-            // 由于此问题在 Scala 领域可能广泛存在，因此接受这些无效的类型签名并实际解析出
-            // 所有 "throws" 后缀，比抛出异常并拒绝解析类型签名更好
+            // 但由于类型擦除,JVM 会忽略类型签名,而 Scala 似乎依赖这一点 --
+            // 或者至少 Scala 团队从未注意到这个问题,因为这些类在纯 Scala 环境中可以正常运行
+            // 由于此问题在 Scala 领域可能广泛存在,因此接受这些无效的类型签名并实际解析出
+            // 所有 "throws" 后缀,比抛出异常并拒绝解析类型签名更好
             throwsSignatures = new ArrayList<>();
             while (TypeParser.peek() == '^') {
                 TypeParser.expect('^');
@@ -184,9 +192,9 @@ public final class ClassType extends HierarchicalType {
     }
 
     /**
-     * 获取超类的类型签名(对于 {@link Object} 可能为 null，因为它没有超类)
+     * 获取超类的类型签名(对于 {@link Object} 可能为 null,因为它没有超类)
      *
-     * @return 超类的类型签名，如果无超类则返回 null(即对于 {@link Object})
+     * @return 超类的类型签名,如果无超类则返回 null(即对于 {@link Object})
      */
     public ClassRef getSuperclassSignature() {
         return superclassSignature;
@@ -202,7 +210,7 @@ public final class ClassType extends HierarchicalType {
     }
 
     /**
-     * 获取 throws 签名根据 ClassParser 规范，这些是无效的(因此此方法目前是非公开的)，
+     * 获取 throws 签名根据 ClassParser 规范,这些是无效的(因此此方法目前是非公开的),
      * 但可能由 Scala 编译器添加(参见 bug #495)
      *
      * @return throws 签名
@@ -389,7 +397,7 @@ public final class ClassType extends HierarchicalType {
             final StringBuilder sb = new StringBuilder();
             superclassSignature.toString(useSimpleNames, sb);
             final String superSig = sb.toString();
-            // 即使超类是 Object，superSig 也可能带有类类型注解
+            // 即使超类是 Object,superSig 也可能带有类类型注解
             if (!"java.lang.Object".equals(superSig)
                     && !("Object".equals(superSig) && "java.lang.Object".equals(superclassSignature.className))) {
                 buf.append(" extends ");

@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 /**
  * 括号匹配高亮协调器监听 CodeArea 光标位置,查找匹配括号并应用高亮样式
  *
- * <p>实现策略：
+ * <p>实现策略:
  * <ol>
  *   <li>通过 {@code caretPositionProperty} 监听光标变化,150ms 防抖</li>
  *   <li>光标位于括号字符上时,向前/后扫描查找匹配括号</li>
@@ -39,17 +39,20 @@ public final class BracketHighlighter {
 
     /** 防抖延迟(毫秒) */
     private static final int DEBOUNCE_MS = 150;
+
     /** 超大文件跳过括号匹配的字节阈值 */
     private static final int SKIP_LENGTH_THRESHOLD = 500_000;
 
     /** 所有括号字符集合 */
     private static final Set<Character> BRACKETS = Set.of('(', ')', '{', '}', '[', ']', '<', '>');
+
     /** 括号对映射(开 → 闭) */
     private static final Map<Character, Character> PAIRS = Map.of(
             '(', ')', '{', '}', '[', ']', '<', '>');
 
     /** 匹配成功括号高亮色(金色) */
     private static final Color COLOR_MATCHED = Color.rgb(255, 215, 0);
+
     /** 不匹配括号高亮色(红色) */
     private static final Color COLOR_UNMATCHED = Color.rgb(255, 80, 80);
 
@@ -60,16 +63,22 @@ public final class BracketHighlighter {
                     + "|(?<ID>\\b[a-zA-Z_][a-zA-Z0-9_]*\\b)");
 
     private final CodeArea codeArea;
+
     private final RegexHighlighter regexHighlighter;
+
     private final PauseTransition debounce;
 
     /** 当前匹配括号的文档偏移量(-1 表示无匹配) */
     private volatile int matchedOpenPos = -1;
+
     private volatile int matchedClosePos = -1;
+
     private volatile boolean isMatched;
-    /** 已销毁标志：dispose 后不再恢复旧装饰器 */
+
+    /** 已销毁标志:dispose 后不再恢复旧装饰器 */
     private volatile boolean disposed;
-    /** 光标位置监听器引用，用于 dispose 时移除，防止内存泄漏 */
+
+    /** 光标位置监听器引用,用于 dispose 时移除,防止内存泄漏 */
     private javafx.beans.value.ChangeListener<TextPos> caretListener;
 
     /**
@@ -377,7 +386,7 @@ public final class BracketHighlighter {
         Platform.runLater(() -> codeArea.setSyntaxDecorator(decorator));
     }
 
-    // ---- 内部 SyntaxDecorator：在 RegexHighlighter 样式上叠加括号高亮 ----
+    // ---- 内部 SyntaxDecorator:在 RegexHighlighter 样式上叠加括号高亮 ----
 
     /**
      * 组合括号高亮的 {@link SyntaxDecorator} 实现
@@ -390,8 +399,11 @@ public final class BracketHighlighter {
     private static final class BracketSyntaxDecorator implements SyntaxDecorator {
 
         private final RegexHighlighter highlighter;
+
         private final int bracketPos1;
+
         private final int bracketPos2;
+
         private final StyleAttributeMap bracketStyle;
 
         BracketSyntaxDecorator(RegexHighlighter highlighter, int pos1, int pos2,

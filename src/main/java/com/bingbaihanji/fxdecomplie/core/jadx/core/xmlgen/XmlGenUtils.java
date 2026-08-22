@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class XmlGenUtils {
+
     private XmlGenUtils() {
     }
 

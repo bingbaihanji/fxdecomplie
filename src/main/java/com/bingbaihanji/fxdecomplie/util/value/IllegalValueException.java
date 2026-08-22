@@ -6,6 +6,7 @@ package com.bingbaihanji.fxdecomplie.util.value;
  * @author Matt Coley
  */
 public class IllegalValueException extends Exception {
+
     /**
      * @param message
      * 		无法创建该值的原因

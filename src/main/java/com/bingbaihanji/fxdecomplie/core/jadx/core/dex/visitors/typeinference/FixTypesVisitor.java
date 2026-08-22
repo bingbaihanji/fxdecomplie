@@ -4,10 +4,24 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.clsp.ClspGraph;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.PhiListAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithOp;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IndexInsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.PhiInsn;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.PrimitiveType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.TernaryInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IMethodDetails;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.InitCodeVariables;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
@@ -23,7 +37,14 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 @JadxVisitor(
@@ -37,11 +58,13 @@ import java.util.function.Function;
         }
 )
 public final class FixTypesVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(FixTypesVisitor.class);
 
     private final TypeInferenceVisitor typeInference = new TypeInferenceVisitor();
 
     private TypeUpdate typeUpdate;
+
     private List<Function<MethodNode, Boolean>> resolvers;
 
     /**

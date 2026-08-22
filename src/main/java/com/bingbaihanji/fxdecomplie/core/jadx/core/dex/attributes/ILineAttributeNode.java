@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes;
 
 public interface ILineAttributeNode {
+
     int getSourceLine();
 
     void setSourceLine(int sourceLine);

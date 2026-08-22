@@ -1,8 +1,8 @@
 package com.bingbaihanji.fxdecomplie.ui.uml;
 
 /**
- * UML 类图亮/暗色板。
- * 颜色取自参考项目 class-diagram-gen 的 PlantUML skinparam。
+ * UML 类图亮/暗色板.
+ * 颜色取自参考项目 class-diagram-gen 的 PlantUML skinparam.
  */
 public record UmlTheme(
         boolean dark,
@@ -27,19 +27,19 @@ public record UmlTheme(
 
     public static final UmlTheme LIGHT = new UmlTheme(
             false,
-            "#FFFFFF",
-            "#FFFFFF",
+            "#E0E0E0",
+            "#FFFDE7",
             "#A0A7B3",
             "#1F2430",
             "#8C9BAC",
             "#2E3440",
-            "#EDF2FA",
-            "#EAF0FF",
-            "#E9F4EC",
-            "#FDF3E0",
-            "#F3E9FA",
-            "#E7F7F4",
-            "#EDEDED",
+            "#B3E5FC",
+            "#81D4FA",
+            "#A5D6A7",
+            "#FFE0B2",
+            "#CE93D8",
+            "#80CBC4",
+            "#D0D0D0",
             "#000082",
             "#008200",
             "#595959",

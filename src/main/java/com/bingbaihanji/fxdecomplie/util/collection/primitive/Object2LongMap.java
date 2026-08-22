@@ -11,6 +11,7 @@ package com.bingbaihanji.fxdecomplie.util.collection.primitive;
 public class Object2LongMap<K> extends AbstractObjectKeyMap<K> {
 
     // ---------- 字段 ----------
+
     /** 存储值(与键数组一一对应) */
     private long[] values;
 
@@ -151,7 +152,7 @@ public class Object2LongMap<K> extends AbstractObjectKeyMap<K> {
 
     /**
      * 清空映射中的所有键值对(重置内部状态) 
-     * 注意：values 数组未被显式清零,但 size 已重置,旧值不会被访问 
+     * 注意:values 数组未被显式清零,但 size 已重置,旧值不会被访问 
      */
     public void clear() {
         clearKeys();
@@ -237,6 +238,7 @@ public class Object2LongMap<K> extends AbstractObjectKeyMap<K> {
      */
     @FunctionalInterface
     public interface ObjectLongConsumer<K> {
+
         /**
          * 处理一对键值 
          *
@@ -253,6 +255,7 @@ public class Object2LongMap<K> extends AbstractObjectKeyMap<K> {
      */
     @FunctionalInterface
     public interface ObjectLongFunction<K> {
+
         /**
          * 根据键计算新值 
          *

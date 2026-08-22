@@ -120,18 +120,20 @@ public class ClassUtils {
                 matches.add(type);
             }
         } catch (Exception e) {
-            log.warn("无法检查类 '{}'：{} - {}", qualifiedName, e.getClass().getName(), e.getMessage());
+            log.warn("无法检查类 '{}':{} - {}", qualifiedName, e.getClass().getName(), e.getMessage());
         }
     }
 
     /** 类匹配测试接口 */
     @FunctionalInterface
     public interface Test {
+
         boolean matches(Class<?> type);
     }
 
-    /** 查询实现类：匹配继承自 parentType 且非自身 非抽象的类 */
+    /** 查询实现类:匹配继承自 parentType 且非自身 非抽象的类 */
     public static class IsA implements Test {
+
         private final Class<?> parent;
 
         public IsA(Class<?> parentType) {
@@ -153,6 +155,7 @@ public class ClassUtils {
 
     /** 查询带有指定注解的类 */
     public static class AnnotatedWith implements Test {
+
         private final Class<? extends Annotation> annotation;
 
         public AnnotatedWith(Class<? extends Annotation> annotation) {

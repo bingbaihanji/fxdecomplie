@@ -30,7 +30,7 @@ public interface DataAnalyzer {
      * @param data    完整的原始字节数组
      * @param offset  当前分析片段在 {@code data} 中的起始偏移
      * @param length  片段长度
-     * @return 分析结果列表,每个结果包含标签、值和显示颜色
+     * @return 分析结果列表,每个结果包含标签,值和显示颜色
      */
     List<Result> analyze(long address, byte[] data, int offset, int length);
 

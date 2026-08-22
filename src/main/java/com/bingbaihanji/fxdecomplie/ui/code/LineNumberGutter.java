@@ -24,6 +24,7 @@ public final class LineNumberGutter {
 
     /** 暗色主题下的行号颜色 */
     private static final Color LINE_NUMBER_COLOR = Color.web("#6f7a82");
+
     /** 行号 Label 的内联样式,用于覆盖控件默认白色文本 */
     private static final String LINE_NUMBER_STYLE = String.join("",
             "-fx-background-color: #252526;",
@@ -52,8 +53,10 @@ public final class LineNumberGutter {
     }
 
     private static final class DarkLineNumberDecorator implements SideDecorator {
+
         /** 绑定目标 CodeArea,用于让行号字体跟随编辑器字体 */
         private final CodeArea area;
+
         /** 行号格式化器,保持和 JavaFX 内置行号类似的分组显示 */
         private final DecimalFormat format = new DecimalFormat("#,##0");
 

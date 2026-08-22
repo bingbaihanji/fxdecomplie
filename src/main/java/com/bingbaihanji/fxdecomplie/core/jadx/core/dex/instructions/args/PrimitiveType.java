@@ -14,7 +14,9 @@ public enum PrimitiveType {
     VOID("V", "void", ArgType.object("java.lang.Void"));
 
     private final String shortName;
+
     private final String longName;
+
     private final ArgType boxType;
 
     PrimitiveType(String shortName, String longName, ArgType boxType) {

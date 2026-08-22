@@ -1,25 +1,38 @@
 package com.bingbaihanji.fxdecomplie.util.lookup;
 
 import com.bingbaihanji.fxdecomplie.model.Nullness;
-import com.bingbaihanji.fxdecomplie.util.value.*;
-
+import com.bingbaihanji.fxdecomplie.util.value.ArrayValue;
+import com.bingbaihanji.fxdecomplie.util.value.DoubleValue;
+import com.bingbaihanji.fxdecomplie.util.value.FloatValue;
+import com.bingbaihanji.fxdecomplie.util.value.IllegalValueException;
+import com.bingbaihanji.fxdecomplie.util.value.IntValue;
+import com.bingbaihanji.fxdecomplie.util.value.LongValue;
+import com.bingbaihanji.fxdecomplie.util.value.ObjectValue;
+import com.bingbaihanji.fxdecomplie.util.value.ReValue;
+import com.bingbaihanji.fxdecomplie.util.value.StringValue;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * {@link InvokeStaticLookup} 的基础实现，用于处理常见的静态方法
+ * {@link InvokeStaticLookup} 的基础实现,用于处理常见的静态方法
  * <br>
  * 大部分为自动生成
  *
  * @author Matt Coley
  */
 public class BasicInvokeStaticLookup extends BasicLookupUtils implements InvokeStaticLookup {
+
     private static final Map<String, Func> METHODS = new HashMap<>();
+
     private static final Logger logger = LoggerFactory.getLogger(BasicInvokeStaticLookup.class);
 
     static {
@@ -587,7 +600,7 @@ public class BasicInvokeStaticLookup extends BasicLookupUtils implements InvokeS
             try {
                 value = func.apply(values);
             } catch (Throwable t) {
-                // 某些方法本身可能抛出异常，例如 'Math.floorDiv(0, 0)'，因此这些
+                // 某些方法本身可能抛出异常,例如 'Math.floorDiv(0, 0)',因此这些
                 // 错误日志仅在调试时启用
                 logger.debug("Computation threw an exception for: " + key, t);
             }

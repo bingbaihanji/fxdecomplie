@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class BoxedBooleanValueImpl extends ObjectValueBoxImpl<Boolean> {
+
     private static final Type TYPE = Type.getType(Boolean.class);
 
     /**

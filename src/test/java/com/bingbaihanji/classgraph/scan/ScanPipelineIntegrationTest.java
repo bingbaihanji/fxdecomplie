@@ -20,7 +20,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Scan pipeline 集成测试 — 端到端目录扫描 → 类信息完整性验证。
+ * Scan pipeline 集成测试 — 端到端目录扫描 → 类信息完整性验证.
  */
 @DisplayName("Scan Pipeline Integration")
 class ScanPipelineIntegrationTest {
@@ -262,7 +262,7 @@ class ScanPipelineIntegrationTest {
             ClassMetadata myList = result.getClassOrThrow("com/example/MyList");
             assertFalse(myList.isExternalClass());
 
-            // 外部类（java/util/ArrayList）也应该在结果中
+            // 外部类(java/util/ArrayList)也应该在结果中
             assertTrue(result.containsClass("java/util/ArrayList"),
                 "java/util/ArrayList should be tracked as external class");
             ClassMetadata arrayList = result.getClassOrThrow("java/util/ArrayList");

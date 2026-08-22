@@ -16,7 +16,7 @@ public class JadxRenameConditions {
 
     /**
      * 该方法提供 jadx 使用的默认反混淆条件的可变列表
-     * 若需构建 {@link IRenameCondition}，请使用 {@link CombineDeobfConditions#combine(List)} 方法
+     * 若需构建 {@link IRenameCondition},请使用 {@link CombineDeobfConditions#combine(List)} 方法
      *
      * @return 默认反混淆条件列表
      */

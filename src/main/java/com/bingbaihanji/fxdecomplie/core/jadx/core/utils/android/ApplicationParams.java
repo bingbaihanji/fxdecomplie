@@ -5,13 +5,21 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.JavaClass;
 import org.jetbrains.annotations.Nullable;
 
 public class ApplicationParams {
+
     private @Nullable String applicationLabel;
+
     private @Nullable Integer minSdkVersion;
+
     private @Nullable Integer targetSdkVersion;
+
     private @Nullable Integer compileSdkVersion;
+
     private @Nullable Integer versionCode;
+
     private @Nullable String versionName;
+
     private @Nullable String mainActivity;
+
     private @Nullable String application;
 
     public @Nullable String getApplication() {

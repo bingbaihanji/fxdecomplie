@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class BetterName {
+
     private static final Logger LOG = LoggerFactory.getLogger(BetterName.class);
 
     private static final boolean DEBUG = false;
@@ -130,7 +131,9 @@ public class BetterName {
     }
 
     private static class AnalyzeResult {
+
         private int length;
+
         private int digitCount;
     }
 }

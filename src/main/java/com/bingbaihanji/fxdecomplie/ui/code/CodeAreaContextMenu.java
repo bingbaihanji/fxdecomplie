@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 代码区右键上下文菜单,提供跳转声明、查看继承图/UML 类图/方法图/控制流图、注释与重命名等菜单动作
+ * 代码区右键上下文菜单,提供跳转声明,查看继承图/UML 类图/方法图/控制流图,注释与重命名等菜单动作
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -22,16 +22,25 @@ public class CodeAreaContextMenu extends ContextMenu {
     private static final Logger log = LoggerFactory.getLogger(CodeAreaContextMenu.class);
 
     private final CodeArea codeArea;
+
     private final CodeViewContext context;
+
     private final CodeActionHandler actionHandler;
 
     private final MenuItem gotoDeclarationItem;
+
     private final MenuItem inheritanceGraphItem;
+
     private final MenuItem umlDiagramItem;
+
     private final MenuItem methodGraphItem;
+
     private final MenuItem controlFlowGraphItem;
+
     private final MenuItem addCommentItem;
+
     private final MenuItem deleteCommentItem;
+
     /** 右键点击位置,用于确定操作目标 */
     private TextPos actionPosition;
 

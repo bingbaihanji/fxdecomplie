@@ -16,8 +16,11 @@ import java.util.TreeMap;
 public class AnnotatedCodeWriter extends SimpleCodeWriter implements ICodeWriter {
 
     private int line = 1;
+
     private int offset;
+
     private Map<Integer, ICodeAnnotation> annotations = Collections.emptyMap();
+
     private Map<Integer, Integer> lineMap = Collections.emptyMap();
 
     public AnnotatedCodeWriter(JadxArgs args) {

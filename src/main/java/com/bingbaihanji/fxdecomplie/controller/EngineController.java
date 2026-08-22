@@ -23,11 +23,11 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Function;
 
 /**
- * 引擎切换与图形展示控制器：反编译引擎切换 当前标签页刷新 
+ * 引擎切换与图形展示控制器:反编译引擎切换 当前标签页刷新 
  * 继承图 / 控制流图 / 方法调用图展示 多引擎对比
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
+ * 从 MainWindow 拆分而来,通过 owner 访问共享状态与协作者 (Mediator 模式)
+ * 所有协作者均在调用时通过 owner 访问,以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */
@@ -258,7 +258,7 @@ public final class EngineController {
     }
 
     /**
-     * 图形渲染统一骨架：创建并显示对话框 → 后台取类字节 → 构建 DOT → FX 线程显示 → 失败处理
+     * 图形渲染统一骨架:创建并显示对话框 → 后台取类字节 → 构建 DOT → FX 线程显示 → 失败处理
      * dotBuilder 返回 null 表示无内容,走失败提示
      */
     private void runGraph(CodeViewContext context, GraphSpec spec) {
@@ -339,7 +339,7 @@ public final class EngineController {
         return currentTab.getOpenFile().engine();
     }
 
-    /** 一次图形渲染请求：对话框标题 后台任务名 失败提示路径 以及从类字节构建 DOT 的闭包 */
+    /** 一次图形渲染请求:对话框标题 后台任务名 失败提示路径 以及从类字节构建 DOT 的闭包 */
     private record GraphSpec(String title, String taskName, String failurePath,
                              Function<byte[], String> dotBuilder) {
     }

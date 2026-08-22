@@ -15,7 +15,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.SwitchInsn;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrinkVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
@@ -272,7 +277,9 @@ public class FixSwitchOverEnum extends AbstractVisitor {
     }
 
     private static class EnumMapInfo {
+
         private final InsnArg arg;
+
         private final FieldNode mapField;
 
         public EnumMapInfo(InsnArg arg, FieldNode mapField) {

@@ -8,13 +8,13 @@ import java.nio.file.Path;
 import java.util.Set;
 
 /**
- * 导出冲突解决器 — 处理文件/条目重名时的冲突策略。
+ * 导出冲突解决器 — 处理文件/条目重名时的冲突策略.
  *
- * <p>从 {@link ExportService} 中提取，支持三种策略：
+ * <p>从 {@link ExportService} 中提取,支持三种策略:
  * <ul>
  *   <li>{@code OVERWRITE} — 直接覆盖</li>
  *   <li>{@code SKIP} — 跳过已存在的文件</li>
- *   <li>{@code RENAME} — 自动重命名（追加 -1, -2 ... -9999）</li>
+ *   <li>{@code RENAME} — 自动重命名(追加 -1, -2 ... -9999)</li>
  * </ul>
  *
  * @author bingbaihanji
@@ -30,7 +30,7 @@ final class ExportConflictResolver {
 
     /** 目录输出冲突处理 */
     static Path applyDirConflictPolicy(Path target,
-                                        ExportConfig.ConflictPolicy policy)
+                                       ExportConfig.ConflictPolicy policy)
             throws IOException {
         if (!Files.exists(target) || policy == ExportConfig.ConflictPolicy.OVERWRITE) {
             return target;
@@ -43,8 +43,8 @@ final class ExportConflictResolver {
 
     /** ZIP 条目冲突处理 */
     static String applyZipConflictPolicy(String entryName,
-                                          ExportConfig.ConflictPolicy policy,
-                                          Set<String> writtenEntries) {
+                                         ExportConfig.ConflictPolicy policy,
+                                         Set<String> writtenEntries) {
         if (!writtenEntries.contains(entryName)) {
             return entryName;
         }
@@ -69,7 +69,7 @@ final class ExportConflictResolver {
     }
 
     private static String nextAvailableEntry(String entryName,
-                                              Set<String> writtenEntries) {
+                                             Set<String> writtenEntries) {
         int slash = entryName.lastIndexOf('/');
         String dir = slash >= 0 ? entryName.substring(0, slash + 1) : "";
         String fileName = slash >= 0 ? entryName.substring(slash + 1) : entryName;

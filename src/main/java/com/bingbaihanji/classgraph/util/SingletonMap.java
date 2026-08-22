@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.util;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -10,8 +9,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * 一个从键到单例实例的映射允许你按需创建对象单例实例，并根据键值将其添加到 {@link ConcurrentMap} 中
- * 其功能与 {@code concurrentMap.computeIfAbsent(key, key -> newInstance(key))} 相同，但同时也兼容 JDK 7
+ * 一个从键到单例实例的映射允许你按需创建对象单例实例,并根据键值将其添加到 {@link ConcurrentMap} 中
+ * 其功能与 {@code concurrentMap.computeIfAbsent(key, key -> newInstance(key))} 相同,但同时也兼容 JDK 7
  *
  * @param <K>
  *            键类型
@@ -21,6 +20,7 @@ import java.util.concurrent.CountDownLatch;
  *            元素类型
  */
 public abstract class SingletonMap<K, V, E extends Exception> {
+
     /** 内部映射 */
     private final ConcurrentMap<K, SingletonHolder<V>> map = new ConcurrentHashMap<>();
 
@@ -33,7 +33,7 @@ public abstract class SingletonMap<K, V, E extends Exception> {
      *            单例的键
      * @param log
      *            日志
-     * @return 单例实例此方法必须返回非 null 值，或者抛出类型为 E 的异常
+     * @return 单例实例此方法必须返回非 null 值,或者抛出类型为 E 的异常
      * @throws E
      *             如果在实例化新对象实例时出错
      * @throws InterruptedException
@@ -42,23 +42,23 @@ public abstract class SingletonMap<K, V, E extends Exception> {
     public abstract V newInstance(K key, LogNode log) throws E, InterruptedException;
 
     /**
-     * 检查给定的键是否在映射中，如果在，则返回该键对应的 {@link #newInstance(Object, LogNode)} 的值，
-     * 如果另一个线程正在创建新实例，则阻塞等待 {@link #newInstance(Object, LogNode)} 的结果
+     * 检查给定的键是否在映射中,如果在,则返回该键对应的 {@link #newInstance(Object, LogNode)} 的值,
+     * 如果另一个线程正在创建新实例,则阻塞等待 {@link #newInstance(Object, LogNode)} 的结果
      *
-     * 如果给定的键当前不在映射中，则在映射中为该键存储一个占位符，然后运行该键对应的
-     * {@link #newInstance(Object, LogNode)}，将结果存储到占位符中(这会解除其他等待该值的线程的阻塞)，
+     * 如果给定的键当前不在映射中,则在映射中为该键存储一个占位符,然后运行该键对应的
+     * {@link #newInstance(Object, LogNode)},将结果存储到占位符中(这会解除其他等待该值的线程的阻塞),
      * 然后返回新实例
      *
      * @param key
      *            单例的键
      * @param newInstanceFactory
-     *            如果非 null，则为创建新实例的工厂；如果为 null，则调用
+     *            如果非 null,则为创建新实例的工厂;如果为 null,则调用
      *            {@link #newInstance(Object, LogNode)}(这允许按实例覆盖新实例的创建方式)
      * @param log
      *            日志
-     * @return 非 null 的单例实例，前提是 {@link #newInstance(Object, LogNode)} 在此次调用或之前的调用中
-     *         返回了非 null 实例；否则，如果此次调用或之前的 {@link #newInstance(Object, LogNode)} 调用返回了
-     *         null，则抛出 {@link NullPointerException}
+     * @return 非 null 的单例实例,前提是 {@link #newInstance(Object, LogNode)} 在此次调用或之前的调用中
+     *         返回了非 null 实例;否则,如果此次调用或之前的 {@link #newInstance(Object, LogNode)} 调用返回了
+     *         null,则抛出 {@link NullPointerException}
      * @throws E
      *             如果 {@link #newInstance(Object, LogNode)} 抛出了异常
      * @throws InterruptedException
@@ -77,12 +77,12 @@ public abstract class SingletonMap<K, V, E extends Exception> {
             // 此键在映射中已有 SingletonHolder -- 获取其值
             instance = singletonHolder.get();
         } else {
-            // 此键在映射中没有 SingletonHolder，需要创建一个
-            // (需要处理竞态条件，因此使用 putIfAbsent 调用)
+            // 此键在映射中没有 SingletonHolder,需要创建一个
+            // (需要处理竞态条件,因此使用 putIfAbsent 调用)
             final SingletonHolder<V> newSingletonHolder = new SingletonHolder<>();
             final SingletonHolder<V> oldSingletonHolder = map.putIfAbsent(key, newSingletonHolder);
             if (oldSingletonHolder != null) {
-                // 由于竞态条件，此键在映射中已经存在一个单例 --
+                // 由于竞态条件,此键在映射中已经存在一个单例 --
                 // 返回已存在的单例
                 instance = oldSingletonHolder.get();
             } else {
@@ -98,9 +98,9 @@ public abstract class SingletonMap<K, V, E extends Exception> {
 
                 } catch (final Throwable t) {
                     // 用新实例初始化 newSingletonHolder
-                    // 即使 newInstance() 抛出异常或返回 null，也必须始终调用 .set()，
+                    // 即使 newInstance() 抛出异常或返回 null,也必须始终调用 .set(),
                     // 因为 .set() 会调用 initialized.countDown()
-                    // 否则，调用 .get() 的线程可能会永远等待下去
+                    // 否则,调用 .get() 的线程可能会永远等待下去
                     newSingletonHolder.set(instance);
                     throw new NewInstanceException(key, t);
                 }
@@ -117,20 +117,20 @@ public abstract class SingletonMap<K, V, E extends Exception> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 检查给定的键是否在映射中，如果在，则返回该键对应的 {@link #newInstance(Object, LogNode)} 的值，
-     * 如果另一个线程正在创建新实例，则阻塞等待 {@link #newInstance(Object, LogNode)} 的结果
+     * 检查给定的键是否在映射中,如果在,则返回该键对应的 {@link #newInstance(Object, LogNode)} 的值,
+     * 如果另一个线程正在创建新实例,则阻塞等待 {@link #newInstance(Object, LogNode)} 的结果
      *
-     * 如果给定的键当前不在映射中，则在映射中为该键存储一个占位符，然后运行该键对应的
-     * {@link #newInstance(Object, LogNode)}，将结果存储到占位符中(这会解除其他等待该值的线程的阻塞)，
+     * 如果给定的键当前不在映射中,则在映射中为该键存储一个占位符,然后运行该键对应的
+     * {@link #newInstance(Object, LogNode)},将结果存储到占位符中(这会解除其他等待该值的线程的阻塞),
      * 然后返回新实例
      *
      * @param key
      *            单例的键
      * @param log
      *            日志
-     * @return 非 null 的单例实例，前提是 {@link #newInstance(Object, LogNode)} 在此次调用或之前的调用中
-     *         返回了非 null 实例；否则，如果此次调用或之前的 {@link #newInstance(Object, LogNode)} 调用返回了
-     *         null，则抛出 {@link NullPointerException}
+     * @return 非 null 的单例实例,前提是 {@link #newInstance(Object, LogNode)} 在此次调用或之前的调用中
+     *         返回了非 null 实例;否则,如果此次调用或之前的 {@link #newInstance(Object, LogNode)} 调用返回了
+     *         null,则抛出 {@link NullPointerException}
      * @throws E
      *             如果 {@link #newInstance(Object, LogNode)} 抛出了异常
      * @throws InterruptedException
@@ -148,7 +148,7 @@ public abstract class SingletonMap<K, V, E extends Exception> {
     /**
      * 获取映射中所有有效的单例值
      *
-     * @return 映射中的单例值，跳过 newInstance() 抛出异常或返回 null 的值
+     * @return 映射中的单例值,跳过 newInstance() 抛出异常或返回 null 的值
      * @throws InterruptedException
      *             如果获取值时被中断
      */
@@ -192,7 +192,7 @@ public abstract class SingletonMap<K, V, E extends Exception> {
      *
      * @param key
      *            键
-     * @return 映射中原来的单例(如果存在)，否则为 null
+     * @return 映射中原来的单例(如果存在),否则为 null
      * @throws InterruptedException
      *             如果被中断
      */
@@ -215,6 +215,7 @@ public abstract class SingletonMap<K, V, E extends Exception> {
      */
     @FunctionalInterface
     public interface NewInstanceFactory<V, E extends Exception> {
+
         /**
          * 创建新实例
          *
@@ -225,6 +226,7 @@ public abstract class SingletonMap<K, V, E extends Exception> {
 
     /** 当 {@link SingletonMap#newInstance(Object, LogNode)} 返回 null 时抛出 */
     public static class NullSingletonException extends Exception {
+
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
 
@@ -243,6 +245,7 @@ public abstract class SingletonMap<K, V, E extends Exception> {
 
     /** 当 {@link SingletonMap#newInstance(Object, LogNode)} 抛出异常时抛出 */
     public static class NewInstanceException extends Exception {
+
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
 
@@ -262,22 +265,24 @@ public abstract class SingletonMap<K, V, E extends Exception> {
     }
 
     /**
-     * 包装器，允许使用 putIfAbsent() 将对象实例放入 ConcurrentHashMap 中，而无需先初始化该实例，
-     * 这样就不需要使用同步锁来包装 putIfAbsent 操作，并且如果键对应的对象已存在于映射中，
+     * 包装器,允许使用 putIfAbsent() 将对象实例放入 ConcurrentHashMap 中,而无需先初始化该实例,
+     * 这样就不需要使用同步锁来包装 putIfAbsent 操作,并且如果键对应的对象已存在于映射中,
      * 也不会浪费初始化工作
      *
      * @param <V>
      *            单例类型
      */
     private static class SingletonHolder<V> {
-        /** 单例是否已初始化(如果已初始化，计数将达到 0) */
+
+        /** 单例是否已初始化(如果已初始化,计数将达到 0) */
         private final CountDownLatch initialized = new CountDownLatch(1);
+
         /** 单例实例 */
         @SuppressWarnings("null")
         private volatile V singleton;
 
         /**
-         * 设置单例值，并将倒计时锁存器减少到 0
+         * 设置单例值,并将倒计时锁存器减少到 0
          *
          * @param singleton
          *            单例实例

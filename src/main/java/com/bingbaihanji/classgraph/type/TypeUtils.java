@@ -17,14 +17,14 @@ public final class TypeUtils {
     }
 
     /**
-     * 解析 Java 标识符，将 '/' 替换为 '.'将标识符追加到解析器的 token 缓冲区中
+     * 解析 Java 标识符,将 '/' 替换为 '.'将标识符追加到解析器的 token 缓冲区中
      *
      * @param TypeParser
      *            解析器
      * @param stopAtDollarSign
-     *            如果为 true，遇到第一个 '$' 时停止解析
+     *            如果为 true,遇到第一个 '$' 时停止解析
      * @param stopAtDot
-     *            如果为 true，遇到第一个 '.' 时停止解析
+     *            如果为 true,遇到第一个 '.' 时停止解析
      * @return 如果至少解析了一个标识符字符则返回 true
      */
     public static boolean getIdentifierToken(final TypeParser TypeParser, final boolean stopAtDollarSign,
@@ -49,7 +49,7 @@ public final class TypeUtils {
     }
 
     /**
-     * 必要时追加空格(如果不在缓冲区开头，且最后一个字符还不是空格)，然后追加修饰符关键字
+     * 必要时追加空格(如果不在缓冲区开头,且最后一个字符还不是空格),然后追加修饰符关键字
      *
      * @param buf
      *            缓冲区
@@ -64,14 +64,14 @@ public final class TypeUtils {
     }
 
     /**
-     * 将修饰符转换为字符串表示形式，例如 "public static final"
+     * 将修饰符转换为字符串表示形式,例如 "public static final"
      *
      * @param modifiers
      *            字段或方法的修饰符
      * @param modifierType
      *            这些修饰符适用的 ModifierType 类型
      * @param isDefault
-     *            对于方法，如果这是默认方法则为 true(否则忽略)
+     *            对于方法,如果这是默认方法则为 true(否则忽略)
      * @param buf
      *            用于写入结果的缓冲区
      */
@@ -123,8 +123,8 @@ public final class TypeUtils {
         if (modifierType != ModifierType.FIELD && (modifiers & Modifier.STRICT) != 0) {
             appendModifierKeyword(buf, "strictfp");
         }
-        // 已忽略：
-        // ACC_SUPER (0x0020)：当通过 invokespecial 指令调用时，对超类方法进行特殊处理
+        // 已忽略:
+        // ACC_SUPER (0x0020):当通过 invokespecial 指令调用时,对超类方法进行特殊处理
     }
 
     /** 修饰符位的来源 */

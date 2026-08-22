@@ -12,7 +12,9 @@ public enum StackFrameType {
     FULL(255, 255);
 
     private static final StackFrameType[] MAPPING = buildMapping();
+
     private final int start;
+
     private final int end;
 
     StackFrameType(int start, int end) {

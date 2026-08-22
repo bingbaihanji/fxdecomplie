@@ -6,7 +6,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
 import org.jetbrains.annotations.Nullable;
 
 public final class AwaitingInsnCompareTraverserState extends TraverserState {
+
     private final CentralityState centralityState;
+
     private final @Nullable TraverserBlockInfo blockInsnInfo;
 
     public AwaitingInsnCompareTraverserState(TraverserActivePathState state, CentralityState centralityState,

@@ -94,11 +94,11 @@ public final class ClassNameUtil {
             }
         }
         for (String prefix : CONTAINER_CLASS_PREFIXES) {
-            // 直接匹配：如 BOOT-INF/classes/com/example/Foo
+            // 直接匹配:如 BOOT-INF/classes/com/example/Foo
             if (normalized.startsWith(prefix)) {
                 return normalized.substring(prefix.length());
             }
-            // 嵌套匹配：如 someDir/BOOT-INF/classes/com/example/Foo
+            // 嵌套匹配:如 someDir/BOOT-INF/classes/com/example/Foo
             String nested = "/" + prefix;
             int index = normalized.indexOf(nested);
             if (index >= 0) {
@@ -116,7 +116,7 @@ public final class ClassNameUtil {
     /**
      * 判断两个类名是否指向同一个类
      * <p>
-     * 比较规则：先直接比较规范化的内部名,若不匹配则剥离容器前缀后再比较
+     * 比较规则:先直接比较规范化的内部名,若不匹配则剥离容器前缀后再比较
      * </p>
      *
      * @param left  第一个类名
@@ -170,7 +170,7 @@ public final class ClassNameUtil {
     /**
      * 生成类文件路径候选列表,用于在归档中逐级查找
      * <p>
-     * 生成策略：从普通路径开始,依次将最深的 {@code /} 替换为 {@code $}(模拟内部类路径),
+     * 生成策略:从普通路径开始,依次将最深的 {@code /} 替换为 {@code $}(模拟内部类路径),
      * 同时为每个候选生成剥离容器前缀的变体例如 {@code com/example/Outer$Inner.class}
      * </p>
      *

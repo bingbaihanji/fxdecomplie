@@ -6,7 +6,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes
 import java.util.Arrays;
 
 public class StackState {
+
     private final StackValueType[] stack;
+
     private int pos = -1;
 
     public StackState(int maxStack) {

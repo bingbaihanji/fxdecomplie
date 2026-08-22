@@ -10,7 +10,12 @@ import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.OverrunStyle;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.Tab;
+import javafx.scene.control.ToggleGroup;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
 import org.slf4j.Logger;
@@ -28,38 +33,56 @@ import java.util.function.Consumer;
 public class CodeEditorTab extends Tab {
 
     private static final Logger log = LoggerFactory.getLogger(CodeEditorTab.class);
+
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
 
     /** 代码视图面板 */
     private final CodeViewPanel codeViewPanel;
+
     /** 可拖拽的标签标题节点 */
     private final Label titleLabel;
+
     /** 默认字号 */
     private final int defaultFontSize;
+
     private final String fontFamily;
+
     private final boolean wrapText;
+
     private final boolean lineNumbersEnabled;
+
     /** 类文件原始字节码 */
     private final byte[] classBytes;
+
     /** 编辑器内搜索栏 */
     private final EditorSearchBar editorSearchBar;
+
     private VsCodeThemeLoader.ThemeData theme;
+
     /** 标签页显示标题 */
     private String displayTitle;
+
     /** Java 源码编辑器(兼容引用) */
     private CodeArea codeArea;
+
     /** 打开的文件 */
     private OpenFile openFile;
+
     /** Ctrl+Click 导航元数据 */
     private CodeMetadata metadata;
+
     /** Ctrl+Click 导航回调(null 时禁用) */
     private Consumer<CodeMetadata.Reference> onNavigate;
+
     /** 反编译源码是否已就绪 */
     private boolean sourceReady = true;
+
     /** 分屏请求回调(由外部设置,传入本 tab 以便在右侧分屏打开同 class 不同引擎) */
     private Consumer<CodeEditorTab> onSplitRequested;
+
     /** 切换引擎回调(由外部设置,传入目标引擎进行原地重反编译) */
     private Consumer<DecompilerTypeEnum> onSwitchEngine;
+
     /** 源码内容更新回调,用于刷新大纲 继承等依赖当前 tab 内容的工具窗口 */
     private Runnable onContentUpdated;
 
@@ -138,7 +161,7 @@ public class CodeEditorTab extends Tab {
         return label;
     }
 
-    /** 根据打开的文件生成标签页显示标题：类名 [引擎名] */
+    /** 根据打开的文件生成标签页显示标题:类名 [引擎名] */
     private static String displayTitleFor(OpenFile openFile) {
         return openFile.className() + " [" + openFile.engine().name() + "]";
     }
@@ -158,7 +181,7 @@ public class CodeEditorTab extends Tab {
         return engineMenu;
     }
 
-    /** 加载字体,优先级：内置 FiraCode → 指定字体族 → Consolas 回退 */
+    /** 加载字体,优先级:内置 FiraCode → 指定字体族 → Consolas 回退 */
     private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
         try {
             java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");

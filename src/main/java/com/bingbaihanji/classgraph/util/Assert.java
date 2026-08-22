@@ -2,8 +2,9 @@ package com.bingbaihanji.classgraph.util;
 
 /** 断言工具 */
 public final class Assert {
+
     /**
-     * 如果类不是注解，则抛出 {@link IllegalArgumentException}
+     * 如果类不是注解,则抛出 {@link IllegalArgumentException}
      *
      * @param clazz
      *            类
@@ -17,7 +18,7 @@ public final class Assert {
     }
 
     /**
-     * 如果类不是接口，则抛出 {@link IllegalArgumentException}
+     * 如果类不是接口,则抛出 {@link IllegalArgumentException}
      *
      * @param clazz
      *            类

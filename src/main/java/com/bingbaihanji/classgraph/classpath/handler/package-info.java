@@ -1,6 +1,6 @@
 //  20 种 ClassLoader 处理器
 //
-//  内建支持 20 种不同 ClassLoader，覆盖主流 Java 框架和运行时：
+//  内建支持 20 种不同 ClassLoader,覆盖主流 Java 框架和运行时:
 //
 //  - Spring Boot(SpringBootRestartClassLoaderHandler)
 //  - Quarkus(QuarkusClassLoaderHandler)

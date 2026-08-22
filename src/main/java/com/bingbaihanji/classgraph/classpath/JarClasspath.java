@@ -1,15 +1,24 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
-import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.resource.FastZipEntry;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.LogicalZipFile;
+import com.bingbaihanji.classgraph.resource.Resource;
+import com.bingbaihanji.classgraph.resource.ZipFileSlice;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
 import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceException;
 import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
+import com.bingbaihanji.classgraph.util.URLPathEncoder;
+import com.bingbaihanji.classgraph.util.VersionFinder;
+import com.bingbaihanji.classgraph.util.WorkQueue;
 
 import java.io.File;
 import java.io.IOError;
@@ -21,31 +30,43 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 一个 zip/jar 文件类路径元素 */
 public class JarClasspath extends Classpath {
+
     /**
-     * 此 zip 文件的路径字符串、{@link URL}、{@link URI} 或 {@link Path} 的 {@link String} 表示形式
+     * 此 zip 文件的路径字符串,{@link URL},{@link URI} 或 {@link Path} 的 {@link String} 表示形式
      */
     private final String rawPath;
+
     /** 从相对路径到未被拒绝的 zip 条目的 {@link Resource} 映射 */
     private final ConcurrentHashMap<String, Resource> relativePathToResource = new ConcurrentHashMap<>();
+
     /** 在此 zip 文件内作为路径前缀找到的所有自动包根前缀的列表 */
     private final Set<String> strippedAutomaticPackageRootPrefixes = new HashSet<>();
+
     /** 嵌套 jar 处理器 */
     private final JarReader JarReader;
+
     /** 此类路径元素的逻辑 zip 文件 */
     public LogicalZipFile logicalZipFile;
+
     /**
      * 从 {@code Automatic-Module-Name} 清单属性中获取的模块名称(如果类路径元素根中存在该属性)
      */
     public String moduleNameFromManifestFile;
-    /** jar 文件的规范化路径，如果嵌套则以 "!/" 分隔，不包含任何包根路径 */
+
+    /** jar 文件的规范化路径,如果嵌套则以 "!/" 分隔,不包含任何包根路径 */
     private String zipFilePath;
+
     /** 从 jar 文件名派生的自动模块名称 */
     private String derivedAutomaticModuleName;
 
@@ -64,7 +85,7 @@ public class JarClasspath extends Classpath {
         super(workUnit, ScanConfig);
         final Object rawPathObj = workUnit.classpathEntryObj;
 
-        // 将原始路径对象(Path、URL 或 URI)转换为字符串
+        // 将原始路径对象(Path,URL 或 URI)转换为字符串
         // 任何需要的 URL/URI 解析都在 JarReader 中完成
         String rawPath = null;
         if (rawPathObj instanceof Path) {
@@ -116,14 +137,14 @@ public class JarClasspath extends Classpath {
                 logicalZipFileAndPackageRoot = JarReader.nestedPathToLogicalZipFileAndPackageRootMap
                         .get(rawPath, subLog);
             } catch (final NullSingletonException | NewInstanceException e) {
-                // 通常在第一次调用 .get() 失败后，第二次及后续尝试时抛出，
+                // 通常在第一次调用 .get() 失败后,第二次及后续尝试时抛出,
                 // 或者 newInstance() 抛出了异常
                 throw new IOException("Could not get logical zipfile " + rawPath + " : "
                         + (e.getCause() == null ? e : e.getCause()));
             }
             logicalZipFile = logicalZipFileAndPackageRoot.getKey();
             if (logicalZipFile == null) {
-                // 不应该发生，但这样可以让 lgtm 静态分析满意
+                // 不应该发生,但这样可以让 lgtm 静态分析满意
                 throw new IOException("Logical zipfile was null");
             }
 
@@ -144,7 +165,7 @@ public class JarClasspath extends Classpath {
         }
 
         if (!ScanConfig.enableSystemJarsAndModules && logicalZipFile.isJREJar) {
-            // 发现一个被拒绝的 JRE jar，该 jar 未被 ClasspathFinder 中的 rt.jar 过滤捕获
+            // 发现一个被拒绝的 JRE jar,该 jar 未被 ClasspathFinder 中的 rt.jar 过滤捕获
             // (isJREJar 值是通过检测 jar 清单文件中的 JRE 头设置的)
             if (subLog != null) {
                 subLog.log("Ignoring JRE jar: " + rawPath);
@@ -161,13 +182,13 @@ public class JarClasspath extends Classpath {
             return;
         }
 
-        // 自动将任何嵌套的 "lib/" 目录添加到类路径中，因为并非所有类加载器都将其
+        // 自动将任何嵌套的 "lib/" 目录添加到类路径中,因为并非所有类加载器都将其
         // 作为类路径元素返回
         int childClasspathEntryIdx = 0;
         if (ScanConfig.scanNestedJars) {
             for (final FastZipEntry zipEntry : logicalZipFile.entries) {
                 for (final String libDirPrefix : HandlerRegistry.AUTOMATIC_LIB_DIR_PREFIXES) {
-                    // 即使给出了包根路径(例如 BOOT-INF/classes)，仍然在 lib/ 等目录中查找 jar 文件
+                    // 即使给出了包根路径(例如 BOOT-INF/classes),仍然在 lib/ 等目录中查找 jar 文件
                     if (zipEntry.entryNameUnversioned.startsWith(libDirPrefix)
                             && zipEntry.entryNameUnversioned.endsWith(".jar")) {
                         final String entryPath = zipEntry.getPath();
@@ -188,15 +209,15 @@ public class JarClasspath extends Classpath {
         final Set<String> scheduledChildClasspaths = new HashSet<>();
         scheduledChildClasspaths.add(rawPath);
 
-        // 从清单文件 Class-Path 条目中获取的值创建子类路径元素，
+        // 从清单文件 Class-Path 条目中获取的值创建子类路径元素,
         // 将路径解析为相对于包含该 jar 文件的目录或父 jar 文件的路径
         if (logicalZipFile.classPathManifestEntryValue != null) {
-            // 获取逻辑 zip 文件在祖父切片中的父目录，
-            // 例如，对于 zip 文件切片路径 "/path/to/jar1.jar!/lib/jar2.jar"，结果是 "lib"，
-            // 对于 "/path/to/jar1.jar"，结果是 "/path/to"，如果 jar 在顶层目录则结果为 ""
+            // 获取逻辑 zip 文件在祖父切片中的父目录,
+            // 例如,对于 zip 文件切片路径 "/path/to/jar1.jar!/lib/jar2.jar",结果是 "lib",
+            // 对于 "/path/to/jar1.jar",结果是 "/path/to",如果 jar 在顶层目录则结果为 ""
             final String jarParentDir = FileUtils
                     .getParentDirPath(logicalZipFile.getPathWithinParentZipFileSlice());
-            // 将清单文件 "Class-Path" 条目中的路径添加到类路径中，
+            // 将清单文件 "Class-Path" 条目中的路径添加到类路径中,
             // 将路径解析为相对于父目录或 jar 的路径
             for (final String childClassPathEltPathRelative : logicalZipFile.classPathManifestEntryValue
                     .split(" ")) {
@@ -204,7 +225,7 @@ public class JarClasspath extends Classpath {
                     // 将 Class-Path 条目解析为相对于包含目录的路径
                     final String childClassPathEltPath = FastPathResolver.resolve(jarParentDir,
                             childClassPathEltPathRelative);
-                    // 如果这是一个嵌套 jar，则在前面添加外部 jar 前缀
+                    // 如果这是一个嵌套 jar,则在前面添加外部 jar 前缀
                     final ZipFileSlice parentZipFileSlice = logicalZipFile.getParentZipFileSlice();
                     final String childClassPathEltPathWithPrefix = parentZipFileSlice == null
                             ? childClassPathEltPath
@@ -222,19 +243,19 @@ public class JarClasspath extends Classpath {
                 }
             }
         }
-        // 将 OSGi bundle jar 清单文件 "Bundle-ClassPath" 条目中的路径添加到类路径中，
+        // 将 OSGi bundle jar 清单文件 "Bundle-ClassPath" 条目中的路径添加到类路径中,
         // 将路径解析为相对于 jar 文件根目录的路径
         if (logicalZipFile.bundleClassPathManifestEntryValue != null) {
             final String zipFilePathPrefix = zipFilePath + "!/";
-            // Class-Path 以 " " 分隔，但 Bundle-ClassPath 以 "," 分隔
+            // Class-Path 以 " " 分隔,但 Bundle-ClassPath 以 "," 分隔
             for (String childBundlePath : logicalZipFile.bundleClassPathManifestEntryValue.split(",")) {
                 // 假设 Bundle-ClassPath 路径必须相对于 jar 文件根目录给出
                 while (childBundlePath.startsWith("/")) {
                     childBundlePath = childBundlePath.substring(1);
                 }
                 // 目前 "." 相对于子类路径条目的位置被忽略(
-                // Bundle-ClassPath 路径被当作 "." 在第一个位置，因为子
-                // 类路径条目总是在父类路径条目之后添加到类路径中，
+                // Bundle-ClassPath 路径被当作 "." 在第一个位置,因为子
+                // 类路径条目总是在父类路径条目之后添加到类路径中,
                 // 它们是从父类路径条目获取的)
                 if (!childBundlePath.isEmpty() && !".".equals(childBundlePath)) {
                     // 在 jar 内解析 Bundle-ClassPath 条目
@@ -264,7 +285,8 @@ public class JarClasspath extends Classpath {
      */
     private Resource newResource(final FastZipEntry zipEntry, final String pathRelativeToPackageRoot) {
         return new Resource(this, zipEntry.uncompressedSize) {
-            /** 如果资源已打开，则为 true */
+
+            /** 如果资源已打开,则为 true */
             private final AtomicBoolean isOpen = new AtomicBoolean();
 
             /**
@@ -388,7 +410,7 @@ public class JarClasspath extends Classpath {
             public void close() {
                 if (isOpen.getAndSet(false)) {
                     if (byteBuffer != null) {
-                        // ByteBuffer 应为副本或切片，或包装了数组，因此它不需要
+                        // ByteBuffer 应为副本或切片,或包装了数组,因此它不需要
                         // 被取消映射
                         byteBuffer = null;
                     }
@@ -405,7 +427,7 @@ public class JarClasspath extends Classpath {
      *
      * @param relativePath
      *            要返回的 {@link Resource} 的相对路径
-     * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
+     * @return 给定相对路径的 {@link Resource},如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
     public Resource getResource(final String relativePath) {
@@ -413,7 +435,7 @@ public class JarClasspath extends Classpath {
     }
 
     /**
-     * 扫描 jar 文件内的路径匹配，并记录匹配文件的 ZipEntry 对象
+     * 扫描 jar 文件内的路径匹配,并记录匹配文件的 ZipEntry 对象
      *
      * @param log
      *            日志
@@ -458,10 +480,10 @@ public class JarClasspath extends Classpath {
         for (final FastZipEntry zipEntry : logicalZipFile.entries) {
             String relativePath = zipEntry.entryNameUnversioned;
 
-            // 路径不应以 "META-INF/versions/{version}/" 开头，因为要么这是一个版本化
-            // jar，此时 zipEntry.entryNameUnversioned 已剥离版本前缀，要么这是一个
-            // 非版本化 jar(例如清单文件中未设置多版本标志)，并且多版本路径中有一些
-            // 多余的条目(在这种情况下，应忽略它们)
+            // 路径不应以 "META-INF/versions/{version}/" 开头,因为要么这是一个版本化
+            // jar,此时 zipEntry.entryNameUnversioned 已剥离版本前缀,要么这是一个
+            // 非版本化 jar(例如清单文件中未设置多版本标志),并且多版本路径中有一些
+            // 多余的条目(在这种情况下,应忽略它们)
             if (!ScanConfig.enableMultiReleaseVersions
                     && relativePath.startsWith(LogicalZipFile.MULTI_RELEASE_PATH_PREFIX)) {
                 if (subLog != null) {
@@ -477,7 +499,7 @@ public class JarClasspath extends Classpath {
                 continue;
             }
 
-            // 如果这是一个模块化 jar，则忽略默认包中除 "module-info.class" 之外的所有 class 文件，
+            // 如果这是一个模块化 jar,则忽略默认包中除 "module-info.class" 之外的所有 class 文件,
             // 因为这些都是不允许的
             if (isModularJar && relativePath.indexOf('/') < 0 && relativePath.endsWith(".class")
                     && !"module-info.class".equals(relativePath)) {
@@ -486,7 +508,7 @@ public class JarClasspath extends Classpath {
 
             // 检查相对路径是否在嵌套类路径根内
             if (nestedClasspathRootPrefixes != null) {
-                // 这是 O(mn) 复杂度，效率不高，但嵌套类路径根的数量应该很少
+                // 这是 O(mn) 复杂度,效率不高,但嵌套类路径根的数量应该很少
                 boolean reachedNestedRoot = false;
                 for (final String nestedClasspathRoot : nestedClasspathRootPrefixes) {
                     if (relativePath.startsWith(nestedClasspathRoot)) {
@@ -540,7 +562,7 @@ public class JarClasspath extends Classpath {
             }
 
             // 获取此 ZipEntry 文件相对路径的父目录的匹配状态(或重用上一次的
-            // 匹配状态以提高速度，如果目录名未更改的话)
+            // 匹配状态以提高速度,如果目录名未更改的话)
             final int lastSlashIdx = relativePath.lastIndexOf('/');
             final String parentRelativePath = lastSlashIdx < 0 ? "/" : relativePath.substring(0, lastSlashIdx + 1);
             final boolean parentRelativePathChanged = !parentRelativePath.equals(prevParentRelativePath);
@@ -569,8 +591,8 @@ public class JarClasspath extends Classpath {
                     // 资源被接受
                     addAcceptedResource(resource, parentMatchStatus, /* isClassfileOnly = */ false, subLog);
                 } else if (ScanConfig.enableClassInfo && "module-info.class".equals(relativePath)) {
-                    // 将模块描述符添加为被接受的 class 文件资源，以便对其进行扫描，
-                    // 但不要将其添加到 ScanResult 的资源列表中，因为它不在
+                    // 将模块描述符添加为被接受的 class 文件资源,以便对其进行扫描,
+                    // 但不要将其添加到 ScanResult 的资源列表中,因为它不在
                     // 被接受的包中 (#352)
                     addAcceptedResource(resource, parentMatchStatus, /* isClassfileOnly = */ true, subLog);
                 }
@@ -587,7 +609,7 @@ public class JarClasspath extends Classpath {
     }
 
     /**
-     * 从模块描述符获取模块名称，或从清单文件获取自动模块名称，或从 jar 名称派生自动模块名称
+     * 从模块描述符获取模块名称,或从清单文件获取自动模块名称,或从 jar 名称派生自动模块名称
      *
      * @return 模块名称
      */
@@ -609,7 +631,7 @@ public class JarClasspath extends Classpath {
     /**
      * 获取 zip 文件路径
      *
-     * @return zip 文件的路径，包含任何包根路径
+     * @return zip 文件的路径,包含任何包根路径
      */
     public String getZipFilePath() {
         return packageRootPrefix.isEmpty() ? zipFilePath
@@ -629,7 +651,7 @@ public class JarClasspath extends Classpath {
     }
 
     /**
-     * 返回类路径元素的 URI，以及任何已去除的嵌套自动包根前缀的 URI，例如 "!/BOOT-INF/classes"
+     * 返回类路径元素的 URI,以及任何已去除的嵌套自动包根前缀的 URI,例如 "!/BOOT-INF/classes"
      */
     @Override
     public List<URI> getAllURIs() {
@@ -654,8 +676,8 @@ public class JarClasspath extends Classpath {
     /**
      * 获取此类路径元素的最外层 zip 文件的 {@link File}
      *
-     * @return 此类路径元素的最外层 zip 文件的 {@link File}，如果此文件是从 URL 直接下载到 RAM，
-     *         或者类路径元素由支持 {@link Path} API 但不支持 {@link File} API 的自定义文件系统支持，
+     * @return 此类路径元素的最外层 zip 文件的 {@link File},如果此文件是从 URL 直接下载到 RAM,
+     *         或者类路径元素由支持 {@link Path} API 但不支持 {@link File} API 的自定义文件系统支持,
      *         则返回 null
      */
     @Override
@@ -663,7 +685,7 @@ public class JarClasspath extends Classpath {
         if (logicalZipFile != null) {
             return logicalZipFile.getPhysicalFile();
         } else {
-            // 未执行完整扫描(仅获取类路径元素)，因此未设置 logicalZipFile
+            // 未执行完整扫描(仅获取类路径元素),因此未设置 logicalZipFile
             final int plingIdx = rawPath.indexOf('!');
             final String outermostZipFilePathResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
                     plingIdx < 0 ? rawPath : rawPath.substring(0, plingIdx));

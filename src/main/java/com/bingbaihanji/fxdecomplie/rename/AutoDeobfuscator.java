@@ -1,18 +1,31 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 自动反混淆：扫描工作区中所有类 字段和方法,为混淆名称生成可读新名称
+ * 自动反混淆:扫描工作区中所有类 字段和方法,为混淆名称生成可读新名称
  *
- * <p>实现取 jadx 的核心策略：先用条件筛选需要重命名的节点,再用稳定的 alias
+ * <p>实现取 jadx 的核心策略:先用条件筛选需要重命名的节点,再用稳定的 alias
  * provider 生成类 C 字段 f 方法 m 前缀的新名称</p>
  *
  * @author bingbaihanji
@@ -22,24 +35,30 @@ public final class AutoDeobfuscator {
 
     private static final Logger log = LoggerFactory.getLogger(AutoDeobfuscator.class);
 
-    /** 混淆名长度范围：1-3 字符为典型的混淆名(如 a, bb, cCd) */
+    /** 混淆名长度范围:1-3 字符为典型的混淆名(如 a, bb, cCd) */
     private static final int MIN_OBFUSCATED_LENGTH = 1;
+
     private static final int MAX_OBFUSCATED_LENGTH = 3;
+
     /** 标准/第三方库前缀,这些包下的类不需要反混淆 */
     private static final Set<String> STANDARD_PREFIXES = Set.of(
             "java/", "javax/", "jdk/", "sun/", "com/sun/", "kotlin/",
             "kotlinx/", "android/", "androidx/");
-    /** 白名单前缀：即使匹配标准前缀也仍然扫描(某些 support 库可能需要反混淆) */
+
+    /** 白名单前缀:即使匹配标准前缀也仍然扫描(某些 support 库可能需要反混淆) */
     private static final Set<String> WHITELIST_PREFIXES = Set.of(
             "android/support/v4/", "android/support/v7/", "androidx/core/os/",
             "androidx/annotation/");
-    /** 永远不重命名的方法：构造器 静态初始化器 main 方法等 */
+
+    /** 永远不重命名的方法:构造器 静态初始化器 main 方法等 */
     private static final Set<String> NEVER_RENAME_METHODS = Set.of(
             "<init>", "<clinit>", "main", "values", "valueOf");
+
     /** java.lang.Object 的方法,不应重命名以避免破坏继承链 */
     private static final Set<String> OBJECT_METHODS = Set.of(
             "toString", "hashCode", "equals", "clone", "finalize", "getClass",
             "notify", "notifyAll", "wait");
+
     /** 常见的短名称(如 id, db, ui, io 等),这些不应被当作混淆名处理 */
     private static final Set<String> COMMON_SHORT_NAMES = Set.of(
             "id", "db", "ui", "io", "ok", "no", "tag", "key", "val", "url", "uri",
@@ -151,7 +170,7 @@ public final class AutoDeobfuscator {
     /**
      * 判断名称是否为混淆名
      *
-     * <p>混淆名的判定条件：长度在 1-3 字符之间 不在常见短名集合中 
+     * <p>混淆名的判定条件:长度在 1-3 字符之间 不在常见短名集合中 
      * 且所有字符为字母 数字 下划线或美元符号</p>
      */
     public static boolean isObfuscated(String name) {
@@ -318,7 +337,7 @@ public final class AutoDeobfuscator {
         if (simpleName == null || simpleName.isBlank()) {
             return false;
         }
-        // 内部类：提取最内层名称 匿名内部类(全数字)不重命名
+        // 内部类:提取最内层名称 匿名内部类(全数字)不重命名
         if (simpleName.contains("$")) {
             String inner = simpleName.substring(simpleName.lastIndexOf('$') + 1);
             if (inner.chars().allMatch(Character::isDigit)) {
@@ -329,13 +348,13 @@ public final class AutoDeobfuscator {
         return shouldRenameName(simpleName) || collidesWithPackage(simpleName, index);
     }
 
-    /** 字段需要重命名的条件：是混淆名或同名字段出现多次(重载冲突) */
+    /** 字段需要重命名的条件:是混淆名或同名字段出现多次(重载冲突) */
     private static boolean shouldRenameField(MemberIndexEntry field,
                                              Map<String, Integer> fieldNameCount) {
         return shouldRenameName(field.name()) || fieldNameCount.getOrDefault(field.name(), 0) > 1;
     }
 
-    /** 方法需要重命名的条件：是混淆名或同签名方法出现多次(重载冲突),但排除不可重命名的方法 */
+    /** 方法需要重命名的条件:是混淆名或同签名方法出现多次(重载冲突),但排除不可重命名的方法 */
     private static boolean shouldRenameMethod(MemberIndexEntry method,
                                               Map<String, Integer> signatureCount) {
         String name = method.name();
@@ -346,7 +365,7 @@ public final class AutoDeobfuscator {
                 || signatureCount.getOrDefault(method.name() + method.descriptor(), 0) > 1;
     }
 
-    /** 基础条件：混淆名 非法标识符 或非可打印 ASCII 字符 */
+    /** 基础条件:混淆名 非法标识符 或非可打印 ASCII 字符 */
     private static boolean shouldRenameName(String name) {
         return isObfuscated(name) || !RenameService.isValidName(name) || !isPrintableAscii(name);
     }
@@ -467,7 +486,7 @@ public final class AutoDeobfuscator {
         return dollar >= 0 ? simpleName.substring(dollar + 1) : simpleName;
     }
 
-    /** 生成类反混淆别名：格式为 C0001 + 原始名的合法字符部分 */
+    /** 生成类反混淆别名:格式为 C0001 + 原始名的合法字符部分 */
     private static String classAlias(int index, String oldName) {
         return "C" + "%04d".formatted(index) + sanitizeNamePart(oldName);
     }
@@ -488,32 +507,35 @@ public final class AutoDeobfuscator {
     }
 
     /**
-     * 别名提供器：为类 字段 方法生成稳定递增的反混淆名称
+     * 别名提供器:为类 字段 方法生成稳定递增的反混淆名称
      *
      * <p>类前缀 C 字段前缀 f 方法前缀 m 覆写方法前缀 mo,
      * 后接递增序号和原始名的合法字符部分</p>
      */
     private static final class AliasProvider {
+
         private int clsIndex;
+
         private int fldIndex;
+
         private int mthIndex;
 
-        /** 生成类别名：C0000 + 原始名可打印部分 */
+        /** 生成类别名:C0000 + 原始名可打印部分 */
         String forClass(String oldName) {
             return classAlias(clsIndex++, oldName);
         }
 
-        /** 生成字段别名：f0 + 原始名可打印部分 */
+        /** 生成字段别名:f0 + 原始名可打印部分 */
         String forField(String oldName) {
             return "f" + fldIndex++ + sanitizeNamePart(oldName);
         }
 
-        /** 生成方法别名：m0 + 原始名可打印部分 */
+        /** 生成方法别名:m0 + 原始名可打印部分 */
         String forMethod(String oldName) {
             return "m" + mthIndex++ + sanitizeNamePart(oldName);
         }
 
-        /** 生成覆写方法别名：mo0 + 原始名可打印部分(用于可能被覆写的方法) */
+        /** 生成覆写方法别名:mo0 + 原始名可打印部分(用于可能被覆写的方法) */
         String forOverrideMethod(String oldName) {
             return "mo" + mthIndex++ + sanitizeNamePart(oldName);
         }

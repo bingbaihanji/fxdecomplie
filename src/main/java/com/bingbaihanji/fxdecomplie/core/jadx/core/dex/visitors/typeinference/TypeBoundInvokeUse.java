@@ -10,9 +10,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
  * Arguments bound type calculated using instance generic type.
  */
 public final class TypeBoundInvokeUse implements ITypeBoundDynamic {
+
     private final RootNode root;
+
     private final BaseInvokeNode invokeNode;
+
     private final RegisterArg arg;
+
     private final ArgType genericArgType;
 
     public TypeBoundInvokeUse(RootNode root, BaseInvokeNode invokeNode, RegisterArg arg, ArgType genericArgType) {

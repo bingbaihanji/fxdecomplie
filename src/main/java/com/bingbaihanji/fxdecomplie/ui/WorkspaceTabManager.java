@@ -26,11 +26,27 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,25 +71,36 @@ public final class WorkspaceTabManager {
 
     /** 编辑区上下分割条的实际鼠标命中高度 */
     private static final double EDITOR_DIVIDER_HIT_HEIGHT = 12.0;
+
     /** 编辑区最小保留高度,避免底部工具窗口拖得过高 */
     private static final double MIN_EDITOR_HEIGHT = 160.0;
+
     /** 底部工具窗口最小保留高度 */
     private static final double MIN_TOOL_WINDOW_HEIGHT = 120.0;
+
     /** 外层标签页 */
     private final TabPane outerTabPane;
+
     /** 状态栏 */
     private final StatusBar statusBar;
+
     /** 标签页 → 工作区视图映射 */
     private final Map<Tab, WorkspaceView> workspaceViews = new HashMap<>();
+
     /** 工作区标签页 → 底部工具窗口状态 */
     private final Map<Tab, WorkspaceTools> workspaceTools = new HashMap<>();
+
     /** 欢迎页动作 */
     private WelcomeActions welcomeActions = WelcomeActions.empty();
+
     /** 当前引擎显示名 */
     private String currentEngineName = "";
+
     /** 拖放配置(用于主窗口安装代码标签拖拽处理器) */
     private AppConfig dragDropConfig;
+
     private VsCodeThemeLoader.ThemeData dragDropTheme;
+
     /** 内层代码标签切换回调(工具栏刷新等) */
     private Runnable onActiveTabChange;
 
@@ -1254,6 +1281,7 @@ public final class WorkspaceTabManager {
 
     @FunctionalInterface
     public interface TreeItemAction {
+
         void accept(TreeItem<FileTreeNode> item);
     }
 
@@ -1265,6 +1293,7 @@ public final class WorkspaceTabManager {
             List<String> recentFiles,
             Consumer<String> openRecent
     ) {
+
         public WelcomeActions {
             openFile = openFile == null ? () -> {
             } : openFile;
@@ -1284,12 +1313,19 @@ public final class WorkspaceTabManager {
     }
 
     private static final class WorkspaceTools {
+
         private final SplitPane editorSplitPane;
+
         private final Node toolContainer;
+
         private final TabPane toolTabPane;
+
         private final Tab outlineTab;
+
         private final Tab inheritanceTab;
+
         private final Tab commentsTab;
+
         private double dividerPosition = 0.72;
 
         private WorkspaceTools(SplitPane editorSplitPane, Node toolContainer, TabPane toolTabPane,

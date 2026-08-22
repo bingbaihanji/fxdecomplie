@@ -1,7 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry;
 
 public class RawNamedValue {
+
     private final int nameRef;
+
     private final RawValue rawValue;
 
     public RawNamedValue(int nameRef, RawValue rawValue) {

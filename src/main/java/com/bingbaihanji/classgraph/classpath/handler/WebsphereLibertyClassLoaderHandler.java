@@ -1,4 +1,3 @@
-
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -24,6 +23,7 @@ import java.util.List;
  * @author R. Kempees
  */
 class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
+
     /** {@code "com.ibm.ws.classloading.internal."} */
     private static final String PKG_PREFIX = "com.ibm.ws.classloading.internal.";
 
@@ -47,7 +47,7 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
      *
      * @param containerClassLoader
      *            containerClassLoader 对象
-     * @return 路径对象的集合，类型为 {@link URL} 或 {@link String}
+     * @return 路径对象的集合,类型为 {@link URL} 或 {@link String}
      */
     private static Collection<Object> getPaths(final Object containerClassLoader,
                                                final ReflectionUtils reflectionUtils) {
@@ -63,7 +63,7 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
             return urls;
         }
 
-        // "getContainerURLs" 不起作用，尝试获取容器对象……
+        // "getContainerURLs" 不起作用,尝试获取容器对象......
         final Object container = reflectionUtils.getFieldVal(false, containerClassLoader, "container");
         if (container == null) {
             return Collections.emptyList();
@@ -76,7 +76,7 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
             return urls;
         }
 
-        // "getURLs" 不起作用，回退到之前的 "delegate" 内省逻辑
+        // "getURLs" 不起作用,回退到之前的 "delegate" 内省逻辑
         final Object delegate = reflectionUtils.getFieldVal(false, container, "delegate");
         if (delegate == null) {
             return Collections.emptyList();
@@ -102,7 +102,7 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 调用 "getURLs" 方法的工具，展平"集合的集合"并忽略
+     * 调用 "getURLs" 方法的工具,展平"集合的集合"并忽略
      * "UnsupportedOperationException"
      *
      * 所有 "getURLs" 方法最终都会调用 "com.ibm.wsspi.adaptable.module.Container#getURLs()"
@@ -149,7 +149,7 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -207,8 +207,9 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
                     classpathOrder.addClasspathEntry(path, classLoader, ScanConfig, log);
                 }
             } else {
-                // "getClassPath" 不起作用……回退到遍历 "classPath" 元素
-                @SuppressWarnings("unchecked") final List<Object> classPathElements = (List<Object>) classpathOrder.reflectionUtils
+                // "getClassPath" 不起作用......回退到遍历 "classPath" 元素
+                @SuppressWarnings("unchecked")
+                final List<Object> classPathElements = (List<Object>) classpathOrder.reflectionUtils
                         .getFieldVal(false, smartClassPath, "classPath");
                 if (classPathElements != null && !classPathElements.isEmpty()) {
                     for (final Object Classpath : classPathElements) {

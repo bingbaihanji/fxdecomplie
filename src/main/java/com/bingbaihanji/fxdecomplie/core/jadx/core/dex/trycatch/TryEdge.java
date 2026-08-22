@@ -14,8 +14,11 @@ import java.util.Optional;
 public final class TryEdge {
 
     private final BlockNode source;
+
     private final BlockNode target;
+
     private final Optional<ExceptionHandler> handler;
+
     private final TryEdgeType type;
 
     public TryEdge(BlockNode source, BlockNode target, TryEdgeType type) {

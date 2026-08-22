@@ -15,34 +15,38 @@ import java.util.stream.Collectors;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils.containsChar;
 
 /**
- * 包节点，表示 DEX 文件中的包结构
- * 维护包的层级关系 (父包 子包) 包含的类列表，以及包别名 (用于重命名)
+ * 包节点,表示 DEX 文件中的包结构
+ * 维护包的层级关系 (父包 子包) 包含的类列表,以及包别名 (用于重命名)
  */
 public class PackageNode extends LineAttrNode
         implements IPackageUpdate, IDexNode, ICodeNodeRef, Comparable<PackageNode> {
 
     /** 根节点引用 */
     private final RootNode root;
+
     /** 原始包信息 (不含别名) */
     private final PackageInfo pkgInfo;
-    /** 父包节点，顶层包时为 null */
+
+    /** 父包节点,顶层包时为 null */
     private final @Nullable PackageNode parentPkg;
+
     /** 子包列表 */
     private final List<PackageNode> subPackages = new ArrayList<>();
+
     /** 该包直接包含的类列表 */
     private final List<ClassNode> classes = new ArrayList<>();
 
-    /** 别名包信息，未设置别名时等于原始包信息 */
+    /** 别名包信息,未设置别名时等于原始包信息 */
     private PackageInfo aliasPkgInfo;
 
     /** 对应的 Java API 层包节点 */
     private JavaPackage javaNode;
 
     /**
-     * 私有构造函数，通过 {@link #getOrBuild} 等静态方法创建实例
+     * 私有构造函数,通过 {@link #getOrBuild} 等静态方法创建实例
      *
      * @param root      根节点
-     * @param parentPkg 父包节点，顶层包时为 null
+     * @param parentPkg 父包节点,顶层包时为 null
      * @param pkgInfo   包信息
      */
     private PackageNode(RootNode root, @Nullable PackageNode parentPkg, PackageInfo pkgInfo) {
@@ -53,7 +57,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 获取或构建指定全限定包名对应的包节点，并将给定类添加到该包中
+     * 获取或构建指定全限定包名对应的包节点,并将给定类添加到该包中
      *
      * @param root    根节点
      * @param fullPkg 全限定包名 (以 '.' 分隔)
@@ -67,7 +71,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 获取已存在的包节点，如果不存在则递归构建完整的包层级结构
+     * 获取已存在的包节点,如果不存在则递归构建完整的包层级结构
      * 会自动创建缺失的父包节点
      *
      * @param root    根节点
@@ -94,7 +98,7 @@ public class PackageNode extends LineAttrNode
      *
      * @param root    根节点
      * @param pgkInfo 包信息
-     * @return 父包节点，如果为顶层包则返回 null
+     * @return 父包节点,如果为顶层包则返回 null
      */
     private static @Nullable PackageNode getParentPkg(RootNode root, PackageInfo pgkInfo) {
         PackageInfo parentPkg = pgkInfo.getParentPkg();
@@ -110,12 +114,12 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 重命名包支持三种格式：
+     * 重命名包支持三种格式:
      * <ul>
-     *   <li>包含 '/' 的名称：按 '/' 转换为 '.' 后作为全限定别名</li>
-     *   <li>以 '.' 开头的名称：去掉开头的点作为全限定别名</li>
-     *   <li>包含 '.' 的名称：作为全限定别名</li>
-     *   <li>其他：作为叶子别名 (仅重命名当前包的最后一段)</li>
+     *   <li>包含 '/' 的名称:按 '/' 转换为 '.' 后作为全限定别名</li>
+     *   <li>以 '.' 开头的名称:去掉开头的点作为全限定别名</li>
+     *   <li>包含 '.' 的名称:作为全限定别名</li>
+     *   <li>其他:作为叶子别名 (仅重命名当前包的最后一段)</li>
      * </ul>
      *
      * @param newName     新名称
@@ -128,7 +132,7 @@ public class PackageNode extends LineAttrNode
             alias = newName.replace('/', '.');
             isFullAlias = true;
         } else if (newName.startsWith(".")) {
-            // 视为完整包名，去掉开头的点号
+            // 视为完整包名,去掉开头的点号
             alias = newName.substring(1);
             isFullAlias = true;
         } else {
@@ -178,7 +182,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 当父包更新时回调，重新计算当前包的别名信息并传播更新到子包和类
+     * 当父包更新时回调,重新计算当前包的别名信息并传播更新到子包和类
      */
     @Override
     public void onParentPackageUpdate(PackageNode updatedPkg) {
@@ -187,7 +191,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 触发包更新，将变更传播到所有子包和类
+     * 触发包更新,将变更传播到所有子包和类
      */
     public void updatePackages() {
         updatePackages(this);
@@ -224,7 +228,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 获取别名包信息如果未设置别名，则返回原始包信息
+     * 获取别名包信息如果未设置别名,则返回原始包信息
      */
     public PackageInfo getAliasPkgInfo() {
         return aliasPkgInfo;
@@ -243,7 +247,7 @@ public class PackageNode extends LineAttrNode
     /**
      * 判断父包是否设置了别名 (当前包的别名父包与原始父包不同)
      *
-     * @return 如果父包设置了别名返回 true，否则返回 false
+     * @return 如果父包设置了别名返回 true,否则返回 false
      */
     public boolean hasParentAlias() {
         if (pkgInfo == aliasPkgInfo) {
@@ -252,7 +256,7 @@ public class PackageNode extends LineAttrNode
         return !Objects.equals(pkgInfo.getParentPkg(), aliasPkgInfo.getParentPkg());
     }
 
-    /** 移除当前包的别名，恢复原始包名 */
+    /** 移除当前包的别名,恢复原始包名 */
     public void removeAlias() {
         aliasPkgInfo = pkgInfo;
     }
@@ -260,7 +264,7 @@ public class PackageNode extends LineAttrNode
     /**
      * 获取父包节点
      *
-     * @return 父包节点，顶层包时返回 null
+     * @return 父包节点,顶层包时返回 null
      */
     public @Nullable PackageNode getParentPkg() {
         return parentPkg;
@@ -269,7 +273,7 @@ public class PackageNode extends LineAttrNode
     /**
      * 获取父包的别名包信息
      *
-     * @return 父包的别名包信息，当前为顶层包时返回 null
+     * @return 父包的别名包信息,当前为顶层包时返回 null
      */
     public @Nullable PackageInfo getParentAliasPkgInfo() {
         return parentPkg == null ? null : parentPkg.aliasPkgInfo;
@@ -278,7 +282,7 @@ public class PackageNode extends LineAttrNode
     /**
      * 判断当前包是否为根包 (无父包)
      *
-     * @return 如果是根包返回 true，否则返回 false
+     * @return 如果是根包返回 true,否则返回 false
      */
     public boolean isRoot() {
         return parentPkg == null;
@@ -287,7 +291,7 @@ public class PackageNode extends LineAttrNode
     /**
      * 判断当前包是否为叶子包 (无子包)
      *
-     * @return 如果是叶子包返回 true，否则返回 false
+     * @return 如果是叶子包返回 true,否则返回 false
      */
     public boolean isLeaf() {
         return subPackages.isEmpty();
@@ -313,7 +317,7 @@ public class PackageNode extends LineAttrNode
 
     /**
      * 获取当前包包含的去重类列表
-     * 通过 ClassInfo 去重，避免同一个类被多次列出
+     * 通过 ClassInfo 去重,避免同一个类被多次列出
      *
      * @return 去重后的类节点列表
      */
@@ -346,7 +350,7 @@ public class PackageNode extends LineAttrNode
     /**
      * 判断当前包是否为空 (既没有类也没有子包)
      *
-     * @return 如果包为空返回 true，否则返回 false
+     * @return 如果包为空返回 true,否则返回 false
      */
     public boolean isEmpty() {
         return classes.isEmpty() && subPackages.isEmpty();

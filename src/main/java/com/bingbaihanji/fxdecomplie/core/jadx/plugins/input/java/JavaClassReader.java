@@ -4,8 +4,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IClassData;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.JavaClassData;
 
 public class JavaClassReader {
+
     private final int id;
+
     private final String fileName;
+
     private final byte[] data;
 
     public JavaClassReader(int id, String fileName, byte[] data) {

@@ -9,7 +9,11 @@ import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 图形服务工具类,负责 DOT 字符串生成和类内方法调用解析
@@ -89,7 +93,7 @@ public final class GraphService {
     /**
      * 递归为继承树生成边
      *
-     * <p>边的方向总是指向父节点(配合 rankdir=BT 实现"自底向上"的继承层次)：
+     * <p>边的方向总是指向父节点(配合 rankdir=BT 实现"自底向上"的继承层次):
      * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口,边 parent→child(指向更上层) 
      * SUBCLASS → child 是 parent 的子类,边 child→parent(指向被分析的类)</p>
      */
@@ -109,10 +113,10 @@ public final class GraphService {
                     && seen.contains(childNode.className())) {
                 if (childNode.relation() == InheritanceNode.RelationType.SUPER_CLASS
                         || childNode.relation() == InheritanceNode.RelationType.INTERFACE) {
-                    // 父类/接口：箭头指向更上层
+                    // 父类/接口:箭头指向更上层
                     appendInheritanceEdge(sb, parent.className(), childNode.className());
                 } else if (childNode.relation() == InheritanceNode.RelationType.SUBCLASS) {
-                    // 子类：箭头指向被分析的类(parent)
+                    // 子类:箭头指向被分析的类(parent)
                     appendInheritanceEdge(sb, childNode.className(), parent.className());
                 }
             }
@@ -271,10 +275,13 @@ public final class GraphService {
      * 仅记录目标类与当前类相同的方法调用(类内部调用)</p>
      */
     private static final class MethodCallCollector extends ClassVisitor {
+
         /** 方法节点映射(键 = 方法名+描述符) */
         private final Map<String, MethodNode> nodeMap = new LinkedHashMap<>();
+
         /** 方法调用边集合(已去重) */
         private final Set<MethodEdge> edges = new LinkedHashSet<>();
+
         /** 当前正在解析的类内部名称 */
         private String owner;
 
@@ -315,6 +322,7 @@ public final class GraphService {
             nodeMap.putIfAbsent(nodeKey(currentNode), currentNode);
 
             return new MethodVisitor(Opcodes.ASM9) {
+
                 @Override
                 public void visitMethodInsn(int opcode, String ownerName, String mName,
                                             String mDesc, boolean itf) {

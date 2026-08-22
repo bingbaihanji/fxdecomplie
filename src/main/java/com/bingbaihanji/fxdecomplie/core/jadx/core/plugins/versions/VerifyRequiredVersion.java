@@ -9,8 +9,11 @@ import java.util.regex.Pattern;
 public class VerifyRequiredVersion {
 
     private static final Pattern REQ_VER_FORMAT = Pattern.compile("(\\d+\\.\\d+\\.\\d+),\\s+(r\\d+)");
+
     private final String jadxVersion;
+
     private final boolean unstable;
+
     private final boolean dev;
 
     public VerifyRequiredVersion() {
@@ -63,7 +66,9 @@ public class VerifyRequiredVersion {
     }
 
     private static final class RequiredVersionData {
+
         private final String releaseVer;
+
         private final String unstableRev;
 
         private RequiredVersionData(String releaseVer, String unstableRev) {

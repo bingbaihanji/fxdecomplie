@@ -7,12 +7,12 @@ import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import java.util.Optional;
 
 /**
- * L2 (内存) + L3 (磁盘) 两级缓存协调：
+ * L2 (内存) + L3 (磁盘) 两级缓存协调:
  * <ol>
  *   <li>先查 L2 → 命中返回</li>
  *   <li>L2 未命中查 L3 → 命中后回填 L2</li>
  *   <li>均未命中返回 empty</li>
- *   <li>写入时先写 L2，L3 异步写（不阻塞调用方）</li>
+ *   <li>写入时先写 L2,L3 异步写(不阻塞调用方)</li>
  * </ol>
  *
  * @author bingbaihanji
@@ -21,6 +21,7 @@ import java.util.Optional;
 public class DecompileCacheService implements CodeCacheStore {
 
     private final DecompileCache l2;
+
     private final DiskCodeCache l3;
 
     public DecompileCacheService(DecompileCache l2, DiskCodeCache l3) {

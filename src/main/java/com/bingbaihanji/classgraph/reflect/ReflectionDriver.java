@@ -35,16 +35,25 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** 反射驱动 */
 abstract class ReflectionDriver {
+
     private static Method isAccessibleMethod;
+
     private static Method canAccessMethod;
 
     static {
         // 查找已弃用的方法以消除编译期警告
-        // TODO 待此问题修复后切换到 MethodHandles：
+        // TODO 待此问题修复后切换到 MethodHandles:
         // https://github.com/mojohaus/animal-sniffer/issues/67
         try {
             isAccessibleMethod = AccessibleObject.class.getDeclaredMethod("isAccessible");
@@ -60,6 +69,7 @@ abstract class ReflectionDriver {
 
     private final SingletonMap<Class<?>, ClassMemberCache, Exception> classToClassMemberCache //
             = new SingletonMap<Class<?>, ClassMemberCache, Exception>() {
+
         @Override
         public ClassMemberCache newInstance(final Class<?> cls, final LogNode log)
                 throws Exception, InterruptedException {
@@ -106,7 +116,7 @@ abstract class ReflectionDriver {
     abstract Field[] getDeclaredFields(Class<?> cls) throws Exception;
 
     /**
-     * 获取非静态字段的值，必要时进行装箱
+     * 获取非静态字段的值,必要时进行装箱
      *
      * @param object
      *            要获取字段值的对象实例
@@ -117,7 +127,7 @@ abstract class ReflectionDriver {
     abstract Object getField(final Object object, final Field field) throws Exception;
 
     /**
-     * 设置非静态字段的值，必要时进行拆箱
+     * 设置非静态字段的值,必要时进行拆箱
      *
      * @param object
      *            要获取字段值的对象实例
@@ -129,7 +139,7 @@ abstract class ReflectionDriver {
     abstract void setField(final Object object, final Field field, Object value) throws Exception;
 
     /**
-     * 获取静态字段的值，必要时进行装箱
+     * 获取静态字段的值,必要时进行装箱
      *
      * @param field
      *            静态字段
@@ -138,7 +148,7 @@ abstract class ReflectionDriver {
     abstract Object getStaticField(final Field field) throws Exception;
 
     /**
-     * 设置静态字段的值，必要时进行拆箱
+     * 设置静态字段的值,必要时进行拆箱
      *
      * @param field
      *            静态字段
@@ -148,7 +158,7 @@ abstract class ReflectionDriver {
     abstract void setStaticField(final Field field, Object value) throws Exception;
 
     /**
-     * 调用非静态方法，必要时对返回值进行装箱
+     * 调用非静态方法,必要时对返回值进行装箱
      *
      * @param object
      *            要调用方法的对象实例
@@ -161,7 +171,7 @@ abstract class ReflectionDriver {
     abstract Object invokeMethod(final Object object, final Method method, final Object... args) throws Exception;
 
     /**
-     * 调用静态方法，必要时对返回值进行装箱
+     * 调用静态方法,必要时对返回值进行装箱
      *
      * @param method
      *            静态方法
@@ -175,7 +185,7 @@ abstract class ReflectionDriver {
      * 使字段或方法可访问
      *
      * @param instance
-     *            对象实例，静态时可为 null
+     *            对象实例,静态时可为 null
      * @param fieldOrMethod
      *            字段或方法
      *
@@ -187,10 +197,10 @@ abstract class ReflectionDriver {
      * 检查字段或方法是否可访问
      *
      * <p>
-     * 注意：Narcissus 驱动中此方法被重写为直接返回 true，因为 JNI 可以访问所有内容
+     * 注意:Narcissus 驱动中此方法被重写为直接返回 true,因为 JNI 可以访问所有内容
      *
      * @param instance
-     *            对象实例，静态时可为 null
+     *            对象实例,静态时可为 null
      * @param fieldOrMethod
      *            字段或方法
      *
@@ -198,7 +208,7 @@ abstract class ReflectionDriver {
      */
     boolean isAccessible(final Object instance, final AccessibleObject fieldOrMethod) {
         if (canAccessMethod != null) {
-            // JDK 9+：使用 canAccess
+            // JDK 9+:使用 canAccess
             try {
                 return (Boolean) canAccessMethod.invoke(fieldOrMethod, instance);
             } catch (final Throwable e) {
@@ -206,7 +216,7 @@ abstract class ReflectionDriver {
             }
         }
         if (isAccessibleMethod != null) {
-            // JDK 7/8：使用 isAccessible(JDK 9+ 中已弃用)
+            // JDK 7/8:使用 isAccessible(JDK 9+ 中已弃用)
             try {
                 return (Boolean) isAccessibleMethod.invoke(fieldOrMethod);
             } catch (final Throwable e) {
@@ -222,10 +232,10 @@ abstract class ReflectionDriver {
      * @param cls
      *            类
      * @param obj
-     *            对象实例，静态字段时可为 null
+     *            对象实例,静态字段时可为 null
      * @param fieldName
      *            字段名
-     * @return 请求字段名对应的 {@link Field} 对象，如果类中未找到该字段则返回 null
+     * @return 请求字段名对应的 {@link Field} 对象,如果类中未找到该字段则返回 null
      * @throws Exception
      *             如果找不到字段
      */
@@ -233,7 +243,7 @@ abstract class ReflectionDriver {
         final Field field = classToClassMemberCache.get(cls, /* log = */ null).fieldNameToField.get(fieldName);
         if (field != null) {
             if (!isAccessible(obj, field)) {
-                // 如果字段找到了但不可访问，尝试使其可访问然后返回
+                // 如果字段找到了但不可访问,尝试使其可访问然后返回
                 // (可能会在 stderr 上产生反射访问警告)
                 makeAccessible(obj, field);
             }
@@ -249,7 +259,7 @@ abstract class ReflectionDriver {
      *            类
      * @param fieldName
      *            字段名
-     * @return 请求字段名对应的 {@link Field} 对象，如果类中未找到该字段则返回 null
+     * @return 请求字段名对应的 {@link Field} 对象,如果类中未找到该字段则返回 null
      * @throws Exception
      *             如果找不到字段
      */
@@ -261,10 +271,10 @@ abstract class ReflectionDriver {
      * 获取类中具有给定字段名的非静态字段
      *
      * @param obj
-     *            对象实例，静态字段时可为 null
+     *            对象实例,静态字段时可为 null
      * @param fieldName
      *            字段名
-     * @return 请求字段名对应的 {@link Field} 对象，如果类中未找到该字段则返回 null
+     * @return 请求字段名对应的 {@link Field} 对象,如果类中未找到该字段则返回 null
      * @throws Exception
      *             如果找不到字段
      */
@@ -281,12 +291,12 @@ abstract class ReflectionDriver {
      * @param cls
      *            类
      * @param obj
-     *            对象实例，静态方法时可为 null
+     *            对象实例,静态方法时可为 null
      * @param methodName
      *            方法名
      * @param paramTypes
-     *            方法参数的类型对于基本类型参数，请使用例如 Integer.TYPE
-     * @return 匹配方法对应的 {@link Method} 对象，如果类中未找到该方法则返回 null
+     *            方法参数的类型对于基本类型参数,请使用例如 Integer.TYPE
+     * @return 匹配方法对应的 {@link Method} 对象,如果类中未找到该方法则返回 null
      * @throws Exception
      *             如果找不到方法
      */
@@ -305,7 +315,7 @@ abstract class ReflectionDriver {
                     }
                 }
             }
-            // 如果方法找到了但不可访问，尝试使其可访问然后返回
+            // 如果方法找到了但不可访问,尝试使其可访问然后返回
             // (可能会在 stderr 上产生反射访问警告)
             if (found) {
                 for (final Method method : methodsForName) {
@@ -328,8 +338,8 @@ abstract class ReflectionDriver {
      * @param methodName
      *            方法名
      * @param paramTypes
-     *            方法参数的类型对于基本类型参数，请使用例如 Integer.TYPE
-     * @return 匹配方法对应的 {@link Method} 对象，如果类中未找到该方法则返回 null
+     *            方法参数的类型对于基本类型参数,请使用例如 Integer.TYPE
+     * @return 匹配方法对应的 {@link Method} 对象,如果类中未找到该方法则返回 null
      * @throws Exception
      *             如果找不到方法
      */
@@ -342,12 +352,12 @@ abstract class ReflectionDriver {
      * 按名称和参数类型获取非静态方法
      *
      * @param obj
-     *            对象实例，静态方法时可为 null
+     *            对象实例,静态方法时可为 null
      * @param methodName
      *            方法名
      * @param paramTypes
-     *            方法参数的类型对于基本类型参数，请使用例如 Integer.TYPE
-     * @return 匹配方法对应的 {@link Method} 对象，如果类中未找到该方法则返回 null
+     *            方法参数的类型对于基本类型参数,请使用例如 Integer.TYPE
+     * @return 匹配方法对应的 {@link Method} 对象,如果类中未找到该方法则返回 null
      * @throws Exception
      *             如果找不到方法
      */
@@ -361,11 +371,13 @@ abstract class ReflectionDriver {
 
     /** 缓存类成员 */
     public class ClassMemberCache {
+
         private final Map<String, List<Method>> methodNameToMethods = new HashMap<>();
+
         private final Map<String, Field> fieldNameToField = new HashMap<>();
 
         private ClassMemberCache(final Class<?> cls) throws Exception {
-            // 遍历类及其超类，查找用于开始遍历的初始接口
+            // 遍历类及其超类,查找用于开始遍历的初始接口
             final Set<Class<?>> visited = new HashSet<>();
             final LinkedList<Class<?>> interfaceQueue = new LinkedList<Class<?>>();
             for (Class<?> c = cls; c != null; c = c.getSuperclass()) {
@@ -414,7 +426,7 @@ abstract class ReflectionDriver {
         }
 
         private void cacheField(final Field field) {
-            // 仅当映射中不存在时，才存入字段名到字段的映射，这样子类会遮蔽超类中同名的字段
+            // 仅当映射中不存在时,才存入字段名到字段的映射,这样子类会遮蔽超类中同名的字段
             if (!fieldNameToField.containsKey(field.getName())) {
                 fieldNameToField.put(field.getName(), field);
             }

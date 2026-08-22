@@ -7,8 +7,20 @@ import sun.reflect.ReflectionFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 反射工具类
@@ -17,13 +29,20 @@ import java.util.*;
  * @author xDark
  */
 public final class ReflectUtils {
+
     private static final Map<Class<?>, ThrowableGetter<?>> GETTERS = new ArrayMap<>();
+
     private static final Map<Class<?>, ThrowableSetter<?>> SETTERS = new ArrayMap<>();
+
     private static final ThrowableGetter<?> DEFAULT_GETTER = ReflectUtils::get;
+
     private static final ThrowableSetter<?> DEFAULT_SETTER = ReflectUtils::set;
+
     private final static Logger log = LoggerFactory.getLogger(ReflectUtils.class);
+
     /** 嵌套属性路径分隔符 */
     private static final String PATH_SEPARATOR = "\\.";
+
     private static MethodHandles.Lookup trustedLookup;
 
     static {
@@ -66,7 +85,7 @@ public final class ReflectUtils {
      * 初始化反射访问修补
      */
     public static void patch() {
-        // 有意留空修补在静态初始化块中完成，调用方通过调用此方法
+        // 有意留空修补在静态初始化块中完成,调用方通过调用此方法
         // 即可触发该初始化
     }
 
@@ -328,7 +347,7 @@ public final class ReflectUtils {
     /**
      * 根据方法名和参数个数调用方法,自动进行参数类型转换
      * <p>
-     * 支持常用类型自动转换：String Integer Long Double Float Boolean 适用于参数类型不明确或由外部传入的场景
+     * 支持常用类型自动转换:String Integer Long Double Float Boolean 适用于参数类型不明确或由外部传入的场景
      * </p>
      * @param obj 目标对象
      * @param methodName 方法名
@@ -950,7 +969,7 @@ public final class ReflectUtils {
      * @param type
      * 		定义该方法的类
      * @param instance
-     * 		调用所在的实例；静态方法则为 {@code null}
+     * 		调用所在的实例;静态方法则为 {@code null}
      * @param name
      * 		方法名
      * @param argTypes
@@ -1054,6 +1073,7 @@ public final class ReflectUtils {
      * 		值类型
      */
     interface ThrowableSetter<T> {
+
         void set(Field field, Object instance, T value) throws IllegalAccessException;
     }
 
@@ -1064,6 +1084,7 @@ public final class ReflectUtils {
      * 		值类型
      */
     interface ThrowableGetter<T> {
+
         T get(Field field, Object instance) throws IllegalAccessException;
     }
 

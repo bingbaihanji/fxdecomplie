@@ -12,8 +12,10 @@ public final class URLPathEncoder {
     /** 十六进制数字 */
     private static final char[] HEXADECIMAL = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c',
             'd', 'e', 'f'};
+
     /** 有效的类路径 URL 方案前缀 */
     private static final String[] SCHEME_PREFIXES = {"jrt:", "file:", "jar:file:", "jar:", "http:", "https:"};
+
     /** ASCII 字符是否对 URL 安全 */
     private static boolean[] safe = new boolean[256];
 
@@ -31,7 +33,7 @@ public final class URLPathEncoder {
         safe['$'] = safe['-'] = safe['_'] = safe['.'] = safe['+'] = true;
         // "extra" 规则
         safe['!'] = safe['*'] = safe['\''] = safe['('] = safe[')'] = safe[','] = true;
-        // 仅从 "fsegment" 和 "hsegment" 规则中包含 "/"(为安全起见排除 ':'、'@'、'&' 和 '=')
+        // 仅从 "fsegment" 和 "hsegment" 规则中包含 "/"(为安全起见排除 ':','@','&' 和 '=')
         safe['/'] = true;
         // 也允许 '+' 字符(#468)
         //safe['+'] = true;
@@ -52,7 +54,7 @@ public final class URLPathEncoder {
         for (int chrIdx = 0, len = str.length(); chrIdx < len; chrIdx++) {
             final char c = str.charAt(chrIdx);
             if (c == '%') {
-                // 解码百分号转义字符序列，例如 %5D
+                // 解码百分号转义字符序列,例如 %5D
                 if (chrIdx > len - 3) {
                     // 忽略字符串末尾被截断的百分号序列
                 } else {
@@ -89,7 +91,7 @@ public final class URLPathEncoder {
     }
 
     /**
-     * 反转义 URL 段，并将其从 UTF-8 字节转换为 Java 字符串
+     * 反转义 URL 段,并将其从 UTF-8 字节转换为 Java 字符串
      *
      * @param str
      *            字符串
@@ -150,7 +152,7 @@ public final class URLPathEncoder {
     }
 
     /**
-     * 规范化 URL 路径，使其可以被传入 URL 或 URI 构造函数
+     * 规范化 URL 路径,使其可以被传入 URL 或 URI 构造函数
      *
      * @param urlPath
      *            URL 路径
@@ -161,7 +163,7 @@ public final class URLPathEncoder {
         if (!urlPathNormalized.startsWith("jrt:") && !urlPathNormalized.startsWith("http://")
                 && !urlPathNormalized.startsWith("https://")) {
 
-            // 剥离 "jar:" 和/或 "file:"，如果已存在
+            // 剥离 "jar:" 和/或 "file:",如果已存在
             if (urlPathNormalized.startsWith("jar:")) {
                 urlPathNormalized = urlPathNormalized.substring(4);
             }
@@ -169,7 +171,7 @@ public final class URLPathEncoder {
                 urlPathNormalized = urlPathNormalized.substring(4);
             }
 
-            // 在 Windows 上，如果存在驱动器前缀，则从路径中移除(否则 ':' 后跟驱动器字母会被转义为 %3A)
+            // 在 Windows 上,如果存在驱动器前缀,则从路径中移除(否则 ':' 后跟驱动器字母会被转义为 %3A)
             String windowsDrivePrefix = "";
             if (VersionFinder.OS == OperatingSystem.Windows) {
                 if (urlPathNormalized.length() >= 2 && Character.isLetter(urlPathNormalized.charAt(0))
@@ -185,10 +187,10 @@ public final class URLPathEncoder {
                 }
             }
 
-            // 包含 "!" 段的 URL 必须在 "!" 后有 "/"，以使 "jar:" URL 方案正常工作
+            // 包含 "!" 段的 URL 必须在 "!" 后有 "/",以使 "jar:" URL 方案正常工作
             urlPathNormalized = urlPathNormalized.replace("/!", "!").replace("!/", "!").replace("!", "!/");
 
-            // 在绝对路径前添加 "file:///"，在相对路径前添加 "file:"
+            // 在绝对路径前添加 "file:///",在相对路径前添加 "file:"
             if (windowsDrivePrefix.isEmpty()) {
                 // 没有 Windows 驱动器
                 if (urlPathNormalized.startsWith("/")) {
@@ -199,11 +201,11 @@ public final class URLPathEncoder {
                     urlPathNormalized = "file:" + urlPathNormalized;
                 }
             } else {
-                // 有 Windows 驱动器，路径必须是绝对路径
+                // 有 Windows 驱动器,路径必须是绝对路径
                 urlPathNormalized = "file:///" + windowsDrivePrefix + urlPathNormalized;
             }
 
-            // 如果路径包含 "!" 段，在前面添加 "jar:"
+            // 如果路径包含 "!" 段,在前面添加 "jar:"
             if (urlPathNormalized.contains("!") && !urlPathNormalized.startsWith("jar:")) {
                 urlPathNormalized = "jar:" + urlPathNormalized;
             }

@@ -9,6 +9,7 @@ public record InheritanceReferenceTree(
         boolean partial,
         String statusMessage
 ) {
+
     public InheritanceReferenceTree {
         Objects.requireNonNull(root, "root");
         Objects.requireNonNull(groups, "groups");

@@ -6,14 +6,15 @@ import com.bingbaihanji.fxdecomplie.service.task.ThreadPoolTaskExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 
 /**
- * 后台任务工具类，提供三个独立线程池以避免长任务阻塞交互操作。
+ * 后台任务工具类,提供三个独立线程池以避免长任务阻塞交互操作.
  *
- * <p>内部委托给 {@link TaskExecutorService} 实例；可通过 {@link #setExecutor(TaskExecutorService)}
- * 注入自定义实现（例如测试中替换）。</p>
+ * <p>内部委托给 {@link TaskExecutorService} 实例;可通过 {@link #setExecutor(TaskExecutorService)}
+ * 注入自定义实现(例如测试中替换).</p>
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -33,18 +34,18 @@ public final class BackgroundTasks {
         throw new AssertionError("utility class");
     }
 
-    /** 注入自定义执行器（测试或特殊场景），传 null 恢复默认 */
+    /** 获取当前执行器实例 */
+    public static TaskExecutorService getExecutor() {
+        return executor;
+    }
+
+    /** 注入自定义执行器(测试或特殊场景),传 null 恢复默认 */
     public static void setExecutor(TaskExecutorService newExecutor) {
         if (newExecutor != null) {
             executor = newExecutor;
         } else {
             executor = new ThreadPoolTaskExecutor();
         }
-    }
-
-    /** 获取当前执行器实例 */
-    public static TaskExecutorService getExecutor() {
-        return executor;
     }
 
     private static TaskKind mapType(PoolType type) {
@@ -100,7 +101,7 @@ public final class BackgroundTasks {
         executor.close();
     }
 
-    /** 任务池类型，调用方据此将任务路由到合适的池 */
+    /** 任务池类型,调用方据此将任务路由到合适的池 */
     public enum PoolType {
         /** 搜索 打开类 Ctrl+Click UI 触发的交互操作 */
         INTERACTIVE,

@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * 通过 JavaFX Stage 查找原生 Win32 窗口句柄的工具类
  *
- * <p>先在 JavaFX 线程通过反射获取句柄；若失败则通过枚举当前进程所有窗口的标题来匹配
+ * <p>先在 JavaFX 线程通过反射获取句柄;若失败则通过枚举当前进程所有窗口的标题来匹配
  * 仅在 Windows 平台有效,其他平台直接返回 {@code Optional.empty()}</p>
  */
 final class Win32WindowHandles {

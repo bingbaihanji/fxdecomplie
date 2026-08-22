@@ -48,6 +48,7 @@ public class EnumMapAttr implements IJadxAttribute {
     }
 
     public static class KeyValueMap {
+
         private final Map<Object, Object> map = new HashMap<>();
 
         public Object get(Object key) {

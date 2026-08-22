@@ -3,17 +3,23 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attribute
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.DataReader;
 
 public class TypeInfoReader {
+
     private static final int ITEM_TOP = 0;
+
     private static final int ITEM_INT = 1;
+
     private static final int ITEM_FLOAT = 2;
 
     private static final int ITEM_DOUBLE = 3;
+
     private static final int ITEM_LONG = 4;
 
     private static final int ITEM_NULL = 5;
+
     private static final int ITEM_UNINITIALIZED_THIS = 6;
 
     private static final int ITEM_OBJECT = 7;
+
     private static final int ITEM_UNINITIALIZED = 8;
 
     static StackValueType[] readTypeInfoList(DataReader reader, int count) {

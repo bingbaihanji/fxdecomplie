@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class BoxedByteValueImpl extends ObjectValueBoxImpl<Byte> {
+
     private static final Type TYPE = Type.getType(Byte.class);
 
     /**

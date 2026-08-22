@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 class CollectUsageRegionVisitor extends TracedRegionVisitor {
+
     private final List<RegisterArg> args = new ArrayList<>();
+
     private final Map<SSAVar, VarUsage> usageMap = new LinkedHashMap<>();
 
     public Map<SSAVar, VarUsage> getUsageMap() {

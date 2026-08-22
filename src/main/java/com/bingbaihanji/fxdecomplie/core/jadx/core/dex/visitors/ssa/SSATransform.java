@@ -22,7 +22,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
 
 @JadxVisitor(
         name = "SSATransform",

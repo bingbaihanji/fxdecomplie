@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ClassTypeVarsAttr implements IJadxAttribute {
+
     public static final ClassTypeVarsAttr EMPTY = new ClassTypeVarsAttr(Collections.emptyList(), Collections.emptyMap());
 
     /**

@@ -1,4 +1,3 @@
-
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -9,6 +8,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
 
 /** 能够从 CxfContainerClassLoader 提取 URL 的 ClassLoaderHandler */
 class CxfContainerClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public CxfContainerClassLoaderHandler() {
     }
@@ -20,7 +20,7 @@ class CxfContainerClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -52,7 +52,7 @@ class CxfContainerClassLoaderHandler implements ClassLoaderHandler {
         classLoaderOrder.delegateTo(
                 (ClassLoader) classLoaderOrder.reflectionUtils.invokeMethod(false, classLoader, "tccl"),
                 /* isParent = */ false, log);
-        // 此类加载器实际上不加载任何类，但将其添加到顺序中可改进日志记录
+        // 此类加载器实际上不加载任何类,但将其添加到顺序中可改进日志记录
         classLoaderOrder.add(classLoader, log);
     }
 
@@ -71,6 +71,6 @@ class CxfContainerClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
                                    final ScanConfig ScanConfig, final LogNode log) {
-        // 类加载器本身不执行任何类加载操作，它仅委托给其他类加载器
+        // 类加载器本身不执行任何类加载操作,它仅委托给其他类加载器
     }
 }

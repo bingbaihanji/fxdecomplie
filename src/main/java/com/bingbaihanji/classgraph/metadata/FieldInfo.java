@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypeAnnotationDecorator;
@@ -22,6 +21,7 @@ import java.util.Set;
  * 保存扫描过程中遇到的类的字段元数据所有值均直接从类的 ClassParser 中获取
  */
 public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> {
+
     /** 已解析的类型签名 */
     private transient TypeSignature typeSignature;
 
@@ -29,7 +29,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     private transient TypeSignature typeDescriptor;
 
     /** 字段的常量初始值(如果有的话) */
-    // 这是 transient 的，因为常量初始值是 final 的，因此该值不需要序列化
+    // 这是 transient 的,因为常量初始值是 final 的,因此该值不需要序列化
     private TypedValue constantInitializerValue;
 
     /** 此字段的 {@link TypeSignature} 实例的类型注解装饰器 */
@@ -86,7 +86,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * 获取字段修饰符字符串，例如 "public static final"如需获取修饰符位值，请调用 getModifiers()
+     * 获取字段修饰符字符串,例如 "public static final"如需获取修饰符位值,请调用 getModifiers()
      *
      * @return 字段修饰符字符串
      */
@@ -100,7 +100,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     /**
      * 返回此字段是否为 transient 字段
      *
-     * @return 如果字段是 transient 的，则返回 true
+     * @return 如果字段是 transient 的,则返回 true
      */
     public boolean isTransient() {
         return Modifier.isTransient(modifiers);
@@ -109,14 +109,14 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     /**
      * 返回此字段是否为枚举常量
      *
-     * @return 如果字段是枚举常量，则返回 true
+     * @return 如果字段是枚举常量,则返回 true
      */
     public boolean isEnum() {
         return (modifiers & 0x4000) != 0;
     }
 
     /**
-     * 返回字段的已解析类型描述符，该描述符不包含类型参数如果需要泛型类型参数，请改用 {@link #getTypeSignature()}
+     * 返回字段的已解析类型描述符,该描述符不包含类型参数如果需要泛型类型参数,请改用 {@link #getTypeSignature()}
      *
      * @return 字段的已解析类型描述符字符串
      */
@@ -141,7 +141,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
 
     /**
      * 对给定的已解析字段类型运行类型注解装饰器任何无法匹配到该类型的单独类型注解
-     * (例如不可解析的嵌套类型，或编译器错误)会被跳过，而非导致整个字段类型
+     * (例如不可解析的嵌套类型,或编译器错误)会被跳过,而非导致整个字段类型
      * 解析失败(尽力而为)(#897)
      *
      * @param fieldType
@@ -153,7 +153,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
                 try {
                     decorator.decorate(fieldType);
                 } catch (final IllegalArgumentException e) {
-                    // 跳过无法匹配到字段类型的类型注解，而非导致整个字段类型
+                    // 跳过无法匹配到字段类型的类型注解,而非导致整个字段类型
                     // 解析失败(尽力而为)(#897)
                 }
             }
@@ -161,10 +161,10 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * 返回字段的已解析类型签名，可能包含类型参数如果返回 null，
-     * 表示此字段没有可用的类型签名信息，请改用 {@link #getTypeDescriptor()}
+     * 返回字段的已解析类型签名,可能包含类型参数如果返回 null,
+     * 表示此字段没有可用的类型签名信息,请改用 {@link #getTypeDescriptor()}
      *
-     * @return 字段的已解析类型签名，如果不可用则返回 null
+     * @return 字段的已解析类型签名,如果不可用则返回 null
      * @throws IllegalArgumentException
      *             如果字段类型签名无法解析(这应该只在 ClassParser 损坏或编译器错误导致向 ClassParser
      *             写入了无效的类型签名时抛出)
@@ -195,10 +195,10 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * 返回字段的类型签名，可能包含类型参数如果类型签名为 null，表示此字段没有可用的类型签名信息，
+     * 返回字段的类型签名,可能包含类型参数如果类型签名为 null,表示此字段没有可用的类型签名信息,
      * 则返回类型描述符
      *
-     * @return 字段的已解析类型签名，如果不可用则返回字段的已解析类型描述符
+     * @return 字段的已解析类型签名,如果不可用则返回字段的已解析类型描述符
      */
     @Override
     public TypeSignature getTypeSignatureOrTypeDescriptor() {
@@ -216,11 +216,11 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
 
     /**
      * 返回字段的常量初始值需要先调用 {@link ClassGraph#withConstantFieldValues()}
-     * 仅对于具有常量初始化器的字段才返回非 null 值，通常这仅限于基本类型字段或 String 常量
-     * 另请注意，常量值字段是否在字段定义本身中作为常量赋值，还是在静态或非静态类初始化块或构造函数中
-     * 手动赋值，这取决于编译器 -- 因此在提取常量初始值方面效果可能因人而异
+     * 仅对于具有常量初始化器的字段才返回非 null 值,通常这仅限于基本类型字段或 String 常量
+     * 另请注意,常量值字段是否在字段定义本身中作为常量赋值,还是在静态或非静态类初始化块或构造函数中
+     * 手动赋值,这取决于编译器 -- 因此在提取常量初始值方面效果可能因人而异
      *
-     * @return 如果此字段具有常量初始值，则返回初始值，否则返回 null
+     * @return 如果此字段具有常量初始值,则返回初始值,否则返回 null
      */
     public Object getConstantInitializerValue() {
         if (!scanResult.ScanConfig.enableStaticFinalFieldConstantInitializerValues) {
@@ -233,7 +233,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 加载此字段关联的类，并获取此字段的 {@link Field} 引用
+     * 加载此字段关联的类,并获取此字段的 {@link Field} 引用
      *
      * @return 此字段的 {@link Field} 引用
      * @throws IllegalArgumentException
@@ -379,7 +379,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     void toString(final boolean includeModifiers, final boolean useSimpleNames, final StringBuilder buf) {
         if (annotationInfo != null) {
             for (final AnnotationInfo annotation : annotationInfo) {
-                // 如果此字段是 record 参数，前一个位置可能有括号
+                // 如果此字段是 record 参数,前一个位置可能有括号
                 if (buf.length() > 0 && buf.charAt(buf.length() - 1) != ' '
                         && buf.charAt(buf.length() - 1) != '(') {
                     buf.append(' ');

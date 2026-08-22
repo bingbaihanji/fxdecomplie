@@ -33,7 +33,9 @@ import static com.bingbaihanji.fxdecomplie.util.collection.ListUtils.allMatch;
 public class InsnRemover {
 
     private final MethodNode mth;
+
     private final List<InsnNode> toRemove;
+
     @Nullable
     private List<InsnNode> instrList;
 

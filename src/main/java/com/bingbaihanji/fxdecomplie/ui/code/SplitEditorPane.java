@@ -5,7 +5,16 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.StackPane;
 import org.slf4j.Logger;
@@ -20,7 +29,7 @@ import java.util.function.Consumer;
 /**
  * 多分屏编辑器容器,按需管理 1-3 个并排 TabPane(cells)
  *
- * <p>类似 IDEA 的 Split Editor：默认仅一个主 panel,右键标签选择 "向右拆分"
+ * <p>类似 IDEA 的 Split Editor:默认仅一个主 panel,右键标签选择 "向右拆分"
  * 时动态创建右侧 panel每个 cell 独立持有 CodeEditorTab,
  * 同 class 可用不同反编译引擎在各分屏中对比关闭分屏时 tab 移回主 panel</p>
  *
@@ -30,27 +39,39 @@ import java.util.function.Consumer;
 public final class SplitEditorPane extends StackPane {
 
     private static final Logger log = LoggerFactory.getLogger(SplitEditorPane.class);
+
     /** 最大分屏数 */
     private static final int MAX_CELLS = 3;
+
     /** cell 最小宽度(防止拖拽分隔线完全覆盖 cell) */
     private static final double MIN_CELL_WIDTH = 200.0;
+
     private final SplitPane splitPane;
+
     /** 所有 cell(cells[0] 始终存在,其余按需创建 关闭中间 cell 后自动压缩数组) */
     private final TabPane[] cells = new TabPane[MAX_CELLS];
+
     /** 外部拖放配置(来自 WorkspaceTabManager) */
     private final AppConfig dragDropConfig;
+
     /** 编辑器主题(用于外部拖放) */
     private final com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader.ThemeData dragDropTheme;
-    /** 关闭的标签页历史栈，用于支持"重新打开关闭的标签"功能 */
+
+    /** 关闭的标签页历史栈,用于支持"重新打开关闭的标签"功能 */
     private final Deque<ClosedTabRecord> closedTabs = new ArrayDeque<>(10);
+
     /** 最近获得焦点的 cell(基于引用而非索引,避免压缩后索引错位) */
     private TabPane focusedCell;
+
     /** 当前活跃 cell 数 (= splitPane.getItems().size()) */
     private int activeCount = 1;
+
     /** 分屏状态变化回调(用于同步主 panel 的勾选框) */
     private Runnable onSplitStateChanged;
+
     /** 重新打开关闭标签的回调(由 WorkspaceTabManager 注入) */
     private Consumer<String> onReopenClosedTab;
+
     /** 创建不带拖放功能的默认分屏编辑器 */
     public SplitEditorPane() {
         this(null, null);
@@ -580,7 +601,7 @@ public final class SplitEditorPane extends StackPane {
         if (record == null) {
             return;
         }
-        // 如果标签已存在于某个 cell 中，直接选中
+        // 如果标签已存在于某个 cell 中,直接选中
         for (TabPane cell : allTabPanes()) {
             for (Tab tab : cell.getTabs()) {
                 if (tab instanceof CodeEditorTab ct && ct.getOpenFile() != null
@@ -596,7 +617,7 @@ public final class SplitEditorPane extends StackPane {
         }
     }
 
-    /** 关闭的标签页记录，用于支持"重新打开关闭的标签"功能 */
+    /** 关闭的标签页记录,用于支持"重新打开关闭的标签"功能 */
     private record ClosedTabRecord(String title, String fullPath, String engineName) {
     }
 }

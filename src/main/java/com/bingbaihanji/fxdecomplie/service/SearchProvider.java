@@ -16,6 +16,7 @@ import java.util.regex.PatternSyntaxException;
  * @date 2026-06-17
  */
 public interface SearchProvider {
+
     /** 在给定的源码缓存中搜索匹配 {@code query} 的结果 */
     List<SearchResult> search(String query, Map<String, String> sourceCache);
 

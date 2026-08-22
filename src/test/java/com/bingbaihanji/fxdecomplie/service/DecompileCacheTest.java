@@ -96,7 +96,7 @@ class DecompileCacheTest {
     @Test
     void evictsWhenExceedingByteLimit() {
         DecompileCache cache = new DecompileCache();
-        // ~25MB 的字符串（50MB 上限 → 三个触发淘汰）
+        // ~25MB 的字符串(50MB 上限 → 三个触发淘汰)
         StringBuilder sb = new StringBuilder(12_500_000);
         for (int i = 0; i < 12_500_000; i++) {
             sb.append('x');

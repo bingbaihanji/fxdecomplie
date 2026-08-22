@@ -6,7 +6,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.IDexTreeVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -18,11 +24,12 @@ import java.util.stream.Collectors;
  */
 public class PassMerge {
 
-    /** 目标访问者列表，合并后的自定义 Pass 将插入到此列表中 */
+    /** 目标访问者列表,合并后的自定义 Pass 将插入到此列表中 */
     private final List<IDexTreeVisitor> visitors;
 
     /** 本次待合并的所有自定义 Pass 名称集合 */
     private Set<String> mergePassesNames;
+
     /** 访问者到其名称的映射表 */
     private Map<IDexTreeVisitor, String> namesMap;
 
@@ -38,7 +45,7 @@ public class PassMerge {
     /**
      * 将依赖关系构建为双向链接
      * <p>
-     * 即若 A 声明 runAfter B，则同时为 B 补充 runBefore A，反之亦然，
+     * 即若 A 声明 runAfter B,则同时为 B 补充 runBefore A,反之亦然,
      * 以便后续排序时能够从两个方向感知依赖
      */
     private static void linkDeps(List<MergePass> mergePasses) {
@@ -150,7 +157,7 @@ public class PassMerge {
         }
         if (after == -1) {
             if (before == Integer.MAX_VALUE) {
-                // 未指定顺序，追加到末尾
+                // 未指定顺序,追加到末尾
                 return -1;
             }
             return before;
@@ -160,14 +167,19 @@ public class PassMerge {
     }
 
     /**
-     * 合并过程中使用的 Pass 包装对象，保存原始 Pass 对应的访问者以及可修改的依赖列表
+     * 合并过程中使用的 Pass 包装对象,保存原始 Pass 对应的访问者以及可修改的依赖列表
      */
     private static final class MergePass {
+
         private final JadxPass pass;
+
         private final IDexTreeVisitor visitor;
+
         private final JadxPassInfo info;
+
         // 复制依赖列表以便后续修改
         private final List<String> before;
+
         private final List<String> after;
 
         private MergePass(JadxPass pass, IDexTreeVisitor visitor, JadxPassInfo info) {
@@ -212,6 +224,7 @@ public class PassMerge {
      * 将与访问者存在依赖关系的 Pass 排在其他 Pass 之前
      */
     private static class ExtDepsComparator implements Comparator<MergePass> {
+
         private final Set<String> names;
 
         public ExtDepsComparator(List<IDexTreeVisitor> visitors) {
@@ -238,9 +251,10 @@ public class PassMerge {
     }
 
     /**
-     * 按反向依赖排序，即：若某个 Pass 依赖另一个 Pass，则将其排在被依赖者之前
+     * 按反向依赖排序,即:若某个 Pass 依赖另一个 Pass,则将其排在被依赖者之前
      */
     private static class InvertedDepsComparator implements Comparator<MergePass> {
+
         public static final InvertedDepsComparator INSTANCE = new InvertedDepsComparator();
 
         @Override

@@ -9,7 +9,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.CodeVar
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.ConstructorInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.AbstractRegionVisitor;
@@ -25,20 +29,26 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * 变量处理访问者
  * <p>
- * 负责在反编译过程中处理方法中的局部变量：移除未使用的指令结果 收集并合并代码变量 
- * 校验变量类型，并为每个代码变量确定合适的声明位置
+ * 负责在反编译过程中处理方法中的局部变量:移除未使用的指令结果 收集并合并代码变量 
+ * 校验变量类型,并为每个代码变量确定合适的声明位置
  */
 public class ProcessVariables extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(ProcessVariables.class);
 
     private static void removeUnusedResults(MethodNode mth) {
         DepthRegionTraversal.traverse(mth, new AbstractRegionVisitor() {
+
             @Override
             public void processBlock(MethodNode mth, IBlock container) {
                 for (InsnNode insn : container.getInstructions()) {
@@ -220,7 +230,7 @@ public class ProcessVariables extends AbstractVisitor {
             return;
         }
         checkCodeVars(mth, codeVars);
-        // TODO: 若已应用调试信息，则按名称合并代码变量 (需要检查变量作用域)
+        // TODO: 若已应用调试信息,则按名称合并代码变量 (需要检查变量作用域)
 
         // 收集所有变量的使用情况
         CollectUsageRegionVisitor usageCollector = new CollectUsageRegionVisitor();
@@ -285,7 +295,7 @@ public class ProcessVariables extends AbstractVisitor {
         }
         // TODO: 搜索最近的区域用于声明
 
-        // 未找到合适区域，则在方法起始处声明
+        // 未找到合适区域,则在方法起始处声明
         declareVarInRegion(mth.getRegion(), codeVar);
     }
 

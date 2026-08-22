@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 /**
  * Split View 同步工具,在源码和字节码文本之间做方法级光标同步
  *
- * <p>同步策略分层降级：
+ * <p>同步策略分层降级:
  * 1. ASM LineNumberTable → 精确行映射
  * 2. 方法签名文本搜索 → 模糊匹配
  * 3. 失败时静默忽略(记录 debug 日志,不弹窗)</p>
@@ -27,7 +27,7 @@ public final class CodeSyncHelper {
 
     private static final Logger log = LoggerFactory.getLogger(CodeSyncHelper.class);
 
-    /** 匹配方法声明行的模式：可见性 [static] 返回类型 方法名( */
+    /** 匹配方法声明行的模式:可见性 [static] 返回类型 方法名( */
     private static final Pattern METHOD_DECL_PATTERN =
             Pattern.compile("^\\s*(?:public|protected|private|static|final|abstract|synchronized|native|strictfp|\\s)+"
                     + "(?:<[\\w\\s.,?]+>\\s*)?"  // 泛型返回值
@@ -52,11 +52,13 @@ public final class CodeSyncHelper {
         try {
             ClassReader reader = new ClassReader(classBytes);
             reader.accept(new ClassVisitor(org.objectweb.asm.Opcodes.ASM9) {
+
                 @Override
                 public MethodVisitor visitMethod(int access, String name, String desc,
                                                  String signature, String[] exceptions) {
                     String key = name + desc;
                     return new MethodVisitor(org.objectweb.asm.Opcodes.ASM9) {
+
                         @Override
                         public void visitLineNumber(int line, Label start) {
                             if (!map.containsKey(key)) {

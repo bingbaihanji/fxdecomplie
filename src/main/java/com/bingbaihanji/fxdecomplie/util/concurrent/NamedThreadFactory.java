@@ -10,16 +10,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 带命名前缀的简单线程工厂
  * <p>
- * 线程名格式：{@code <prefix>-<poolId>-<threadId>}
- * 配备统一的未捕获异常处理器，OOM 错误会强制中断线程
+ * 线程名格式:{@code <prefix>-<poolId>-<threadId>}
+ * 配备统一的未捕获异常处理器,OOM 错误会强制中断线程
  */
 public final class NamedThreadFactory implements ThreadFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(NamedThreadFactory.class);
+
     private static final AtomicInteger POOL_ID = new AtomicInteger(0);
 
     private final String name;
+
     private final AtomicInteger number = new AtomicInteger(0);
+
     private final int poolId;
 
     /**

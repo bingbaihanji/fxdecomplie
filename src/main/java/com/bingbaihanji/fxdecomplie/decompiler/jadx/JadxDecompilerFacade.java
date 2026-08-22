@@ -13,6 +13,7 @@ import java.util.List;
 public final class JadxDecompilerFacade {
 
     private static final Logger log = LoggerFactory.getLogger(JadxDecompilerFacade.class);
+
     private static final JadxDecompilerFacade INSTANCE = new JadxDecompilerFacade();
 
     private final JadxInputBuilder inputBuilder = new JadxInputBuilder();
@@ -57,7 +58,7 @@ public final class JadxDecompilerFacade {
     }
 
     /**
-     * 结构化反编译，返回包含状态和诊断信息的结果对象
+     * 结构化反编译,返回包含状态和诊断信息的结果对象
      */
     public JadxDecompilerResult decompileResult(JadxDecompilerRequest request) {
         long start = System.currentTimeMillis();
@@ -66,7 +67,8 @@ public final class JadxDecompilerFacade {
             JadxInputPlan inputPlan = inputBuilder.build(request);
             JadxArgs args = JadxArgsFactory.create(request.options());
             try (com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler jadx =
-                         new com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler(args)) {
+                         new com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler(args)
+            ) {
                 jadx.addCustomCodeLoader(inputPlan.codeLoader());
                 jadx.load();
 

@@ -21,6 +21,7 @@ public interface IJadxAttrType<T extends IJadxAttribute> {
 
     static <A extends IJadxAttribute> IJadxAttrType<A> create(String name) {
         return new IJadxAttrType<>() {
+
             @Override
             public String toString() {
                 return name;

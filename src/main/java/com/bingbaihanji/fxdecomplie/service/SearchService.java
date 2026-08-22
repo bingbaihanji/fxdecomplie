@@ -6,7 +6,12 @@ import com.bingbaihanji.fxdecomplie.model.SearchScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -23,6 +28,7 @@ public class SearchService {
 
     /** 已注册的搜索策略提供器,按插入顺序调用 */
     private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
+
     private volatile ExcludeConfig excludeConfig = new ExcludeConfig(List.of(), List.of());
 
     private static Pattern globContainsPattern(String glob) {
@@ -122,7 +128,8 @@ public class SearchService {
                 }
             }
         }
-        all.sort(Comparator.comparingInt((SearchResult a) -> a.matchType().ordinal()).thenComparingInt(SearchResult::lineNumber));
+        all.sort(Comparator.comparingInt((SearchResult a) -> a.matchType().ordinal())
+                .thenComparingInt(SearchResult::lineNumber));
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
     }
 
@@ -173,7 +180,8 @@ public class SearchService {
                 }
             }
         }
-        all.sort(Comparator.comparingInt((SearchResult a) -> a.matchType().ordinal()).thenComparingInt(SearchResult::lineNumber));
+        all.sort(Comparator.comparingInt((SearchResult a) -> a.matchType().ordinal())
+                .thenComparingInt(SearchResult::lineNumber));
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
     }
 

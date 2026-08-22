@@ -12,9 +12,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
  * Bound type calculated using instance generic type.
  */
 public final class TypeBoundFieldGetAssign implements ITypeBoundDynamic {
+
     private final RootNode root;
+
     private final IndexInsnNode getNode;
+
     private final FieldInfo fieldInfo;
+
     private final ArgType initType;
 
     public TypeBoundFieldGetAssign(RootNode root, IndexInsnNode getNode, ArgType initType) {

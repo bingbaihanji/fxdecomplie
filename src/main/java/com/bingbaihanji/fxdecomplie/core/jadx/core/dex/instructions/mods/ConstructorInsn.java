@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ConstructorInsn extends BaseInvokeNode {
 
     private final MethodInfo callMth;
+
     private final CallType callType;
 
     public ConstructorInsn(MethodNode mth, InvokeNode invoke) {

@@ -14,14 +14,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** 测试助手：内存编译源码 → 字节映射，并构造 FileTreeModel */
+/** 测试助手:内存编译源码 → 字节映射,并构造 FileTreeModel */
 final class TestCompile {
 
     private TestCompile() {
         throw new AssertionError("utility class");
     }
 
-    /** 编译多段源码，返回「com/example/Test.class」→ 字节 映射。键用完整路径（含 .class）。 */
+    /** 编译多段源码,返回「com/example/Test.class」→ 字节 映射.键用完整路径(含 .class). */
     static Map<String, byte[]> compile(Map<String, String> classNameToSource) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         MemFileManager fm = new MemFileManager(
@@ -45,7 +45,7 @@ final class TestCompile {
         return fm.outputBytes;
     }
 
-    /** 由编译产物构建文件树根（PACKAGE 根 + CLASS_FILE 子节点） */
+    /** 由编译产物构建文件树根(PACKAGE 根 + CLASS_FILE 子节点) */
     static FileTreeModel treeFromClasses(Map<String, byte[]> classBytes) {
         FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
@@ -60,7 +60,7 @@ final class TestCompile {
         return root;
     }
 
-    /** 内存文件管理器：捕获编译输出的 class 字节 */
+    /** 内存文件管理器:捕获编译输出的 class 字节 */
     private static final class MemFileManager extends ForwardingJavaFileManager<JavaFileManager> {
         final Map<String, byte[]> outputBytes = new HashMap<>();
 

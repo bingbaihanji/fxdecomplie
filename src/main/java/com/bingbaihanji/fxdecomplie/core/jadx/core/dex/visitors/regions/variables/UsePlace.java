@@ -6,7 +6,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
 import java.util.Objects;
 
 public class UsePlace {
+
     public final IRegion region;
+
     public final IBlock block;
 
     public UsePlace(IRegion region, IBlock block) {

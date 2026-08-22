@@ -9,6 +9,7 @@ import java.util.Deque;
 import java.util.Objects;
 
 public abstract class TracedRegionVisitor implements IRegionVisitor {
+
     private final Deque<IRegion> regionStack = new ArrayDeque<>();
 
     @Override

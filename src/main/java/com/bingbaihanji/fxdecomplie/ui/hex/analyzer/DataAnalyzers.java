@@ -13,8 +13,8 @@ import java.util.UUID;
  * 内置数据分析器({@link DataAnalyzer})的注册工具类 
  * <p>
  * 该类为实用工具类,提供静态方法 {@link #registerDefaults} 向 {@link HexViewController}
- * 注册一系列默认的分析器,涵盖原始字节、十进制、二进制、ASCII、整数(有/无符号,大/小端)、
- * 浮点数、时间戳、RGBA 颜色以及 GUID 等常见数据类型的解析 
+ * 注册一系列默认的分析器,涵盖原始字节,十进制,二进制,ASCII,整数(有/无符号,大/小端),
+ * 浮点数,时间戳,RGBA 颜色以及 GUID 等常见数据类型的解析 
  * </p>
  *
  * @author BingBaiHanJi
@@ -25,11 +25,17 @@ public final class DataAnalyzers {
 
     // ---------- 颜色常量 ----------
     private static final Color C_HEX = Color.rgb(0x88, 0xC0, 0xFF);      // 十六进制
+
     private static final Color C_DEC = Color.rgb(0xC0, 0xE0, 0xC0);      // 十进制
+
     private static final Color C_FLOAT = Color.rgb(0xFF, 0xC0, 0x80);    // 浮点数
+
     private static final Color C_STR = Color.rgb(0xFF, 0xD0, 0x70);      // 字符串/ASCII
+
     private static final Color C_TIME = Color.rgb(0x80, 0xC0, 0xFF);     // 时间戳
+
     private static final Color C_BIN = Color.rgb(0xA0, 0xA0, 0xA0);      // 二进制
+
     private static final Color C_GUID = Color.rgb(0xC0, 0x80, 0xFF);     // GUID
 
     /**
@@ -41,7 +47,7 @@ public final class DataAnalyzers {
     /**
      * 向指定的控制器注册所有默认的内置数据分析器 
      * <p>
-     * 注册的分析器包括：
+     * 注册的分析器包括:
      * <ul>
      *   <li><b>Hex (raw)</b> – 当前字节的十六进制表示及十进制值</li>
      *   <li><b>Decimal</b> – 无符号 8 位整数</li>
@@ -54,7 +60,7 @@ public final class DataAnalyzers {
      *   <li><b>Float32</b> – 32 位单精度浮点数(大/小端)</li>
      *   <li><b>Float64</b> – 64 位双精度浮点数(大/小端)</li>
      *   <li><b>Timestamp</b> – Unix 时间戳(32 位小端,转为 ISO 时间)</li>
-     *   <li><b>RGBA</b> – 四字节颜色(R、G、B、A)并显示为 #RRGGBBAA</li>
+     *   <li><b>RGBA</b> – 四字节颜色(R,G,B,A)并显示为 #RRGGBBAA</li>
      *   <li><b>GUID</b> – 16 字节全局唯一标识符(大端顺序)</li>
      * </ul>
      * </p>
@@ -210,6 +216,7 @@ public final class DataAnalyzers {
      */
     @FunctionalInterface
     private interface SimpleFn {
+
         /**
          * 执行分析并返回结果列表 
          *
@@ -227,6 +234,7 @@ public final class DataAnalyzers {
      */
     @FunctionalInterface
     private interface MultiFn {
+
         /**
          * 执行分析并返回结果列表 
          *
@@ -238,13 +246,14 @@ public final class DataAnalyzers {
     }
 
     /**
-     * 简单分析器实现,适用于只需处理单个偏移位置的分析(如 Hex、ASCII、Decimal 等) 
+     * 简单分析器实现,适用于只需处理单个偏移位置的分析(如 Hex,ASCII,Decimal 等) 
      * <p>
      * 直接使用 {@link SimpleFn} 处理从指定偏移开始的单个字节或简单数据 
      * </p>
      */
     private record SimpleAnalyzer(String name, Color colorHint, SimpleFn fn)
             implements DataAnalyzer {
+
         @Override
         public String getName() {
             return name;
@@ -257,7 +266,7 @@ public final class DataAnalyzers {
     }
 
     /**
-     * 多字节分析器实现,适用于需要读取连续 N 个字节并作为整体解析的分析(如整数、浮点数、时间戳等) 
+     * 多字节分析器实现,适用于需要读取连续 N 个字节并作为整体解析的分析(如整数,浮点数,时间戳等) 
      * <p>
      * 构造时指定所需的字节数 {@code byteCount},分析时会从数据中截取指定长度的片段,
      * 包装为 {@link ByteBuffer} 传递给 {@link MultiFn} 处理 
@@ -265,6 +274,7 @@ public final class DataAnalyzers {
      */
     private record MultiAnalyzer(String name, int byteCount, MultiFn fn)
             implements DataAnalyzer {
+
         @Override
         public String getName() {
             return name;

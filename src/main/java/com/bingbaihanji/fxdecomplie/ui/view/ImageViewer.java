@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 
 /**
- * IDEA 风格图片查看器：工具栏 + 滚轮缩放 + 旋转 + 拖拽平移
+ * IDEA 风格图片查看器:工具栏 + 滚轮缩放 + 旋转 + 拖拽平移
  *
  * @author bingbaihanji
  * @date 2026-07-03
@@ -24,25 +24,34 @@ import java.io.ByteArrayInputStream;
 public final class ImageViewer extends BorderPane {
 
     private static final Logger log = LoggerFactory.getLogger(ImageViewer.class);
+
     private static final double MIN_ZOOM = 0.1;
+
     private static final double MAX_ZOOM = 10.0;
+
     private static final double ZOOM_STEP = 0.15;
 
     /** 图片显示控件 */
     private final ImageView imageView = new ImageView();
+
     /** 图片容器(StackPane 居中,支持拖拽平移) */
     private final StackPane canvas = new StackPane(imageView);
+
     /** 底部状态信息标签(尺寸 缩放 旋转角度) */
     private final Label infoLabel = new Label("");
 
     /** 当前缩放比例 */
     private double zoom = 1.0;
+
     /** 鼠标按下时的 X 坐标 */
     private double mouseDownX;
+
     /** 鼠标按下时的 Y 坐标 */
     private double mouseDownY;
+
     /** 鼠标按下时图片的 TranslateX */
     private double transOnDownX;
+
     /** 鼠标按下时图片的 TranslateY */
     private double transOnDownY;
 

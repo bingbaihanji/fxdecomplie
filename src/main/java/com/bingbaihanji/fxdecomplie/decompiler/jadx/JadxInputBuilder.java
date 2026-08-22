@@ -7,7 +7,15 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaLoadResult;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 
 /**
  * 将项目工作区上下文转换为 jadx 可消费的 class reader 集合 

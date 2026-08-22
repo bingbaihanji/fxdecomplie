@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JavaMethodParametersAttr extends MethodParametersAttr implements IJavaAttribute {
+
     public JavaMethodParametersAttr(List<Info> list) {
         super(list);
     }

@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 public class AnnotationGen {
 
     private final ClassNode cls;
+
     private final ClassGen classGen;
 
     public AnnotationGen(ClassNode cls, ClassGen classGen) {

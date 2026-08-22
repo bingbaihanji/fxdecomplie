@@ -7,7 +7,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.AnnotationsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.CodeFeaturesAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IFieldInfoRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.FixSwitchOverEnum;
@@ -75,7 +80,8 @@ public class NonFinalResIdsVisitor extends AbstractVisitor implements IRegionIte
                 }
                 for (Map.Entry<String, EncodedValue> entry : annotation.getValues().entrySet()) {
                     Object value = entry.getValue().getValue();
-                    if (value instanceof IFieldInfoRef && isCustomResourceClass(((IFieldInfoRef) value).getFieldInfo().getDeclClass())) {
+                    if (value instanceof IFieldInfoRef && isCustomResourceClass(((IFieldInfoRef) value).getFieldInfo()
+                            .getDeclClass())) {
                         gradleInfoStorage.setNonFinalResIds(true);
                         return true;
                     }

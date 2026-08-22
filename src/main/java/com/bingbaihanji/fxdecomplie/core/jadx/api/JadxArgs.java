@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.args.GeneratedRenamesMappingFileMode;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.args.IntegerFormat;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.args.ResourceNameSource;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.args.UseSourceNameAsClassNameAlias;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.args.UserRenamesMappingsMode;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.data.ICodeData;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IAliasProvider;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IRenameCondition;
@@ -29,7 +33,13 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -37,49 +47,65 @@ import java.util.stream.Collectors;
 /**
  * Jadx 反编译器参数配置类
  * <p>
- * 包含反编译过程中的所有可配置选项，如输入/输出路径 反编译模式 
+ * 包含反编译过程中的所有可配置选项,如输入/输出路径 反编译模式 
  * 去混淆设置 代码格式化选项 插件配置等
  * <p>
- * 实现 {@link Closeable} 接口，用于释放内部缓存和插件加载器资源
+ * 实现 {@link Closeable} 接口,用于释放内部缓存和插件加载器资源
  */
 public class JadxArgs implements Closeable {
-    /** 默认线程数，取 CPU 核心数的一半 (最少为 1) */
+
+    /** 默认线程数,取 CPU 核心数的一半 (最少为 1) */
     public static final int DEFAULT_THREADS_COUNT = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
-    /** 默认换行符，使用系统行分隔符 */
+
+    /** 默认换行符,使用系统行分隔符 */
     public static final String DEFAULT_NEW_LINE_STR = System.lineSeparator();
-    /** 默认缩进字符串，4 个空格 */
+
+    /** 默认缩进字符串,4 个空格 */
     public static final String DEFAULT_INDENT_STR = "    ";
+
     /** 默认输出根目录名 */
     public static final String DEFAULT_OUT_DIR = "jadx-output";
+
     /** 默认源码输出子目录名 */
     public static final String DEFAULT_SRC_DIR = "sources";
+
     /** 默认资源输出子目录名 */
     public static final String DEFAULT_RES_DIR = "resources";
+
     private static final Logger LOG = LoggerFactory.getLogger(JadxArgs.class);
+
     /**
      * 要排除处理的反编译通道列表
      */
     private final List<String> disabledPasses = new ArrayList<>();
+
     /** 待反编译的输入文件列表 */
     private List<File> inputFiles = new ArrayList<>(1);
+
     /** 输出根目录 */
     private File outDir;
+
     /** 源码输出目录 */
     private File outDirSrc;
+
     /** 资源输出目录 */
     private File outDirRes;
-    /** 代码缓存，用于缓存反编译结果 */
+
+    /** 代码缓存,用于缓存反编译结果 */
     private ICodeCache codeCache = new InMemoryCodeCache();
+
     /**
      * 使用数据缓存在代码重新加载之间保存类 方法和字段的使用位置信息
-     * 如果不需要代码重新加载，可以设置为 {@link EmptyUsageInfoCache}
+     * 如果不需要代码重新加载,可以设置为 {@link EmptyUsageInfoCache}
      */
     private IUsageInfoCache usageInfoCache = new InMemoryUsageInfoCache();
+
     /** 反编译使用的线程数 */
     private int threadsCount = DEFAULT_THREADS_COUNT;
 
     /** 是否输出控制流图 (CFG) */
     private boolean cfgOutput = false;
+
     /** 是否输出原始控制流图 */
     private boolean rawCFGOutput = false;
 
@@ -88,30 +114,39 @@ public class JadxArgs implements Closeable {
 
     /** 是否使用 import 语句 */
     private boolean useImports = true;
+
     /** 是否保留调试信息 */
     private boolean debugInfo = true;
+
     /** 是否插入调试行号 */
     private boolean insertDebugLines = false;
+
     /** 是否提取 finally 块 */
     private boolean extractFinally = true;
+
     /** 是否内联匿名类 */
     private boolean inlineAnonymousClasses = true;
+
     /** 是否内联方法 */
     private boolean inlineMethods = true;
+
     /** 是否允许内联 Kotlin lambda 表达式 */
     private boolean allowInlineKotlinLambda = true;
+
     /** 是否将内部类移至顶级 */
     private boolean moveInnerClasses = true;
 
     /** 是否跳过资源文件的处理 */
     private boolean skipResources = false;
+
     /** 是否跳过源代码的处理 */
     private boolean skipSources = false;
+
     /** 是否使用 HTTP 头来检测资源文件扩展名 */
     private boolean useHeadersForDetectResourceExtensions;
 
     /**
-     * 类过滤器谓词，允许根据类的全限定名过滤要处理的类
+     * 类过滤器谓词,允许根据类的全限定名过滤要处理的类
      */
     private @Nullable Predicate<String> classFilter = null;
 
@@ -122,30 +157,36 @@ public class JadxArgs implements Closeable {
 
     /** 用户自定义重命名映射文件路径 */
     private Path userRenamesMappingsPath = null;
+
     /** 用户自定义重命名映射模式 */
     private UserRenamesMappingsMode userRenamesMappingsMode = UserRenamesMappingsMode.getDefault();
 
     /** 是否启用去混淆 */
     private boolean deobfuscationOn = false;
+
     /** 是否使用源文件名作为类名的别名 */
     private UseSourceNameAsClassNameAlias useSourceNameAsClassNameAlias = UseSourceNameAsClassNameAlias.getDefault();
+
     /** 源名称重复次数限制 */
     private int sourceNameRepeatLimit = 10;
 
     /** 生成的重命名映射文件路径 */
     private File generatedRenamesMappingFile = null;
+
     /** 生成的重命名映射文件模式 */
     private GeneratedRenamesMappingFileMode generatedRenamesMappingFileMode = GeneratedRenamesMappingFileMode.getDefault();
+
     /** 资源名称来源 */
     private ResourceNameSource resourceNameSource = ResourceNameSource.AUTO;
 
     /** 去混淆时名称的最小长度 */
     private int deobfuscationMinLength = 0;
+
     /** 去混淆时名称的最大长度 */
     private int deobfuscationMaxLength = Integer.MAX_VALUE;
 
     /**
-     * 去混淆白名单，包含要排除去混淆处理的类和包名列表 (以 '.*' 结尾表示包)
+     * 去混淆白名单,包含要排除去混淆处理的类和包名列表 (以 '.*' 结尾表示包)
      */
     private List<String> deobfuscationWhitelist = DeobfWhitelist.DEFAULT_LIST;
 
@@ -161,11 +202,14 @@ public class JadxArgs implements Closeable {
 
     /** 是否将 Unicode 字符转义为 \\uXXXX 形式 */
     private boolean escapeUnicode = false;
+
     /** 是否将常量字段替换为其实际值 */
     private boolean replaceConsts = true;
+
     /** 是否保留字节码中的访问修饰符 (即使它们与源码不一致) */
     private boolean respectBytecodeAccModifiers = false;
-    /** Gradle 项目导出类型，null 表示不导出为 Gradle 项目 */
+
+    /** Gradle 项目导出类型,null 表示不导出为 Gradle 项目 */
     private @Nullable ExportGradleType exportGradleType = null;
 
     /** 是否恢复字符串上的 switch 语句 */
@@ -176,56 +220,76 @@ public class JadxArgs implements Closeable {
 
     /** 文件系统是否区分大小写 */
     private boolean fsCaseSensitive;
+
     /** 重命名标志集合 */
     private Set<RenameEnum> renameFlags = EnumSet.allOf(RenameEnum.class);
+
     /** 输出格式 */
     private OutputFormatEnum outputFormat = OutputFormatEnum.JAVA;
+
     /** 反编译模式 */
     private DecompilationMode decompilationMode = DecompilationMode.AUTO;
-    /** 代码数据对象，用于存储反编译后的代码元信息 */
+
+    /** 代码数据对象,用于存储反编译后的代码元信息 */
     private ICodeData codeData;
+
     /** 代码中使用的换行符 */
     private String codeNewLineStr = DEFAULT_NEW_LINE_STR;
+
     /** 代码中使用的缩进字符串 */
     private String codeIndentStr = DEFAULT_INDENT_STR;
-    /** 代码写入器工厂函数，用于创建 ICodeWriter 实例 */
+
+    /** 代码写入器工厂函数,用于创建 ICodeWriter 实例 */
     private Function<JadxArgs, ICodeWriter> codeWriterProvider = AnnotatedCodeWriter::new;
-    /** 注释级别，控制反编译输出中注释的详细程度 */
+
+    /** 注释级别,控制反编译输出中注释的详细程度 */
     private CommentsLevel commentsLevel = CommentsLevel.INFO;
+
     /** 整数字面量的输出格式 */
     private IntegerFormat integerFormat = IntegerFormat.AUTO;
+
     /**
      * 每条指令在方法中允许的类型更新最大次数
-     * 值必须大于等于 1，默认值为 10
+     * 值必须大于等于 1,默认值为 10
      */
     private int typeUpdatesLimitCount = 10;
+
     /** 是否使用 dx 格式输入 (Android Dalvik 可执行文件) */
     private boolean useDxInput = false;
+
     /** 是否使用 Kotlin 方法名作为变量名 */
     private UseKotlinMethodsForVarNames useKotlinMethodsForVarNames = UseKotlinMethodsForVarNames.APPLY;
+
     /**
      * 附加文件结构信息获取器
      * 默认使用临时目录
      */
     private IJadxFilesGetter filesGetter = TempFilesGetter.INSTANCE;
+
     /**
      * 附加数据验证和安全检查
      */
     private IJadxSecurity security = new JadxSecurity(JadxSecurityFlag.all());
+
     /**
      * 是否跳过文件保存 (可用于性能测试)
      */
     private boolean skipFilesSave = false;
+
     /**
-     * 是否运行额外的开销较大的检查，以验证内部不变量和信息完整性
+     * 是否运行额外的开销较大的检查,以验证内部不变量和信息完整性
      */
     private boolean runDebugChecks = false;
+
     /** 插件选项键值对 */
     private Map<String, String> pluginOptions = new HashMap<>();
+
     /** 已禁用的插件名称集合 */
     private Set<String> disabledPlugins = new HashSet<>();
+
     /** 插件加载器 */
     private JadxPluginLoader pluginLoader = new JadxBasePluginLoader();
+
     /** 是否加载 jadx 内置类集合文件 */
     private boolean loadJadxClsSetFile = true;
 
@@ -235,10 +299,10 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 构建插件相关的哈希字符串，作为选项哈希的一部分
+     * 构建插件相关的哈希字符串,作为选项哈希的一部分
      * 将所有已解析插件上下文的输入哈希以 ":" 连接
      *
-     * @param decompiler Jadx 反编译器实例 (可为 null，此时返回空字符串)
+     * @param decompiler Jadx 反编译器实例 (可为 null,此时返回空字符串)
      * @return 插件哈希字符串
      */
     private static String buildPluginsHash(@Nullable JadxDecompiler decompiler) {
@@ -252,7 +316,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置输出根目录，并自动设置源码和资源子目录
+     * 设置输出根目录,并自动设置源码和资源子目录
      *
      * @param rootDir 输出根目录
      */
@@ -263,8 +327,8 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 关闭并释放所有内部资源，包括代码缓存 使用数据缓存和插件加载器
-     * 关闭过程中的异常会被记录到日志，不会抛出
+     * 关闭并释放所有内部资源,包括代码缓存 使用数据缓存和插件加载器
+     * 关闭过程中的异常会被记录到日志,不会抛出
      */
     @Override
     public void close() {
@@ -293,7 +357,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置输入文件列表，替换已有的输入文件集合
+     * 设置输入文件列表,替换已有的输入文件集合
      *
      * @param inputFiles 输入文件列表
      */
@@ -311,7 +375,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置单个输入文件 (内部通过追加方式实现，不会清空已有列表)
+     * 设置单个输入文件 (内部通过追加方式实现,不会清空已有列表)
      *
      * @param inputFile 输入文件
      */
@@ -667,7 +731,7 @@ public class JadxArgs implements Closeable {
 
     /**
      * 设置是否导出为 Gradle 项目
-     * 传入 true 且当前未指定 Gradle 类型时，默认使用 {@link ExportGradleType#AUTO}
+     * 传入 true 且当前未指定 Gradle 类型时,默认使用 {@link ExportGradleType#AUTO}
      * 传入 false 时清除导出类型
      *
      * @param exportAsGradleProject 是否导出为 Gradle 项目
@@ -741,7 +805,7 @@ public class JadxArgs implements Closeable {
     /**
      * 根据开关状态更新重命名标志集合
      *
-     * @param enabled 为 true 时添加标志，为 false 时移除标志
+     * @param enabled 为 true 时添加标志,为 false 时移除标志
      * @param flag    要更新的重命名标志
      */
     private void updateRenameFlag(boolean enabled, RenameEnum flag) {
@@ -951,9 +1015,9 @@ public class JadxArgs implements Closeable {
 
     /**
      * 计算所有可能影响反编译结果代码的选项的哈希值
-     * 用于缓存键生成，确保选项变更时能生成不同的缓存键
+     * 用于缓存键生成,确保选项变更时能生成不同的缓存键
      *
-     * @param decompiler Jadx 反编译器实例 (可为 null，此时不包含插件哈希)
+     * @param decompiler Jadx 反编译器实例 (可为 null,此时不包含插件哈希)
      * @return 选项哈希值的 MD5 字符串
      */
     public String makeCodeArgsHash(@Nullable JadxDecompiler decompiler) {
@@ -972,7 +1036,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 返回包含主要配置选项的字符串表示，主要用于调试和日志输出
+     * 返回包含主要配置选项的字符串表示,主要用于调试和日志输出
      *
      * @return 描述当前参数配置的字符串
      */
@@ -1025,7 +1089,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 重命名标志枚举，控制去混淆时的重命名行为
+     * 重命名标志枚举,控制去混淆时的重命名行为
      * <ul>
      *   <li>CASE - 区分大小写</li>
      *   <li>VALID - 仅使用有效标识符字符</li>
@@ -1033,7 +1097,9 @@ public class JadxArgs implements Closeable {
      * </ul>
      */
     public enum RenameEnum {
-        CASE, VALID, PRINTABLE
+        CASE,
+        VALID,
+        PRINTABLE
     }
 
     /**
@@ -1044,7 +1110,8 @@ public class JadxArgs implements Closeable {
      * </ul>
      */
     public enum OutputFormatEnum {
-        JAVA, JSON
+        JAVA,
+        JSON
     }
 
     /**
@@ -1056,6 +1123,8 @@ public class JadxArgs implements Closeable {
      * </ul>
      */
     public enum UseKotlinMethodsForVarNames {
-        DISABLE, APPLY, APPLY_AND_HIDE
+        DISABLE,
+        APPLY,
+        APPLY_AND_HIDE
     }
 }

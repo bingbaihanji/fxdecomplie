@@ -11,10 +11,10 @@ import java.util.Arrays;
  *
  * <p>
  * {@code SparseIntArray} 把 int 键映射到 int 值键之间可以有空洞相比用 {@link java.util.HashMap} 存
- * {@code Integer → Integer},它更省内存：既避免了键和值的自动装箱,也不需要为每个映射额外创建 Entry 对象
+ * {@code Integer → Integer},它更省内存:既避免了键和值的自动装箱,也不需要为每个映射额外创建 Entry 对象
  *
  * <p>
- * 内部用两个平行数组保存数据,并按键升序排列,查找走二分因此不适合超大规模数据：查找是二分 增删要移动数组元素
+ * 内部用两个平行数组保存数据,并按键升序排列,查找走二分因此不适合超大规模数据:查找是二分 增删要移动数组元素
  * 对于数百量级的容器,性能差距通常小于 50%可通过 {@link #keyAt(int)} 与 {@link #valueAt(int)} 按升序下标遍历
  *
  * <p>
@@ -26,8 +26,11 @@ import java.util.Arrays;
  * @description int → int  将整数映射为整数
  */
 public class SparseIntArray implements Cloneable {
+
     private int[] mKeys;
+
     private int[] mValues;
+
     private int mSize;
 
     /**
@@ -64,7 +67,7 @@ public class SparseIntArray implements Cloneable {
             clone.mKeys = mKeys.clone();
             clone.mValues = mValues.clone();
         } catch (CloneNotSupportedException cnse) {
-            /* 不会发生：本类实现了 Cloneable */
+            /* 不会发生:本类实现了 Cloneable */
         }
         return clone;
     }
@@ -156,7 +159,7 @@ public class SparseIntArray implements Cloneable {
      * 返回下标 {@code index}(范围 {@code 0...size()-1})处映射的键
      *
      * <p>
-     * 以升序下标访问时,键按升序返回：{@code keyAt(0)} 是最小键,{@code keyAt(size()-1)} 是最大键
+     * 以升序下标访问时,键按升序返回:{@code keyAt(0)} 是最小键,{@code keyAt(size()-1)} 是最大键
      * 下标越界({@code index >= size()})时抛出 {@link ArrayIndexOutOfBoundsException}
      *
      * @param index 映射下标

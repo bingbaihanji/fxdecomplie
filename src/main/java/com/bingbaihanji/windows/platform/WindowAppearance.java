@@ -19,6 +19,7 @@ public record WindowAppearance(
 
     /** 默认标题栏颜色(深墨绿 0x00514933,COLORREF 格式) */
     public static final int DEFAULT_CAPTION_COLOR = 0x00514933;
+
     /** 默认标题栏文字颜色( #915CB9 ) */
     public static final int DEFAULT_TEXT_COLOR = 0x00B95C91;
 
@@ -69,6 +70,7 @@ public record WindowAppearance(
      * Win32 风格的窗口边框外边距各边设为 -1 时,DWM 帧将扩展到整个客户区
      */
     public record FrameMargins(int left, int right, int top, int bottom) {
+
         /**
          * 创建全客户区扩展的边距(四边均为 -1)
          */
@@ -81,13 +83,21 @@ public record WindowAppearance(
      * WindowAppearance 的 Builder
      */
     public static final class Builder {
+
         private Boolean darkMode;
+
         private Boolean shadow;
+
         private WindowBackdropType backdropType;
+
         private WindowCornerPreference cornerPreference;
+
         private Integer borderColor;
+
         private Integer captionColor;
+
         private Integer textColor;
+
         private FrameMargins frameMargins;
 
         private Builder() {

@@ -11,7 +11,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrinkVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
@@ -19,7 +23,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @JadxVisitor(
@@ -363,8 +374,11 @@ public class ExtractFieldInit extends AbstractVisitor {
     }
 
     private static final class FieldInitInfo {
+
         final FieldNode fieldNode;
+
         final IndexInsnNode putInsn;
+
         final boolean canMove;
 
         public FieldInitInfo(FieldNode fieldNode, IndexInsnNode putInsn, boolean canMove) {
@@ -375,7 +389,9 @@ public class ExtractFieldInit extends AbstractVisitor {
     }
 
     private static final class ConstructorInitInfo {
+
         final MethodNode constructorMth;
+
         final List<FieldInitInfo> fieldInits;
 
         private ConstructorInitInfo(MethodNode constructorMth, List<FieldInitInfo> fieldInits) {

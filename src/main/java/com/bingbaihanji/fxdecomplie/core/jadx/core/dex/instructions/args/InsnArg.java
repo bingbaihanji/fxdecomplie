@@ -17,7 +17,7 @@ import java.util.Objects;
 
 /**
  * 指令参数
- * 可以是：寄存器 字面量 指令或名称
+ * 可以是:寄存器 字面量 指令或名称
  */
 public abstract class InsnArg extends Typed {
 
@@ -37,7 +37,7 @@ public abstract class InsnArg extends Typed {
         return reg(insn.getReg(argNum), type);
     }
 
-    /** 若类型已知则创建类型不可变的寄存器参数，否则创建普通寄存器参数 */
+    /** 若类型已知则创建类型不可变的寄存器参数,否则创建普通寄存器参数 */
     public static RegisterArg typeImmutableIfKnownReg(InsnData insn, int argNum, ArgType type) {
         if (type.isTypeKnown()) {
             return typeImmutableReg(insn.getReg(argNum), type);
@@ -55,7 +55,7 @@ public abstract class InsnArg extends Typed {
         return reg(regNum, type, true);
     }
 
-    /** 创建寄存器参数，可选是否将类型标记为不可变 */
+    /** 创建寄存器参数,可选是否将类型标记为不可变 */
     public static RegisterArg reg(int regNum, ArgType type, boolean typeImmutable) {
         RegisterArg reg = new RegisterArg(regNum, type);
         if (typeImmutable) {
@@ -74,13 +74,13 @@ public abstract class InsnArg extends Typed {
         return lit(insn.getLiteral(), type);
     }
 
-    /** 将指令包装为参数，并标记其为已包装 */
+    /** 将指令包装为参数,并标记其为已包装 */
     private static InsnWrapArg wrap(InsnNode insn) {
         insn.add(AFlag.WRAPPED);
         return new InsnWrapArg(insn);
     }
 
-    /** 在父指令中查找指定参数的索引，未找到返回 -1 */
+    /** 在父指令中查找指定参数的索引,未找到返回 -1 */
     private static int getArgIndex(InsnNode parent, InsnArg arg) {
         int count = parent.getArgsCount();
         for (int i = 0; i < count; i++) {
@@ -93,8 +93,8 @@ public abstract class InsnArg extends Typed {
 
     /**
      * 将指令包装为参数
-     * 对于 CONST/MOVE 指令，若能内联则直接返回其参数并标记不生成代码 
-     * 若不能内联 (强制内联标志)，则作为包装指令处理
+     * 对于 CONST/MOVE 指令,若能内联则直接返回其参数并标记不生成代码 
+     * 若不能内联 (强制内联标志),则作为包装指令处理
      */
     @NotNull
     public static InsnArg wrapInsnIntoArg(InsnNode insn) {
@@ -120,7 +120,7 @@ public abstract class InsnArg extends Typed {
      * 将指令包装为指令参数 (内部包装)
      * <p>
      * 优先使用 {@link InsnArg#wrapInsnIntoArg(InsnNode)}
-     * 本方法不支持 MOVE 和 CONST 指令！
+     * 本方法不支持 MOVE 和 CONST 指令!
      */
     public static InsnArg wrapArg(InsnNode insn) {
         RegisterArg resArg = insn.getResult();
@@ -229,7 +229,7 @@ public abstract class InsnArg extends Typed {
         InsnArg arg = wrapInsnIntoArg(insn);
         InsnArg oldArg = parent.getArg(i);
         if (arg.getType() == ArgType.UNKNOWN) {
-            // 若被包装指令缺少结果，则恢复参数类型
+            // 若被包装指令缺少结果,则恢复参数类型
             arg.setType(oldArg.getType());
         }
         parent.setArg(i, arg);
@@ -301,7 +301,7 @@ public abstract class InsnArg extends Typed {
         return false;
     }
 
-    /** 若为包装指令参数则返回其内部指令，否则返回 null */
+    /** 若为包装指令参数则返回其内部指令,否则返回 null */
     public InsnNode unwrap() {
         if (isInsnWrap()) {
             return ((InsnWrapArg) this).getWrapInsn();
@@ -368,7 +368,7 @@ public abstract class InsnArg extends Typed {
         return copy;
     }
 
-    /** 复制当前参数，返回一个副本 */
+    /** 复制当前参数,返回一个副本 */
     public abstract InsnArg duplicate();
 
     /** 返回简短的字符串表示 */

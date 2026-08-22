@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 /**
  * 字节码视图语法高亮器,用于 jadx 风格的字节码输出
  *
- * <p>高亮元素：标题行 结构头(magic/flags/this_class/Constant pool 等) 
+ * <p>高亮元素:标题行 结构头(magic/flags/this_class/Constant pool 等) 
  * hex 地址 hex 字节 指令偏移(|xxxx:) 操作码 常量池引用(#N) 
  * 注释 字符串</p>
  *
@@ -25,29 +25,51 @@ import java.util.regex.Pattern;
 final class BytecodeHighlighter implements SyntaxDecorator {
 
     private static final Color DEFAULT_TEXT = Color.web("#9aa7b0");
+
     private static final Color HEADER = Color.web("#4ec9b0");
+
     private static final Color DIRECTIVE = Color.web("#c586c0");
+
     private static final Color OPCODE = Color.web("#569cd6");
+
     private static final Color HEX_ADDR = Color.web("#dcdcaa");
+
     private static final Color HEX_BYTES = Color.web("#9cdcfe");
+
     private static final Color COMMENT = Color.web("#6a9955");
+
     private static final Color STRING = Color.web("#ce9178");
+
     private static final Color CP_REF = Color.web("#b5cea8");
+
     private static final Color INSN_OFF = Color.web("#d7ba7d");
+
     private static final Color NUMBER = Color.web("#b5cea8");
+
     private static final Color LABEL = Color.web("#e0e0e0");
 
     private static final StyleAttributeMap S_DEFAULT = builder(DEFAULT_TEXT);
+
     private static final StyleAttributeMap S_HEADER = builder(HEADER);
+
     private static final StyleAttributeMap S_DIRECTIVE = builder(DIRECTIVE);
+
     private static final StyleAttributeMap S_OPCODE = builder(OPCODE);
+
     private static final StyleAttributeMap S_HEX_ADDR = builder(HEX_ADDR);
+
     private static final StyleAttributeMap S_HEX_BYTES = builder(HEX_BYTES);
+
     private static final StyleAttributeMap S_COMMENT = builder(COMMENT);
+
     private static final StyleAttributeMap S_STRING = builder(STRING);
+
     private static final StyleAttributeMap S_CP_REF = builder(CP_REF);
+
     private static final StyleAttributeMap S_INSN_OFF = builder(INSN_OFF);
+
     private static final StyleAttributeMap S_NUMBER = builder(NUMBER);
+
     private static final StyleAttributeMap S_LABEL = builder(LABEL);
 
     /** 结构头标签 */
@@ -327,8 +349,18 @@ final class BytecodeHighlighter implements SyntaxDecorator {
     }
 
     private enum Kind {
-        HEADER, DIRECTIVE, OPCODE, HEX_ADDR, HEX_BYTES, INSN_OFF,
-        COMMENT, STRING, CP_REF, NUMBER, LABEL, DEFAULT
+        HEADER,
+        DIRECTIVE,
+        OPCODE,
+        HEX_ADDR,
+        HEX_BYTES,
+        INSN_OFF,
+        COMMENT,
+        STRING,
+        CP_REF,
+        NUMBER,
+        LABEL,
+        DEFAULT
     }
 
     private record Token(Kind kind, String text) {

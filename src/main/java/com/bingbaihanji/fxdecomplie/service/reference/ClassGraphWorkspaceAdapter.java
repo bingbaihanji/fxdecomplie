@@ -1,17 +1,20 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.ClassInfoList;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import org.objectweb.asm.*;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,12 +191,19 @@ public final class ClassGraphWorkspaceAdapter {
     }
 
     private static final class MetadataVisitor extends ClassVisitor {
+
         final List<String> interfaces = new ArrayList<>();
+
         final List<String> annotations = new ArrayList<>();
+
         final List<MethodData> methods = new ArrayList<>();
+
         String name;
+
         int access;
+
         String superName;
+
         String sourceFile;
 
         MetadataVisitor() {
@@ -235,7 +245,7 @@ public final class ClassGraphWorkspaceAdapter {
     }
 
     /**
-     * 轻量级方法数据(仅名称、描述符、访问标志)
+     * 轻量级方法数据(仅名称,描述符,访问标志)
      */
     private record MethodData(String name, String descriptor, int access) {
     }

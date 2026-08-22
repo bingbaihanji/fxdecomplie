@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
  * Current implementation: use class with source file as 'classesN.dex' where N is minimal
  */
 public class SelectFromDuplicates {
+
     private static final Logger LOG = LoggerFactory.getLogger(SelectFromDuplicates.class);
 
     private static final Pattern CLASSES_DEX_PATTERN = Pattern.compile("classes([1-9]\\d*)\\.dex");

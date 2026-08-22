@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.scan.ScanConfig;
@@ -7,19 +6,25 @@ import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /** 保存扫描过程中遇到的包的元数据 */
 public class PackageInfo implements Comparable<PackageInfo>, Named {
+
     /** 包名称 */
     private String name;
 
     /**
-     * 对 package-info.class 文件上的注解的唯 {@link AnnotationInfo} 对象集合(如果存在)，否则为 null
+     * 对 package-info.class 文件上的注解的唯 {@link AnnotationInfo} 对象集合(如果存在),否则为 null
      */
     private Set<AnnotationInfo> annotationInfoSet;
 
-    /** 对 package-info.class 文件上的注解的 {@link AnnotationInfo}(如果存在)，否则为 null */
+    /** 对 package-info.class 文件上的注解的 {@link AnnotationInfo}(如果存在),否则为 null */
     private AnnotationInfoList annotationInfo;
 
     /** 此包的父包 */
@@ -49,11 +54,11 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
     }
 
     /**
-     * 获取父包的名称，或命名类所属包的名称
+     * 获取父包的名称,或命名类所属包的名称
      *
      * @param packageOrClassName
      *            包名或类名
-     * @return 父包名称，或命名类所属包的名称，如果 packageOrClassName 是根包("")则返回 null
+     * @return 父包名称,或命名类所属包的名称,如果 packageOrClassName 是根包("")则返回 null
      */
     public static String getParentPackageName(final String packageOrClassName) {
         if (packageOrClassName.isEmpty()) {
@@ -66,7 +71,7 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取指定名称包的 {@link PackageInfo} 对象，如果不存在则创建它，同时为任何尚未创建的
+     * 获取指定名称包的 {@link PackageInfo} 对象,如果不存在则创建它,同时为任何尚未创建的
      * 所需父包创建 {@link PackageInfo} 对象
      *
      * @param packageName
@@ -91,7 +96,7 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
 
         // 如果这不是根包("")
         if (!packageName.isEmpty()) {
-            // 递归为父包创建 PackageInfo 对象(直到到达已存在或不被接受的父包)，
+            // 递归为父包创建 PackageInfo 对象(直到到达已存在或不被接受的父包),
             // 并将每个祖先包连接到其父包
             final String parentPackageName = getParentPackageName(packageInfo.name);
             if (ScanConfig.packageAcceptReject.isAcceptedAndNotRejected(parentPackageName)
@@ -164,11 +169,11 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
     }
 
     /**
-     * 获取此包上的某个注解，如果包没有该注解则返回 null
+     * 获取此包上的某个注解,如果包没有该注解则返回 null
      *
      * @param annotation
      *            注解类
-     * @return 表示此包上该注解的 {@link AnnotationInfo} 对象，如果包没有该注解则返回 null
+     * @return 表示此包上该注解的 {@link AnnotationInfo} 对象,如果包没有该注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -176,11 +181,11 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
     }
 
     /**
-     * 获取此包上的某个命名注解，如果包没有该命名注解则返回 null
+     * 获取此包上的某个命名注解,如果包没有该命名注解则返回 null
      *
      * @param annotationName
      *            注解名称
-     * @return 表示此包上该命名注解的 {@link AnnotationInfo} 对象，如果包没有该命名注解则返回 null
+     * @return 表示此包上该命名注解的 {@link AnnotationInfo} 对象,如果包没有该命名注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
         for (final AnnotationInfo ai : getAnnotationInfo()) {
@@ -236,18 +241,18 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 此包的父包，如果是根包则返回 null
+     * 此包的父包,如果是根包则返回 null
      *
-     * @return 父包，如果是根包则返回 null
+     * @return 父包,如果是根包则返回 null
      */
     public PackageInfo getParent() {
         return parent;
     }
 
     /**
-     * 此包的子包，如果没有则返回空列表
+     * 此包的子包,如果没有则返回空列表
      *
-     * @return 子包，如果没有则返回空列表
+     * @return 子包,如果没有则返回空列表
      */
     public PackageInfoList getChildren() {
         if (children == null) {
@@ -256,6 +261,7 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
         final PackageInfoList childrenSorted = new PackageInfoList(children);
         // 确保子包已排序
         CollectionUtils.sortIfNotEmpty(childrenSorted, new Comparator<PackageInfo>() {
+
             @Override
             public int compare(final PackageInfo o1, final PackageInfo o2) {
                 return o1.name.compareTo(o2.name);
@@ -265,11 +271,11 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
     }
 
     /**
-     * 获取此包中指定名称类的 {@link ClassInfo} 对象，如果在此包中未找到该类则返回 null
+     * 获取此包中指定名称类的 {@link ClassInfo} 对象,如果在此包中未找到该类则返回 null
      *
      * @param className
      *            类名
-     * @return 此包中指定名称类的 {@link ClassInfo} 对象，如果在此包中未找到该类则返回 null
+     * @return 此包中指定名称类的 {@link ClassInfo} 对象,如果在此包中未找到该类则返回 null
      */
     public ClassInfo getClassInfo(final String className) {
         return memberClassNameToClassInfo == null ? null : memberClassNameToClassInfo.get(className);

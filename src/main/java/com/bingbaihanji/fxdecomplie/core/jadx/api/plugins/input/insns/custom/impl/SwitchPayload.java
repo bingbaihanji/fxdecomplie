@@ -5,7 +5,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.custom.ISw
 public class SwitchPayload implements ISwitchPayload {
 
     private final int size;
+
     private final int[] keys;
+
     private final int[] targets;
 
     public SwitchPayload(int size, int[] keys, int[] targets) {

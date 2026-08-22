@@ -12,10 +12,12 @@ import java.util.List;
 public class IntList {
 
     // ---------- 常量 ----------
+
     /** 默认初始容量 */
     private static final int DEFAULT_CAPACITY = 16;
 
     // ---------- 字段 ----------
+
     /** 存储数据的内部数组 */
     private int[] data;
 

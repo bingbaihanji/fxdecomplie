@@ -8,7 +8,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstStringNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IndexInsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;

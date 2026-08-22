@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.util.CollectionUtils;
@@ -6,29 +5,43 @@ import com.bingbaihanji.classgraph.util.FastPathResolver;
 import com.bingbaihanji.classgraph.util.FileUtils;
 import com.bingbaihanji.classgraph.util.JarUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /** 存储接受或拒绝条件的类 */
 public abstract class Filter {
+
     /** 已接受的项(全字符串匹配) */
     protected Set<String> accept;
+
     /** 已拒绝的项(全字符串匹配) */
     protected Set<String> reject;
-    /** 已接受的项(前缀匹配)，以集合形式存储 */
+
+    /** 已接受的项(前缀匹配),以集合形式存储 */
     protected Set<String> acceptPrefixesSet;
-    /** 已接受的项(前缀匹配)，以排序列表形式存储 */
+
+    /** 已接受的项(前缀匹配),以排序列表形式存储 */
     protected List<String> acceptPrefixes;
+
     /** 已拒绝的项(前缀匹配) */
     protected List<String> rejectPrefixes;
-    /** 接受的通配符字符串(序列化为 JSON，用于日志记录) */
+
+    /** 接受的通配符字符串(序列化为 JSON,用于日志记录) */
     protected Set<String> acceptGlobs;
-    /** 拒绝的通配符字符串(序列化为 JSON，用于日志记录) */
+
+    /** 拒绝的通配符字符串(序列化为 JSON,用于日志记录) */
     protected Set<String> rejectGlobs;
+
     /** 接受的正则表达式模式(不序列化为 JSON) */
     protected transient List<Pattern> acceptPatterns;
+
     /** 拒绝的正则表达式模式(不序列化为 JSON) */
     protected transient List<Pattern> rejectPatterns;
+
     /** 分隔符字符 */
     protected char separatorChar;
 
@@ -111,16 +124,16 @@ public abstract class Filter {
      * @param glob
      *            通配符字符串
      * @param simpleGlob
-     *            如果为 true，处理简单通配符："*" 匹配零个或多个字符(将 "." 替换为 "\\."，将 "*"
-     *            替换为 ".*"，然后编译为正则表达式)如果为 false，处理文件系统风格的通配符："**"
-     *            匹配零个或多个字符，"*" 匹配除 "/" 之外的零个或多个字符，"?" 匹配
-     *            一个字符(将 "." 替换为 "\\."，将 "**" 替换为 ".*"，将 "*" 替换为 "[^/]*"，将 "?" 替换为 "."，然后
+     *            如果为 true,处理简单通配符:"*" 匹配零个或多个字符(将 "." 替换为 "\\.",将 "*"
+     *            替换为 ".*",然后编译为正则表达式)如果为 false,处理文件系统风格的通配符:"**"
+     *            匹配零个或多个字符,"*" 匹配除 "/" 之外的零个或多个字符,"?" 匹配
+     *            一个字符(将 "." 替换为 "\\.",将 "**" 替换为 ".*",将 "*" 替换为 "[^/]*",将 "?" 替换为 ".",然后
      *            编译为正则表达式)
      * @return 从通配符字符串创建的 Pattern
      */
     public static Pattern globToPattern(final String glob, final boolean simpleGlob) {
-        // TODO: 下次 API 变更时，使所有通配符行为在接受/拒绝条件与资源过滤之间保持一致
-        // (即对路径的接受/拒绝条件强制 simpleGlob == false，但包/类需要不同处理，
+        // TODO: 下次 API 变更时,使所有通配符行为在接受/拒绝条件与资源过滤之间保持一致
+        // (即对路径的接受/拒绝条件强制 simpleGlob == false,但包/类需要不同处理,
         // 因为 ** 应跨任意深度的包而不是任意段数的路径工作)
         return Pattern.compile("^" //
                 + (simpleGlob //
@@ -269,7 +282,7 @@ public abstract class Filter {
      *
      * @param str
      *            要测试的字符串
-     * @return 如果请求的字符串被<i>明确</i>接受且未被拒绝则返回 true，即如果接受列表为空或字符串被拒绝则不会返回 true
+     * @return 如果请求的字符串被<i>明确</i>接受且未被拒绝则返回 true,即如果接受列表为空或字符串被拒绝则不会返回 true
      */
     public boolean isSpecificallyAcceptedAndNotRejected(final String str) {
         return !acceptIsEmpty() && isAcceptedAndNotRejected(str);
@@ -280,7 +293,7 @@ public abstract class Filter {
      *
      * @param str
      *            要测试的字符串
-     * @return 如果请求的字符串被<i>明确</i>接受则返回 true，即如果接受列表为空则不会返回 true
+     * @return 如果请求的字符串被<i>明确</i>接受则返回 true,即如果接受列表为空则不会返回 true
      */
     public boolean isSpecificallyAccepted(final String str) {
         return !acceptIsEmpty() && isAccepted(str);
@@ -349,6 +362,7 @@ public abstract class Filter {
 
     /** 用于前缀字符串的接受/拒绝 */
     public static class FilterPrefix extends Filter {
+
         /** 反序列化构造函数 */
         public FilterPrefix() {
             super();
@@ -455,7 +469,7 @@ public abstract class Filter {
          *
          * @param str
          *            要测试的字符串
-         * @return (不返回，抛出异常)
+         * @return (不返回,抛出异常)
          * @throws IllegalArgumentException
          *             始终抛出
          */
@@ -486,6 +500,7 @@ public abstract class Filter {
 
     /** 用于全字符串匹配的接受/拒绝 */
     public static class FilterWholeString extends Filter {
+
         /** 反序列化构造函数 */
         public FilterWholeString() {
             super();
@@ -523,9 +538,9 @@ public abstract class Filter {
                 this.accept.add(str);
             }
 
-            // 对于不执行前缀匹配的 FilterWholeString(不同于 FilterPrefix)，
-            // 使用 acceptPrefixes 存储已接受路径的所有父级前缀，以便
-            // acceptHasPrefix() 能够在非常大的接受列表上高效运行(#338)，
+            // 对于不执行前缀匹配的 FilterWholeString(不同于 FilterPrefix),
+            // 使用 acceptPrefixes 存储已接受路径的所有父级前缀,以便
+            // acceptHasPrefix() 能够在非常大的接受列表上高效运行(#338),
             // 特别是当接受列表的大小远大于最大路径深度时
             if (this.acceptPrefixesSet == null) {
                 this.acceptPrefixesSet = new HashSet<>();
@@ -535,7 +550,7 @@ public abstract class Filter {
             final String separator = Character.toString(separatorChar);
             String prefix = str;
             if (prefix.contains("*")) {
-                // 在第一个 '*' 处停止前缀搜索 -- 这意味着如果路径中有多个 '*'，前缀匹配将中断
+                // 在第一个 '*' 处停止前缀搜索 -- 这意味着如果路径中有多个 '*',前缀匹配将中断
                 prefix = prefix.substring(0, prefix.indexOf('*'));
                 // /path/to/wildcard*.jar -> /path/to
                 // /path/to/*.jar -> /path/to
@@ -634,6 +649,7 @@ public abstract class Filter {
 
     /** 用于叶子名称匹配的接受/拒绝 */
     public static class FilterLeafname extends FilterWholeString {
+
         /** 反序列化构造函数 */
         public FilterLeafname() {
             super();
@@ -700,7 +716,7 @@ public abstract class Filter {
          *
          * @param str
          *            要测试的字符串
-         * @return (不返回，抛出异常)
+         * @return (不返回,抛出异常)
          * @throws IllegalArgumentException
          *             始终抛出
          */

@@ -30,7 +30,11 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This visitor is responsible for extracting finally blocks from duplicated instructions located
@@ -60,6 +64,7 @@ import java.util.*;
         runBefore = ConstInlineVisitor.class
 )
 public class MarkFinallyVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(MarkFinallyVisitor.class);
 
     private static void resetTryBlocks(MethodNode mth, List<TryCatchBlockAttr> tryBlocks) {
@@ -250,7 +255,8 @@ public class MarkFinallyVisitor extends AbstractVisitor {
         // If any scope has been merged with the fallthrough case of the try catch, don't merge inner trys.
         // Otherwise, merge inner trys.
         boolean mergedFallthroughScope =
-                ListUtils.anyMatch(tryInfo.scopeGroups.getMergedScopes(), scopePair -> scopePair.first().isNotHandlerExit());
+                ListUtils.anyMatch(tryInfo.scopeGroups.getMergedScopes(), scopePair -> scopePair.first()
+                        .isNotHandlerExit());
         boolean mergeInnerTryBlocks = hasInnerBlocks && !mergedFallthroughScope;
 
         tryInfo.finallyHandler.setFinally(true);
@@ -465,14 +471,21 @@ public class MarkFinallyVisitor extends AbstractVisitor {
     }
 
     private static final class TryExtractInfo {
+
         private final TryCatchBlockAttr tryBlock;
+
         private final TryEdgeScopeGroupMap scopeGroups;
+
         private final ExceptionHandler finallyHandler;
+
         private final Map<BlockNode, List<TryEdge>> scopeTerminusGroups;
+
         private final TryCatchEdgeBlockMap handlerScopes;
+
         private final Set<BlockNode> rethrowBlocks;
 
         private Set<BlockNode> completeFinallyBlocks = null;
+
         private Set<BlockNode> completeCandidateBlocks = null;
 
         private TryExtractInfo(TryCatchBlockAttr tryBlock, TryEdgeScopeGroupMap scopeGroups,

@@ -14,10 +14,11 @@ import java.util.List;
 /**
  * 插件运行时数据
  * <p>
- * 承载单个插件在运行期间的状态与相关信息，
+ * 承载单个插件在运行期间的状态与相关信息,
  * 包括插件实例 代码输入 配置选项等
  */
 public interface JadxPluginRuntimeData {
+
     /**
      * 判断插件是否已完成初始化
      *
@@ -56,7 +57,7 @@ public interface JadxPluginRuntimeData {
     /**
      * 获取插件的配置选项
      *
-     * @return 插件选项，可能为 null
+     * @return 插件选项,可能为 null
      */
     @Nullable
     JadxPluginOptions getOptions();
@@ -69,10 +70,10 @@ public interface JadxPluginRuntimeData {
     String getInputsHash();
 
     /**
-     * 便捷方法，用于简化从自定义文件加载代码的过程
+     * 便捷方法,用于简化从自定义文件加载代码的过程
      *
      * @param files     待加载的文件路径列表
-     * @param closeable 加载完成后需关闭的资源，可为 null
+     * @param closeable 加载完成后需关闭的资源,可为 null
      * @return 代码加载器
      */
     ICodeLoader loadCodeFiles(List<Path> files, @Nullable Closeable closeable);

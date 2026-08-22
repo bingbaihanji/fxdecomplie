@@ -8,7 +8,9 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.impl
 public class TryData implements ITry {
 
     private final int startOffset;
+
     private final int endOffset;
+
     private final ICatch catchHandler;
 
     public TryData(int startOffset, int endOffset, ICatch catchHandler) {

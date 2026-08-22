@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 
 public class EmptyUsageInfoCache implements IUsageInfoCache {
+
     @Override
     public @Nullable IUsageInfoData get(RootNode root) {
         return null;

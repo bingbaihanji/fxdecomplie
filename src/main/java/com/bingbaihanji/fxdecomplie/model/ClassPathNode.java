@@ -7,6 +7,7 @@ package com.bingbaihanji.fxdecomplie.model;
  * @date 2026-06-18
  */
 public final class ClassPathNode extends AbstractPathNode<FileTreeNode> {
+
     /**
      * 构造类路径节点
      *

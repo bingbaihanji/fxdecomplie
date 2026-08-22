@@ -9,7 +9,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.CodeD
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.JavaInsnData;
 
 public class InvokeDecoder implements IJavaInsnDecoder {
+
     private final int payloadSize;
+
     private final Opcode apiOpcode;
 
     public InvokeDecoder(int payloadSize, Opcode apiOpcode) {

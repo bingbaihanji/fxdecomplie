@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class BoxedLongValueImpl extends ObjectValueBoxImpl<Long> {
+
     private static final Type TYPE = Type.getType(Long.class);
 
     /**

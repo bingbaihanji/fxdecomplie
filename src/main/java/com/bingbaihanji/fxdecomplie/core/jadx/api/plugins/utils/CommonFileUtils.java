@@ -4,7 +4,11 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
@@ -12,8 +16,11 @@ import java.util.Set;
 public class CommonFileUtils {
 
     public static final File CWD = getCWD();
+
     public static final Path CWD_PATH = CWD.toPath();
+
     private static final Logger LOG = LoggerFactory.getLogger(CommonFileUtils.class);
+
     private static final Set<String> ZIP_FILE_EXTS = Utils.constSet("zip", "jar", "apk");
 
     private static File getCWD() {

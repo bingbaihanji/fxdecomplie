@@ -7,21 +7,22 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 项目级扫描结果 — 不暴露 ClassGraph 内部 ScanResult。
+ * 项目级扫描结果 — 不暴露 ClassGraph 内部 ScanResult.
  *
  * @author bingbaihanji
  */
 public final class ClassScanResult {
 
     private final Map<String, ClassMetadata> classes;
+
     private final ScanStatistics statistics;
 
     public ClassScanResult(Map<String, ClassMetadata> classes, ScanStatistics statistics) {
         this.classes = Collections.unmodifiableMap(
-            new LinkedHashMap<>(classes != null ? classes : Map.of())
+                new LinkedHashMap<>(classes != null ? classes : Map.of())
         );
         this.statistics = statistics != null ? statistics
-            : new ScanStatistics(classes != null ? classes.size() : 0, 0, 0, 0, 0);
+                : new ScanStatistics(classes != null ? classes.size() : 0, 0, 0, 0, 0);
     }
 
     public ClassScanResult(Map<String, ClassMetadata> classes) {

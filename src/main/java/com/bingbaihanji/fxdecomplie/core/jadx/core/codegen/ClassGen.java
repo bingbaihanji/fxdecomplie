@@ -14,15 +14,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodeGenUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.FieldInitInsnAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.EnumClassAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.EnumClassAttr.EnumField;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LineAttrNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.MethodInlineAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.NotificationAttrNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.SkipMethodArgsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.AccessInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.PrimitiveType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.mods.ConstructorInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.EncodedValueUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidResourcesUtils;
@@ -31,37 +39,52 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * 类代码生成器
  * <p>
- * 负责将 {@link ClassNode} 中间表示生成为 Java 源码文本，包括包声明 导入语句 类声明 
+ * 负责将 {@link ClassNode} 中间表示生成为 Java 源码文本,包括包声明 导入语句 类声明 
  * 字段 方法 内部类以及枚举字段等同时管理导入集合 类型/类名的书写方式 (短名或全名)
- * 与导入冲突检测内部类通过创建带 parentGen 的子 ClassGen 递归生成，导入统一汇聚到顶层
+ * 与导入冲突检测内部类通过创建带 parentGen 的子 ClassGen 递归生成,导入统一汇聚到顶层
  */
 public class ClassGen {
 
     /** 当前正在生成的类节点 */
     private final ClassNode cls;
-    /** 父类生成器 (用于内部类场景)，顶层类为 null */
+
+    /** 父类生成器 (用于内部类场景),顶层类为 null */
     private final ClassGen parentGen;
+
     /** 注解生成器 */
     private final AnnotationGen annotationGen;
-    /** 是否为回退 (fallback)模式，回退模式使用全限定名且不做导入优化 */
+
+    /** 是否为回退 (fallback)模式,回退模式使用全限定名且不做导入优化 */
     private final boolean fallback;
+
     /** 是否使用 import 简化类名 */
     private final boolean useImports;
+
     /** 是否显示不一致 (反编译异常)的代码 */
     private final boolean showInconsistentCode;
+
     /** 整数字面量的输出格式 (十进制/十六进制等) */
     private final IntegerFormat integerFormat;
 
     /** 当前类收集到的导入集合 */
     private final Set<ClassInfo> imports = new HashSet<>();
-    /** 类声明结束时在代码写入器中的偏移量，用于判断类体是否为空 */
+
+    /** 类声明结束时在代码写入器中的偏移量,用于判断类体是否为空 */
     private int clsDeclOffset;
 
     /** 类体代码是否已开始生成 */
@@ -184,7 +207,7 @@ public class ClassGen {
     /**
      * 生成完整的类源码
      * <p>
-     * 先生成类体，再依次拼接包声明 导入语句和类体，返回带元数据的代码信息
+     * 先生成类体,再依次拼接包声明 导入语句和类体,返回带元数据的代码信息
      * 若类为 package-info 则走 {@link #makePackageInfo()} 分支
      *
      * @return 生成的代码信息
@@ -326,12 +349,12 @@ public class ClassGen {
     }
 
     /**
-     * 生成泛型类型参数列表，形如 {@code <T, K extends A & B>}
+     * 生成泛型类型参数列表,形如 {@code <T, K extends A & B>}
      *
      * @param code             代码写入器
      * @param generics         泛型参数列表
      * @param classDeclaration 是否为类声明处 (类声明处会为上界类型补充导入)
-     * @return 若生成了泛型参数返回 true，否则返回 false
+     * @return 若生成了泛型参数返回 true,否则返回 false
      */
     public boolean addGenericTypeParameters(ICodeWriter code, List<ArgType> generics, boolean classDeclaration) {
         if (generics == null || generics.isEmpty()) {
@@ -375,7 +398,7 @@ public class ClassGen {
     }
 
     /**
-     * 生成类体 (花括号内的内容)，字段 内部类与方法
+     * 生成类体 (花括号内的内容),字段 内部类与方法
      *
      * @param clsCode 代码写入器
      * @throws CodegenException 代码生成失败时抛出
@@ -473,7 +496,7 @@ public class ClassGen {
     }
 
     /**
-     * 内联方法的附加检查，判断是否应跳过该方法的代码生成
+     * 内联方法的附加检查,判断是否应跳过该方法的代码生成
      */
     private boolean skipMethod(MethodNode mth) {
         if (cls.root().getArgs().getDecompilationMode().isSpecial()) {
@@ -561,7 +584,7 @@ public class ClassGen {
     }
 
     /**
-     * 生成单个字段的代码，包含注释 注解 访问修饰符 类型 字段名以及初始化值/常量值
+     * 生成单个字段的代码,包含注释 注解 访问修饰符 类型 字段名以及初始化值/常量值
      *
      * @param code 代码写入器
      * @param f    字段节点
@@ -696,7 +719,7 @@ public class ClassGen {
     }
 
     /**
-     * 将类型写入代码，自动处理基本类型 对象类型 数组类型与泛型类型
+     * 将类型写入代码,自动处理基本类型 对象类型 数组类型与泛型类型
      *
      * @param code 代码写入器
      * @param type 待写入的类型
@@ -730,7 +753,7 @@ public class ClassGen {
     }
 
     /**
-     * 按类型写入类引用，处理外部类 内部类嵌套与泛型信息
+     * 按类型写入类引用,处理外部类 内部类嵌套与泛型信息
      *
      * @param code 代码写入器
      * @param type 类类型
@@ -897,7 +920,7 @@ public class ClassGen {
             if (top != extClsInfo) {
                 String usedName = useClassInternal(useCls, top);
                 if (!usedName.equals(top.getAliasShortName())) {
-                    // 无法使用顶层类短名时，回退使用全限定名
+                    // 无法使用顶层类短名时,回退使用全限定名
                     return extClsInfo.getAliasFullName();
                 }
             } else {

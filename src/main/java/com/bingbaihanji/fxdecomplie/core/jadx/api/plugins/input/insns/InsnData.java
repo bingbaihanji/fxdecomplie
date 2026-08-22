@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICallSite;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodHandle;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodProto;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodRef;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.custom.ICustomPayload;
 
 public interface InsnData {

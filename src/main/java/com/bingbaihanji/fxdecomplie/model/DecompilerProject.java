@@ -15,6 +15,7 @@ public record DecompilerProject(
         String selectedInputPath,
         String exportPath
 ) {
+
     public DecompilerProject {
         inputPaths = inputPaths == null ? List.of() : List.copyOf(inputPaths);
         engine = engine == null ? "" : engine;

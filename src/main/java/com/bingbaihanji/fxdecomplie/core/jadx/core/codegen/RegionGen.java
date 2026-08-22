@@ -17,8 +17,17 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LoopLabe
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.SwitchInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.CodeVar;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.NamedArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion.CaseInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SynchronizedRegion;
@@ -45,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class RegionGen extends InsnGen {
+
     private static final Logger LOG = LoggerFactory.getLogger(RegionGen.class);
 
     public RegionGen(MethodGen mgen) {
@@ -363,7 +373,8 @@ public class RegionGen extends InsnGen {
         } else if (arg instanceof NamedArg) {
             code.add(mgen.getNameGen().assignNamedArg((NamedArg) arg));
         } else {
-            throw new JadxRuntimeException("Unexpected arg type in catch block: " + arg + ", class: " + arg.getClass().getSimpleName());
+            throw new JadxRuntimeException("Unexpected arg type in catch block: " + arg + ", class: " + arg.getClass()
+                    .getSimpleName());
         }
         code.add(") {");
 

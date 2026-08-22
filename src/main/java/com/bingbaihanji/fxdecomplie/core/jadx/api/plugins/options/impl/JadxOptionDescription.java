@@ -5,15 +5,24 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.options.OptionFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.options.OptionType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 public class JadxOptionDescription implements OptionDescription {
 
     private final String name;
+
     private final String desc;
+
     private final String defaultValue;
+
     private final List<String> values;
+
     private final OptionType type;
+
     private final Set<OptionFlag> flags = EnumSet.noneOf(OptionFlag.class);
 
     public JadxOptionDescription(String name, String desc, @Nullable String defaultValue, List<String> values) {

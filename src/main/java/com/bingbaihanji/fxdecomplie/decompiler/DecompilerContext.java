@@ -21,14 +21,19 @@ public final class DecompilerContext implements AutoCloseable {
 
     /** 字节码提供器,用于按内部名称解析依赖类字节码 */
     private final ClassBytecodeProvider bytecodeProvider;
+
     /** 反编译选项(不可变) */
     private final Map<String, String> options;
+
     /** 工作区标识,用于需要同步项目级状态的引擎适配层 */
     private final String workspaceHash;
+
     /** 可关闭的资源(如 ZipFile),反编译完成后可能需要关闭 */
     private final AutoCloseable closeable;
+
     /** 是否在使用后自动关闭 closeable */
     private final boolean closeAfterUse;
+
     /** CAS 关闭标记,确保 closeable 只被关闭一次 */
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -115,7 +120,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 核心工厂方法：校验参数并按规则创建上下文
+     * 核心工厂方法:校验参数并按规则创建上下文
      * 若 bytecodeProvider 为 null 且传入了 closeable,则立即关闭 closeable 并抛出异常(参数无效) 
      * 若仅 bytecodeProvider 为 null,则回退为仅带选项的上下文
      */

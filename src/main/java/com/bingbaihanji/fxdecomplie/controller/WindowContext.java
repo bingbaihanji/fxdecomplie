@@ -8,12 +8,12 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.Stage;
 
 /**
- * 窗口级上下文 — 状态和命令的单一来源。
+ * 窗口级上下文 — 状态和命令的单一来源.
  *
- * <p>替代子控制器通过 {@code MainWindow} 包级访问器读写共享状态的模式。
- * 提供可观察属性（绑定工具栏/状态栏自动刷新）和命令总线（菜单/工具栏/快捷键统一派发）。</p>
+ * <p>替代子控制器通过 {@code MainWindow} 包级访问器读写共享状态的模式.
+ * 提供可观察属性(绑定工具栏/状态栏自动刷新)和命令总线(菜单/工具栏/快捷键统一派发).</p>
  *
- * <p>使用方式：
+ * <p>使用方式:
  * <ol>
  *   <li>{@code MainWindow} 创建 WindowContext</li>
  *   <li>子控制器构造参数从 MainWindow 逐步改为 WindowContext + 需要的 Service</li>
@@ -26,6 +26,7 @@ import javafx.stage.Stage;
 public final class WindowContext {
 
     private final Stage stage;
+
     private final WindowCommandBus commandBus;
 
     // ─── 可观察状态 ───

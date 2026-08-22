@@ -14,7 +14,9 @@ import java.util.List;
  * 将 jadx 内核运行时产生的类 alias 同步到项目级 RenameService
  */
 public final class JadxProjectRenameSynchronizer {
+
     public static final String CACHE_STATE_VERSION = "project-rename-sync-v1";
+
     private static final Logger log = LoggerFactory.getLogger(JadxProjectRenameSynchronizer.class);
 
     private JadxProjectRenameSynchronizer() {

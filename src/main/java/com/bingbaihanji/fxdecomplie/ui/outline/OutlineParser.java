@@ -26,7 +26,7 @@ public final class OutlineParser {
      * 方法签名匹配模式
      * 使用简单括号计数扫描参数列表,避免正则嵌套量词导致灾难性回溯或
      * 深层嵌套泛型(如 {@code Map<String, Map<String, List<Integer>>>})匹配失败
-     * 匹配策略：定位开括号后逐字符扫描,跳过字符串/注释,括号计数归零时结束
+     * 匹配策略:定位开括号后逐字符扫描,跳过字符串/注释,括号计数归零时结束
      */
     private static final Pattern METHOD_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|final|synchronized|abstract|native|\\s)*)"
@@ -39,7 +39,7 @@ public final class OutlineParser {
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|\\s)*)\\b(class|interface|enum|record)\\s+(\\w+)");
 
-    /** 匹配全限定类引用：包路径(小写段)+ 类名/内部类(大小写均可,混淆后类名常为小写单字母) */
+    /** 匹配全限定类引用:包路径(小写段)+ 类名/内部类(大小写均可,混淆后类名常为小写单字母) */
     private static final Pattern CLASS_REF_PATTERN = Pattern.compile(
             "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+\\.[A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)\\b");
 
@@ -191,7 +191,7 @@ public final class OutlineParser {
     /**
      * 从反编译 Java 源码提取大纲成员(字段 方法 内部类)
      *
-     * <p>逐行扫描源码,用大括号计数跟踪嵌套深度方法匹配采用两步策略：
+     * <p>逐行扫描源码,用大括号计数跟踪嵌套深度方法匹配采用两步策略:
      * 先用 {@link #METHOD_PATTERN} 匹配方法名前缀,再从开括号位置逐字符扫描
      * 找到匹配的闭括号(跳过字符串和注释),避免正则嵌套量词的深度限制和
      * 灾难性回溯问题</p>
@@ -399,7 +399,7 @@ public final class OutlineParser {
      * 泛型类型参数的简单名(如 {@code ServiceImpl<AjglMapper, a>} 中的 {@code a})
      * 映射到字节码中的全限定名(如 {@code com.pig4cloud.domain.a}) </p>
      *
-     * <p>此方法解决了混淆场景下多个同名类的导航歧义问题：
+     * <p>此方法解决了混淆场景下多个同名类的导航歧义问题:
      * 字节码的 Signature 属性存储了无歧义的全限定类型引用,将其与反编译源码
      * 中的泛型位置关联后,Ctrl+Click 可以精确跳转到正确的类 </p>
      *
@@ -415,7 +415,7 @@ public final class OutlineParser {
 
         String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
 
-        // ---- 第一阶段：正则提取全限定类引用(原有逻辑) ----
+        // ---- 第一阶段:正则提取全限定类引用(原有逻辑) ----
         boolean inBlockComment = false;
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
@@ -456,7 +456,7 @@ public final class OutlineParser {
             }
         }
 
-        // ---- 第二阶段：字节码泛型签名增强 ----
+        // ---- 第二阶段:字节码泛型签名增强 ----
         if (classBytes != null && classBytes.length > 10) {
             try {
                 enhanceWithBytecodeSignatures(lines, classBytes, refsByLine);
@@ -483,7 +483,7 @@ public final class OutlineParser {
         }
 
         // 按 extends/implements 子句匹配源码中的类型参数
-        // 关键：同一行可能同时有 extends 和 implements,需要逐个关键字处理
+        // 关键:同一行可能同时有 extends 和 implements,需要逐个关键字处理
         int ownerIndex = 0;
         boolean inBlockComment = false;
 
@@ -725,7 +725,7 @@ public final class OutlineParser {
      * <p>混淆后的类名通常为小写单字母(如 a/b/c),若只按首字母大写过滤
      * 会漏掉所有混淆类引用,导致 Ctrl+Click 导航失效</p>
      *
-     * <p>简单规则：最后一个 '.' 后面的简单类名必须是有效 Java 标识符,
+     * <p>简单规则:最后一个 '.' 后面的简单类名必须是有效 Java 标识符,
      * 且至少包含两个 '.' 段(至少一级包 + 类名),避免误匹配单个变量</p>
      */
     private static boolean looksLikeClassReference(String match) {
@@ -755,7 +755,7 @@ public final class OutlineParser {
         return raw.trim().replaceAll("\\s+", " ");
     }
 
-    /** 方法签名记录：包含方法名和参数个数 */
+    /** 方法签名记录:包含方法名和参数个数 */
     public record MethodSignature(String name, int paramCount) {
     }
 

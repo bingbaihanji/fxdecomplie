@@ -36,12 +36,12 @@ public class JadxDecompiler implements Decompiler {
     /**
      * 使用 jadx 引擎反编译指定类
      *
-     * <p>核心流程：创建 jadx JadxDecompiler 实例，加载目标类字节码，
-     * 调用 load() 初始化类层次图，然后通过 getCode() 获取反编译结果</p>
+     * <p>核心流程:创建 jadx JadxDecompiler 实例,加载目标类字节码,
+     * 调用 load() 初始化类层次图,然后通过 getCode() 获取反编译结果</p>
      *
      * @param typeName   类的内部名称(如 {@code com/example/MyClass})
      * @param classBytes 类的原始字节码
-     * @param context    反编译上下文(可为 null，用于解析依赖类字节码)
+     * @param context    反编译上下文(可为 null,用于解析依赖类字节码)
      * @return 反编译后的 Java 源码字符串 异常时返回错误信息注释
      */
     @Override

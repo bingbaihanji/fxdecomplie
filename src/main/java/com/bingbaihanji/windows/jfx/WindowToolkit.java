@@ -13,7 +13,12 @@ import javafx.stage.Window;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -28,6 +33,7 @@ public final class WindowToolkit {
     public static final Duration DEFAULT_HANDLE_TIMEOUT = Duration.ofMillis(800);
 
     private static volatile ExecutorService executor = newExecutor();
+
     private static volatile WindowPlatformProvider provider = detectProvider();
 
     private WindowToolkit() {
@@ -371,6 +377,7 @@ public final class WindowToolkit {
                 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 new ThreadFactory() {
+
                     private final AtomicInteger counter = new AtomicInteger();
 
                     @Override

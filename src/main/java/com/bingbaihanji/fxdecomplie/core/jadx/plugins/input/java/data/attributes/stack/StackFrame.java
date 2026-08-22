@@ -1,11 +1,15 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.stack;
 
 public class StackFrame {
+
     private final int offset;
+
     private final StackFrameType type;
 
     private int stackSize;
+
     private StackValueType[] stackValueTypes;
+
     private int localsCount;
 
     public StackFrame(int offset, StackFrameType type) {

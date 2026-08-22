@@ -19,9 +19,9 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 扫描所有 main 源码的 import 语句,验证包依赖边界不违反架构规则。
+ * 扫描所有 main 源码的 import 语句,验证包依赖边界不违反架构规则.
  *
- * <p>不依赖 ArchUnit 等第三方库 — 纯 JDK 正则扫描，保持零额外依赖。</p>
+ * <p>不依赖 ArchUnit 等第三方库 — 纯 JDK 正则扫描,保持零额外依赖.</p>
  */
 @DisplayName("架构边界验证")
 final class ArchitectureBoundaryTest {
@@ -62,7 +62,7 @@ final class ArchitectureBoundaryTest {
     );
 
     /**
-     * 白名单: 已知违规,后续阶段逐步消除。
+     * 白名单: 已知违规,后续阶段逐步消除.
      * 格式: "源文件相对路径::imported包"
      */
     private static final Set<String> WHITELIST = Set.of(
@@ -188,8 +188,8 @@ final class ArchitectureBoundaryTest {
                 Matcher m = IMPORT_PATTERN.matcher(content);
                 while (m.find()) {
                     String imported = m.group(1);
-                    // model 允许依赖 util、decompiler（枚举）、bytecode（元数据）
-                    // 禁止依赖 controller、ui、service、classgraph、windows
+                    // model 允许依赖 util,decompiler(枚举),bytecode(元数据)
+                    // 禁止依赖 controller,ui,service,classgraph,windows
                     if ((imported.startsWith(BASE + ".controller")
                             || imported.startsWith(BASE + ".ui")
                             || imported.startsWith(BASE + ".service"))

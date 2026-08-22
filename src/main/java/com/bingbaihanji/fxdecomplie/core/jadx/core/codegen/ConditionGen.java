@@ -181,6 +181,7 @@ public class ConditionGen extends InsnGen {
     }
 
     private static class CondStack {
+
         private final Queue<IfCondition> stack = new ArrayDeque<>();
 
         public Queue<IfCondition> getStack() {

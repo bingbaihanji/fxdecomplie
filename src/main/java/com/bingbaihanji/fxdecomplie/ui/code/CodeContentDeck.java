@@ -27,36 +27,56 @@ public class CodeContentDeck extends VBox {
 
     /** Code 标签索引 */
     public static final int TAB_CODE = 0;
+
     /** Smali/JVM指令视图索引 */
     public static final int TAB_SMALI = 1;
+
     /** 字节码索引 */
     public static final int TAB_BYTECODE = 2;
+
     /** 简化代码索引 */
     public static final int TAB_SIMPLE = 3;
+
     /** HEX 十六进制视图索引 */
     public static final int TAB_HEX = 4;
+
     /** 标签总数 */
     private static final int TAB_COUNT = 5;
+
     private static final Logger log = LoggerFactory.getLogger(CodeContentDeck.class);
+
     private final AbstractCodeContentPanel[] panels;
+
     private final ToggleButton[] buttons;
+
     private final StackPane contentArea;
+
     private final HBox bottomBar;
+
     private final ToggleGroup toggleGroup;
+
     private final AtomicInteger cancelGen = new AtomicInteger();
+
     private final AtomicInteger activeIndex = new AtomicInteger(TAB_CODE);
+
     /** 类文件字节码,Smali/Bytecode 按需读取 */
     private final byte[] classBytes;
+
     /** 防止 setSelected→action→selectTab 死循环 */
     private boolean suppressAction;
+
     /** 源码内容提供回调,Simple 面板按需读取 */
     private volatile String sourceCode;
+
     /** 编辑器主题,用于 HEX 面板配色 */
     private volatile VsCodeThemeLoader.ThemeData theme;
+
     /** 字体族 */
     private volatile String fontFamily = "Consolas";
+
     /** 字号 */
     private volatile int fontSize = 14;
+
     /** 是否显示行号 */
     private volatile boolean lineNumbersEnabled = true;
 
@@ -223,7 +243,7 @@ public class CodeContentDeck extends VBox {
         }
     }
 
-    /** 加载字体,优先级：内置 FiraCode → 指定字体族 → Consolas 回退 */
+    /** 加载字体,优先级:内置 FiraCode → 指定字体族 → Consolas 回退 */
     private javafx.scene.text.Font loadFont() {
         try {
             java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");

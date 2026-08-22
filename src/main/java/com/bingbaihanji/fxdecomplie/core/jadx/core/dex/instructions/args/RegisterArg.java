@@ -12,30 +12,33 @@ import java.util.Objects;
 /**
  * 寄存器参数表示类
  * <p>
- * 继承自 {@link InsnArg}，实现 {@link Named} 接口，
+ * 继承自 {@link InsnArg},实现 {@link Named} 接口,
  * 用于表示 Dalvik/ART 字节码中的寄存器操作数
  * 在 SSA 变换之后会关联一个 {@link SSAVar} 变量
  * </p>
  */
 public class RegisterArg extends InsnArg implements Named {
+
     /** this 关键字的参数名称常量 */
     public static final String THIS_ARG_NAME = "this";
+
     /** super 关键字的参数名称常量 */
     public static final String SUPER_ARG_NAME = "super";
 
     /** 寄存器编号 */
     protected final int regNum;
-    /** SSA 变量引用，在 SSATransform 阶段之后不为 null */
+
+    /** SSA 变量引用,在 SSATransform 阶段之后不为 null */
     private SSAVar sVar;
 
     /**
      * 构造寄存器参数
      *
      * @param rn   寄存器编号
-     * @param type 初始类型，不会被修改，可以是未知类型
+     * @param type 初始类型,不会被修改,可以是未知类型
      */
     public RegisterArg(int rn, ArgType type) {
-        this.type = type; // 初始类型，不会改变，可以是未知类型
+        this.type = type; // 初始类型,不会改变,可以是未知类型
         this.regNum = rn;
     }
 
@@ -59,7 +62,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 获取初始类型 (构造时设置的类型，不会随类型推断改变)
+     * 获取初始类型 (构造时设置的类型,不会随类型推断改变)
      *
      * @return 初始类型
      */
@@ -68,7 +71,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 获取当前类型如果已关联 SSA 变量，则返回 SSA 变量的推断类型 
+     * 获取当前类型如果已关联 SSA 变量,则返回 SSA 变量的推断类型 
      * 否则返回 {@link ArgType#UNKNOWN}
      *
      * @return 当前类型
@@ -82,7 +85,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 设置新的类型必须已关联 SSA 变量，否则抛出异常
+     * 设置新的类型必须已关联 SSA 变量,否则抛出异常
      *
      * @param newType 新类型
      * @throws JadxRuntimeException 如果没有关联 SSA 变量
@@ -96,7 +99,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 强制设置初始类型，不依赖 SSA 变量
+     * 强制设置初始类型,不依赖 SSA 变量
      *
      * @param type 要设置的类型
      */
@@ -108,7 +111,7 @@ public class RegisterArg extends InsnArg implements Named {
      * 获取不可变类型如果 SSA 变量存在则委托给 SSA 变量 
      * 否则检查是否设置了 {@link AFlag#IMMUTABLE_TYPE} 标志
      *
-     * @return 不可变类型，如果不存在则返回 null
+     * @return 不可变类型,如果不存在则返回 null
      */
     @Nullable
     public ArgType getImmutableType() {
@@ -137,16 +140,16 @@ public class RegisterArg extends InsnArg implements Named {
     /**
      * 获取关联的 SSA 变量
      *
-     * @return SSA 变量，可能为 null
+     * @return SSA 变量,可能为 null
      */
     public SSAVar getSVar() {
         return sVar;
     }
 
     /**
-     * 设置关联的 SSA 变量 (包级私有，仅允许内部调用)
+     * 设置关联的 SSA 变量 (包级私有,仅允许内部调用)
      *
-     * @param sVar SSA 变量，不能为 null
+     * @param sVar SSA 变量,不能为 null
      */
     void setSVar(@NotNull SSAVar sVar) {
         this.sVar = sVar;
@@ -160,9 +163,9 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 获取参数名称优先返回 super/this 关键字名称，否则返回 SSA 变量的名称
+     * 获取参数名称优先返回 super/this 关键字名称,否则返回 SSA 变量的名称
      *
-     * @return 参数名称，如果无法确定则返回 null
+     * @return 参数名称,如果无法确定则返回 null
      */
     @Override
     public String getName() {
@@ -179,7 +182,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 设置参数名称如果 SSA 变量存在且名称不为 null，则委托给 SSA 变量设置
+     * 设置参数名称如果 SSA 变量存在且名称不为 null,则委托给 SSA 变量设置
      *
      * @param name 参数名称
      */
@@ -200,7 +203,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 如果当前名称未知 (为 null)，则设置指定名称
+     * 如果当前名称未知 (为 null),则设置指定名称
      *
      * @param name 要设置的名称
      */
@@ -225,7 +228,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 复制当前寄存器参数，保持相同的寄存器编号 初始类型和 SSA 变量
+     * 复制当前寄存器参数,保持相同的寄存器编号 初始类型和 SSA 变量
      *
      * @return 复制后的寄存器参数
      */
@@ -235,7 +238,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 复制当前寄存器参数，使用指定的初始类型
+     * 复制当前寄存器参数,使用指定的初始类型
      *
      * @param initType 指定的初始类型
      * @return 复制后的寄存器参数
@@ -247,7 +250,7 @@ public class RegisterArg extends InsnArg implements Named {
     /**
      * 复制当前寄存器参数并创建一个新的 SSA 变量
      *
-     * @param mth 所属方法节点，用于创建新 SSA 变量
+     * @param mth 所属方法节点,用于创建新 SSA 变量
      * @return 带有新 SSA 变量的寄存器参数副本
      */
     public RegisterArg duplicateWithNewSSAVar(MethodNode mth) {
@@ -257,10 +260,10 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 复制当前寄存器参数，使用指定的寄存器编号和 SSA 变量
+     * 复制当前寄存器参数,使用指定的寄存器编号和 SSA 变量
      *
      * @param regNum 指定的寄存器编号
-     * @param sVar   指定的 SSA 变量，可为 null
+     * @param sVar   指定的 SSA 变量,可为 null
      * @return 复制后的寄存器参数
      */
     public RegisterArg duplicate(int regNum, @Nullable SSAVar sVar) {
@@ -272,14 +275,14 @@ public class RegisterArg extends InsnArg implements Named {
      *
      * @param regNum   寄存器编号
      * @param initType 初始类型
-     * @param sVar     SSA 变量，可为 null 如果非 null，仅设置引用，
+     * @param sVar     SSA 变量,可为 null 如果非 null,仅设置引用,
      *                 赋值或使用绑定将在后续阶段完成
      * @return 复制后的寄存器参数
      */
     public RegisterArg duplicate(int regNum, ArgType initType, @Nullable SSAVar sVar) {
         RegisterArg dup = new RegisterArg(regNum, initType);
         if (sVar != null) {
-            // 仅在此处设置引用，赋值或使用的绑定将在后续阶段完成
+            // 仅在此处设置引用,赋值或使用的绑定将在后续阶段完成
             dup.setSVar(sVar);
         }
         return copyCommonParams(dup);
@@ -288,7 +291,7 @@ public class RegisterArg extends InsnArg implements Named {
     /**
      * 获取赋值指令节点返回对该寄存器进行赋值操作的指令
      *
-     * @return 赋值指令节点，如果 SSA 变量不存在则返回 null
+     * @return 赋值指令节点,如果 SSA 变量不存在则返回 null
      */
     @Nullable
     public InsnNode getAssignInsn() {
@@ -369,7 +372,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 返回哈希码，基于寄存器编号
+     * 返回哈希码,基于寄存器编号
      *
      * @return 寄存器编号作为哈希码
      */
@@ -398,7 +401,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 返回简短的字符串表示，格式为 "r{寄存器编号}v{SSA版本号}"
+     * 返回简短的字符串表示,格式为 "r{寄存器编号}v{SSA版本号}"
      *
      * @return 简短字符串表示
      */
@@ -413,7 +416,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 返回完整的字符串表示，包含寄存器编号 SSA 版本 名称 类型 初始类型和属性信息
+     * 返回完整的字符串表示,包含寄存器编号 SSA 版本 名称 类型 初始类型和属性信息
      *
      * @return 完整字符串表示
      */

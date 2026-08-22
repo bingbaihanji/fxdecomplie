@@ -12,9 +12,13 @@ import java.util.List;
 import java.util.Objects;
 
 public final class JavaPackage implements JavaNode, Comparable<JavaPackage> {
+
     private final PackageNode pkgNode;
+
     private final List<JavaClass> classes;
+
     private final List<JavaClass> clsListNoDup;
+
     private final List<JavaPackage> subPkgs;
 
     JavaPackage(PackageNode pkgNode, List<JavaClass> classes, List<JavaPackage> subPkgs) {

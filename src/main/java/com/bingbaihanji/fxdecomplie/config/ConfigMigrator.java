@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * 配置 schema 版本迁移 — 集中管理所有版本升级逻辑。
+ * 配置 schema 版本迁移 — 集中管理所有版本升级逻辑.
  *
- * <p>每次迁移：
+ * <p>每次迁移:
  * <ol>
- *   <li>先备份原文件到同目录（带时间戳）</li>
- *   <li>执行迁移逻辑（空方法体表示无字段变化）</li>
+ *   <li>先备份原文件到同目录(带时间戳)</li>
+ *   <li>执行迁移逻辑(空方法体表示无字段变化)</li>
  *   <li>迁移失败时回退到默认配置并保留错误日志</li>
  * </ol>
  *
@@ -28,7 +28,9 @@ import java.time.format.DateTimeFormatter;
 public final class ConfigMigrator {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigMigrator.class);
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private static final DateTimeFormatter TS_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
@@ -37,7 +39,7 @@ public final class ConfigMigrator {
     }
 
     /**
-     * 执行从 fromVersion 到 toVersion 的完整迁移链。
+     * 执行从 fromVersion 到 toVersion 的完整迁移链.
      *
      * @param root        配置 JSON 节点
      * @param fromVersion 当前 schema 版本
@@ -65,7 +67,7 @@ public final class ConfigMigrator {
     }
 
     /**
-     * 在迁移前备份配置文件。
+     * 在迁移前备份配置文件.
      *
      * @param configFile 配置文件路径
      * @return 备份文件路径

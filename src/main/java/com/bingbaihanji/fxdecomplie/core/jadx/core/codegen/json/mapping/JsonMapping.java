@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.mapping;
 import java.util.List;
 
 public class JsonMapping {
+
     private List<JsonClsMapping> classes;
 
     public List<JsonClsMapping> getClasses() {

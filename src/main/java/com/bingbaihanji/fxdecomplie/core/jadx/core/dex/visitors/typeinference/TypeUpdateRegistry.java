@@ -3,7 +3,11 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 public class TypeUpdateRegistry {
 

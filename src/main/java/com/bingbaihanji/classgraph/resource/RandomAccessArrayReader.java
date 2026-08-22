@@ -40,6 +40,7 @@ import java.nio.ReadOnlyBufferException;
  * 由字节数组支持的 {@link RandomAccessReader}按 zipfile 格式所需的<b>小端序</b>读取
  */
 public class RandomAccessArrayReader implements RandomAccessReader {
+
     /** 数组 */
     private final byte[] arr;
 

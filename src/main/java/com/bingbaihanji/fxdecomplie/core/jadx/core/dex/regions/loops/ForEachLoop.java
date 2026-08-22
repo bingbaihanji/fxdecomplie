@@ -7,7 +7,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.Registe
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 
 public final class ForEachLoop extends LoopType {
+
     private final InsnNode varArgInsn;
+
     private final InsnNode iterableArgInsn;
 
     public ForEachLoop(RegisterArg varArg, InsnArg iterableArg) {

@@ -1,6 +1,11 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
+import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
+import com.bingbaihanji.fxdecomplie.model.SearchOptions;
+import com.bingbaihanji.fxdecomplie.model.SearchResult;
+import com.bingbaihanji.fxdecomplie.model.SearchScope;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 
 import java.util.ArrayList;
@@ -32,7 +37,7 @@ public class IndexedMemberSearchProvider implements SearchProvider {
     }
 
     /**
-     * 基本匹配辅助方法：将成员名称与关键字逐一比对(不区分大小写),匹配则加入结果列表
+     * 基本匹配辅助方法:将成员名称与关键字逐一比对(不区分大小写),匹配则加入结果列表
      *
      * @param results    结果累积列表
      * @param members    待搜索的成员列表(方法或字段)
@@ -54,7 +59,7 @@ public class IndexedMemberSearchProvider implements SearchProvider {
     }
 
     /**
-     * 高级匹配辅助方法：使用 SearchOptions 进行正则/大小写/全词匹配
+     * 高级匹配辅助方法:使用 SearchOptions 进行正则/大小写/全词匹配
      */
     private void addMatchesOptions(List<SearchResult> results, List<MemberIndexEntry> members,
                                    String query, SearchOptions options,
@@ -70,7 +75,7 @@ public class IndexedMemberSearchProvider implements SearchProvider {
         }
     }
 
-    /** 基本搜索：遍历工作区索引中所有类的方法和字段,逐名称匹配(不区分大小写) */
+    /** 基本搜索:遍历工作区索引中所有类的方法和字段,逐名称匹配(不区分大小写) */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
@@ -97,7 +102,7 @@ public class IndexedMemberSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.METHOD;
     }
 
-    /** 高级搜索：使用 SearchOptions 进行正则/大小写/全词匹配的索引成员搜索 */
+    /** 高级搜索:使用 SearchOptions 进行正则/大小写/全词匹配的索引成员搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

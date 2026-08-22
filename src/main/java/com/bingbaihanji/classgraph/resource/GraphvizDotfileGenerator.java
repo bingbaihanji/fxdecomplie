@@ -1,7 +1,14 @@
- 
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.ClassInfoList;
+import com.bingbaihanji.classgraph.metadata.FieldInfo;
+import com.bingbaihanji.classgraph.metadata.FieldInfoList;
+import com.bingbaihanji.classgraph.metadata.MethodInfo;
+import com.bingbaihanji.classgraph.metadata.MethodInfoList;
+import com.bingbaihanji.classgraph.metadata.MethodParam;
 import com.bingbaihanji.classgraph.scan.ClassGraph;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.type.TypeSignature;
@@ -13,6 +20,7 @@ import java.util.Set;
 
 /** 以 Graphviz .dot 文件格式构建类图可视化 */
 public final class GraphvizDotfileGenerator {
+
     /** 标准类的颜色 */
     private static final String STANDARD_CLASS_COLOR = "fff2b6";
 
@@ -29,9 +37,9 @@ public final class GraphvizDotfileGenerator {
     private static final BitSet IS_UNICODE_WHITESPACE = new BitSet(1 << 16);
 
     static {
-        // 有效的 Unicode 空白字符，参见：
+        // 有效的 Unicode 空白字符,参见:
         // http://stackoverflow.com/questions/4731055/whitespace-matching-regex-java
-        // 另见(关于 \n 和 \r -- 一个 Java 愚蠢行为的真实例子)：
+        // 另见(关于 \n 和 \r -- 一个 Java 愚蠢行为的真实例子):
         // https://stackoverflow.com/a/3866219/3950982
         final String wsChars = " " // 空格 (SPACE)
                 + "	" // 字符制表符 (CHARACTER TABULATION)
@@ -58,7 +66,7 @@ public final class GraphvizDotfileGenerator {
                 + " " // 段落分隔符 (PARAGRAPH SEPARATOR)
                 + " " // 窄不换行空格 (NARROW NO-BREAK SPACE)
                 + " " // 中等数学空格 (MEDIUM MATHEMATICAL SPACE)
-                + "　"; // 表意空格 (IDEOGRAPHIC SPACE)
+                + " "; // 表意空格 (IDEOGRAPHIC SPACE)
         for (int i = 0; i < wsChars.length(); i++) {
             IS_UNICODE_WHITESPACE.set(wsChars.charAt(i));
         }
@@ -88,7 +96,7 @@ public final class GraphvizDotfileGenerator {
      * @param unsafeStr
      *            要进行转义以使其 HTML 安全的字符串
      * @param turnNewlineIntoBreak
-     *            如果为 true，将 '\n' 转换为输出中的换行元素
+     *            如果为 true,将 '\n' 转换为输出中的换行元素
      * @param buf
      *            字符串构建器
      */
@@ -116,7 +124,7 @@ public final class GraphvizDotfileGenerator {
                     buf.append("&lsol;");
                     break;
                 case '/':
-                    buf.append("&#x2F;"); // 如果属性值未加引号，'/' 可能是危险字符
+                    buf.append("&#x2F;"); // 如果属性值未加引号,'/' 可能是危险字符
                     break;
                 // 编码一些常见的在某些字符集/浏览器变体中容易出问题的字符
                 case '—':
@@ -125,16 +133,18 @@ public final class GraphvizDotfileGenerator {
                 case '–':
                     buf.append("&ndash;");
                     break;
-                case '“':
+                case '"':
                     buf.append("&ldquo;");
                     break;
-                case '”':
+                case '"':
                     buf.append("&rdquo;");
                     break;
-                case '‘':
+                case ''
+                    ':
                     buf.append("&lsquo;");
                     break;
-                case '’':
+                case ''
+                    ':
                     buf.append("&rsquo;");
                     break;
                 case '«':
@@ -159,7 +169,7 @@ public final class GraphvizDotfileGenerator {
                     if (turnNewlineIntoBreak) {
                         buf.append("<br>");
                     } else {
-                        buf.append(' '); // 在 HTML 文本中，换行符作为空白字符起作用
+                        buf.append(' '); // 在 HTML 文本中,换行符作为空白字符起作用
                     }
                     break;
                 default:
@@ -344,7 +354,7 @@ public final class GraphvizDotfileGenerator {
                     buf.append("<tr>");
 
                     // 方法注解
-                    // TODO: 如果内容过长，对此单元格进行换行
+                    // TODO: 如果内容过长,对此单元格进行换行
                     buf.append("<td align='right' valign='top'>");
                     final AnnotationInfoList methodAnnotationInfo = mi.annotationInfo;
                     if (methodAnnotationInfo != null) {
@@ -455,7 +465,7 @@ public final class GraphvizDotfileGenerator {
     }
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化
      * sizeX 和 sizeY 参数是让 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
      *
      * @param classInfoList
@@ -613,7 +623,7 @@ public final class GraphvizDotfileGenerator {
     }
 
     /**
-     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
+     * 生成一个 .dot 文件,可输入到 GraphViz 中进行类图的布局和可视化
      * 返回的图仅显示类间依赖关系sizeX 和 sizeY 参数是让 GraphViz 渲染 .dot 文件时使用的
      * 图像输出尺寸(以英寸为单位)使用此方法前必须调用
      * {@link ClassGraph#withInterClassDependencies()}
@@ -625,10 +635,10 @@ public final class GraphvizDotfileGenerator {
      * @param sizeY
      *            GraphViz 布局宽度(以英寸为单位)
      * @param includeExternalClasses
-     *            如果为 true，在图中包含不在 classInfoList 中的任何依赖节点
+     *            如果为 true,在图中包含不在 classInfoList 中的任何依赖节点
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             如果此 {@link ClassInfoList} 为空，或者在扫描前未调用
+     *             如果此 {@link ClassInfoList} 为空,或者在扫描前未调用
      *             {@link ClassGraph#withInterClassDependencies()}(因为将没有可绘制的内容)
      */
     public static String generateGraphVizDotFileFromInterClassDependencies(final ClassInfoList classInfoList,

@@ -3,8 +3,11 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data;
 public class ClassOffsets {
 
     private final int[] constPoolOffsets;
+
     private final int constPoolEnd;
+
     private final int interfacesEnd;
+
     private final int attributesOffset;
 
     public ClassOffsets(DataReader data) {

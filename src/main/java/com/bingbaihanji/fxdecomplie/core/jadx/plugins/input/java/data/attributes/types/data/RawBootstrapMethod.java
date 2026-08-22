@@ -1,7 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.data;
 
 public class RawBootstrapMethod {
+
     private final int methodHandleIdx;
+
     private final int[] args;
 
     public RawBootstrapMethod(int methodHandleIdx, int[] args) {

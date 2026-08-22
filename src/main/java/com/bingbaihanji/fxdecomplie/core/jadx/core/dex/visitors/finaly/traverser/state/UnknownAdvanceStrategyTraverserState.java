@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class UnknownAdvanceStrategyTraverserState extends TraverserState {
+
     private final CentralityState centralityState;
+
     private final List<BlockNode> nextBlocks;
 
     public UnknownAdvanceStrategyTraverserState(TraverserActivePathState state, CentralityState centralityState,

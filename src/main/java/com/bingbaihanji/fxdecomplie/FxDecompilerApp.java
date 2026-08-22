@@ -32,10 +32,13 @@ import java.util.Locale;
 public final class FxDecompilerApp {
 
     private static final Logger log = LoggerFactory.getLogger(FxDecompilerApp.class);
+
     /** JavaFX 预览属性名 */
     private static final String JAVAFX_PREVIEW_PROPERTY = "javafx.enablePreview";
+
     /** 抑制预览警告属性名 */
     private static final String JAVAFX_SUPPRESS_PREVIEW_WARNING_PROPERTY = "javafx.suppressPreviewWarning";
+
     /** 启动错误日志文件路径(位于应用根目录 logs 子目录下) */
     private static final Path STARTUP_ERROR_LOG = AppPaths.startupErrorLog();
 
@@ -101,8 +104,10 @@ public final class FxDecompilerApp {
 
         /** 应用配置引用 */
         private AppConfig config;
+
         /** 主窗口控制器,用于直接关闭窗口时释放工作区资源 */
         private MainWindow window;
+
         /** 主 Stage,用于在所有退出路径上持久化窗口状态 */
         private Stage primaryStage;
 

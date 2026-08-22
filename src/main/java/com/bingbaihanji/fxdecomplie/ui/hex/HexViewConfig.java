@@ -1,18 +1,32 @@
 package com.bingbaihanji.fxdecomplie.ui.hex;
 
 import com.bingbaihanji.fxdecomplie.ui.hex.util.HexFonts;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.text.Font;
 
 public class HexViewConfig {
+
     private final IntegerProperty bytesPerRow = new SimpleIntegerProperty(16);
+
     private final BooleanProperty upperCaseHex = new SimpleBooleanProperty(true);
+
     private final BooleanProperty grayOutZero = new SimpleBooleanProperty(true);
+
     private final BooleanProperty showAscii = new SimpleBooleanProperty(true);
+
     private final BooleanProperty showMiniMap = new SimpleBooleanProperty(false);
+
     private final IntegerProperty miniMapWidth = new SimpleIntegerProperty(5);
+
     private final ObjectProperty<Font> font = new SimpleObjectProperty<>(HexFonts.defaultHexFont());
+
     private final IntegerProperty addressWidth = new SimpleIntegerProperty(8);
+
     private final Runnable onChanged;
 
     public HexViewConfig(Runnable onChanged) {

@@ -31,6 +31,7 @@ public class JadxEventsManager {
 
     private static ThreadFactory makeThreadFactory() {
         return new ThreadFactory() {
+
             private final AtomicInteger threadNumber = new AtomicInteger(0);
 
             @Override

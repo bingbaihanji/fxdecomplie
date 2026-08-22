@@ -26,18 +26,25 @@ public final class VersionFinder {
 
     /** 操作系统类型 */
     public static final OperatingSystem OS;
+
     /** Java 版本字符串 */
     public static final String JAVA_VERSION = getProperty("java.version");
-    /** Java 主版本号 -- 7 表示 "1.7"，8 表示 "1.8.0_244"，9 表示 "9"，11 表示 "11-ea" 等 */
+
+    /** Java 主版本号 -- 7 表示 "1.7",8 表示 "1.8.0_244",9 表示 "9",11 表示 "11-ea" 等 */
     public static final int JAVA_MAJOR_VERSION;
+
     /** Java 次版本号 -- "11.0.4" 则为 0 */
     public static final int JAVA_MINOR_VERSION;
+
     /** Java 子版本号 -- "11.0.4" 则为 4 */
     public static final int JAVA_SUB_VERSION;
+
     /** Java 是否为 EA 版本 -- "11-ea" 等则为 true */
     public static final boolean JAVA_IS_EA_VERSION;
+
     /** ClassGraph 的 Maven 包 */
     private static final String MAVEN_PACKAGE = "com.bingbaihanji.classgraph.core";
+
     /** ClassGraph 的 Maven 构件 */
     private static final String MAVEN_ARTIFACT = "classgraph";
 
@@ -131,7 +138,7 @@ public final class VersionFinder {
      *            属性名称
      * @param defaultVal
      *            属性的默认值
-     * @return 属性值，如果属性未定义则返回默认值
+     * @return 属性值,如果属性未定义则返回默认值
      */
     public static String getProperty(final String propName, final String defaultVal) {
         try {
@@ -160,7 +167,7 @@ public final class VersionFinder {
                 for (int i = 0; i < packagePathSegments && path != null; i++) {
                     path = path.getParent();
                 }
-                // 再向上移除两到三个级别，以处理 "bin" 或 "target/classes"
+                // 再向上移除两到三个级别,以处理 "bin" 或 "target/classes"
                 for (int i = 0; i < 3 && path != null; i++, path = path.getParent()) {
                     final Path pom = path.resolve("pom.xml");
                     try (InputStream is = Files.newInputStream(pom)) {
@@ -185,7 +192,8 @@ public final class VersionFinder {
 
         // 尝试从 JAR 的 META-INF 目录中的 Maven 属性获取版本号
         try (InputStream is = cls.getResourceAsStream(
-                "/META-INF/maven/" + MAVEN_PACKAGE + "/" + MAVEN_ARTIFACT + "/pom.properties")) {
+                "/META-INF/maven/" + MAVEN_PACKAGE + "/" + MAVEN_ARTIFACT + "/pom.properties")
+        ) {
             if (is != null) {
                 final Properties p = new Properties();
                 p.load(is);

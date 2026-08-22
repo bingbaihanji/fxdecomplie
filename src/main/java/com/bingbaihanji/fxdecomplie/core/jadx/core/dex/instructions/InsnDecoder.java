@@ -33,7 +33,9 @@ import java.util.List;
 import java.util.Objects;
 
 public class InsnDecoder {
+
     private final MethodNode method;
+
     private final RootNode root;
 
     public InsnDecoder(MethodNode mthNode) {

@@ -9,6 +9,7 @@ package com.bingbaihanji.fxdecomplie.model;
  * @date 2026-06-21
  */
 public record CommentScope(String workspaceHash, String optionsHash) {
+
     public CommentScope {
         workspaceHash = workspaceHash == null ? "" : workspaceHash;
         optionsHash = optionsHash == null || optionsHash.isBlank() ? "default" : optionsHash;

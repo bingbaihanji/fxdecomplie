@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
+import com.bingbaihanji.fxdecomplie.model.SearchOptions;
+import com.bingbaihanji.fxdecomplie.model.SearchResult;
+import com.bingbaihanji.fxdecomplie.model.SearchScope;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 
 import java.util.ArrayList;
@@ -23,6 +27,7 @@ public class BytecodeSearchProvider implements SearchProvider {
 
     /** 内部类名 → javap 风格反汇编文本(简单模式) */
     private final Map<String, String> bytecodeCache;
+
     /** 工作区字节码索引(高级模式,支持 SearchOptions) */
     private final WorkspaceIndex index;
 
@@ -46,7 +51,7 @@ public class BytecodeSearchProvider implements SearchProvider {
         this.index = Objects.requireNonNull(index, "index");
     }
 
-    /** 基本搜索：逐行匹配字节码文本中的关键字(不区分大小写) */
+    /** 基本搜索:逐行匹配字节码文本中的关键字(不区分大小写) */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
@@ -76,7 +81,7 @@ public class BytecodeSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.BYTECODE;
     }
 
-    /** 高级搜索：支持正则 大小写 全词匹配等选项的字节码搜索 */
+    /** 高级搜索:支持正则 大小写 全词匹配等选项的字节码搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

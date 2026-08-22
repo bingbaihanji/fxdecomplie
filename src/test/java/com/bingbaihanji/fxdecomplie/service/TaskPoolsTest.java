@@ -37,7 +37,7 @@ class TaskPoolsTest {
 
     @Test
     void defaultRunUsesInteractivePool() throws Exception {
-        // 任务内线程被重命名为任务名，但 daemon 标记可验证来自 bg 池
+        // 任务内线程被重命名为任务名,但 daemon 标记可验证来自 bg 池
         CompletableFuture<Boolean> done = new CompletableFuture<>();
         BackgroundTasks.run("test-default", () ->
                 done.complete(Thread.currentThread().isDaemon()));

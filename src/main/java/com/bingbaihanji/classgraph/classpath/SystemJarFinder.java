@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.util.FastPathResolver;
@@ -13,6 +12,7 @@ import java.util.Set;
 
 /** 用于查找 rt.jar 以及 JRE "lib/" 或 "ext/" 目录下 JAR 文件的类 */
 public final class SystemJarFinder {
+
     /** 在 JRE 中找到的所有 "rt.jar" 文件的路径 */
     private static final Set<String> RT_JARS = new LinkedHashSet<>();
 
@@ -22,7 +22,7 @@ public final class SystemJarFinder {
     /** 在 JRE 中找到的所有 "lib/" 或 "ext/" JAR 文件的路径 */
     private static final Set<String> JRE_LIB_OR_EXT_JARS = new LinkedHashSet<>();
 
-    // 在 JRE 目录中查找 JAR 文件({java.home}、{java.home}/lib、{java.home}/lib/ext 等)
+    // 在 JRE 目录中查找 JAR 文件({java.home},{java.home}/lib,{java.home}/lib/ext 等)
     static {
         String javaHome = VersionFinder.getProperty("java.home");
         if (javaHome == null || javaHome.isEmpty()) {
@@ -32,13 +32,13 @@ public final class SystemJarFinder {
             final File javaHomeFile = new File(javaHome);
             addJREPath(javaHomeFile);
             if ("jre".equals(javaHomeFile.getName())) {
-                // 当 java.home 是 JRE 路径时，尝试将 "{java.home}/.." 添加为 JDK 根路径
+                // 当 java.home 是 JRE 路径时,尝试将 "{java.home}/.." 添加为 JDK 根路径
                 final File jreParent = javaHomeFile.getParentFile();
                 addJREPath(jreParent);
                 addJREPath(new File(jreParent, "lib"));
                 addJREPath(new File(jreParent, "lib/ext"));
             } else {
-                // 当 java.home 不是 JRE 路径时，尝试将 "{java.home}/jre" 添加为 JRE 根路径
+                // 当 java.home 不是 JRE 路径时,尝试将 "{java.home}/jre" 添加为 JRE 根路径
                 addJREPath(new File(javaHomeFile, "jre"));
             }
             addJREPath(new File(javaHomeFile, "lib"));
@@ -58,7 +58,7 @@ public final class SystemJarFinder {
             }
         }
 
-        // 系统扩展路径 -- 参见：https://docs.oracle.com/javase/tutorial/ext/basics/install.html
+        // 系统扩展路径 -- 参见:https://docs.oracle.com/javase/tutorial/ext/basics/install.html
         switch (VersionFinder.OS) {
             case Linux:
             case Unix:
@@ -85,7 +85,7 @@ public final class SystemJarFinder {
                 }
                 break;
             case Solaris:
-                // Solaris 路径：
+                // Solaris 路径:
                 addJREPath(new File("/usr/jdk/packages"));
                 addJREPath(new File("/usr/jdk/packages/lib"));
                 addJREPath(new File("/usr/jdk/packages/lib/ext"));
@@ -146,10 +146,10 @@ public final class SystemJarFinder {
     /**
      * 获取 JRE "rt.jar" 路径
      *
-     * @return rt.jar 的路径(在 JDK 7 或 8 中)，如果未找到则返回 null(例如在 JDK 9+ 中)
+     * @return rt.jar 的路径(在 JDK 7 或 8 中),如果未找到则返回 null(例如在 JDK 9+ 中)
      */
     public static String getJreRtJarPath() {
-        // 仅包含第一个 rt.jar -- 如果 JDK 和 JRE 中各有一份副本，则无需扫描两者
+        // 仅包含第一个 rt.jar -- 如果 JDK 和 JRE 中各有一份副本,则无需扫描两者
         return RT_JAR;
     }
 

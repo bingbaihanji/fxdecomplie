@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.JadxPass;
 
 public interface JadxAfterLoadPass extends JadxPass {
+
     JadxPassType TYPE = new JadxPassType("AfterLoadPass");
 
     void init(JadxDecompiler decompiler);

@@ -71,6 +71,7 @@ public final class QuickOpenDialog {
         }
 
         listView.setCellFactory(lv -> new ListCell<>() {
+
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);

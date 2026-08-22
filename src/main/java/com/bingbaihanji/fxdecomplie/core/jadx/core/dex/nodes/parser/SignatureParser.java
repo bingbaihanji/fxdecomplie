@@ -14,13 +14,17 @@ import java.util.Collections;
 import java.util.List;
 
 public class SignatureParser {
+
     private static final Logger LOG = LoggerFactory.getLogger(SignatureParser.class);
 
     private static final char STOP_CHAR = 0;
 
     private final String sign;
+
     private final int end;
+
     private int pos;
+
     private int mark;
 
     public SignatureParser(String signature) {

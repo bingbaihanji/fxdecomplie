@@ -1,4 +1,3 @@
-
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
@@ -10,6 +9,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
  * 回退 ClassLoaderHandler尝试从一系列可能的方法和字段名中获取类路径
  */
 class FallbackClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public FallbackClassLoaderHandler() {
     }
@@ -21,11 +21,11 @@ class FallbackClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类之一
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
-        // 这是回退处理器，它可以处理任何情况
+        // 这是回退处理器,它可以处理任何情况
         return true;
     }
 

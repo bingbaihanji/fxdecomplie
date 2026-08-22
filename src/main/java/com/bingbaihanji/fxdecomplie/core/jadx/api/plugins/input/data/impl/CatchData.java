@@ -5,8 +5,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICatch;
 import static com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.impl.InputUtils.formatOffset;
 
 public class CatchData implements ICatch {
+
     private final int[] handlers;
+
     private final String[] types;
+
     private final int allHandler;
 
     public CatchData(int[] handlers, String[] types, int allHandler) {

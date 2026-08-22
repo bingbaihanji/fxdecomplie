@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 窗口级命令总线 — 集中注册和派发 {@link WindowCommand}。
+ * 窗口级命令总线 — 集中注册和派发 {@link WindowCommand}.
  *
- * <p>菜单栏 Action、工具栏按钮、键盘快捷键通过同一命令名派发，
- * 确保行为一致，无重复代码。命令在窗口初始化时注册。</p>
+ * <p>菜单栏 Action,工具栏按钮,键盘快捷键通过同一命令名派发,
+ * 确保行为一致,无重复代码.命令在窗口初始化时注册.</p>
  *
  * <h3>使用示例</h3>
  * <pre>{@code
@@ -30,14 +30,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class WindowCommandBus {
 
     private static final Logger log = LoggerFactory.getLogger(WindowCommandBus.class);
+
     private final Map<String, WindowCommand<?>> commands = new ConcurrentHashMap<>();
 
     /**
-     * 派发命令。命令未注册时记录警告并返回 null。
+     * 派发命令.命令未注册时记录警告并返回 null.
      *
      * @param commandName 命令名
      * @param <T>         返回值类型
-     * @return 命令返回值，未注册时返回 null
+     * @return 命令返回值,未注册时返回 null
      */
     @SuppressWarnings("unchecked")
     public <T> T dispatch(String commandName) {
@@ -54,7 +55,7 @@ public final class WindowCommandBus {
         }
     }
 
-    /** 注册命令（同一名称重复注册会覆盖） */
+    /** 注册命令(同一名称重复注册会覆盖) */
     public void register(String name, WindowCommand<?> command) {
         commands.put(name, command);
         log.debug("注册命令: {}", name);

@@ -15,7 +15,9 @@ public class MethodOverrideAttr extends PinnedAttribute {
      * All methods overridden by current method. Current method excluded, empty for base method.
      */
     private final List<IMethodDetails> overrideList;
+
     private final Set<IMethodDetails> baseMethods;
+
     /**
      * All method nodes from override hierarchy. Current method included.
      */

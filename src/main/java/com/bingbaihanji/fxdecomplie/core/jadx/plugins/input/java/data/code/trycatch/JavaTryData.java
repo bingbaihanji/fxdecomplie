@@ -7,7 +7,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.utils.Utils;
 public class JavaTryData implements ITry {
 
     private final int startOffset;
+
     private final int endOffset;
+
     private ICatch catchHandler;
 
     public JavaTryData(int startOffset, int endOffset) {

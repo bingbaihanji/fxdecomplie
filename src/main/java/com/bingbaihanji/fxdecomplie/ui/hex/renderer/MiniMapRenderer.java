@@ -24,9 +24,9 @@ public class MiniMapRenderer {
     /**
      * 按字节值分级的颜色映射表 
      * <ul>
-     *   <li>索引 0：全零行(深灰)</li>
-     *   <li>索引 1~5：低值到高值渐变</li>
-     *   <li>索引 6：极高值(洋红色)</li>
+     *   <li>索引 0:全零行(深灰)</li>
+     *   <li>索引 1~5:低值到高值渐变</li>
+     *   <li>索引 6:极高值(洋红色)</li>
      * </ul>
      */
     private static final Color[] VALUE_COLORS = {
@@ -54,7 +54,7 @@ public class MiniMapRenderer {
     /**
      * 在指定区域绘制 MiniMap 
      * <p>
-     * 绘制过程包括：
+     * 绘制过程包括:
      * <ol>
      *   <li>为每个像素行计算对应数据行的平均颜色并填充</li>
      *   <li>在 MiniMap 上叠加半透明的视口指示矩形,表示当前可视范围</li>
@@ -113,7 +113,7 @@ public class MiniMapRenderer {
     /**
      * 计算一行字节的摘要颜色 
      * <p>
-     * 算法：对非零字节求平均值,然后将平均值映射到 {@link #VALUE_COLORS} 颜色表,
+     * 算法:对非零字节求平均值,然后将平均值映射到 {@link #VALUE_COLORS} 颜色表,
      * 若全为零则返回颜色表第一个(深灰) 
      * </p>
      *

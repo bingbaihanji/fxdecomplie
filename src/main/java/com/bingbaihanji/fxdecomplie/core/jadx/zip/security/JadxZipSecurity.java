@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class JadxZipSecurity implements IJadxZipSecurity {
+
     private static final Logger LOG = LoggerFactory.getLogger(JadxZipSecurity.class);
 
     private static final Path CWD = Paths.get(".").toAbsolutePath().normalize();

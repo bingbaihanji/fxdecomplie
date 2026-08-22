@@ -91,9 +91,13 @@ class JBoss6VFS extends VFS {
 
     /** JBoss VirtualFile 包装类 */
     static class JbossVirtualFile {
+
         static Class<?> virtualFileClass;
+
         static Method getPathNameRelativeTo;
+
         static Method getChildrenRecursively;
+
         private final Object virtualFile;
 
         JbossVirtualFile(Object virtualFile) {
@@ -122,7 +126,9 @@ class JBoss6VFS extends VFS {
 
     /** JBoss VFS 包装类 */
     static class JbossVFS {
+
         static Class<?> vfsClass;
+
         static Method getChild;
 
         static JbossVirtualFile getChild(URL url) throws IOException {

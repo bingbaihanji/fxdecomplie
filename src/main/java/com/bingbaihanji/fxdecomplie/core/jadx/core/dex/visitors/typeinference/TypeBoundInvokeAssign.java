@@ -14,8 +14,11 @@ import org.jetbrains.annotations.Nullable;
  * TODO: also can depends on argument types
  */
 public final class TypeBoundInvokeAssign implements ITypeBoundDynamic {
+
     private final RootNode root;
+
     private final InvokeNode invokeNode;
+
     private final ArgType genericReturnType;
 
     public TypeBoundInvokeAssign(RootNode root, InvokeNode invokeNode, ArgType genericReturnType) {

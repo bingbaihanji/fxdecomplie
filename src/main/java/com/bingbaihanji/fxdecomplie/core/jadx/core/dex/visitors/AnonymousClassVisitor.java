@@ -19,7 +19,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrinkVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @JadxVisitor(
         name = "AnonymousClassVisitor",
@@ -62,7 +66,8 @@ public class AnonymousClassVisitor extends AbstractVisitor {
         List<RegisterArg> argList = mth.getArgRegs();
         ClassNode outerCls = mth.getUseIn().get(0).getParentClass();
         int startArg = 0;
-        if (callMth.getArgsCount() != 0 && callMth.getArgumentsTypes().get(0).equals(outerCls.getClassInfo().getType())) {
+        if (callMth.getArgsCount() != 0 && callMth.getArgumentsTypes().get(0)
+                .equals(outerCls.getClassInfo().getType())) {
             startArg = 1;
         }
         Map<InsnArg, FieldNode> map = new LinkedHashMap<>();

@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * jadx 反编译引擎可配置参数定义
  * <p>
- * 参数列表从 {@link JadxOptionSchema} 生成，确保与 {@code JadxOptionsBridge}
+ * 参数列表从 {@link JadxOptionSchema} 生成,确保与 {@code JadxOptionsBridge}
  * 和 {@code DecompilerOptions.hash()} 的 key/默认值一致
  *
  * @author bingbaihanji
@@ -42,7 +42,7 @@ public final class JadxParameters {
                     paramType,
                     defaultValue, def.i18nKey(), def.i18nKey() + ".help", category, null));
         }
-        // 适配器参数 — 不属于内核引擎选项，手动添加
+        // 适配器参数 — 不属于内核引擎选项,手动添加
         params.add(new DecompilerParameter(JadxAdapterOptions.LOAD_WORKSPACE_DEPENDENCIES,
                 ParamType.BOOLEAN, "true",
                 "engine.jadx." + JadxAdapterOptions.LOAD_WORKSPACE_DEPENDENCIES,

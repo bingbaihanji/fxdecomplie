@@ -4,7 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
 /**
  * 国际化工具类(纯静态方法,线程安全)
@@ -78,7 +84,7 @@ public final class I18nUtil {
      * 获取带参数格式化的国际化文本
      * <p>
      * 使用 {@link MessageFormat} 语法,如 {@code getString("welcome", userName)}
-     * 匹配模板 {@code "欢迎, {0}！"}
+     * 匹配模板 {@code "欢迎, {0}!"}
      * </p>
      *
      * @param key    资源文件中的 key
@@ -159,7 +165,7 @@ public final class I18nUtil {
     /**
      * 获取布尔值
      * <p>
-     * 支持的 true 值：true / yes / 1 / on(不区分大小写)
+     * 支持的 true 值:true / yes / 1 / on(不区分大小写)
      * </p>
      *
      * @param key          资源文件中的 key
@@ -229,8 +235,8 @@ public final class I18nUtil {
     /**
      * 获取枚举常量的国际化显示名
      * <p>
-     * 拼接规则：枚举类全名(不含包名)+ "." + 常量名 → key
-     * 例：{@code I18nUtil.getEnum(GridType.POLAR)} 生成 key
+     * 拼接规则:枚举类全名(不含包名)+ "." + 常量名 → key
+     * 例:{@code I18nUtil.getEnum(GridType.POLAR)} 生成 key
      * {@code "GridType.POLAR"}若未定义则返回常量名本身
      * </p>
      *
@@ -383,7 +389,7 @@ public final class I18nUtil {
      * 创建使用自定义资源基名的独立提供者
      * <p>
      * 当一个项目需要多套独立的国际化资源时使用
-     * 例：主应用使用 "language/language",插件使用 "plugin/i18n/strings"
+     * 例:主应用使用 "language/language",插件使用 "plugin/i18n/strings"
      * </p>
      *
      * @param baseName 资源文件基名

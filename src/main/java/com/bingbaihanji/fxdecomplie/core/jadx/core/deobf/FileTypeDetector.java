@@ -13,7 +13,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FileTypeDetector {
+
     private static final Pattern DOCTYPE_PATTERN = Pattern.compile("\\s*<!doctype *(\\w+)[ >]", Pattern.CASE_INSENSITIVE);
+
     private static final List<FileSignature> FILE_SIGNATURES = new ArrayList<>();
 
     static {

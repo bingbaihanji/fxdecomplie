@@ -17,20 +17,21 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * 通用工具类，提供字符串处理 集合操作 堆栈跟踪 线程工具等常用功能
+ * 通用工具类,提供字符串处理 集合操作 堆栈跟踪 线程工具等常用功能
  */
 public class Utils {
 
-    /** Jadx API 所在的包名，用于在过滤堆栈跟踪时识别并截断 API 层调用帧 */
+    /** Jadx API 所在的包名,用于在过滤堆栈跟踪时识别并截断 API 层调用帧 */
     private static final String JADX_API_PACKAGE = JadxDecompiler.class.getPackage().getName();
-    /** 堆栈跟踪过滤的停止类名，遇到该类时截断后续的调用帧 */
+
+    /** 堆栈跟踪过滤的停止类名,遇到该类时截断后续的调用帧 */
     private static final String STACKTRACE_STOP_CLS_NAME = DepthTraversal.class.getName();
 
     private Utils() {
     }
 
     /**
-     * 清理对象名称，将 Smali 格式的类名 (如 Ljava/lang/String;)转换为 Java 格式 (如 java.lang.String)
+     * 清理对象名称,将 Smali 格式的类名 (如 Ljava/lang/String;)转换为 Java 格式 (如 java.lang.String)
      *
      * @param obj Smali 格式的对象名称
      * @return 清理后的 Java 格式对象名称
@@ -46,7 +47,7 @@ public class Utils {
     }
 
     /**
-     * 截取对象名称，移除 Smali 格式中的 'L' 前缀和 ';' 后缀
+     * 截取对象名称,移除 Smali 格式中的 'L' 前缀和 ';' 后缀
      *
      * @param obj Smali 格式的对象名称
      * @return 截取后的对象名称
@@ -125,13 +126,13 @@ public class Utils {
     }
 
     /**
-     * 清理对象名称并处理内部类，将 Smali 格式转换为 Java 格式，同时将内部类分隔符 '$' 替换为 '.'
+     * 清理对象名称并处理内部类,将 Smali 格式转换为 Java 格式,同时将内部类分隔符 '$' 替换为 '.'
      *
      * @param obj Smali 格式的对象名称
      * @return 处理内部类后的 Java 格式对象名称
      */
     private static String cleanObjectNameWithInnerClass(String obj) {
-        // 或许可以直接更新 Utils.cleanObjectName 方法？
+        // 或许可以直接更新 Utils.cleanObjectName 方法?
         String result = Utils.cleanObjectName(obj);
         return result.replace('$', '.');
     }
@@ -191,7 +192,7 @@ public class Utils {
      * 重复拼接字符串指定的次数
      *
      * @param str   待重复的字符串
-     * @param count 重复次数，小于 1 时返回空字符串
+     * @param count 重复次数,小于 1 时返回空字符串
      * @return 重复拼接后的字符串
      */
     @SuppressWarnings("StringRepeatCanBeUsed")
@@ -210,7 +211,7 @@ public class Utils {
     }
 
     /**
-     * 将可迭代对象拼接为字符串，默认使用 ", " 作为分隔符
+     * 将可迭代对象拼接为字符串,默认使用 ", " 作为分隔符
      *
      * @param objects 待拼接的可迭代对象
      * @return 拼接后的字符串
@@ -234,7 +235,7 @@ public class Utils {
     }
 
     /**
-     * 将可迭代对象通过转换函数映射后拼接为字符串，默认使用 ", " 作为分隔符
+     * 将可迭代对象通过转换函数映射后拼接为字符串,默认使用 ", " 作为分隔符
      *
      * @param objects 待拼接的可迭代对象
      * @param toStr   元素到字符串的转换函数
@@ -294,7 +295,7 @@ public class Utils {
      * 将数组元素以 ", " 分隔拼接为字符串
      *
      * @param arr 待拼接的数组
-     * @return 拼接后的字符串，数组为空时返回空字符串
+     * @return 拼接后的字符串,数组为空时返回空字符串
      */
     public static <T> String arrayToStr(T[] arr) {
         int len = arr == null ? 0 : arr.length;
@@ -337,7 +338,7 @@ public class Utils {
     }
 
     /**
-     * 获取当前调用位置的堆栈跟踪字符串，并跳过开头指定数量的栈帧
+     * 获取当前调用位置的堆栈跟踪字符串,并跳过开头指定数量的栈帧
      *
      * @param skipFrames 需要跳过的栈帧数量
      * @return 当前堆栈跟踪文本
@@ -404,6 +405,7 @@ public class Utils {
         }
         code.startLine();
         OutputStream w = new OutputStream() {
+
             @Override
             public void write(int b) {
                 char c = (char) b;
@@ -430,7 +432,7 @@ public class Utils {
     }
 
     /**
-     * 递归过滤异常及其原因链的堆栈跟踪，截断 jadx 内部调用帧
+     * 递归过滤异常及其原因链的堆栈跟踪,截断 jadx 内部调用帧
      *
      * @param th 待过滤的异常
      */
@@ -479,7 +481,7 @@ public class Utils {
      *
      * @param list    源集合
      * @param mapFunc 元素映射函数
-     * @return 映射后的列表，源集合为空时返回空列表
+     * @return 映射后的列表,源集合为空时返回空列表
      */
     public static <T, R> List<R> collectionMap(Collection<T> list, Function<T, R> mapFunc) {
         if (list == null || list.isEmpty()) {
@@ -493,11 +495,11 @@ public class Utils {
     }
 
     /**
-     * 将集合中的每个元素通过映射函数转换后收集为新列表，并过滤掉映射结果为 null 的元素
+     * 将集合中的每个元素通过映射函数转换后收集为新列表,并过滤掉映射结果为 null 的元素
      *
      * @param list    源集合
      * @param mapFunc 元素映射函数
-     * @return 映射后的非空元素列表，源集合为空时返回空列表
+     * @return 映射后的非空元素列表,源集合为空时返回空列表
      */
     public static <T, R> List<R> collectionMapNoNull(Collection<T> list, Function<T, R> mapFunc) {
         if (list == null || list.isEmpty()) {
@@ -537,7 +539,7 @@ public class Utils {
      *
      * @param list    待检查的列表
      * @param element 目标元素
-     * @return 引用相同元素的索引，未找到时返回 -1
+     * @return 引用相同元素的索引,未找到时返回 -1
      */
     public static <T> int indexInListByRef(List<T> list, T element) {
         if (list == null || list.isEmpty()) {
@@ -554,7 +556,7 @@ public class Utils {
     }
 
     /**
-     * 将列表转换为不可变列表，并对空列表和单元素列表做优化
+     * 将列表转换为不可变列表,并对空列表和单元素列表做优化
      *
      * @param list 源列表
      * @return 不可变列表
@@ -574,7 +576,7 @@ public class Utils {
      *
      * @param list       源列表
      * @param startIndex 起始索引 (包含)
-     * @return 子列表，起始索引超出范围时返回空列表
+     * @return 子列表,起始索引超出范围时返回空列表
      */
     public static <T> List<T> listTail(List<T> list, int startIndex) {
         if (startIndex == 0) {
@@ -588,7 +590,7 @@ public class Utils {
     }
 
     /**
-     * 合并两个列表为一个新列表，其中一个为空时直接返回另一个
+     * 合并两个列表为一个新列表,其中一个为空时直接返回另一个
      *
      * @param first  第一个列表
      * @param second 第二个列表
@@ -608,7 +610,7 @@ public class Utils {
     }
 
     /**
-     * 合并两个集合为一个新集合，其中一个为空时直接返回另一个
+     * 合并两个集合为一个新集合,其中一个为空时直接返回另一个
      *
      * @param first  第一个集合
      * @param second 第二个集合
@@ -650,7 +652,7 @@ public class Utils {
     }
 
     /**
-     * 合并两个 Map，返回一个新的 HashMap第二个 Map 的值会覆盖第一个 Map 中的同名键
+     * 合并两个 Map,返回一个新的 HashMap第二个 Map 的值会覆盖第一个 Map 中的同名键
      *
      * @param first  第一个 Map
      * @param second 第二个 Map
@@ -670,9 +672,9 @@ public class Utils {
     }
 
     /**
-     * 通过“值到键”的映射函数，将值列表构建为 Map
+     * 通过"值到键"的映射函数,将值列表构建为 Map
      * <br>
-     * 类似于：
+     * 类似于:
      * <br>
      * {@code list.stream().collect(Collectors.toMap(mapKey, Function.identity())); }
      *
@@ -721,7 +723,7 @@ public class Utils {
     }
 
     /**
-     * 当列表恰好只有一个元素时返回该元素，否则返回 null
+     * 当列表恰好只有一个元素时返回该元素,否则返回 null
      *
      * @param list 源列表
      * @return 唯一元素或 null
@@ -735,7 +737,7 @@ public class Utils {
     }
 
     /**
-     * 当集合恰好只有一个元素时返回该元素，否则返回 null
+     * 当集合恰好只有一个元素时返回该元素,否则返回 null
      *
      * @param collection 源集合
      * @return 唯一元素或 null
@@ -765,7 +767,7 @@ public class Utils {
     }
 
     /**
-     * 返回列表的第一个元素，列表为空时返回 null
+     * 返回列表的第一个元素,列表为空时返回 null
      *
      * @param list 源列表
      * @return 第一个元素或 null
@@ -779,7 +781,7 @@ public class Utils {
     }
 
     /**
-     * 返回可迭代对象的第一个元素，无元素时返回 null
+     * 返回可迭代对象的第一个元素,无元素时返回 null
      *
      * @param list 源可迭代对象
      * @return 第一个元素或 null
@@ -794,7 +796,7 @@ public class Utils {
     }
 
     /**
-     * 返回列表的最后一个元素，列表为空时返回 null
+     * 返回列表的最后一个元素,列表为空时返回 null
      *
      * @param list 源列表
      * @return 最后一个元素或 null
@@ -808,7 +810,7 @@ public class Utils {
     }
 
     /**
-     * 返回可迭代对象的最后一个元素，无元素时返回 null
+     * 返回可迭代对象的最后一个元素,无元素时返回 null
      *
      * @param list 源可迭代对象
      * @return 最后一个元素或 null
@@ -828,7 +830,7 @@ public class Utils {
     }
 
     /**
-     * 返回对象本身，若对象为 null 则返回默认值
+     * 返回对象本身,若对象为 null 则返回默认值
      *
      * @param obj        目标对象
      * @param defaultObj 默认值
@@ -892,7 +894,7 @@ public class Utils {
     }
 
     /**
-     * 检查当前线程是否被中断，若已中断则抛出运行时异常
+     * 检查当前线程是否被中断,若已中断则抛出运行时异常
      *
      * @throws JadxRuntimeException 当前线程被中断时抛出
      */
@@ -907,7 +909,7 @@ public class Utils {
      *
      * @param varName  环境变量名
      * @param defValue 默认值
-     * @return 环境变量的布尔值，未设置时返回默认值
+     * @return 环境变量的布尔值,未设置时返回默认值
      * @deprecated 核心模块中不应使用环境变量
      *             建议在 `app` 中解析 (使用 'app-commons' 的 JadxCommonEnv)并通过 jadx 参数设置
      */
@@ -925,7 +927,7 @@ public class Utils {
      *
      * @param varName  环境变量名
      * @param defValue 默认值
-     * @return 环境变量的整数值，未设置时返回默认值
+     * @return 环境变量的整数值,未设置时返回默认值
      * @deprecated 核心模块中不应使用环境变量
      *             建议在 `app` 中解析 (使用 'app-commons' 的 JadxCommonEnv)并通过 jadx 参数设置
      */
@@ -939,7 +941,7 @@ public class Utils {
     }
 
     /**
-     * 安全地将字符串解析为 int，解析失败时返回默认值
+     * 安全地将字符串解析为 int,解析失败时返回默认值
      *
      * @param value    待解析的字符串
      * @param defValue 默认值
@@ -957,10 +959,10 @@ public class Utils {
     }
 
     /**
-     * 安全地将字符串解析为 Integer，解析失败时返回 null
+     * 安全地将字符串解析为 Integer,解析失败时返回 null
      *
      * @param value 待解析的字符串
-     * @return 解析结果，失败时返回 null
+     * @return 解析结果,失败时返回 null
      */
     public static @Nullable Integer safeParseInteger(@Nullable String value) {
         if (value == null || value.isEmpty()) {

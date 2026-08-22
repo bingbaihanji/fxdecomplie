@@ -1,6 +1,12 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +14,7 @@ import java.util.List;
 /**
  * 自定义 ASM ClassVisitor,生成 jadx 风格的 smali 文本
  *
- * <p>输出格式：.class / .super / .source 头信息 + .field / .method 定义,
+ * <p>输出格式:.class / .super / .source 头信息 + .field / .method 定义,
  * 方法体包含 .registers / .line / .local 和 smali 风格操作码(小写 带连字符)</p>
  *
  * @author bingbaihanji
@@ -17,16 +23,25 @@ import java.util.List;
 final class SmaliTextBuilder extends ClassVisitor {
 
     private static final String INDENT = "    ";
+
     private static final String METHOD_INDENT = INDENT;
 
     private final StringBuilder sb = new StringBuilder(4096);
+
     private final List<FieldInfo> fields = new ArrayList<>();
+
     private String className;
+
     private String sourceFile;
+
     private int version;
+
     private int access;
+
     private String superName;
+
     private String[] interfaces;
+
     private String currentMethodText;
 
     /** 构造 ASM9 级别的 ClassVisitor */
@@ -367,7 +382,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         };
     }
 
-    /** 记录类基本信息：版本 访问标志 类名 父类 接口 */
+    /** 记录类基本信息:版本 访问标志 类名 父类 接口 */
     @Override
     public void visit(int version, int access, String name, String signature,
                       String superName, String[] interfaces) {
@@ -465,7 +480,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         }
         out.append('\n');
 
-        // 字段 — 分组：静态字段 / 实例字段
+        // 字段 — 分组:静态字段 / 实例字段
         List<FieldInfo> staticFields = new ArrayList<>();
         List<FieldInfo> instanceFields = new ArrayList<>();
         for (FieldInfo f : fields) {
@@ -492,7 +507,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             out.append('\n');
         }
 
-        // 方法 — 分组：direct methods / virtual methods
+        // 方法 — 分组:direct methods / virtual methods
         out.append(sb);
         return out.toString();
     }
@@ -514,12 +529,17 @@ final class SmaliTextBuilder extends ClassVisitor {
 
     // -- 内部数据结构 --
 
-    /** 字段元数据：访问标志 名称 描述符 签名 默认值 */
+    /** 字段元数据:访问标志 名称 描述符 签名 默认值 */
     private static class FieldInfo {
+
         int access;
+
         String name;
+
         String descriptor;
+
         String signature;
+
         Object value;
     }
 
@@ -530,13 +550,21 @@ final class SmaliTextBuilder extends ClassVisitor {
      * 在 visitEnd() 中将完整方法体一次性拼接输出
      */
     private class SmaliMethodWriter extends MethodVisitor {
+
         private final StringBuilder mb = new StringBuilder(256);
+
         private final int methodAccess;
+
         private final String methodName;
+
         private final String methodDesc;
+
         private final String[] exceptions;
+
         private int maxStack;
+
         private int maxLocals;
+
         private boolean isDirect;
 
         SmaliMethodWriter(int access, String name, String desc,
@@ -742,10 +770,10 @@ final class SmaliTextBuilder extends ClassVisitor {
         public void visitEnd() {
             // 构建方法完整文本
             StringBuilder header = new StringBuilder(128);
-            // 分组标题：按 direct / virtual 分类
+            // 分组标题:按 direct / virtual 分类
             String group = isDirect ? "# direct methods\n" : "# virtual methods\n";
 
-            // 方法签名：访问标志 + 方法名 + 参数类型 + 返回类型
+            // 方法签名:访问标志 + 方法名 + 参数类型 + 返回类型
             String accessStr = formatAccess(methodAccess, false);
             header.append(INDENT).append(".method");
             if (!accessStr.isEmpty()) {

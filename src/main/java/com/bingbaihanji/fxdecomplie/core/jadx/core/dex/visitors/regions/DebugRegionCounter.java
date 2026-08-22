@@ -25,8 +25,11 @@ public class DebugRegionCounter extends AbstractVisitor {
     }
 
     private static class RegionCounterVisitor extends AbstractRegionVisitor {
+
         private int depth = 0;
+
         private int nregions = 0;
+
         private List<BlockDepthEntry> blockDepths = new ArrayList<>();
 
         @Override
@@ -61,7 +64,9 @@ public class DebugRegionCounter extends AbstractVisitor {
     }
 
     private static class BlockDepthEntry {
+
         public int depth;
+
         public BlockNode block;
 
         public BlockDepthEntry(int depth, BlockNode block) {

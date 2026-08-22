@@ -10,6 +10,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public non-sealed interface UninitializedValue extends ReValue {
+
     UninitializedValue UNINITIALIZED_VALUE = UninitializedValueImpl.UNINITIALIZED_VALUE;
 
     @Override

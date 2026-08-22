@@ -12,7 +12,13 @@ import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -25,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 继承引用面板,用于展示当前类相关的父类、接口、注解、实现类、子类
+ * 继承引用面板,用于展示当前类相关的父类,接口,注解,实现类,子类
  * 以及方法级别的重写/被重写/继承关系
  *
  * <p>支持搜索过滤和方法签名 tooltip</p>
@@ -36,12 +42,19 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class InheritanceReferencePane extends VBox {
 
     private final TreeView<InheritanceReferenceNode> treeView;
+
     private final TextField filterField;
+
     private final Label statusLabel;
+
     private final AtomicLong loadGeneration = new AtomicLong();
+
     private final AtomicReference<Future<?>> currentTask = new AtomicReference<>();
+
     private OpenHandler openHandler;
+
     private Runnable refreshAction;
+
     /** 缓存的当前树(未过滤),用于搜索重建 */
     private TreeItem<InheritanceReferenceNode> cachedRoot;
 
@@ -82,6 +95,7 @@ public final class InheritanceReferencePane extends VBox {
         VBox.setVgrow(treeView, Priority.ALWAYS);
 
         treeView.setCellFactory(tv -> new TreeCell<>() {
+
             @Override
             protected void updateItem(InheritanceReferenceNode item, boolean empty) {
                 super.updateItem(item, empty);
@@ -292,6 +306,7 @@ public final class InheritanceReferencePane extends VBox {
 
     @FunctionalInterface
     public interface OpenHandler {
+
         void open(InheritanceReferenceNode node);
     }
 }

@@ -28,10 +28,16 @@
  */
 package com.bingbaihanji.classgraph.util;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /** 一个可在 try-with-resources 块中使用的 ThreadPoolExecutor */
 public class AutoCloseableExecutorService extends ThreadPoolExecutor implements AutoCloseable {
+
     /** {@link InterruptionChecker} 实例 */
     public final InterruptionChecker interruptionChecker = new InterruptionChecker();
 
@@ -47,7 +53,7 @@ public class AutoCloseableExecutorService extends ThreadPoolExecutor implements 
     }
 
     /**
-     * 捕获来自 submit() 和 execute() 的异常，并调用 {@link InterruptionChecker#interrupt()} 中断所有线程
+     * 捕获来自 submit() 和 execute() 的异常,并调用 {@link InterruptionChecker#interrupt()} 中断所有线程
      *
      * @param runnable
      *            要执行的 Runnable
@@ -63,12 +69,12 @@ public class AutoCloseableExecutorService extends ThreadPoolExecutor implements 
             // 调用了 execute() 并抛出了未捕获的异常或错误
             interruptionChecker.interrupt();
         } else if (/* throwable == null && */ runnable instanceof Future<?>) {
-            // 调用了 submit()，因此 throwable 未设置
+            // 调用了 submit(),因此 throwable 未设置
             try {
-                // 此调用不会阻塞，因为执行已经完成
+                // 此调用不会阻塞,因为执行已经完成
                 ((Future<?>) runnable).get();
             } catch (CancellationException | InterruptedException e) {
-                // 如果此线程被取消或中断，则中断其他线程
+                // 如果此线程被取消或中断,则中断其他线程
                 interruptionChecker.interrupt();
             } catch (final ExecutionException e) {
                 // 记录线程抛出的异常
@@ -97,7 +103,7 @@ public class AutoCloseableExecutorService extends ThreadPoolExecutor implements 
         }
         if (!terminated) {
             try {
-                // 如果 awaitTermination() 超时，中断所有线程以终止它们
+                // 如果 awaitTermination() 超时,中断所有线程以终止它们
                 shutdownNow();
             } catch (final SecurityException e) {
                 throw new RuntimeException("Could not shut down ExecutorService -- need "

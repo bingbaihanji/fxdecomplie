@@ -4,28 +4,39 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.AccessFlags
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import org.intellij.lang.annotations.MagicConstant;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 类路径图中的类节点
  * <p>
- * 表示在类路径图上解析到的一个类，包含类型信息 访问标志 父类/接口 
- * 方法列表 类型参数等元数据，用于支持类型推断和方法重载解析
+ * 表示在类路径图上解析到的一个类,包含类型信息 访问标志 父类/接口 
+ * 方法列表 类型参数等元数据,用于支持类型推断和方法重载解析
  */
 public class ClspClass {
 
     /** 类在类路径图中的类型表示 */
     private final ArgType clsType;
+
     /** 类在类路径图中的唯一标识 ID */
     private final int id;
+
     /** 类的访问标志 (public interface abstract 等) */
     private final int accFlags;
+
     /** 类来源 (标识该类来自哪个类路径源) */
     private final ClspClassSource source;
+
     /** 父类和实现的接口类型数组 */
     private ArgType[] parents;
-    /** 方法映射表，键为方法的短 ID，值为对应的 ClspMethod */
+
+    /** 方法映射表,键为方法的短 ID,值为对应的 ClspMethod */
     private Map<String, ClspMethod> methodsMap = Collections.emptyMap();
+
     /** 泛型类型参数列表 */
     private List<ArgType> typeParameters = Collections.emptyList();
 
@@ -84,7 +95,7 @@ public class ClspClass {
         this.parents = parents;
     }
 
-    /** 获取方法映射表 (键为方法短 ID，值为 ClspMethod) */
+    /** 获取方法映射表 (键为方法短 ID,值为 ClspMethod) */
     public Map<String, ClspMethod> getMethodsMap() {
         return methodsMap;
     }

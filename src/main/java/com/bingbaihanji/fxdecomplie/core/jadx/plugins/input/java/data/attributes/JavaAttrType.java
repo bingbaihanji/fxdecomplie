@@ -5,7 +5,19 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.debuginfo.LocalVarTypesAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.debuginfo.LocalVarsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.stack.StackMapTableReader;
-import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.CodeAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.ConstValueAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.IgnoredAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaAnnotationDefaultAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaAnnotationsAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaBootstrapMethodsAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaExceptionsAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaInnerClsAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaMethodParametersAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaParamAnnsAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaSignatureAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.JavaSourceFileAttr;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.types.StackMapTableAttr;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -14,31 +26,57 @@ import java.util.Map;
 public final class JavaAttrType<T extends IJavaAttribute> {
 
     public static final JavaAttrType<JavaInnerClsAttr> INNER_CLASSES;
+
     public static final JavaAttrType<JavaBootstrapMethodsAttr> BOOTSTRAP_METHODS;
+
     public static final JavaAttrType<ConstValueAttr> CONST_VALUE;
+
     public static final JavaAttrType<CodeAttr> CODE;
+
     public static final JavaAttrType<StackMapTableAttr> STACK_MAP_TABLE;
+
     public static final JavaAttrType<LineNumberTableAttr> LINE_NUMBER_TABLE;
+
     public static final JavaAttrType<LocalVarsAttr> LOCAL_VAR_TABLE;
+
     public static final JavaAttrType<LocalVarTypesAttr> LOCAL_VAR_TYPE_TABLE;
+
     public static final JavaAttrType<JavaAnnotationsAttr> RUNTIME_ANNOTATIONS;
+
     public static final JavaAttrType<JavaAnnotationsAttr> BUILD_ANNOTATIONS;
+
     public static final JavaAttrType<JavaParamAnnsAttr> RUNTIME_PARAMETER_ANNOTATIONS;
+
     public static final JavaAttrType<JavaParamAnnsAttr> BUILD_PARAMETER_ANNOTATIONS;
+
     public static final JavaAttrType<IgnoredAttr> RUNTIME_TYPE_ANNOTATIONS;
+
     public static final JavaAttrType<IgnoredAttr> BUILD_TYPE_ANNOTATIONS;
+
     public static final JavaAttrType<JavaAnnotationDefaultAttr> ANNOTATION_DEFAULT;
+
     public static final JavaAttrType<JavaSourceFileAttr> SOURCE_FILE;
+
     public static final JavaAttrType<JavaSignatureAttr> SIGNATURE;
+
     public static final JavaAttrType<JavaExceptionsAttr> EXCEPTIONS;
+
     public static final JavaAttrType<JavaMethodParametersAttr> METHOD_PARAMETERS;
+
     public static final JavaAttrType<IgnoredAttr> DEPRECATED;
+
     public static final JavaAttrType<IgnoredAttr> SYNTHETIC;
+
     public static final JavaAttrType<IgnoredAttr> ENCLOSING_METHOD;
+
     public static final JavaAttrType<IgnoredAttr> MODULE;
+
     public static final JavaAttrType<IgnoredAttr> SOURCE_DEBUG_EXTENSION;
+
     public static final JavaAttrType<IgnoredAttr> NEST_HOST;
+
     public static final JavaAttrType<IgnoredAttr> NEST_MEMBERS;
+
     private static final Map<String, JavaAttrType<?>> NAME_TO_TYPE_MAP;
 
     static {
@@ -82,7 +120,9 @@ public final class JavaAttrType<T extends IJavaAttribute> {
     }
 
     private final int id;
+
     private final String name;
+
     private final IJavaAttributeReader reader;
 
     private JavaAttrType(int id, String name, IJavaAttributeReader reader) {

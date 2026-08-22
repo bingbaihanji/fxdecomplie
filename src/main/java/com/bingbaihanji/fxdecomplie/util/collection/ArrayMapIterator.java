@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.util.collection;
 
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * ArrayMap 集合视图使用的 fail-fast 迭代器
@@ -74,7 +78,7 @@ final class ArrayMapIterator<K, V, E> implements Iterator<E> {
 
     @Override
     public boolean hasNext() {
-        // 与 JDK 迭代器保持一致：hasNext() 不做并发修改检测,仅 next()/remove() 触发 fail-fast
+        // 与 JDK 迭代器保持一致:hasNext() 不做并发修改检测,仅 next()/remove() 触发 fail-fast
         return this.nextIndex < this.collection.colGetSize();
     }
 

@@ -6,7 +6,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class DataReader {
+
     private final byte[] data;
+
     private int offset;
 
     public DataReader(byte[] data) {

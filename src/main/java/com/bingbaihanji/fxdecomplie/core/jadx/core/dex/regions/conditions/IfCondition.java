@@ -5,20 +5,31 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithOp;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfOp;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class IfCondition extends AttrNode {
 
     private final Mode mode;
+
     private final List<IfCondition> args;
+
     private final Compare compare;
 
     private IfCondition(Compare compare) {

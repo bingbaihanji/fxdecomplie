@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 测试辅助：编译 Java 源码并补丁 major version 到 69（Java 25）
+ * 测试辅助:编译 Java 源码并补丁 major version 到 69(Java 25)
  */
 public final class TestClassCompiler {
 

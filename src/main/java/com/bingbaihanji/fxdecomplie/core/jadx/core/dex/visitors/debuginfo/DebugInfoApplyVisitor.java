@@ -10,7 +10,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LocalVarsDebugInfoAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.RegDebugInfoAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.PhiInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.CodeVar;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.Named;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
@@ -24,7 +29,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.OptionalInt;
+import java.util.Set;
 
 @JadxVisitor(
         name = "Debug Info Apply",
@@ -35,6 +44,7 @@ import java.util.*;
         }
 )
 public class DebugInfoApplyVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(DebugInfoApplyVisitor.class);
 
     private static void applyDebugInfo(MethodNode mth) {

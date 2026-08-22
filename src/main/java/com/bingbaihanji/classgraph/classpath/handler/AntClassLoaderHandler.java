@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -9,6 +8,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
 
 /** 从 Ant ClassLoader 提取类路径条目 */
 class AntClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public AntClassLoaderHandler() {
     }
@@ -20,7 +20,7 @@ class AntClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类之一
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {

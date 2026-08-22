@@ -18,6 +18,7 @@ import com.sun.jna.ptr.IntByReference;
  * @author bingbaihanji
  */
 public final class NativeWindowsTools {
+
     private NativeWindowsTools() {
         throw new AssertionError("utility class");
     }
@@ -225,7 +226,7 @@ public final class NativeWindowsTools {
      * 设置窗口标题栏颜色
      *
      * @param hwnd     窗口句柄
-     * @param colorRef 颜色值(COLORREF 格式：0x00BBGGRR)
+     * @param colorRef 颜色值(COLORREF 格式:0x00BBGGRR)
      * @return 操作结果
      * @implNote 需要 Windows 11+
      */
@@ -238,7 +239,7 @@ public final class NativeWindowsTools {
      * 获取窗口标题栏颜色
      *
      * @param hwnd 窗口句柄
-     * @return 标题栏颜色值(COLORREF 格式：0x00BBGGRR),获取失败返回 null
+     * @return 标题栏颜色值(COLORREF 格式:0x00BBGGRR),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static Integer getWindowCaptionColor(WinDef.HWND hwnd) {
@@ -249,7 +250,7 @@ public final class NativeWindowsTools {
      * 设置窗口标题栏文本颜色
      *
      * @param hwnd     窗口句柄
-     * @param colorRef 颜色值(COLORREF 格式：0x00BBGGRR)
+     * @param colorRef 颜色值(COLORREF 格式:0x00BBGGRR)
      * @return 操作结果
      * @implNote 需要 Windows 11+
      */
@@ -262,7 +263,7 @@ public final class NativeWindowsTools {
      * 获取窗口标题栏文本颜色
      *
      * @param hwnd 窗口句柄
-     * @return 文本颜色值(COLORREF 格式：0x00BBGGRR),获取失败返回 null
+     * @return 文本颜色值(COLORREF 格式:0x00BBGGRR),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static Integer getWindowTextColor(WinDef.HWND hwnd) {
@@ -273,7 +274,7 @@ public final class NativeWindowsTools {
      * 设置窗口边框颜色
      *
      * @param hwnd     窗口句柄
-     * @param rgbColor 颜色值(COLORREF 格式：0x00BBGGRR)
+     * @param rgbColor 颜色值(COLORREF 格式:0x00BBGGRR)
      * @implNote 需要 Windows 11+
      */
     public static WindowOperationResult setWindowBorderColor(WinDef.HWND hwnd, int rgbColor) {
@@ -294,7 +295,7 @@ public final class NativeWindowsTools {
      * 获取窗口边框颜色
      *
      * @param hwnd 窗口句柄
-     * @return 边框颜色值(COLORREF 格式：0x00BBGGRR),获取失败返回 null
+     * @return 边框颜色值(COLORREF 格式:0x00BBGGRR),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static Integer getWindowBorderColor(WinDef.HWND hwnd) {
@@ -1622,6 +1623,7 @@ public final class NativeWindowsTools {
 
     /** 窗口坐标点,对应 Win32 POINT 结构体 */
     public record WindowPoint(int x, int y) {
+
         private WinDef.POINT toNativePoint() {
             WinDef.POINT point = new WinDef.POINT();
             point.x = x;
@@ -1632,6 +1634,7 @@ public final class NativeWindowsTools {
 
     /** 窗口矩形信息,对应 Win32 RECT 结构体 */
     public record WindowRect(int left, int top, int right, int bottom) {
+
         public int width() {
             return right - left;
         }

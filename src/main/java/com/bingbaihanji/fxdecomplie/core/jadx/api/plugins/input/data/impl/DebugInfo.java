@@ -9,6 +9,7 @@ import java.util.Map;
 public class DebugInfo implements IDebugInfo {
 
     private final Map<Integer, Integer> sourceLineMap;
+
     private final List<ILocalVar> localVars;
 
     public DebugInfo(Map<Integer, Integer> sourceLineMap, List<ILocalVar> localVars) {

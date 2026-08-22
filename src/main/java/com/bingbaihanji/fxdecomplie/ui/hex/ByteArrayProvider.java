@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.hex;
 
 public class ByteArrayProvider implements HexDataProvider {
+
     private final byte[] data;
 
     public ByteArrayProvider(byte[] data) {

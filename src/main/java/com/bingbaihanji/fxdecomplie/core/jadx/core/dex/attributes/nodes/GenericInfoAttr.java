@@ -7,7 +7,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType
 import java.util.List;
 
 public class GenericInfoAttr implements IJadxAttribute {
+
     private final List<ArgType> genericTypes;
+
     private boolean explicit;
 
     public GenericInfoAttr(List<ArgType> genericTypes) {

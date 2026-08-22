@@ -15,6 +15,7 @@ public record JadxDecompilerResult(
         JadxResultStatus status,
         @Nullable JadxDiagnostic diagnostic
 ) {
+
     /** 是否反编译成功 */
     public boolean isSuccess() {
         return status == JadxResultStatus.OK && source != null && !source.isBlank();

@@ -37,10 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Johno Crawford (johno@sulake.com)
  */
 public class SimpleThreadFactory implements java.util.concurrent.ThreadFactory {
-    /** 线程索引计数器，用于分配唯一的线程 ID */
+
+    /** 线程索引计数器,用于分配唯一的线程 ID */
     private static final AtomicInteger threadIdx = new AtomicInteger();
+
     /** 线程名称前缀 */
     private final String threadNamePrefix;
+
     /** 是否设置为守护线程模式 */
     private final boolean daemon;
 
@@ -50,7 +53,7 @@ public class SimpleThreadFactory implements java.util.concurrent.ThreadFactory {
      * @param threadNamePrefix
      *            创建的线程的名称前缀
      * @param daemon
-     *            是否创建守护线程？
+     *            是否创建守护线程?
      */
     SimpleThreadFactory(final String threadNamePrefix, final boolean daemon) {
         this.threadNamePrefix = threadNamePrefix;
@@ -66,7 +69,7 @@ public class SimpleThreadFactory implements java.util.concurrent.ThreadFactory {
      */
     @Override
     public Thread newThread(final Runnable runnable) {
-        // 通过反射调用 System.getSecurityManager().getThreadGroup()，因为该方法在 JDK 17 中已被弃用
+        // 通过反射调用 System.getSecurityManager().getThreadGroup(),因为该方法在 JDK 17 中已被弃用
         ThreadGroup securityManagerThreadGroup = null;
         try {
             final Method getSecurityManager = System.class.getDeclaredMethod("getSecurityManager");
@@ -76,7 +79,7 @@ public class SimpleThreadFactory implements java.util.concurrent.ThreadFactory {
                 securityManagerThreadGroup = (ThreadGroup) getThreadGroup.invoke(securityManager);
             }
         } catch (final Throwable t) {
-            // 忽略异常，继续执行
+            // 忽略异常,继续执行
         }
         final Thread thread = new Thread(
                 securityManagerThreadGroup != null ? securityManagerThreadGroup

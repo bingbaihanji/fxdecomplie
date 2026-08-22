@@ -88,7 +88,7 @@ public class VineflowerDecompiler implements Decompiler {
 
     /**
      * 将用户选项规格化为 Vineflower 识别的格式
-     * 包括：别名映射(通过 {@link DecompilerOptions#VINEFLOWER_OPTION_ALIASES}) 
+     * 包括:别名映射(通过 {@link DecompilerOptions#VINEFLOWER_OPTION_ALIASES}) 
      * 布尔值转换为 "1"/"0"
      */
     private static Map<String, Object> normalizedOptions(Map<String, String> options) {
@@ -161,7 +161,7 @@ public class VineflowerDecompiler implements Decompiler {
     /**
      * 使用 Vineflower 引擎反编译指定类
      *
-     * <p>核心流程：创建 {@link SingleClassContextSource} 作为字节码来源(无需临时文件),
+     * <p>核心流程:创建 {@link SingleClassContextSource} 作为字节码来源(无需临时文件),
      * 通过 {@link IResultSaver} 收集反编译输出到 StringBuilder,
      * 调用 {@link BaseDecompiler#decompileContext()} 执行反编译</p>
      *
@@ -178,11 +178,12 @@ public class VineflowerDecompiler implements Decompiler {
         final byte[] bytes = classBytes.clone();
 
         try {
-            // 单 class 的 IContextSource：直接从内存字节数组提供字节码,无需临时文件
+            // 单 class 的 IContextSource:直接从内存字节数组提供字节码,无需临时文件
             IContextSource source = new SingleClassContextSource(effectiveTypeName, bytes, effectiveContext);
 
-            // 收集反编译输出的 IResultSaver：将 class 源码追加到 StringBuilder
+            // 收集反编译输出的 IResultSaver:将 class 源码追加到 StringBuilder
             IResultSaver resultSaver = new IResultSaver() {
+
                 @Override
                 public void saveFolder(String path) {
                 }
@@ -226,6 +227,7 @@ public class VineflowerDecompiler implements Decompiler {
 
             // 将 Vineflower 日志桥接到 SLF4J,按严重级别映射
             IFernflowerLogger fernflowerLogger = new IFernflowerLogger() {
+
                 @Override
                 public void writeMessage(String message, Severity severity) {
                     switch (severity) {
@@ -247,7 +249,7 @@ public class VineflowerDecompiler implements Decompiler {
                 }
             };
 
-            // 使用非废弃构造器：不需要 IBytecodeProvider
+            // 使用非废弃构造器:不需要 IBytecodeProvider
             log.debug("Vineflower decompile: class={}, options={}", effectiveTypeName,
                     effectiveContext.hasOptions() ? effectiveContext.options().size() : 0);
             long start = System.currentTimeMillis();
@@ -292,8 +294,11 @@ public class VineflowerDecompiler implements Decompiler {
      * 无需写临时文件,直接从内存中的 bytes 创建 InputStream
      */
     private static final class SingleClassContextSource implements IContextSource {
+
         private final String typeName;
+
         private final byte[] bytes;
+
         private final DecompilerContext context;
 
         /** @param typeName 主类的内部名称 */
@@ -390,6 +395,7 @@ public class VineflowerDecompiler implements Decompiler {
         public IOutputSink createOutputSink(IResultSaver saver) {
             // 将 Vineflower 输出委托给全局 IResultSaver(即 decompileType 中的匿名实现)
             return new IOutputSink() {
+
                 @Override
                 public void begin() {
                 }

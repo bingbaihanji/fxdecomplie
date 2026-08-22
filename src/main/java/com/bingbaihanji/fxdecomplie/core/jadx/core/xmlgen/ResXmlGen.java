@@ -10,7 +10,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.RawNamedValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ValuesParser;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ParserConstants.PLURALS_MAP;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ParserConstants.TYPE_REFERENCE;
@@ -35,7 +42,9 @@ public class ResXmlGen {
             "xml"));
 
     private final ResourceStorage resStorage;
+
     private final ValuesParser vp;
+
     private final ManifestAttributes manifestAttributes;
 
     public ResXmlGen(ResourceStorage resStorage, ValuesParser vp, ManifestAttributes manifestAttributes) {
@@ -186,7 +195,8 @@ public class ResXmlGen {
             if (dataType == ParserConstants.TYPE_INT_DEC && nameStr != null) {
                 try {
                     int intVal = Integer.parseInt(valueStr);
-                    String newVal = manifestAttributes.decode(nameStr.replace("android:", "").replace("attr.", ""), intVal);
+                    String newVal = manifestAttributes.decode(nameStr.replace("android:", "")
+                            .replace("attr.", ""), intVal);
                     if (newVal != null) {
                         valueStr = newVal;
                     }
@@ -197,7 +207,8 @@ public class ResXmlGen {
             if (dataType == ParserConstants.TYPE_INT_HEX && nameStr != null) {
                 try {
                     int intVal = Integer.decode(valueStr);
-                    String newVal = manifestAttributes.decode(nameStr.replace("android:", "").replace("attr.", ""), intVal);
+                    String newVal = manifestAttributes.decode(nameStr.replace("android:", "")
+                            .replace("attr.", ""), intVal);
                     if (newVal != null) {
                         valueStr = newVal;
                     }

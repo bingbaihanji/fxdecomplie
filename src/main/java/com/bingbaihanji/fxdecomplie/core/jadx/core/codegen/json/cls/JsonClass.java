@@ -5,17 +5,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class JsonClass extends JsonNode {
+
     @JsonProperty("package")
     private String pkg;
+
     private String type; // class, interface, enum
+
     @JsonProperty("extends")
     private String superClass;
+
     @JsonProperty("implements")
     private List<String> interfaces;
+
     private String dex;
 
     private List<JsonField> fields;
+
     private List<JsonMethod> methods;
+
     private List<JsonClass> innerClasses;
 
     private List<String> imports;

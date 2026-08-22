@@ -3,8 +3,11 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.cls;
 import org.jetbrains.annotations.Nullable;
 
 public class JsonCodeLine {
+
     private String code;
+
     private String offset;
+
     private Integer sourceLine;
 
     public String getCode() {

@@ -9,7 +9,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUt
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.IAttributeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.MethodOverrideAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfCondition;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
@@ -24,7 +30,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -36,8 +47,11 @@ import java.util.stream.Stream;
  * CheckStyle will reject usage of this class.
  */
 public class DebugUtils {
+
     public static final Predicate<MethodNode> TEST_MTH_FILTER = mth -> "test".equals(mth.getName());
+
     private static final Logger LOG = LoggerFactory.getLogger(DebugUtils.class);
+
     private static Map<String, Long> execTimes;
 
     private DebugUtils() {
@@ -64,6 +78,7 @@ public class DebugUtils {
 
     public static IDexTreeVisitor dumpRawVisitor(String desc) {
         return new AbstractVisitor() {
+
             @Override
             public void visit(MethodNode mth) throws JadxException {
                 dumpRaw(mth, desc);
@@ -73,6 +88,7 @@ public class DebugUtils {
 
     public static IDexTreeVisitor dumpRawVisitor(String desc, Predicate<MethodNode> filter) {
         return new AbstractVisitor() {
+
             @Override
             public void visit(MethodNode mth) {
                 if (filter.test(mth)) {
@@ -96,6 +112,7 @@ public class DebugUtils {
     public static void printRegionsWithBlock(MethodNode mth, BlockNode block) {
         Set<IRegion> regions = new LinkedHashSet<>();
         DepthRegionTraversal.traverse(mth, new TracedRegionVisitor() {
+
             @Override
             public void processBlockTraced(MethodNode mth, IBlock container, IRegion currentRegion) {
                 if (block.equals(container)) {
@@ -108,6 +125,7 @@ public class DebugUtils {
 
     public static IDexTreeVisitor printRegionsVisitor() {
         return new AbstractVisitor() {
+
             @Override
             public void visit(MethodNode mth) throws JadxException {
                 printRegions(mth, true);

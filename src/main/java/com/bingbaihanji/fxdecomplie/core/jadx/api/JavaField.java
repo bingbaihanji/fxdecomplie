@@ -10,13 +10,14 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.List;
 
 /**
- * 对字段节点 ({@link FieldNode})的对外封装，向 API 使用者提供字段的名称 
+ * 对字段节点 ({@link FieldNode})的对外封装,向 API 使用者提供字段的名称 
  * 类型 访问标志和引用关系等信息
  */
 public final class JavaField implements JavaNode {
 
     /** 被封装的底层字段节点 */
     private final FieldNode field;
+
     /** 声明该字段的所属类 */
     private final JavaClass parent;
 
@@ -25,7 +26,7 @@ public final class JavaField implements JavaNode {
         this.parent = cls;
     }
 
-    /** 获取字段名 (使用别名，可能经过反混淆重命名) */
+    /** 获取字段名 (使用别名,可能经过反混淆重命名) */
     @Override
     public String getName() {
         return field.getAlias();
@@ -59,7 +60,7 @@ public final class JavaField implements JavaNode {
         return field.getAccessFlags();
     }
 
-    /** 获取字段的类型，并尝试解析类别名 */
+    /** 获取字段的类型,并尝试解析类别名 */
     public ArgType getType() {
         return ArgType.tryToResolveClassAlias(field.root(), field.getType());
     }
@@ -76,7 +77,7 @@ public final class JavaField implements JavaNode {
         return getDeclaringClass().getRootDecompiler().convertNodes(field.getUseIn());
     }
 
-    /** 移除字段的别名，恢复为原始名称 */
+    /** 移除字段的别名,恢复为原始名称 */
     @Override
     public void removeAlias() {
         this.field.getFieldInfo().removeAlias();
@@ -98,7 +99,7 @@ public final class JavaField implements JavaNode {
     }
 
     /**
-     * 内部 API，不稳定！
+     * 内部 API,不稳定!
      */
     @ApiStatus.Internal
     public FieldNode getFieldNode() {

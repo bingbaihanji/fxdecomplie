@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRegion extends AttrNode implements IRegion {
+
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRegion.class);
 
     private IRegion parent;

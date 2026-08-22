@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 字面量指令参数
- * 以 long 存储原始位值，配合类型 (如整型 浮点型 布尔型等)解释其含义
+ * 以 long 存储原始位值,配合类型 (如整型 浮点型 布尔型等)解释其含义
  */
 public final class LiteralArg extends InsnArg {
 
@@ -27,7 +27,7 @@ public final class LiteralArg extends InsnArg {
         return new LiteralArg(value, type);
     }
 
-    /** 创建字面量参数，并根据值修正为合适的类型 */
+    /** 创建字面量参数,并根据值修正为合适的类型 */
     public static LiteralArg makeWithFixedType(long value, ArgType type) {
         return new LiteralArg(value, fixLiteralType(value, type));
     }

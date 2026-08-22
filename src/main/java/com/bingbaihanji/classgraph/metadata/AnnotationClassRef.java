@@ -1,13 +1,17 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.scan.ScanResult;
-import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.type.ArrayType;
+import com.bingbaihanji.classgraph.type.BaseType;
+import com.bingbaihanji.classgraph.type.ClassRef;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeSignature;
 
 /**
  * 存储在注解参数值中找到的 {@code Class<?>} 类型描述符
  */
 public class AnnotationClassRef extends MetadataNode {
+
     /** 类型描述符字符串 */
     private String typeDescriptorStr;
 
@@ -49,13 +53,13 @@ public class AnnotationClassRef extends MetadataNode {
     /**
      * 获取类型签名
      *
-     * @return {@code Class<?>} 引用的类型签名可能是 {@link ClassRef}、
+     * @return {@code Class<?>} 引用的类型签名可能是 {@link ClassRef},
      *         {@link BaseType} 或 {@link ArrayType}
      */
     private TypeSignature getTypeSignature() {
         if (typeSignature == null) {
             try {
-                // ClassRef、BaseType 或 ArrayType 中不可能有待解析的类型变量，
+                // ClassRef,BaseType 或 ArrayType 中不可能有待解析的类型变量,
                 // 所以直接将 definingClassName 设为 null
                 typeSignature = TypeSignature.parse(typeDescriptorStr, /* definingClassName = */ null);
                 typeSignature.setScanResult(scanResult);
@@ -67,10 +71,10 @@ public class AnnotationClassRef extends MetadataNode {
     }
 
     /**
-     * 加载被引用的类，返回被引用类的 {@code Class<?>} 引用
+     * 加载被引用的类,返回被引用类的 {@code Class<?>} 引用
      *
      * @param ignoreExceptions
-     *            如果为 true，则忽略异常，在类无法加载时返回 null
+     *            如果为 true,则忽略异常,在类无法加载时返回 null
      * @return 被引用类的 {@code Class<?>} 引用
      * @throws IllegalArgumentException
      *             如果类无法加载且 ignoreExceptions 为 false
@@ -91,7 +95,7 @@ public class AnnotationClassRef extends MetadataNode {
     }
 
     /**
-     * 加载被引用的类，返回被引用类的 {@code Class<?>} 引用
+     * 加载被引用的类,返回被引用类的 {@code Class<?>} 引用
      *
      * @return 被引用类的 {@code Class<?>} 引用
      * @throws IllegalArgumentException
@@ -128,9 +132,9 @@ public class AnnotationClassRef extends MetadataNode {
     /**
      * 获取类信息
      *
-     * @return 被引用类的 {@link ClassInfo} 对象，如果被引用类在扫描期间未被遇到则返回 null
+     * @return 被引用类的 {@link ClassInfo} 对象,如果被引用类在扫描期间未被遇到则返回 null
      *         (即在扫描期间没有为该类创建 ClassInfo 对象)
-     *         注意：即使此方法返回 null，{@link #loadClass()} 也可能能够按名称加载被引用类
+     *         注意:即使此方法返回 null,{@link #loadClass()} 也可能能够按名称加载被引用类
      */
     @Override
     public ClassInfo getClassInfo() {
@@ -174,8 +178,8 @@ public class AnnotationClassRef extends MetadataNode {
 
     @Override
     protected void toString(final boolean useSimpleNames, final StringBuilder buf) {
-        // 较新版本的 Annotation::toString() 已经去掉了 "class"/"interface" 前缀，
-        // 并在类引用末尾添加了 ".class"(这实际上并不匹配注解源码语法……)
+        // 较新版本的 Annotation::toString() 已经去掉了 "class"/"interface" 前缀,
+        // 并在类引用末尾添加了 ".class"(这实际上并不匹配注解源码语法......)
 
         //        String prefix = "class ";
         //        if (scanResult != null) {

@@ -26,7 +26,7 @@ public record DecompilerParameter(
 
     /**
      * 返回 fallback 英文标签
-     * <p>当国际化资源缺失时,将 camelCase 格式的 key 转换为可读文本：
+     * <p>当国际化资源缺失时,将 camelCase 格式的 key 转换为可读文本:
      * 首字母大写,每个大写字母前插入空格</p>
      *
      * @return 可读的参数标签文本
@@ -46,9 +46,17 @@ public record DecompilerParameter(
         return sb.toString();
     }
 
-    /** 参数类型：布尔开关 整数 字符串 枚举 */
-    public enum ParamType {BOOLEAN, INTEGER, STRING, ENUM}
+    /** 参数类型:布尔开关 整数 字符串 枚举 */
+    public enum ParamType {
+        BOOLEAN,
+        INTEGER,
+        STRING,
+        ENUM
+    }
 
-    /** 参数分类：常用参数 高级参数 */
-    public enum Category {COMMON, ADVANCED}
+    /** 参数分类:常用参数 高级参数 */
+    public enum Category {
+        COMMON,
+        ADVANCED
+    }
 }

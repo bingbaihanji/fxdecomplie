@@ -7,8 +7,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.utils.Descripto
 public class JavaMethodRef extends JavaMethodProto implements IMethodRef {
 
     private int uniqId;
+
     private String parentClassType;
+
     private String name;
+
     private String descr;
 
     @Override

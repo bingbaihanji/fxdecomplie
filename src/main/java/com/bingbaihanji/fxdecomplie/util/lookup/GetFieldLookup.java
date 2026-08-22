@@ -10,6 +10,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
  * @author Matt Coley
  */
 public interface GetFieldLookup {
+
     /**
      * @param field
      * 		字段引用

@@ -114,7 +114,7 @@ public final class DecompilerOptions {
     }
 
     /**
-     * 对选项键名进行归一化：Vineflower 引擎将缩写别名替换为规范名称,其他引擎直接复制
+     * 对选项键名进行归一化:Vineflower 引擎将缩写别名替换为规范名称,其他引擎直接复制
      * 跳过 null 和空白键名的条目
      */
     private static Map<String, String> normalize(DecompilerTypeEnum engine,

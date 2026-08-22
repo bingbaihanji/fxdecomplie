@@ -12,7 +12,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class JavaVariable implements JavaNode {
+
     private final JavaMethod mth;
+
     private final VarNode varNode;
 
     public JavaVariable(JavaMethod mth, VarNode varNode) {

@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -13,16 +12,17 @@ import java.util.List;
 
 /** 从 Tomcat/Catalina WebappClassLoaderBase 提取类路径条目 */
 class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public TomcatWebappClassLoaderBaseHandler() {
     }
 
     /**
-     * 如果此类加载器委托给其父级，则返回 true
+     * 如果此类加载器委托给其父级,则返回 true
      *
      * @param classLoader
      *            {@link ClassLoader}
-     * @return 如果此类加载器委托给其父级，则返回 true
+     * @return 如果此类加载器委托给其父级,则返回 true
      */
     private static boolean isParentFirst(final ClassLoader classLoader, final ReflectionUtils reflectionUtils) {
         final Object delegateObject = reflectionUtils.getFieldVal(false, classLoader, "delegate");
@@ -40,7 +40,7 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -67,8 +67,8 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
             classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         }
         if ("org.apache.tomee.catalina.TomEEWebappClassLoader".equals(classLoader.getClass().getName())) {
-            // TomEEWebappClassLoader 有很多复杂的委托规则，包括特定于类名的委托，
-            // 当前 ClassGraph 模型不支持这些规则，因此我们只是尝试用固定顺序来近似委托顺序
+            // TomEEWebappClassLoader 有很多复杂的委托规则,包括特定于类名的委托,
+            // 当前 ClassGraph 模型不支持这些规则,因此我们只是尝试用固定顺序来近似委托顺序
             try {
                 classLoaderOrder.delegateTo(Class.forName("org.apache.openejb.OpenEJB").getClassLoader(),
                         /* isParent = */ true, log);
@@ -104,9 +104,10 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
         final Object baseURLs = classpathOrder.reflectionUtils.invokeMethod(false, resources, "getBaseUrls");
         classpathOrder.addClasspathEntryObject(baseURLs, classLoader, ScanConfig, log);
         // 类型 List<List<WebResourceSet>>
-        // 成员：preResources、mainResources、classResources、jarResources、
+        // 成员:preResources,mainResources,classResources,jarResources,
         // postResources
-        @SuppressWarnings("unchecked") final List<List<?>> allResources = (List<List<?>>) classpathOrder.reflectionUtils.getFieldVal(false,
+        @SuppressWarnings("unchecked")
+        final List<List<?>> allResources = (List<List<?>>) classpathOrder.reflectionUtils.getFieldVal(false,
                 resources, "allResources");
         if (allResources != null) {
             // 类型 List<WebResourceSet>
@@ -132,19 +133,19 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
                                     "getBaseUrlString");
                         }
                         if (base != null) {
-                            // 对于 JarWarResourceSet：WAR 文件中 JAR 文件所在的路径
+                            // 对于 JarWarResourceSet:WAR 文件中 JAR 文件所在的路径
                             final String archivePath = (String) classpathOrder.reflectionUtils.getFieldVal(false,
                                     webResourceSet, "archivePath");
                             if (archivePath != null && !archivePath.isEmpty()) {
-                                // 如果 archivePath 非空，则表示这是 WAR 中的 JAR
+                                // 如果 archivePath 非空,则表示这是 WAR 中的 JAR
                                 base += "!" + (archivePath.startsWith("/") ? archivePath : "/" + archivePath);
                             }
                             final String className = webResourceSet.getClass().getName();
                             final boolean isJar = "java.org.apache.catalina.webresources.JarResourceSet"
                                     .equals(className)
                                     || "java.org.apache.catalina.webresources.JarWarResourceSet".equals(className);
-                            // 此 WebResourceSet 中资源将从中提供服务的路径，
-                            // 例如对于资源 JAR，这将是 "META-INF/resources"
+                            // 此 WebResourceSet 中资源将从中提供服务的路径,
+                            // 例如对于资源 JAR,这将是 "META-INF/resources"
                             final String internalPath = (String) classpathOrder.reflectionUtils.invokeMethod(false,
                                     webResourceSet, "getInternalPath");
                             if (internalPath != null && !internalPath.isEmpty() && !"/".equals(internalPath)) {
@@ -159,7 +160,7 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
                 }
             }
         }
-        // 这可能与上述内容重复，也可能不重复
+        // 这可能与上述内容重复,也可能不重复
         final Object urls = classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getURLs");
         classpathOrder.addClasspathEntryObject(urls, classLoader, ScanConfig, log);
     }

@@ -20,8 +20,11 @@ import java.util.List;
 public class JavaMethodData implements IMethodData {
 
     private final JavaClassData clsData;
+
     private final JavaMethodRef methodRef;
+
     private int accessFlags;
+
     private JavaAttrStorage attributes;
 
     public JavaMethodData(JavaClassData clsData, JavaMethodRef methodRef) {

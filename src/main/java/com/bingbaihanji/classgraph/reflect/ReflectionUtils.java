@@ -11,13 +11,17 @@ import java.util.concurrent.Callable;
 
 /** 可供 ClassLoaderHandler 使用的反射工具方法 */
 public final class ReflectionUtils {
+
     /** 要使用的反射驱动 */
     public ReflectionDriver reflectionDriver;
+
     private Class<?> accessControllerClass;
+
     private Class<?> privilegedActionClass;
+
     private Method accessControllerDoPrivileged;
 
-    /** 如果更改了 {@link ClassGraph#CIRCUMVENT_ENCAPSULATION} 的值，请调用此方法 */
+    /** 如果更改了 {@link ClassGraph#CIRCUMVENT_ENCAPSULATION} 的值,请调用此方法 */
     public ReflectionUtils() {
         if (ClassGraph.CIRCUMVENT_ENCAPSULATION == CircumventEncapsulationMethod.NARCISSUS) {
             try {
@@ -41,12 +45,12 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 获取给定对象类或其任意超类中字段的值如果在尝试读取字段时抛出异常，且 throwException 为 true，
-     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
-     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     * 获取给定对象类或其任意超类中字段的值如果在尝试读取字段时抛出异常,且 throwException 为 true,
+     * 则抛出 IllegalArgumentException 包装原始异常;否则此方法将返回 null
+     * 如果传入 null 对象,则返回 null,除非 throwException 为 true,此时抛出 IllegalArgumentException
      *
      * @param throwException
-     *            如果为 true，则在无法读取字段值时抛出异常
+     *            如果为 true,则在无法读取字段值时抛出异常
      * @param obj
      *            对象
      * @param field
@@ -80,12 +84,12 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 获取给定对象类或其任意超类中命名字段的值如果在尝试读取字段时抛出异常，且 throwException 为 true，
-     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
-     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     * 获取给定对象类或其任意超类中命名字段的值如果在尝试读取字段时抛出异常,且 throwException 为 true,
+     * 则抛出 IllegalArgumentException 包装原始异常;否则此方法将返回 null
+     * 如果传入 null 对象,则返回 null,除非 throwException 为 true,此时抛出 IllegalArgumentException
      *
      * @param throwException
-     *            如果为 true，则在无法读取字段值时抛出异常
+     *            如果为 true,则在无法读取字段值时抛出异常
      * @param obj
      *            对象
      * @param fieldName
@@ -119,12 +123,12 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 获取给定类或其任意超类中命名字段的值如果在尝试读取字段值时抛出异常，且 throwException 为 true，
-     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
-     * 如果传入 null 类引用，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     * 获取给定类或其任意超类中命名字段的值如果在尝试读取字段值时抛出异常,且 throwException 为 true,
+     * 则抛出 IllegalArgumentException 包装原始异常;否则此方法将返回 null
+     * 如果传入 null 类引用,则返回 null,除非 throwException 为 true,此时抛出 IllegalArgumentException
      *
      * @param throwException
-     *            如果为 true，则在无法读取字段值时抛出异常
+     *            如果为 true,则在无法读取字段值时抛出异常
      * @param cls
      *            类
      * @param fieldName
@@ -157,12 +161,12 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 调用给定对象或其超类中的命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
-     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
-     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     * 调用给定对象或其超类中的命名方法如果在尝试调用方法时抛出异常,且 throwException 为 true,
+     * 则抛出 IllegalArgumentException 包装原始异常;否则此方法将返回 null
+     * 如果传入 null 对象,则返回 null,除非 throwException 为 true,此时抛出 IllegalArgumentException
      *
      * @param throwException
-     *            如果为 true，则在无法读取字段值时抛出异常
+     *            如果为 true,则在无法读取字段值时抛出异常
      * @param obj
      *            对象
      * @param methodName
@@ -195,9 +199,9 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 调用给定对象或其超类中的命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
-     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
-     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     * 调用给定对象或其超类中的命名方法如果在尝试调用方法时抛出异常,且 throwException 为 true,
+     * 则抛出 IllegalArgumentException 包装原始异常;否则此方法将返回 null
+     * 如果传入 null 对象,则返回 null,除非 throwException 为 true,此时抛出 IllegalArgumentException
      *
      * @param throwException
      *            失败时是否抛出异常
@@ -238,9 +242,9 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 调用命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
-     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
-     * 如果传入 null 类引用，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     * 调用命名方法如果在尝试调用方法时抛出异常,且 throwException 为 true,
+     * 则抛出 IllegalArgumentException 包装原始异常;否则此方法将返回 null
+     * 如果传入 null 类引用,则返回 null,除非 throwException 为 true,此时抛出 IllegalArgumentException
      *
      * @param throwException
      *            失败时是否抛出异常
@@ -276,9 +280,9 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 调用命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
-     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
-     * 如果传入 null 类引用，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     * 调用命名方法如果在尝试调用方法时抛出异常,且 throwException 为 true,
+     * 则抛出 IllegalArgumentException 包装原始异常;否则此方法将返回 null
+     * 如果传入 null 类引用,则返回 null,除非 throwException 为 true,此时抛出 IllegalArgumentException
      *
      * @param throwException
      *            失败时是否抛出异常
@@ -319,11 +323,11 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 调用 Class.forName(className)，但如果抛出任何异常则返回 null
+     * 调用 Class.forName(className),但如果抛出任何异常则返回 null
      *
      * @param className
      *            要加载的类名
-     * @return 请求名称对应的类，如果在尝试加载类时抛出异常则返回 null
+     * @return 请求名称对应的类,如果在尝试加载类时抛出异常则返回 null
      */
     public Class<?> classForNameOrNull(final String className) {
         if (reflectionDriver == null) {
@@ -337,13 +341,13 @@ public final class ReflectionUtils {
     }
 
     /**
-     * 按名称获取方法，但如果抛出任何异常则返回 null
+     * 按名称获取方法,但如果抛出任何异常则返回 null
      *
      * @param className
      *            要加载的类名
      * @param staticMethodName
      *            静态方法名
-     * @return 请求名称对应的类，如果在尝试加载类时抛出异常则返回 null
+     * @return 请求名称对应的类,如果在尝试加载类时抛出异常则返回 null
      */
     public Method staticMethodForNameOrNull(final String className, final String staticMethodName) {
         if (reflectionDriver == null) {
@@ -359,7 +363,7 @@ public final class ReflectionUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 如果可能，使用反射在 AccessController.doPrivileged(PrivilegedAction) 上下文中调用方法
+     * 如果可能,使用反射在 AccessController.doPrivileged(PrivilegedAction) 上下文中调用方法
      * (AccessController 在 JDK 17 中已弃用)
      */
     @SuppressWarnings("unchecked")
@@ -375,6 +379,7 @@ public final class ReflectionUtils {
     }
 
     private class PrivilegedActionInvocationHandler<T> implements InvocationHandler {
+
         private final Callable<T> callable;
 
         public PrivilegedActionInvocationHandler(final Callable<T> callable) {

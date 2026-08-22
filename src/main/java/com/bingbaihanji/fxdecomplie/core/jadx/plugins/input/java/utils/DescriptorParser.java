@@ -9,6 +9,7 @@ import java.util.List;
 public class DescriptorParser {
 
     private final String desc;
+
     private int pos;
 
     private DescriptorParser(String desc) {

@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class ExcludePackageWithTLDNames extends AbstractDeobfCondition {
 
     private static final String RESOURCE_NAME = "tlds.txt";
+
     private static final String LEGACY_RESOURCE_PATH = "/jadx/core/deobf/conditions/tlds.txt";
 
     private static Set<String> loadTldSet() {
@@ -47,6 +48,7 @@ public class ExcludePackageWithTLDNames extends AbstractDeobfCondition {
      * Lazy load TLD set
      */
     private static class TldHolder {
+
         private static final Set<String> TLD_SET = loadTldSet();
     }
 }

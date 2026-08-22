@@ -6,11 +6,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public class JadxPluginInfoBuilder {
+
     private String pluginId;
+
     private String name;
+
     private String description;
+
     private String homepage = "";
+
     private @Nullable String requiredJadxVersion;
+
     private @Nullable String provides;
 
     private JadxPluginInfoBuilder() {

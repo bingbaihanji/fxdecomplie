@@ -2,7 +2,10 @@ package com.bingbaihanji.fxdecomplie.ui.uml;
 
 /** UML 可见性符号 */
 public enum Visibility {
-    PUBLIC('+'), PROTECTED('#'), PACKAGE('~'), PRIVATE('-');
+    PUBLIC('+'),
+    PROTECTED('#'),
+    PACKAGE('~'),
+    PRIVATE('-');
 
     private final char symbol;
 

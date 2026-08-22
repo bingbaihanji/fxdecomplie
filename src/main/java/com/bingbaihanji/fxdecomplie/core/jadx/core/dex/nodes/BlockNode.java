@@ -17,7 +17,7 @@ import java.util.List;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 
 /**
- * 基本块节点，表示控制流图中的一个基本块
+ * 基本块节点,表示控制流图中的一个基本块
  * <p>
  * 包含指令列表 前驱/后继节点关系以及支配树相关信息 (支配节点 后支配节点 支配边界等)
  * </p>
@@ -25,21 +25,25 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 public final class BlockNode extends AttrNode implements IBlock, Comparable<BlockNode> {
 
     /**
-     * 常量标识符，用于唯一标识此块节点
+     * 常量标识符,用于唯一标识此块节点
      */
     private final int cid;
+
     /**
      * 方法字节码中的起始偏移量
      */
     private final int startOffset;
+
     /**
      * 基本块内包含的指令列表
      */
     private final List<InsnNode> instructions = new ArrayList<>(2);
+
     /**
      * 在块列表中的位置 (便于使用 BitSet 进行位操作)
      */
     private int pos;
+
     /**
      * 前驱基本块列表 (控制流中能到达当前块的块)
      */
@@ -56,12 +60,12 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     private List<BlockNode> cleanSuccessors;
 
     /**
-     * 所有支配节点的位集合，不包含自身
+     * 所有支配节点的位集合,不包含自身
      */
     private BitSet doms = EmptyBitSet.EMPTY;
 
     /**
-     * 后支配节点的位集合，不包含自身
+     * 后支配节点的位集合,不包含自身
      */
     private BitSet postDoms = EmptyBitSet.EMPTY;
 
@@ -99,7 +103,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 批量更新块列表中每个块的位置索引，使其与在列表中的下标一致
+     * 批量更新块列表中每个块的位置索引,使其与在列表中的下标一致
      *
      * @param blocks 待更新位置的块列表
      */
@@ -151,7 +155,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 已过时，请使用 {@link #getPos()}
+     * 已过时,请使用 {@link #getPos()}
      */
     @Deprecated
     public int getId() {
@@ -211,7 +215,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 锁定当前块，将各类节点列表转换为不可变列表以防止后续修改
+     * 锁定当前块,将各类节点列表转换为不可变列表以防止后续修改
      * <p>
      * 若支配边界未设置则抛出异常
      * </p>

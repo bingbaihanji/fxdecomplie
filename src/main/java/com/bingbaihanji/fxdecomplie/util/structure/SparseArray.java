@@ -11,14 +11,14 @@ import java.util.Objects;
  *
  * <p>
  * {@code SparseArray} 把 int 键映射到对象值与「Object 数组」不同,它的键之间可以有空洞相比
- * {@link java.util.HashMap},它更省内存：既避免了 int 键的自动装箱,底层结构也不需要为每个映射额外创建 Entry 对象
+ * {@link java.util.HashMap},它更省内存:既避免了 int 键的自动装箱,底层结构也不需要为每个映射额外创建 Entry 对象
  *
  * <p>
- * 内部用两个平行数组保存数据,并按键升序排列,查找走二分因此不适合超大规模数据：查找是二分 增删要移动数组元素
+ * 内部用两个平行数组保存数据,并按键升序排列,查找走二分因此不适合超大规模数据:查找是二分 增删要移动数组元素
  * 对于数百量级的容器,性能差距通常小于 50%
  *
  * <p>
- * <b>删除优化：</b>删除时不会立即压缩数组,而是把对应槽位标记为「已删除」占位这些占位可以在后续「相同键的再次写入」时复用,
+ * <b>删除优化:</b>删除时不会立即压缩数组,而是把对应槽位标记为「已删除」占位这些占位可以在后续「相同键的再次写入」时复用,
  * 或在需要扩容 以及读取 {@link #size()} / {@code keyAt} / {@code valueAt} 等时统一做一次垃圾回收(gc)压缩
  *
  * <p>
@@ -34,6 +34,7 @@ import java.util.Objects;
  * @description int → Object 稀疏数组(SparseArray)将整数映射到对象
  */
 public class SparseArray<E> implements Cloneable {
+
     /**
      * 已删除槽位的占位标记(惰性删除,等待 gc 压缩)
      */
@@ -45,7 +46,9 @@ public class SparseArray<E> implements Cloneable {
     private boolean mGarbage = false;
 
     private int[] mKeys;
+
     private Object[] mValues;
+
     private int mSize;
 
     /**
@@ -83,7 +86,7 @@ public class SparseArray<E> implements Cloneable {
             clone.mKeys = mKeys.clone();
             clone.mValues = mValues.clone();
         } catch (CloneNotSupportedException cnse) {
-            /* 不会发生：本类实现了 Cloneable */
+            /* 不会发生:本类实现了 Cloneable */
         }
         return clone;
     }
@@ -292,7 +295,7 @@ public class SparseArray<E> implements Cloneable {
      * 返回下标 {@code index}(范围 {@code 0...size()-1})处映射的键
      *
      * <p>
-     * 以升序下标访问时,键按升序返回：{@code keyAt(0)} 是最小键,{@code keyAt(size()-1)} 是最大键
+     * 以升序下标访问时,键按升序返回:{@code keyAt(0)} 是最小键,{@code keyAt(size()-1)} 是最大键
      * 下标越界({@code index >= size()})时抛出 {@link ArrayIndexOutOfBoundsException}
      *
      * @param index 映射下标
@@ -370,7 +373,7 @@ public class SparseArray<E> implements Cloneable {
      *
      * <p>
      * 与按键查找不同,这是线性搜索 多个键可能映射到同一值,此处只返回其中一个
-     * 另外注意：本方法用 {@code ==} 比较值,而非 {@code equals}
+     * 另外注意:本方法用 {@code ==} 比较值,而非 {@code equals}
      *
      * @param value 值
      * @return 值对应的下标,不存在时返回 -1
@@ -393,7 +396,7 @@ public class SparseArray<E> implements Cloneable {
      * 返回某个值对应的下标 无键映射到该值时返回负数
      *
      * <p>
-     * 与 {@link #indexOfValue(Object)} 的区别是：本方法用 {@code equals} 比较值
+     * 与 {@link #indexOfValue(Object)} 的区别是:本方法用 {@code equals} 比较值
      *
      * @param value 值
      * @return 值对应的下标,不存在时返回 -1

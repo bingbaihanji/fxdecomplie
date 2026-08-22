@@ -1,6 +1,15 @@
 package com.bingbaihanji.fxdecomplie.util.collection;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 /**
@@ -16,7 +25,9 @@ import java.util.function.Supplier;
  * @author xDark
  */
 public final class MultiMapBuilder<K, V, C extends Collection<V>> {
+
     private final Supplier<? extends Map<K, Collection<V>>> mapSupplier;
+
     private Supplier<Collection<V>> collectionSupplier;
 
     private MultiMapBuilder(Supplier<? extends Map<K, Collection<V>>> mapSupplier) {

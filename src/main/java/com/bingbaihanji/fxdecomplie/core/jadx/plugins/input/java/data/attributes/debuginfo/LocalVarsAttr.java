@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LocalVarsAttr implements IJavaAttribute {
+
     private final List<JavaLocalVar> vars;
 
     public LocalVarsAttr(List<JavaLocalVar> vars) {

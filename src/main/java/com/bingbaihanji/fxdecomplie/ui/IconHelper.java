@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 public final class IconHelper {
 
     private static final Logger log = LoggerFactory.getLogger(IconHelper.class);
+
     private static final String LOGO_PATH = "/icon/logo.png";
+
     private static volatile Image cachedLogo;
 
     /** 私有构造函数,防止实例化工具类 */

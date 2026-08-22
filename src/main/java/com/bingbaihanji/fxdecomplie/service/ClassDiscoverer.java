@@ -249,6 +249,7 @@ public final class ClassDiscoverer {
             long size,
             Runnable cleanup
     ) {
+
         public ClassEntry(String name, String fullPath, FileTreeNode.NodeTypeEnum nodeType,
                           byte[] bytes, FileTreeNode.ByteLoader byteLoader) {
             this(name, fullPath, nodeType, bytes, byteLoader,
@@ -263,8 +264,11 @@ public final class ClassDiscoverer {
     }
 
     private static final class SharedJarArchive implements AutoCloseable {
+
         private final JarFile jar;
+
         private final AtomicInteger references = new AtomicInteger();
+
         private final AtomicBoolean closed = new AtomicBoolean();
 
         private SharedJarArchive(File file) throws IOException {

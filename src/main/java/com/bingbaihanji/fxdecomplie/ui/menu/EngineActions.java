@@ -9,6 +9,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
  * @date 2026-06-17
  */
 public interface EngineActions {
+
     /** 切换反编译引擎 */
     void selectEngine(DecompilerTypeEnum engine);
 

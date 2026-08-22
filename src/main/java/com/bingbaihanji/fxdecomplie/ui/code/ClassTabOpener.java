@@ -4,9 +4,21 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxProjectRenameSynchronizer;
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
-import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
+import com.bingbaihanji.fxdecomplie.service.DecompileCache;
+import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
+import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
+import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+import com.bingbaihanji.fxdecomplie.service.WorkspaceByteReader;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
@@ -30,7 +42,14 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -45,40 +64,57 @@ import java.util.function.Consumer;
 public final class ClassTabOpener {
 
     private static final Logger log = LoggerFactory.getLogger(ClassTabOpener.class);
+
     /** class 打开属于交互任务,使用专用虚拟线程,避免被索引/搜索任务队列拖慢 */
     private static final ExecutorService OPEN_EXECUTOR = Executors.newThreadPerTaskExecutor(
             Thread.ofVirtual().name("class-open-", 0).factory());
+
     /** 限制并发反编译操作数量,防止虚拟线程无限制创建 */
     private static final java.util.concurrent.Semaphore OPEN_SEMAPHORE =
             new java.util.concurrent.Semaphore(4);
+
     /** 超过该大小时跳过源码 metadata 提取,避免打开大类时延迟首屏显示 */
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
+
     /** 交互打开 class 的反编译超时,避免坏类/混淆类长时间占住首屏 */
     private static final int INTERACTIVE_TIMEOUT_SECONDS = 15;
+
     /** Java 21 class major version. JD-Core is unstable on this version and newer. */
     private static final int MIN_UNSUPPORTED_JD_CLASS_VERSION = 65;
+
     /** 应用配置 */
     private final AppConfig config;
+
     /** 状态栏引用 */
     private final StatusBar statusBar;
+
     /** L2 反编译源码缓存,避免重复反编译已打开的类 */
     private final DecompileCache decompileCache = new DecompileCache();
+
     /** 主导航(打开新类)请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
+
     /** 引擎切换/刷新请求序号,独立于主导航,避免切换引擎时误取消其他标签页的反编译 */
     private final AtomicLong refreshGeneration = new AtomicLong();
+
     /** 编辑器主题数据 */
     private volatile VsCodeThemeLoader.ThemeData editorTheme;
+
     /** 当前运行的反编译任务,用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
+
     /** 当前由主导航创建的占位标签,用于任务取消时清理 */
     private volatile Tab currentLoadingTab;
+
     /** 当前已显示但源码仍在反编译中的代码标签,用于快速切换时清理 */
     private volatile CodeEditorTab currentPendingTab;
+
     /** 代码操作回调,用于安装右键菜单 */
     private volatile CodeActionHandler codeActionHandler;
+
     /** 标签页就绪回调(工具栏刷新等) */
     private volatile Runnable onTabReady;
+
     /** 项目级重命名状态变化回调,用于刷新文件树等派生 UI */
     private volatile Consumer<Workspace> onRenameStateChanged;
 
@@ -94,7 +130,7 @@ public final class ClassTabOpener {
         return name.endsWith(".class") ? name.substring(0, name.length() - 6) : name;
     }
 
-    /** 计算工作区缓存键：使用完整路径 + mtime + size,消除路径碰撞和同路径替换误命中 */
+    /** 计算工作区缓存键:使用完整路径 + mtime + size,消除路径碰撞和同路径替换误命中 */
     public static String computeWorkspaceKey(Workspace workspace) {
         File source = workspace.getSourceFile();
         return (source.getAbsolutePath() + "_" + workspace.getContentStamp())
@@ -210,7 +246,7 @@ public final class ClassTabOpener {
         DecompilerRunner.shutdown();
     }
 
-    /** 解析错误弹窗的父窗口：优先焦点窗口,其次第一个可见窗口 */
+    /** 解析错误弹窗的父窗口:优先焦点窗口,其次第一个可见窗口 */
     private static javafx.stage.Window resolveOwnerWindow() {
         // 尝试从焦点节点反查所属窗口
         javafx.scene.Scene scene = javafx.stage.Window.getWindows().stream()
@@ -228,7 +264,7 @@ public final class ClassTabOpener {
             }
             return scene.getWindow();
         }
-        // 最终回退：取第一个可见窗口
+        // 最终回退:取第一个可见窗口
         return javafx.stage.Window.getWindows().stream()
                 .filter(javafx.stage.Window::isShowing)
                 .findFirst().orElse(null);
@@ -739,7 +775,7 @@ public final class ClassTabOpener {
             openImageFileTab(node, workspace, codeTabPane);
             return;
         }
-        // 去重检查：使用完整路径避免同名不同路径文件冲突
+        // 去重检查:使用完整路径避免同名不同路径文件冲突
         for (Tab tab : codeTabPane.getTabs()) {
             if (node.getFullPath().equals(tab.getUserData())) {
                 codeTabPane.getSelectionModel().select(tab);
@@ -842,7 +878,7 @@ public final class ClassTabOpener {
                 classBytes, metadata, onNavigate
         );
         CodeOnlyWindow.enableTabDrag(tab);
-        // 设置分屏请求回调：在右侧新 cell 中打开同 class 的不同引擎
+        // 设置分屏请求回调:在右侧新 cell 中打开同 class 的不同引擎
         tab.setOnSplitRequested(sourceTab -> {
             SplitEditorPane sep = sourceTab.getSplitEditorPane();
             if (sep == null || sep.activeCellCount() >= 3) {
@@ -862,7 +898,7 @@ public final class ClassTabOpener {
             }
             openClassTab(node, ws, targetPane, sameEngine, lineNumbersEnabled, true, false);
         });
-        // 设置切换引擎回调：原地用新引擎重反编译
+        // 设置切换引擎回调:原地用新引擎重反编译
         tab.setOnSwitchEngine(newEngine -> {
             Workspace ws = (Workspace) tab.getProperties().get("workspace");
             FileTreeNode node = (FileTreeNode) tab.getProperties().get("fileTreeNode");
@@ -1167,7 +1203,7 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 共享的反编译+缓存逻辑：依次查询 L2 内存缓存 L3 磁盘缓存,最后执行反编译
+     * 共享的反编译+缓存逻辑:依次查询 L2 内存缓存 L3 磁盘缓存,最后执行反编译
      * 命中 L3 时回填 L2,反编译结果同时写入 L2 和 L3
      * workspaceKey 使用路径 + mtime + size,避免同路径文件替换后命中旧缓存
      */

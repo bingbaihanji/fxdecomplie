@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.function.Function;
 
 public class ListConsumer<T, R> implements ISeqConsumer<T> {
+
     private final Function<T, R> convert;
+
     private List<R> list = new ArrayList<>();
 
     public ListConsumer(Function<T, R> convert) {

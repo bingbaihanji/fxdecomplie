@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 
 public interface IAnnotation {
+
     String getAnnotationClass();
 
     AnnotationVisibility getVisibility();

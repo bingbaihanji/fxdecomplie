@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
-import com.strobel.assembler.metadata.*;
+import com.strobel.assembler.metadata.Buffer;
+import com.strobel.assembler.metadata.ITypeLoader;
+import com.strobel.assembler.metadata.MetadataSystem;
+import com.strobel.assembler.metadata.TypeDefinition;
+import com.strobel.assembler.metadata.TypeReference;
 import com.strobel.decompiler.DecompilationOptions;
 import com.strobel.decompiler.DecompilerSettings;
 import com.strobel.decompiler.PlainTextOutput;
@@ -112,7 +116,7 @@ public class ProcyonDecompiler implements Decompiler {
 
     /**
      * 使用指定上下文反编译指定类型
-     * <p>这是 Procyon 引擎的核心反编译方法,执行以下步骤：
+     * <p>这是 Procyon 引擎的核心反编译方法,执行以下步骤:
      * <ol>
      *   <li>规范化类型内部名</li>
      *   <li>创建类型加载器 {@link CachedTypeLoader} 以支持依赖类解析</li>
@@ -178,10 +182,13 @@ public class ProcyonDecompiler implements Decompiler {
 
     /** Procyon 类型加载器,优先从缓存获取字节码 */
     private static class CachedTypeLoader implements ITypeLoader {
+
         /** 目标类型名 */
         private final String targetName;
+
         /** 目标字节码 */
         private final byte[] targetBytes;
+
         /** 当前反编译上下文 */
         private final DecompilerContext context;
 
@@ -195,7 +202,7 @@ public class ProcyonDecompiler implements Decompiler {
 
         /**
          * 尝试加载指定内部名的类型字节码
-         * <p>加载优先级：目标类本身 → 上下文依赖解析这样 Procyon 在反编译时
+         * <p>加载优先级:目标类本身 → 上下文依赖解析这样 Procyon 在反编译时
          * 可以获取到依赖类的字节码信息,从而生成更准确的代码(如泛型参数 方法签名等)</p>
          *
          * @param internalName 类型内部名(如 com/example/Foo)

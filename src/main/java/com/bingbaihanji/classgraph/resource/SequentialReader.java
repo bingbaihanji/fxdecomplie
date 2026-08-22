@@ -32,6 +32,7 @@ import java.io.IOException;
 
 /** 用于按字节顺序顺序读取各值的接口 */
 public interface SequentialReader {
+
     /**
      * 在当前游标位置读取一个字节
      *
@@ -80,7 +81,7 @@ public interface SequentialReader {
     /**
      * 在当前游标位置读取一个无符号 int
      *
-     * @return 当前游标位置的 int，以 long 形式返回
+     * @return 当前游标位置的 int,以 long 形式返回
      * @throws IOException
      *             如果读取时发生异常
      */
@@ -106,15 +107,15 @@ public interface SequentialReader {
     void skip(final int bytesToSkip) throws IOException;
 
     /**
-     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
+     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式,可选地将 '/' 替换为 '.',
      * 并可选择去除前缀 "L" 和后缀 ";"
      *
      * @param numBytes
      *            字符串 UTF8 编码的字节数
      * @param replaceSlashWithDot
-     *            如果为 true，将 '/' 替换为 '.'
+     *            如果为 true,将 '/' 替换为 '.'
      * @param stripLSemicolon
-     *            如果为 true，去除字符串末尾的 ';' 字符
+     *            如果为 true,去除字符串末尾的 ';' 字符
      * @return 字符串
      * @throws IOException
      *             如果发生 I/O 异常

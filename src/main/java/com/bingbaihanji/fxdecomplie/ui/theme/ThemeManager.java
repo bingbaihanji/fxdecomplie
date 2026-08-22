@@ -78,7 +78,7 @@ public final class ThemeManager {
         return names;
     }
 
-    /** @return 所有可用主题名：内置在前,外部在后 */
+    /** @return 所有可用主题名:内置在前,外部在后 */
     public static List<String> getAllThemes() {
         List<String> all = new ArrayList<>(BUILTIN_THEMES);
         all.addAll(getExternalThemes());
@@ -86,7 +86,7 @@ public final class ThemeManager {
     }
 
     /**
-     * 按名称解析 ThemeData：内置走 classpath,外部从 themes 目录加载
+     * 按名称解析 ThemeData:内置走 classpath,外部从 themes 目录加载
      * 加载失败时回退到 Dark+
      */
     public static VsCodeThemeLoader.ThemeData resolveThemeData(String themeName) {
@@ -111,7 +111,7 @@ public final class ThemeManager {
     }
 
     /**
-     * 导入外部主题：先验证 JSON 有效性,再复制到 themes 目录
+     * 导入外部主题:先验证 JSON 有效性,再复制到 themes 目录
      * 重名时自动追加序号 "name (2)", "name (3)" ...
      *
      * @param sourceFile 源 JSON 文件

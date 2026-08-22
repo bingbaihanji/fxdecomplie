@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import org.jetbrains.annotations.Nullable;
 
 public class ResTableBinaryParserProvider implements IResTableParserProvider {
+
     private RootNode root;
 
     @Override

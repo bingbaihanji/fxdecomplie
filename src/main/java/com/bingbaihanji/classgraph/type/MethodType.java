@@ -8,10 +8,16 @@ import com.bingbaihanji.classgraph.metadata.MethodParam;
 import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.util.LogNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** 方法类型签名(在 ClassParser 文档中称为 "MethodSignature") */
 public final class MethodType extends HierarchicalType {
+
     /** 方法类型参数 */
     final List<TypeParam> TypeParams;
 
@@ -66,7 +72,7 @@ public final class MethodType extends HierarchicalType {
     public static MethodType parse(final String typeDescriptor, final String definingClassName)
             throws ParseException {
         if ("<init>".equals(typeDescriptor)) {
-            // 特殊情况：CONSTANT_NameAndType_info 结构中的实例初始化方法签名：
+            // 特殊情况:CONSTANT_NameAndType_info 结构中的实例初始化方法签名:
             // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.4.2
             return new MethodType(Collections.<TypeParam>emptyList(),
                     Collections.<TypeSignature>emptyList(), /* void */ new BaseType('V'),
@@ -119,7 +125,8 @@ public final class MethodType extends HierarchicalType {
         final MethodType methodSignature = new MethodType(TypeParams, paramTypes, resultType,
                 throwsSignatures);
         // 添加从类型变量签名到其所属方法签名以及封闭类类型签名的反向链接
-        @SuppressWarnings("unchecked") final List<TypeVar> TypeVars = (List<TypeVar>) TypeParser.getState();
+        @SuppressWarnings("unchecked")
+        final List<TypeVar> TypeVars = (List<TypeVar>) TypeParser.getState();
         if (TypeVars != null) {
             for (final TypeVar TypeVar : TypeVars) {
                 TypeVar.containingMethodSignature = methodSignature;
@@ -132,17 +139,17 @@ public final class MethodType extends HierarchicalType {
      * 获取方法的类型参数(如果这是一个
      * <a href="https://docs.oracle.com/javase/tutorial/extra/generics/methods.html">泛型方法</a>)
      *
-     * @return 方法的类型参数(如果有)，否则为 null
+     * @return 方法的类型参数(如果有),否则为 null
      */
     public List<TypeParam> getTypeParams() {
         return TypeParams;
     }
 
     /**
-     * 获取方法参数的类型签名注意：此方法不公开，因为类型需要与其他参数元数据对齐
+     * 获取方法参数的类型签名注意:此方法不公开,因为类型需要与其他参数元数据对齐
      * 参数的类型可以在对齐后从参数的 {@link MethodParam} 对象中获取
      *
-     * @return 方法的参数类型，作为 {@link TypeSignature} 解析类型对象
+     * @return 方法的参数类型,作为 {@link TypeSignature} 解析类型对象
      */
     public List<TypeSignature> getParameterTypeSignatures() {
         return parameterTypeSignatures;
@@ -151,7 +158,7 @@ public final class MethodType extends HierarchicalType {
     /**
      * 获取方法的结果类型
      *
-     * @return 方法的结果类型，作为 {@link TypeSignature} 解析类型对象
+     * @return 方法的结果类型,作为 {@link TypeSignature} 解析类型对象
      */
     public TypeSignature getResultType() {
         return resultType;
@@ -160,7 +167,7 @@ public final class MethodType extends HierarchicalType {
     /**
      * 获取方法的 throws 类型
      *
-     * @return 方法的 throws 类型，作为 {@link TypeSignature} 解析类型对象
+     * @return 方法的 throws 类型,作为 {@link TypeSignature} 解析类型对象
      */
     public List<TypeRef> getThrowsSignatures() {
         return throwsSignatures;
@@ -189,9 +196,9 @@ public final class MethodType extends HierarchicalType {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取显式接收器参数上的类型注解，如果没有则返回 null
+     * 获取显式接收器参数上的类型注解,如果没有则返回 null
      *
-     * @return 显式接收器参数上的类型注解，如果没有则返回 null
+     * @return 显式接收器参数上的类型注解,如果没有则返回 null
      */
     public AnnotationInfoList getReceiverTypeAnnotationInfo() {
         return receiverTypeAnnotationInfo;
@@ -202,7 +209,7 @@ public final class MethodType extends HierarchicalType {
      */
     @Override
     public String getClassName() {
-        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
+        // getClassInfo() 对此类型无效,因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() 不能在此处调用");
     }
 

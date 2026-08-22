@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -9,8 +8,10 @@ import java.util.Set;
 
 /** {@link FieldInfo} 对象的列表 */
 public class FieldInfoList extends InfoList<FieldInfo> {
+
     /** 不可修改的空 {@link FieldInfoList} */
     static final FieldInfoList EMPTY_LIST = new FieldInfoList();
+
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
@@ -80,7 +81,7 @@ public class FieldInfoList extends InfoList<FieldInfo> {
      *
      * @param fieldName
      *            字段名称
-     * @return 如果此列表包含具有给定名称的 {@link FieldInfo} 对象，则返回 true
+     * @return 如果此列表包含具有给定名称的 {@link FieldInfo} 对象,则返回 true
      */
     public boolean containsName(final String fieldName) {
         for (final FieldInfo fi : this) {
@@ -109,17 +110,18 @@ public class FieldInfoList extends InfoList<FieldInfo> {
     }
 
     /**
-     * 使用将 {@link FieldInfo} 对象映射为布尔值的谓词过滤 {@link FieldInfoList}，
-     * 生成一个新的 {@link FieldInfoList}，其中包含谓词为 true 的所有项
+     * 使用将 {@link FieldInfo} 对象映射为布尔值的谓词过滤 {@link FieldInfoList},
+     * 生成一个新的 {@link FieldInfoList},其中包含谓词为 true 的所有项
      */
     @FunctionalInterface
     public interface FieldInfoFilter {
+
         /**
          * 是否允许某个 {@link FieldInfo} 列表项通过过滤器
          *
          * @param fieldInfo
          *            要过滤的 {@link FieldInfo} 项
-         * @return 是否允许该项通过过滤器如果为 true，该项将被复制到输出列表；如果为 false，则被排除
+         * @return 是否允许该项通过过滤器如果为 true,该项将被复制到输出列表;如果为 false,则被排除
          */
         boolean accept(FieldInfo fieldInfo);
     }

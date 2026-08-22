@@ -40,7 +40,9 @@ public class JsonCodeGen {
             .enable(SerializationFeature.INDENT_OUTPUT);
 
     private final ClassNode cls;
+
     private final JadxArgs args;
+
     private final RootNode root;
 
     public JsonCodeGen(ClassNode cls) {
@@ -151,7 +153,8 @@ public class JsonCodeGen {
             }
             jsonMth.setSignature(mth.methodInfo().getShortId());
             jsonMth.setReturnType(getTypeAlias(classGen, mth.getReturnType()));
-            jsonMth.setArguments(Utils.collectionMap(mth.methodInfo().getArgumentsTypes(), clsType -> getTypeAlias(classGen, clsType)));
+            jsonMth.setArguments(Utils.collectionMap(mth.methodInfo()
+                    .getArgumentsTypes(), clsType -> getTypeAlias(classGen, clsType)));
 
             MethodGen mthGen = new MethodGen(classGen, mth);
             ICodeWriter cw = new AnnotatedCodeWriter(args);

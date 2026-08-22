@@ -3,14 +3,19 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.mapping;
 import java.util.List;
 
 public class JsonClsMapping {
+
     private String name;
+
     private String alias;
 
     private String json;
+
     private boolean inner;
+
     private String topClass;
 
     private List<JsonFieldMapping> fields;
+
     private List<JsonMthMapping> methods;
 
     public String getName() {

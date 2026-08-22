@@ -10,13 +10,20 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.TryCatchBlockAtt
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.CodegenException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class TryCatchRegion extends AbstractRegion implements IBranchRegion {
 
     private final IContainer tryRegion;
+
     private Map<ExceptionHandler, IContainer> catchRegions = Collections.emptyMap();
+
     private IContainer finallyRegion;
+
     private TryCatchBlockAttr tryCatchBlock;
 
     public TryCatchRegion(IRegion parent, IContainer tryRegion) {

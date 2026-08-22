@@ -5,9 +5,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Handler 注册表配置 — 允许以可插拔方式注册自定义 ClassLoader 处理器。
+ * Handler 注册表配置 — 允许以可插拔方式注册自定义 ClassLoader 处理器.
  *
- * <p>使用方式：
+ * <p>使用方式:
  * <pre>{@code
  * HandlerRegistryConfig config = HandlerRegistryConfig.defaults()
  *     .withAdditional(new MyCustomHandler())
@@ -18,10 +18,11 @@ import java.util.List;
 public final class HandlerRegistryConfig {
 
     private final List<ClassLoaderHandler> handlers;
+
     private final List<Class<? extends ClassLoaderHandler>> excludedHandlerTypes;
 
     private HandlerRegistryConfig(List<ClassLoaderHandler> handlers,
-                                   List<Class<? extends ClassLoaderHandler>> excluded) {
+                                  List<Class<? extends ClassLoaderHandler>> excluded) {
         this.handlers = Collections.unmodifiableList(new ArrayList<>(handlers));
         this.excludedHandlerTypes = Collections.unmodifiableList(new ArrayList<>(excluded));
     }
@@ -36,7 +37,7 @@ public final class HandlerRegistryConfig {
         return new HandlerRegistryConfig(handlers, List.of());
     }
 
-    /** 创建空配置（仅手动注册的处理器） */
+    /** 创建空配置(仅手动注册的处理器) */
     public static HandlerRegistryConfig empty() {
         return new HandlerRegistryConfig(List.of(), List.of());
     }
@@ -53,7 +54,7 @@ public final class HandlerRegistryConfig {
     public final HandlerRegistryConfig without(
             Class<? extends ClassLoaderHandler>... handlerTypes) {
         List<Class<? extends ClassLoaderHandler>> newExcluded =
-            new ArrayList<>(this.excludedHandlerTypes);
+                new ArrayList<>(this.excludedHandlerTypes);
         Collections.addAll(newExcluded, handlerTypes);
         return new HandlerRegistryConfig(this.handlers, newExcluded);
     }
@@ -62,7 +63,7 @@ public final class HandlerRegistryConfig {
     public HandlerRegistryConfig withHandlers(
             List<ClassLoaderHandler> replacementHandlers) {
         return new HandlerRegistryConfig(
-            new ArrayList<>(replacementHandlers), this.excludedHandlerTypes);
+                new ArrayList<>(replacementHandlers), this.excludedHandlerTypes);
     }
 
     // ─── 包内访问器 ───

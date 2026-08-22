@@ -3,7 +3,6 @@ package com.bingbaihanji.fxdecomplie.config;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
 import com.bingbaihanji.utils.json.JSONUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 应用配置 POJO,从 {@code <appDir>/config/config.json} 加载并持久化
@@ -24,34 +28,49 @@ import java.util.*;
 public class AppConfig {
 
     private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
+
     /** 应用根目录(JAR 所在目录,开发期回退到 user.dir) */
     private static final Path APP_DIR = resolveAppDir();
+
     /** 配置目录 (<appDir>/config) */
     private static final Path CONFIG_DIR = APP_DIR.resolve("config");
+
     /** 配置文件路径 */
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
+
     /** 应用进程内唯一配置实例锁 */
     private static final Object INSTANCE_LOCK = new Object();
+
     /** 最近文件最大数量 */
     private static final int MAX_RECENT_FILES = 20;
+
     /** 应用进程内唯一配置实例 */
     private static volatile AppConfig instance;
+
     /** 配置结构版本,用于后续迁移旧配置 */
     private int schemaVersion = 1;
+
     /** 界面语言: zh-CN / en,空字符串表示跟随系统 */
     private String language = "";
+
     /** 窗口配置 */
     private Window window = new Window();
+
     /** 主题配置 */
     private Theme theme = new Theme();
+
     /** 反编译器配置 */
     private Decompiler decompiler = new Decompiler();
+
     /** 导出配置 */
     private Export export = new Export();
+
     /** 搜索配置 */
     private Search search = new Search();
+
     /** 平台原生窗口配置 */
     private Platform platform = new Platform();
+
     /** 最近打开的文件列表(路径字符串) */
     private List<String> recentFiles = new ArrayList<>();
 
@@ -512,14 +531,19 @@ public class AppConfig {
     }
 
     public static class Window {
+
         /** 窗口宽度 */
         private int width = 1200;
+
         /** 窗口高度 */
         private int height = 800;
+
         /** 窗口 X 坐标 */
         private int x = 100;
+
         /** 窗口 Y 坐标 */
         private int y = 100;
+
         /** 是否最大化 */
         private boolean maximized = false;
 
@@ -570,12 +594,16 @@ public class AppConfig {
     }
 
     public static class Theme {
+
         /** 主题文件路径(空字符串表示使用内置默认主题) */
         private String path = "";
+
         /** 编辑器字体 */
         private String fontFamily = "Consolas";
+
         /** 编辑器字号 */
         private int fontSize = 14;
+
         /** 编辑器配色主题名称, "" 或 "Dark+" 表示内置默认 */
         private String editorTheme = "";
 
@@ -619,13 +647,17 @@ public class AppConfig {
     }
 
     public static class Decompiler {
+
         /** 默认反编译引擎 */
         private DecompilerTypeEnum defaultEngine =
                 DecompilerTypeEnum.JADX;
+
         /** 是否显示行号 */
         private boolean lineNumbersEnabled = true;
+
         /** 是否自动换行 */
         private boolean wrapText = true;
+
         /** 各引擎的自定义选项 (引擎名 → 选项键值对) */
         private Map<String, Map<String, String>> engineOptions = new LinkedHashMap<>();
 
@@ -668,14 +700,19 @@ public class AppConfig {
     }
 
     public static class Export {
+
         /** 默认导出引擎,空字符串表示跟随当前菜单引擎 */
         private String defaultEngine = "";
+
         /** 默认导出格式,有效值: DIR, ZIP */
         private String defaultFormat = "DIR";
+
         /** 默认冲突策略,有效值: SKIP, OVERWRITE, RENAME */
         private String conflictPolicy = "OVERWRITE";
+
         /** 是否默认导出资源文件 */
         private boolean exportResources = true;
+
         /** 最近一次导出路径 */
         private String lastPath = "";
 
@@ -729,10 +766,13 @@ public class AppConfig {
     }
 
     public static class Search {
+
         /** 是否默认启用完整源码搜索 */
         private boolean fullSourceSearch = false;
+
         /** 搜索结果显示上限 */
         private int resultLimit = 200;
+
         /** 搜索排除路径模式(支持通配符 *) */
         private List<String> excludePatterns = new ArrayList<>();
 
@@ -770,8 +810,10 @@ public class AppConfig {
 
     /** Windows 平台原生窗口外观配置,通过 DWM API 应用非 Windows 平台此项被忽略 */
     public static class Platform {
+
         /** 窗口边框颜色 (COLORREF: 0x00BBGGRR) */
         private int windowBorderColor = 0x00888800;
+
         /** 窗口圆角偏好: DO_NOT_ROUND / ROUND / DEFAULT */
         private String cornerPreference = "DO_NOT_ROUND";
 

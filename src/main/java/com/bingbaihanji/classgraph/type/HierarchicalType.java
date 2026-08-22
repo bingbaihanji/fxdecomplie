@@ -9,9 +9,10 @@ import com.bingbaihanji.classgraph.scan.ScanResult;
 import java.util.List;
 
 /**
- * Java 类型签名子类包括 ClassType、MethodType 和 TypeSignature
+ * Java 类型签名子类包括 ClassType,MethodType 和 TypeSignature
  */
 public abstract class HierarchicalType extends MetadataNode {
+
     protected AnnotationInfoList typeAnnotationInfo;
 
     /** 一个层次化的类型签名 */
@@ -43,9 +44,9 @@ public abstract class HierarchicalType extends MetadataNode {
     }
 
     /**
-     * 获取此类型上的所有类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     * 获取此类型上的所有类型注解的 {@link AnnotationInfo} 对象列表,如果没有则返回 null
      *
-     * @return 此类型上的所有类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     * @return 此类型上的所有类型注解的 {@link AnnotationInfo} 对象列表,如果没有则返回 null
      */
     public AnnotationInfoList getTypeAnnotationInfo() {
         return typeAnnotationInfo;
@@ -67,7 +68,7 @@ public abstract class HierarchicalType extends MetadataNode {
      * @param useSimpleNames
      *            是否使用类的简单名称
      * @param annotationsToExclude
-     *            要排除的顶层注解，用于消除重复(顶层注解同时是类/字段/方法注解和类型注解)
+     *            要排除的顶层注解,用于消除重复(顶层注解同时是类/字段/方法注解和类型注解)
      * @param buf
      *            要写入的 {@link StringBuilder}
      */

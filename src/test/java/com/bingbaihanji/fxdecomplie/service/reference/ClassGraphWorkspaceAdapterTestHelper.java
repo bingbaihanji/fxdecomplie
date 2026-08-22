@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.util.Map;
 
 /**
- * 测试辅助：从编译后的字节码构建 Workspace
+ * 测试辅助:从编译后的字节码构建 Workspace
  */
 public final class ClassGraphWorkspaceAdapterTestHelper {
     private ClassGraphWorkspaceAdapterTestHelper() {}

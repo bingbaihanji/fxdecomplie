@@ -6,10 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * 临时文件目录提供者，将 jadx 的配置 缓存与临时文件统一存放在系统临时目录下
+ * 临时文件目录提供者,将 jadx 的配置 缓存与临时文件统一存放在系统临时目录下
  * <p>
- * 所有文件位于一个进程启动时创建的临时根目录中，并在 JVM 退出时自动删除
- * 该类为单例，通过 {@link #INSTANCE} 访问
+ * 所有文件位于一个进程启动时创建的临时根目录中,并在 JVM 退出时自动删除
+ * 该类为单例,通过 {@link #INSTANCE} 访问
  * </p>
  */
 public class TempFilesGetter implements IJadxFilesGetter {
@@ -63,10 +63,11 @@ public class TempFilesGetter implements IJadxFilesGetter {
     }
 
     /**
-     * 临时根目录持有者，采用按需初始化的懒加载单例 (Initialization-on-demand holder)
-     * 首次访问时创建临时根目录，并注册 JVM 退出时删除
+     * 临时根目录持有者,采用按需初始化的懒加载单例 (Initialization-on-demand holder)
+     * 首次访问时创建临时根目录,并注册 JVM 退出时删除
      */
     private static final class TempRootHolder {
+
         /** 临时文件根目录 */
         public static final Path TEMP_ROOT_DIR;
 

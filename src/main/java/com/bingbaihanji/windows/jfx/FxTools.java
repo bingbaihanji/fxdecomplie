@@ -91,7 +91,7 @@ public final class FxTools {
     /**
      * 将未显示的 Stage 居中于父窗口后,注册一次性的尺寸监听来完成微调居中
      *
-     * <p>适用场景：窗口在 {@code show()} 前未设置 size,
+     * <p>适用场景:窗口在 {@code show()} 前未设置 size,
      * 或 size 由场景内容动态决定时首次布局完成后自动居中一次</p>
      *
      * @param stage  目标 Stage
@@ -101,6 +101,7 @@ public final class FxTools {
         Objects.requireNonNull(stage, "stage");
         Objects.requireNonNull(parent, "parent");
         EventHandler<WindowEvent> handler = new EventHandler<>() {
+
             @Override
             public void handle(WindowEvent event) {
                 stage.removeEventHandler(WindowEvent.WINDOW_SHOWN, this);

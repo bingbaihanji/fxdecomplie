@@ -18,6 +18,7 @@ public record RenameEntry(
         String newName,
         String desc
 ) {
+
     public RenameEntry {
         type = type == null ? "" : type;
         className = className == null ? "" : className;

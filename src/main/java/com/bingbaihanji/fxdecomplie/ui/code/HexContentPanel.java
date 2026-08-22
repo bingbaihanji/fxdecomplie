@@ -8,8 +8,8 @@ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader.ThemeData;
 import javafx.scene.Node;
 
 /**
- * HEX 内容面板，使用 {@link HexView} 以十六进制表格展示类文件原始字节，
- * 支持选择、搜索、跳转、复制和 Java 字节码结构高亮
+ * HEX 内容面板,使用 {@link HexView} 以十六进制表格展示类文件原始字节,
+ * 支持选择,搜索,跳转,复制和 Java 字节码结构高亮
  *
  * @author bingbaihanji
  * @date 2026-06-30
@@ -22,7 +22,9 @@ public class HexContentPanel extends AbstractCodeContentPanel {
     }
 
     private final byte[] classBytes;
+
     private HexView hexView;
+
     private volatile ThemeData theme;
 
     /**
@@ -49,7 +51,7 @@ public class HexContentPanel extends AbstractCodeContentPanel {
         return "hex";
     }
 
-    /** 异步构建内容：直接返回 classBytes，无耗时操作 */
+    /** 异步构建内容:直接返回 classBytes,无耗时操作 */
     @Override
     protected Object buildContentAsync(Object cancelToken) {
         return classBytes;
@@ -91,7 +93,7 @@ public class HexContentPanel extends AbstractCodeContentPanel {
         return hexView;
     }
 
-    /** 释放资源：清理 HexView 引用并调用父类清理 */
+    /** 释放资源:清理 HexView 引用并调用父类清理 */
     @Override
     public void dispose() {
         super.dispose();

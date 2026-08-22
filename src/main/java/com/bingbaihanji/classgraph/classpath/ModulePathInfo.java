@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
@@ -15,10 +14,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 模块路径信息注意，这仅包含命令行参数中实际列出的模块系统参数 —— 特别地，这不包括传统类路径中的类路径元素
+ * 模块路径信息注意,这仅包含命令行参数中实际列出的模块系统参数 —— 特别地,这不包括传统类路径中的类路径元素
  * 或系统模块
  */
 public class ModulePathInfo {
+
     /** 模块路径命令行开关 */
     private static final List<String> argSwitches = Arrays.asList( //
             "--module-path=", //
@@ -28,6 +28,7 @@ public class ModulePathInfo {
             "--add-opens=", //
             "--add-reads=" //
     );
+
     /** 模块路径命令行开关值的分隔符 */
     private static final List<Character> argPartSeparatorChars = Arrays.asList( //
             File.pathSeparatorChar, // --module-path(路径分隔符格式)
@@ -37,51 +38,58 @@ public class ModulePathInfo {
             '\0', // --add-opens(每个开关仅一个参数)
             '\0' // --add-reads(每个开关仅一个参数)
     );
+
     /**
-     * 通过 {@code --module-path} 或 {@code -p} 开关在命令行上提供的模块路径，
-     * 作为有序的模块名称集合，按它们在命令行上列出的顺序排列
+     * 通过 {@code --module-path} 或 {@code -p} 开关在命令行上提供的模块路径,
+     * 作为有序的模块名称集合,按它们在命令行上列出的顺序排列
      *
      * <p>
-     * 注意，某些模块(例如系统模块)不会出现在此集合中，因为它们由运行时自动添加到模块系统中
+     * 注意,某些模块(例如系统模块)不会出现在此集合中,因为它们由运行时自动添加到模块系统中
      * 调用 {@link ClassGraph#getModules()} 或 {@link ScanResult#getModules()}
      * 以获取运行时所有可见的模块
      */
     public final Set<String> modulePath = new LinkedHashSet<>();
+
     /**
-     * 通过 {@code --add-modules} 开关在命令行上添加到模块路径的模块，作为有序的模块名称集合，
-     * 按它们在命令行上列出的顺序排列注意，有效的模块名称包括 {@code ALL-DEFAULT}、
+     * 通过 {@code --add-modules} 开关在命令行上添加到模块路径的模块,作为有序的模块名称集合,
+     * 按它们在命令行上列出的顺序排列注意,有效的模块名称包括 {@code ALL-DEFAULT},
      * {@code ALL-SYSTEM} 和 {@code ALL-MODULE-PATH}(详见
      * <a href="https://openjdk.java.net/jeps/261">JEP 261</a>)
      */
     public final Set<String> addModules = new LinkedHashSet<>();
+
     /**
-     * 通过 {@code --patch-module} 开关在命令行上列出的模块补丁指令，作为有序的字符串集合，
-     * 格式为 {@code <module>=<file>}，按它们在命令行上列出的顺序排列
+     * 通过 {@code --patch-module} 开关在命令行上列出的模块补丁指令,作为有序的字符串集合,
+     * 格式为 {@code <module>=<file>},按它们在命令行上列出的顺序排列
      */
     public final Set<String> patchModules = new LinkedHashSet<>();
+
     /**
-     * 通过 {@code --add-exports} 开关在命令行上添加的模块 {@code exports} 指令，作为有序的字符串集合，
-     * 格式为 {@code <source-module>/<package>=<target-module>(,<target-module>)*}，
-     * 按它们在命令行上列出的顺序排列此外，如果此 {@link ModulePathInfo} 对象是从
-     * {@link ScanResult#getModulePathInfo()} 而非 {@link ClassGraph#getModulePathInfo()} 获取的，
-     * 则在类路径扫描期间从清单文件中找到的任何附加 {@code Add-Exports} 条目将被追加到此列表中，
+     * 通过 {@code --add-exports} 开关在命令行上添加的模块 {@code exports} 指令,作为有序的字符串集合,
+     * 格式为 {@code <source-module>/<package>=<target-module>(,<target-module>)*},
+     * 按它们在命令行上列出的顺序排列此外,如果此 {@link ModulePathInfo} 对象是从
+     * {@link ScanResult#getModulePathInfo()} 而非 {@link ClassGraph#getModulePathInfo()} 获取的,
+     * 则在类路径扫描期间从清单文件中找到的任何附加 {@code Add-Exports} 条目将被追加到此列表中,
      * 格式为 {@code <source-module>/<package>=ALL-UNNAMED}
      */
     public final Set<String> addExports = new LinkedHashSet<>();
+
     /**
-     * 通过 {@code --add-opens} 开关在命令行上添加的模块 {@code opens} 指令，作为有序的字符串集合，
-     * 格式为 {@code <source-module>/<package>=<target-module>(,<target-module>)*}，
-     * 按它们在命令行上列出的顺序排列此外，如果此 {@link ModulePathInfo} 对象是从
-     * {@link ScanResult#getModulePathInfo()} 而非 {@link ClassGraph#getModulePathInfo()} 获取的，
-     * 则在类路径扫描期间从清单文件中找到的任何附加 {@code Add-Opens} 条目将被追加到此列表中，
+     * 通过 {@code --add-opens} 开关在命令行上添加的模块 {@code opens} 指令,作为有序的字符串集合,
+     * 格式为 {@code <source-module>/<package>=<target-module>(,<target-module>)*},
+     * 按它们在命令行上列出的顺序排列此外,如果此 {@link ModulePathInfo} 对象是从
+     * {@link ScanResult#getModulePathInfo()} 而非 {@link ClassGraph#getModulePathInfo()} 获取的,
+     * 则在类路径扫描期间从清单文件中找到的任何附加 {@code Add-Opens} 条目将被追加到此列表中,
      * 格式为 {@code <source-module>/<package>=ALL-UNNAMED}
      */
     public final Set<String> addOpens = new LinkedHashSet<>();
+
     /**
-     * 通过 {@code --add-reads} 开关在命令行上添加的模块 {@code reads} 指令，作为有序的字符串集合，
-     * 格式为 {@code <source-module>=<target-module>}，按它们在命令行上列出的顺序排列
+     * 通过 {@code --add-reads} 开关在命令行上添加的模块 {@code reads} 指令,作为有序的字符串集合,
+     * 格式为 {@code <source-module>=<target-module>},按它们在命令行上列出的顺序排列
      */
     public final Set<String> addReads = new LinkedHashSet<>();
+
     /** 字段列表 */
     private final List<Set<String>> fields = Arrays.asList( //
             modulePath, //
@@ -91,6 +99,7 @@ public class ModulePathInfo {
             addOpens, //
             addReads //
     );
+
     /** 当 {@link #getRuntimeInfo()} 被调用后设置为 true */
     private final AtomicBoolean gotRuntimeInfo = new AtomicBoolean();
 
@@ -100,19 +109,20 @@ public class ModulePathInfo {
 
     /** 从 VM 命令行参数填充模块信息 */
     public void getRuntimeInfo(final ReflectionUtils reflectionUtils) {
-        // 仅在明确请求 ModulePathInfo 时才调用此反射方法，以避免在某些 JRE 上出现非法访问警告，
+        // 仅在明确请求 ModulePathInfo 时才调用此反射方法,以避免在某些 JRE 上出现非法访问警告,
         // 例如 Adopt JDK 11 (#605)
         if (!gotRuntimeInfo.getAndSet(true)) {
             // 读取原始命令行参数以获取模块路径覆盖参数
-            // 如果部署的运行时中不存在 java.management 模块(对于 JDK 9+)，或者运行时
-            // 不包含 java.lang.management 包(例如 Android 构建系统，目前也不支持 JPMS)，
+            // 如果部署的运行时中不存在 java.management 模块(对于 JDK 9+),或者运行时
+            // 不包含 java.lang.management 包(例如 Android 构建系统,目前也不支持 JPMS),
             // 则跳过尝试读取命令行参数 (#404)
             final Class<?> managementFactory = reflectionUtils
                     .classForNameOrNull("java.lang.management.ManagementFactory");
             final Object runtimeMXBean = managementFactory == null ? null
                     : reflectionUtils.invokeStaticMethod(/* throwException = */ false, managementFactory,
                     "getRuntimeMXBean");
-            @SuppressWarnings("unchecked") final List<String> commandlineArguments = runtimeMXBean == null ? null
+            @SuppressWarnings("unchecked")
+            final List<String> commandlineArguments = runtimeMXBean == null ? null
                     : (List<String>) reflectionUtils.invokeMethod(/* throwException = */ false, runtimeMXBean,
                     "getInputArguments");
             if (commandlineArguments != null) {

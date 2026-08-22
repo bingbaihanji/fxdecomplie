@@ -15,7 +15,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.InitCodeVariables;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
@@ -44,16 +49,23 @@ import java.util.Set;
         }
 )
 public class ProcessKotlinInternals extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(ProcessKotlinInternals.class);
 
     private static final String KOTLIN_INTERNAL_PKG = "kotlin.jvm.internal.";
+
     private static final String KOTLIN_INTRINSICS_CLS_SHORT_NAME = "Intrinsics";
+
     private static final String KOTLIN_INTRINSICS_CLS = KOTLIN_INTERNAL_PKG + KOTLIN_INTRINSICS_CLS_SHORT_NAME;
+
     private static final String KOTLIN_VARNAME_SOURCE_MTH1 = "(Ljava/lang/Object;Ljava/lang/String;)V";
+
     private static final String KOTLIN_VARNAME_SOURCE_MTH2 = "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V";
 
     private @Nullable ClassInfo kotlinIntrinsicsCls;
+
     private Set<MethodInfo> kotlinVarNameSourceMethods;
+
     private boolean hideInsns;
 
     @Nullable

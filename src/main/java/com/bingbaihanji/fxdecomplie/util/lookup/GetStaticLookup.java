@@ -9,6 +9,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
  * @author Matt Coley
  */
 public interface GetStaticLookup {
+
     /**
      * @param field
      * 		字段引用

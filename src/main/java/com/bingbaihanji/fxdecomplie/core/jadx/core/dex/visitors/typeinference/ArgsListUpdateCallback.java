@@ -8,23 +8,33 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.*;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.CHANGED;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.REJECT;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.SAME;
 
 /**
  * Type update callback to set same type for args from list.
  */
 public class ArgsListUpdateCallback<T extends InsnArg> implements ITypeUpdateCallback {
+
     private final TypeUpdate typeUpdate;
+
     private final TypeUpdateInfo updateInfo;
+
     private final Iterator<T> argsIterator;
+
     private final ArgType candidateType;
+
     private final boolean direct;
 
     private @Nullable Predicate<T> argsFilter;
+
     private @Nullable ITypeUpdateCallback finalResultCallback;
+
     private boolean ignoreReject = false;
 
     private boolean allSame = true;
+
     private boolean firstQueue = false;
 
     public ArgsListUpdateCallback(TypeUpdate typeUpdate, TypeUpdateInfo updateInfo,

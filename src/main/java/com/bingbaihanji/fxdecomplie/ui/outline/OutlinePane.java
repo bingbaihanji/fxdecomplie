@@ -10,7 +10,11 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -26,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 大纲面板,以树形结构显示当前类的字段、方法、内部类列表
+ * 大纲面板,以树形结构显示当前类的字段,方法,内部类列表
  *
  * <p>当查看接口或抽象类时,方法节点会预置占位子节点以显示展开箭头,
  * 展开时自动异步查询并显示该方法的实现类/重写子类</p>
@@ -39,18 +43,31 @@ public final class OutlinePane extends VBox {
     private static final Logger log = LoggerFactory.getLogger(OutlinePane.class);
 
     private final TextField filterField;
+
     private final TreeView<OutlineMember> treeView;
+
     private final TreeItem<OutlineMember> rootItem;
+
     private final Label statusLabel;
+
     private final AtomicLong updateGeneration = new AtomicLong();
+
     private final AtomicReference<Future<?>> currentTask = new AtomicReference<>();
+
     private final ObservableList<TreeItem<OutlineMember>> masterItems = FXCollections.observableArrayList();
+
     private JumpHandler jumpHandler;
+
     private NavigateHandler navigateHandler;
+
     private Workspace workspace;
+
     private WorkspaceIndex workspaceIndex;
+
     private String currentInternalName;
+
     private boolean currentIsInterface;
+
     private boolean currentIsAbstractClass;
 
     public OutlinePane() {
@@ -79,6 +96,7 @@ public final class OutlinePane extends VBox {
         statusLabel.setManaged(false);
 
         treeView.setCellFactory(tv -> new TreeCell<>() {
+
             @Override
             protected void updateItem(OutlineMember item, boolean empty) {
                 super.updateItem(item, empty);
@@ -418,11 +436,13 @@ public final class OutlinePane extends VBox {
 
     @FunctionalInterface
     public interface JumpHandler {
+
         void jump(int lineNumber);
     }
 
     @FunctionalInterface
     public interface NavigateHandler {
+
         void navigate(String classPath, String methodName, String className);
     }
 }

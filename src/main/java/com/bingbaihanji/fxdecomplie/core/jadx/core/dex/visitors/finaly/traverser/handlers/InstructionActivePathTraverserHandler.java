@@ -39,6 +39,7 @@ public final class InstructionActivePathTraverserHandler extends AbstractActiveP
     }
 
     public static final class UnresolvableBlockException extends TraverserException {
+
         public UnresolvableBlockException(BlockNode block, String reason) {
             super("A block, " + block.toString() + ", could not have instructions compared.\n\t" + reason);
         }

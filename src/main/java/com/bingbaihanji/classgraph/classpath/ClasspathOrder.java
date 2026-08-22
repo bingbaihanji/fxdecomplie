@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
@@ -21,15 +20,21 @@ import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** 用于查找唯一有序类路径元素的类 */
 public class ClasspathOrder {
-    /** 自动包根的后缀，例如 "!/BOOT-INF/classes" */
+
+    /** 自动包根的后缀,例如 "!/BOOT-INF/classes" */
     private static final List<String> AUTOMATIC_PACKAGE_ROOT_SUFFIXES = new ArrayList<>();
-    /** 匹配 URL 方案(必须包含至少两个字符，否则可能是 Windows 驱动器号) */
+
+    /** 匹配 URL 方案(必须包含至少两个字符,否则可能是 Windows 驱动器号) */
     private static final Pattern schemeMatcher = Pattern.compile("^[a-zA-Z][a-zA-Z+\\-.]+:");
 
     static {
@@ -40,10 +45,13 @@ public class ClasspathOrder {
 
     /** 扫描规格 */
     private final ScanConfig ScanConfig;
+
     /** 唯一的类路径条目 */
     private final Set<String> classpathEntryUniqueResolvedPaths = new HashSet<>();
+
     /** 类路径顺序键是 {@link String} 或 {@link URL} 的实例 */
     private final List<ClasspathEntry> order = new ArrayList<>();
+
     public ReflectionUtils reflectionUtils;
 
     /**
@@ -58,7 +66,7 @@ public class ClasspathOrder {
     }
 
     /**
-     * 获取类路径元素的顺序，已去重且有序
+     * 获取类路径元素的顺序,已去重且有序
      *
      * @return 类路径顺序
      */
@@ -121,7 +129,7 @@ public class ClasspathOrder {
      * 添加类路径条目
      *
      * @param pathElement
-     *            类路径元素的 {@link String} 路径、{@link File}、{@link Path}、{@link URL} 或 {@link URI}
+     *            类路径元素的 {@link String} 路径,{@link File},{@link Path},{@link URL} 或 {@link URI}
      * @param pathElementStr
      *            字符串格式的路径元素
      * @param classLoader
@@ -132,8 +140,8 @@ public class ClasspathOrder {
      */
     private boolean addClasspathEntry(final Object pathElement, final String pathElementStr,
                                       final ClassLoader classLoader, final ScanConfig ScanConfig) {
-        // 检查类路径元素路径是否以自动包根结尾如果是，则将其剥离以
-        // 消除重复，因为自动包根会被自动检测到(#435)
+        // 检查类路径元素路径是否以自动包根结尾如果是,则将其剥离以
+        // 消除重复,因为自动包根会被自动检测到(#435)
         String pathElementStrWithoutSuffix = pathElementStr;
         boolean hasSuffix = false;
         for (final String suffix : AUTOMATIC_PACKAGE_ROOT_SUFFIXES) {
@@ -153,7 +161,7 @@ public class ClasspathOrder {
                     pathElementWithoutSuffix = pathElement instanceof URL ? new URL(pathElementStrWithoutSuffix)
                             : pathElement instanceof URI ? new URI(pathElementStrWithoutSuffix)
                             : pathElement instanceof Path ? Paths.get(pathElementStrWithoutSuffix)
-                            // 对于 File，仅使用路径字符串
+                            // 对于 File,仅使用路径字符串
                             : pathElementStrWithoutSuffix;
                 } catch (MalformedURLException | URISyntaxException | InvalidPathException e) {
                     try {
@@ -178,7 +186,7 @@ public class ClasspathOrder {
             if (ScanConfig.overrideClasspath == null //
                     && (SystemJarFinder.getJreLibOrExtJars().contains(pathElementStrResolved)
                     || pathElementStrResolved.equals(SystemJarFinder.getJreRtJarPath()))) {
-                // JRE lib 和 ext JAR 会单独处理，因此如果它们由系统类加载器返回，
+                // JRE lib 和 ext JAR 会单独处理,因此如果它们由系统类加载器返回,
                 // 则作为重复项拒绝
                 return false;
             }
@@ -195,7 +203,7 @@ public class ClasspathOrder {
      * ClassLoader 将按顺序被调用
      *
      * @param pathElement
-     *            类路径元素的 {@link String} 路径、{@link URL} 或 {@link URI}，或是某个可以调用其
+     *            类路径元素的 {@link String} 路径,{@link URL} 或 {@link URI},或是某个可以调用其
      *            {@link Object#toString()} 方法来获取类路径元素的对象
      * @param classLoader
      *            获取此 classpath 元素的 ClassLoader
@@ -203,8 +211,8 @@ public class ClasspathOrder {
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
-     * @return 如果 pathElement 不为 null、不为空、存在且未被用户指定的条件过滤掉，则返回 true
-     *         (并添加类路径元素)，否则返回 false
+     * @return 如果 pathElement 不为 null,不为空,存在且未被用户指定的条件过滤掉,则返回 true
+     *         (并添加类路径元素),否则返回 false
      */
     public boolean addClasspathEntry(final Object pathElement, final ClassLoader classLoader,
                                      final ScanConfig ScanConfig, final LogNode log) {
@@ -214,9 +222,9 @@ public class ClasspathOrder {
         String pathElementStr;
         if (pathElement instanceof Path) {
             try {
-                // Path 对象在调用 .toString() 之前必须先转换为 URI，否则 scheme 会丢失
+                // Path 对象在调用 .toString() 之前必须先转换为 URI,否则 scheme 会丢失
                 pathElementStr = ((Path) pathElement).toUri().toString();
-                // Windows 路径("C:\x\y")会被 Path.toUri().toString() 编码为 "file:///C:/x/y"，
+                // Windows 路径("C:\x\y")会被 Path.toUri().toString() 编码为 "file:///C:/x/y",
                 // 但 Paths.get() 无法处理 "///C:/x/y" 形式的路径
                 if (pathElementStr.startsWith("file:///")) {
                     pathElementStr = ((Path) pathElement).toFile().toString();
@@ -233,20 +241,20 @@ public class ClasspathOrder {
         }
         URL pathElementURL = null;
         boolean hasWildcardSuffix = false;
-        // 回退方案 -- 对路径元素调用 toString()，然后尝试转换为 URL
+        // 回退方案 -- 对路径元素调用 toString(),然后尝试转换为 URL
         if (pathElementStr.endsWith("/*") || pathElementStr.endsWith("\\*")) {
             hasWildcardSuffix = true;
             pathElementStr = pathElementStr.substring(0, pathElementStr.length() - 2);
-            // 将 pathElementURL 保持为 null，以便下面可以处理通配符
+            // 将 pathElementURL 保持为 null,以便下面可以处理通配符
         } else if ("*".equals(pathElementStr)) {
             hasWildcardSuffix = true;
             pathElementStr = "";
-            // 将 pathElementURL 保持为 null，以便下面可以处理通配符
+            // 将 pathElementURL 保持为 null,以便下面可以处理通配符
         } else {
             final Matcher m1 = schemeMatcher.matcher(pathElementStr);
             if (m1.find()) {
-                // 路径元素字符串是带有 `[jar:]file:` 以外 scheme 的 URL，因此需要实际
-                // 解析 URL，因为 scheme 可能是自定义 scheme
+                // 路径元素字符串是带有 `[jar:]file:` 以外 scheme 的 URL,因此需要实际
+                // 解析 URL,因为 scheme 可能是自定义 scheme
                 try {
                     pathElementURL = pathElement instanceof URL ? (URL) pathElement
                             : pathElement instanceof URI ? ((URI) pathElement).toURL()
@@ -290,8 +298,8 @@ public class ClasspathOrder {
                 }
                 return false;
             }
-            // 对于 URL 对象，使用对象本身(以便稍后可以进行 URL scheme 处理)；
-            // 对于 URI 和 Path 对象，转换为 URL；对于 File 对象，使用 toString 结果(路径)
+            // 对于 URL 对象,使用对象本身(以便稍后可以进行 URL scheme 处理);
+            // 对于 URI 和 Path 对象,转换为 URL;对于 File 对象,使用 toString 结果(路径)
             final Object classpathElementObj;
             classpathElementObj = pathElement instanceof File ? pathElementStr
                     : pathElementURL != null ? pathElementURL : pathElement;
@@ -393,7 +401,7 @@ public class ClasspathOrder {
             }
             if (pathElementResolved.startsWith("//")) {
                 // 处理 Windows UNC 路径(#705)
-                // File 直接支持 UNC 路径：
+                // File 直接支持 UNC 路径:
                 // https://wiki.eclipse.org/Eclipse/UNC_Paths#Programming_with_UNC_paths
                 try {
                     final File file = new File(pathElementResolved);
@@ -436,14 +444,14 @@ public class ClasspathOrder {
      * 添加由系统路径分隔符分隔的类路径条目
      *
      * @param overrideClasspath
-     *            一个由 {@link String}、{@link URL}、{@link URI} 或 {@link File} 对象组成的路径列表
+     *            一个由 {@link String},{@link URL},{@link URI} 或 {@link File} 对象组成的路径列表
      * @param classLoader
      *            获取此 classpath 的 ClassLoader
      * @param ScanConfig
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
-     * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
+     * @return 如果 pathElement 不为 null 或空,则返回 true(并添加类路径元素),否则返回 false
      */
     public boolean addClasspathEntries(final List<Object> overrideClasspath, final ClassLoader classLoader,
                                        final ScanConfig ScanConfig, final LogNode log) {
@@ -468,7 +476,7 @@ public class ClasspathOrder {
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
-     * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
+     * @return 如果 pathElement 不为 null 或空,则返回 true(并添加类路径元素),否则返回 false
      */
     public boolean addClasspathPathStr(final String pathStr, final ClassLoader classLoader, final ScanConfig ScanConfig,
                                        final LogNode log) {
@@ -488,10 +496,10 @@ public class ClasspathOrder {
     }
 
     /**
-     * 从通过反射获取的对象中添加类路径条目该对象可以是 {@link URL}、{@link URI}、
-     * {@link File}、{@link Path} 或 {@link String}(包含单个类路径元素路径，或包含由
-     * File.pathSeparator 分隔的多个路径)、List 或其他 Iterable，或数组对象对于 Iterable
-     * 和数组，元素可以是任何其 {@code toString()} 方法返回路径或 URL 字符串的类型(包括
+     * 从通过反射获取的对象中添加类路径条目该对象可以是 {@link URL},{@link URI},
+     * {@link File},{@link Path} 或 {@link String}(包含单个类路径元素路径,或包含由
+     * File.pathSeparator 分隔的多个路径),List 或其他 Iterable,或数组对象对于 Iterable
+     * 和数组,元素可以是任何其 {@code toString()} 方法返回路径或 URL 字符串的类型(包括
      * {@code URL} 和 {@code Path} 类型)
      *
      * @param pathObject
@@ -502,7 +510,7 @@ public class ClasspathOrder {
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
-     * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
+     * @return 如果 pathElement 不为 null 或空,则返回 true(并添加类路径元素),否则返回 false
      */
     public boolean addClasspathEntryObject(final Object pathObject, final ClassLoader classLoader,
                                            final ScanConfig ScanConfig, final LogNode log) {
@@ -523,7 +531,7 @@ public class ClasspathOrder {
                         valid |= addClasspathEntryObject(elt, classLoader, ScanConfig, log);
                     }
                 } else {
-                    // 作为最终回退方案，简单地调用 toString() 来处理 String 对象，
+                    // 作为最终回退方案,简单地调用 toString() 来处理 String 对象,
                     // 或尝试处理其他任何类型
                     valid |= addClasspathPathStr(pathObject.toString(), classLoader, ScanConfig, log);
                 }
@@ -536,7 +544,8 @@ public class ClasspathOrder {
      * 一个类路径元素及其来源的 {@link ClassLoader}
      */
     public static class ClasspathEntry {
-        /** 类路径条目对象({@link String} 路径、{@link Path}、{@link URL} 或 {@link URI}) */
+
+        /** 类路径条目对象({@link String} 路径,{@link Path},{@link URL} 或 {@link URI}) */
         public final Object classpathEntryObj;
 
         /** 获取此 classpath 元素的类加载器 */

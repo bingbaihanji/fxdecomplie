@@ -17,17 +17,24 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 类型更新信息管理类，负责收集 排队 应用和回滚类型更新
- * 维护一个更新映射表，以 IdentityHashMap 按参数对象身份存储待应用的更新，
+ * 类型更新信息管理类,负责收集 排队 应用和回滚类型更新
+ * 维护一个更新映射表,以 IdentityHashMap 按参数对象身份存储待应用的更新,
  * 并在更新序列超过限制时抛出溢出异常支持队列化请求和回调处理
  */
 public class TypeUpdateInfo {
+
     private final MethodNode mth;
+
     private final TypeUpdateFlags flags;
+
     private final Map<InsnArg, TypeUpdateEntry> updateMap = new IdentityHashMap<>();
+
     private final List<TypeUpdateRequest> queue = new ArrayList<>();
+
     private final List<TypeUpdateRequest> callbackQueue = new ArrayList<>();
+
     private final int updatesLimitCount;
+
     private int updateSeq = 0;
 
     /**
@@ -35,7 +42,7 @@ public class TypeUpdateInfo {
      *
      * @param mth   所属方法节点
      * @param flags 类型更新标志
-     * @param args  Jadx 运行参数，用于计算更新次数上限
+     * @param args  Jadx 运行参数,用于计算更新次数上限
      */
     public TypeUpdateInfo(MethodNode mth, TypeUpdateFlags flags, JadxArgs args) {
         this.mth = mth;
@@ -62,8 +69,8 @@ public class TypeUpdateInfo {
     }
 
     /**
-     * 请求对指定参数进行类型更新记录更新序列号和变更类型，
-     * 如果同一参数被重复更新则抛出异常，并在达到更新上限时抛出溢出异常
+     * 请求对指定参数进行类型更新记录更新序列号和变更类型,
+     * 如果同一参数被重复更新则抛出异常,并在达到更新上限时抛出溢出异常
      *
      * @param arg        要更新的 InsnArg 参数
      * @param changeType 新的类型值
@@ -86,7 +93,7 @@ public class TypeUpdateInfo {
     }
 
     /**
-     * 回滚对指定参数的更新，移除此参数及其之后的所有更新 (按序列号)
+     * 回滚对指定参数的更新,移除此参数及其之后的所有更新 (按序列号)
      *
      * @param arg 要回滚更新的 InsnArg 参数
      */
@@ -99,7 +106,7 @@ public class TypeUpdateInfo {
     }
 
     /**
-     * 按更新序列号排序后，将所有待定更新统一应用到对应的参数上
+     * 按更新序列号排序后,将所有待定更新统一应用到对应的参数上
      */
     public void applyUpdates() {
         updateMap.values().stream().sorted()

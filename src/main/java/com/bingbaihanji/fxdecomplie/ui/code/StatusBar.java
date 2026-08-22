@@ -24,30 +24,40 @@ import javafx.util.Duration;
  */
 public class StatusBar extends HBox {
 
-    /** 左侧：类路径标签 */
+    /** 左侧:类路径标签 */
     private final Label pathLabel;
-    /** 中间：编码标签 */
+
+    /** 中间:编码标签 */
     private final Label encodingLabel;
+
     /** 当前反编译引擎 */
     private final Label engineLabel;
+
     /** 当前后台任务提示 */
     private final Label taskLabel;
+
     /** 索引构建提示 */
     private final Label indexLabel;
+
     /** 进度条 */
     private final ProgressBar progressBar;
+
     /** 后台任务队列长度 */
     private final Label queueLabel;
+
     /** JVM 内存占用 */
     private final Label memLabel;
-    /** 右侧：光标位置标签 */
+
+    /** 右侧:光标位置标签 */
     private final Label positionLabel;
+
     /** 定时刷新监控信息的时间线 */
     private final Timeline monitorTimeline;
+
     /** 当前进度条是否由索引进度刷新逻辑显示 */
     private boolean indexProgressVisible;
 
-    /** 构建状态栏布局：路径 | 弹性空间 | 任务 | 进度条 | 队列 | 内存 | 引擎 | 编码 | 弹性空间 | 光标位置 */
+    /** 构建状态栏布局:路径 | 弹性空间 | 任务 | 进度条 | 队列 | 内存 | 引擎 | 编码 | 弹性空间 | 光标位置 */
     public StatusBar() {
         setPadding(new Insets(2, 8, 2, 8));
         getStyleClass().add("status-bar");
@@ -158,7 +168,7 @@ public class StatusBar extends HBox {
     /**
      * 设置进度条值
      *
-     * @param progress 0.0~1.0 的进度值，-1 表示不确定进度
+     * @param progress 0.0~1.0 的进度值,-1 表示不确定进度
      */
     public void setProgress(double progress) {
         indexProgressVisible = false;

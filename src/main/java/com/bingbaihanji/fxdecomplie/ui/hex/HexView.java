@@ -20,14 +20,18 @@ import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 import java.util.function.BiConsumer;
 
 /**
  * 可复用的 JavaFX 十六进制编辑器视图组件 
  * <p>
- * 以网格形式渲染二进制数据,支持：
+ * 以网格形式渲染二进制数据,支持:
  * <ul>
  *   <li>地址列 + 十六进制字节列(每 8 个字节分隔) + ASCII 列</li>
  *   <li>前景/背景高亮(回调 + 静态区域 API)</li>
@@ -49,11 +53,17 @@ public class HexView extends Region {
 
     // ---------- 配置与模型 ----------
     private final HexViewConfig config;
+
     private final SelectionModel selection;
+
     private final HighlightModel highlights;
+
     private final SearchModel search;
+
     private final PatternModel patternModel;
+
     private final Pane canvasPane = new Pane() {
+
         @Override
         public boolean isResizable() {
             return true;
@@ -65,28 +75,44 @@ public class HexView extends Region {
             markDirty();
         }
     };
+
     // ---------- 数据与度量 ----------
     private HexDataProvider provider = new ByteArrayProvider(new byte[0]);
+
     private HexViewMetrics metrics;
+
     // ---------- UI 组件 ----------
     private Canvas canvas;
+
     private ScrollBar scrollBar;
+
     private HexGridRenderer gridRenderer;
+
     private MiniMapRenderer miniMapRenderer;
+
     // ---------- 滚动状态 ----------
     private long scrollRow = 0;
+
     private long totalRows = 0;
+
     // ---------- 搜索 / 跳转 UI ----------
     private TextField searchField;
+
     private TextField gotoField;
+
     // ---------- 选择拖拽状态 ----------
     private boolean dragging = false;
+
     // ---------- 悬停跟踪(用于工具提示) ----------
     private long hoveredAddress = -1;
+
     private double hoverMouseX, hoverMouseY;
+
     private BiConsumer<Long, Integer> onHoverCallback;
+
     // ---------- 渲染控制 ----------
     private volatile boolean dirty = true;
+
     private AnimationTimer renderTimer;
 
     // ---------- 构造方法 ----------
@@ -304,7 +330,7 @@ public class HexView extends Region {
     }
 
     /**
-     * 标记视图为“脏”,在下一个脉冲时重新绘制 
+     * 标记视图为"脏",在下一个脉冲时重新绘制 
      */
     public void markDirty() {
         dirty = true;
@@ -313,13 +339,13 @@ public class HexView extends Region {
     // ===================== 布局设置 =====================
 
     private void setupLayout() {
-        // 顶层 VBox：工具栏在上,画布在下
+        // 顶层 VBox:工具栏在上,画布在下
         var menuBar = buildMenuBar();
         var toolBar = buildToolBar();
         var topBar = new VBox(menuBar, toolBar);
         topBar.setStyle("-fx-background-color: #1a1a1e;");
 
-        // 画布面板：可调整大小
+        // 画布面板:可调整大小
         this.canvasPane.setStyle("-fx-background-color: #19191c;");
 
         this.canvas = new Canvas();
@@ -355,12 +381,12 @@ public class HexView extends Region {
 
         canvasPane.getChildren().addAll(canvas, overlay);
 
-        // 画布行：canvasPane 填满宽度,右侧滚动条
+        // 画布行:canvasPane 填满宽度,右侧滚动条
         var canvasRow = new HBox(canvasPane, scrollBar);
         canvasRow.setFillHeight(true);
         HBox.setHgrow(canvasPane, Priority.ALWAYS);
 
-        // 根布局：顶部栏(固定高度)+ 画布行(填充剩余)
+        // 根布局:顶部栏(固定高度)+ 画布行(填充剩余)
         var root = new VBox(topBar, canvasRow);
         root.setFillWidth(true);
         VBox.setVgrow(canvasRow, Priority.ALWAYS);
@@ -564,6 +590,7 @@ public class HexView extends Region {
      */
     private void setupRenderLoop() {
         renderTimer = new AnimationTimer() {
+
             @Override
             public void handle(long now) {
                 if (dirty && getWidth() > 0 && getHeight() > 0) {
@@ -656,7 +683,7 @@ public class HexView extends Region {
     // ===================== 渲染 =====================
 
     /**
-     * 绘制整个画布(包括网格、头部、MiniMap 和工具提示) 
+     * 绘制整个画布(包括网格,头部,MiniMap 和工具提示) 
      */
     private void drawCanvas() {
         if (metrics == null) {
@@ -725,7 +752,7 @@ public class HexView extends Region {
     // ===================== 事件处理 =====================
 
     /**
-     * 设置所有事件处理器(滚动、鼠标、键盘等) 
+     * 设置所有事件处理器(滚动,鼠标,键盘等) 
      */
     private void setupEventHandlers() {
         scrollBar.valueProperty().addListener((obs, old, val) -> {

@@ -6,11 +6,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import java.util.List;
 
 public final class TraverserBlockInfo {
+
     private final BlockNode block;
 
     // These offsets are the instruction indices NOT an instruction size.
     private int bottomOffset;
+
     private int topOffset;
+
     private int bottomImplicitCount;
 
     public TraverserBlockInfo(BlockNode block) {

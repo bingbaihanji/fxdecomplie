@@ -3,7 +3,14 @@ package com.bingbaihanji.fxdecomplie.util.text;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,20 +28,29 @@ public final class DiffMatchPatch {
 
     /** 空白行结束正则 */
     private static final Pattern BLANK_LINE_END = Pattern.compile("\\n\\r?\\n\\Z", Pattern.DOTALL);
+
     /** 空白行开始正则 */
     private static final Pattern BLANK_LINE_START = Pattern.compile("\\A\\r?\\n\\r?\\n", Pattern.DOTALL);
+
     private static final Pattern PATCH_HEADER = Pattern.compile("^@@ -(\\d+),?(\\d*) \\+(\\d+),?(\\d*) @@$");
+
     private final short matchMaxBits = 32;
+
     /** Diff 操作超时秒数(0 表示无限) */
     public float diffTimeout = 1.0f;
+
     /** 空编辑操作的成本(以编辑字符数为单位) */
     public short diffEditCost = 4;
+
     /** 匹配阈值(0.0 = 精确匹配,1.0 = 非常宽松) */
     public float matchThreshold = 0.5f;
+
     /** 匹配搜索距离(0 = 精确位置,1000+ = 广泛匹配) */
     public int matchDistance = 1000;
+
     /** 大块删除时的匹配阈值(0.0 = 精确,1.0 = 宽松) */
     public float patchDeleteThreshold = 0.5f;
+
     /** 补丁上下文字符块大小 */
     public short patchMargin = 4;
 
@@ -271,7 +287,7 @@ public final class DiffMatchPatch {
     }
 
     /**
-     * 查找差异的"中间蛇",将问题一分为二 并返回递归构造的差异结果 参见 Myers 1986 论文：An O(ND) Difference Algorithm and
+     * 查找差异的"中间蛇",将问题一分为二 并返回递归构造的差异结果 参见 Myers 1986 论文:An O(ND) Difference Algorithm and
      * Its Variations
      * @param text1 原始字符串
      * @param text2 新字符串
@@ -417,8 +433,8 @@ public final class DiffMatchPatch {
     public LinesToCharsResult diffLinesToChars(String text1, String text2) {
         List<String> lineArray = new ArrayList<>();
         Map<String, Integer> lineHash = new HashMap<>();
-        // 例如：lineArray[4] == "Hello\n"
-        // 例如：lineHash.get("Hello\n") == 4
+        // 例如:lineArray[4] == "Hello\n"
+        // 例如:lineHash.get("Hello\n") == 4
 
         // "\x00" 是合法字符,但部分调试器不兼容
         // 插入一个无用条目以避免生成 null 字符
@@ -485,7 +501,7 @@ public final class DiffMatchPatch {
      * @return 两段字符串开头公共字符的数量
      */
     public int diffCommonPrefix(String text1, String text2) {
-        // 性能分析： http://neil.fraser.name/news/2007/10/09/
+        // 性能分析: http://neil.fraser.name/news/2007/10/09/
         int n = Math.min(text1.length(), text2.length());
         for (int i = 0; i < n; i++) {
             if (text1.charAt(i) != text2.charAt(i)) {
@@ -502,7 +518,7 @@ public final class DiffMatchPatch {
      * @return 两段字符串末尾公共字符的数量
      */
     public int diffCommonSuffix(String text1, String text2) {
-        // 性能分析： http://neil.fraser.name/news/2007/10/09/
+        // 性能分析: http://neil.fraser.name/news/2007/10/09/
         int text1Length = text1.length();
         int text2Length = text2.length();
         int n = Math.min(text1Length, text2Length);
@@ -535,13 +551,13 @@ public final class DiffMatchPatch {
             text2 = text2.substring(0, text1Length);
         }
         int textLength = Math.min(text1Length, text2Length);
-        // 快速检查最坏情况：完全相同
+        // 快速检查最坏情况:完全相同
         if (text1.equals(text2)) {
             return textLength;
         }
 
         // 从单字符匹配开始,逐步增加长度直到无法匹配
-        // 性能分析：http://neil.fraser.name/news/2010/11/04/
+        // 性能分析:http://neil.fraser.name/news/2010/11/04/
         int best = 0;
         int length = 1;
         while (true) {
@@ -717,8 +733,8 @@ public final class DiffMatchPatch {
         diffCleanupSemanticLossless(diffs);
 
         // 查找删除和插入之间的重叠
-        // 例如：<del>abcxxx</del><ins>xxxdef</ins> → <del>abc</del>xxx<ins>def</ins>
-        // 例如：<del>xxxabc</del><ins>defxxx</ins> → <ins>def</ins>xxx<del>abc</del>
+        // 例如:<del>abcxxx</del><ins>xxxdef</ins> → <del>abc</del>xxx<ins>def</ins>
+        // 例如:<del>xxxabc</del><ins>defxxx</ins> → <ins>def</ins>xxx<del>abc</del>
         // 仅当重叠大小与前后的编辑相当时才提取
         pointer = diffs.listIterator();
         Diff prevDiff = null;
@@ -737,7 +753,7 @@ public final class DiffMatchPatch {
                 int overlapLength2 = this.diffCommonOverlap(insertion, deletion);
                 if (overlapLength1 >= overlapLength2) {
                     if (overlapLength1 >= deletion.length() / 2.0 || overlapLength1 >= insertion.length() / 2.0) {
-                        // 发现重叠：插入相等项并修剪周围编辑
+                        // 发现重叠:插入相等项并修剪周围编辑
                         pointer.previous();
                         pointer.add(new Diff(Operation.EQUAL, insertion.substring(0, overlapLength1)));
                         prevDiff.text = deletion.substring(0, deletion.length() - overlapLength1);
@@ -746,7 +762,7 @@ public final class DiffMatchPatch {
                     }
                 } else {
                     if (overlapLength2 >= deletion.length() / 2.0 || overlapLength2 >= insertion.length() / 2.0) {
-                        // 发现反向重叠：插入相等项并交换修剪周围编辑
+                        // 发现反向重叠:插入相等项并交换修剪周围编辑
                         pointer.previous();
                         pointer.add(new Diff(Operation.EQUAL, deletion.substring(0, overlapLength2)));
                         prevDiff.operation = Operation.INSERT;
@@ -764,7 +780,7 @@ public final class DiffMatchPatch {
     }
 
     /**
-     * 查找两侧均为相等匹配的单次编辑,将编辑平移到单词边界对齐 例如：The c<ins>at c</ins>ame. → The <ins>cat </ins>came.
+     * 查找两侧均为相等匹配的单次编辑,将编辑平移到单词边界对齐 例如:The c<ins>at c</ins>ame. → The <ins>cat </ins>came.
      * @param diffs Diff 对象链表
      */
     public void diffCleanupSemanticLossless(LinkedList<Diff> diffs) {
@@ -869,19 +885,19 @@ public final class DiffMatchPatch {
         boolean blankLine2 = lineBreak2 && BLANK_LINE_START.matcher(two).find();
 
         if (blankLine1 || blankLine2) {
-            // 空白行：5 分
+            // 空白行:5 分
             return 5;
         } else if (lineBreak1 || lineBreak2) {
-            // 换行：4 分
+            // 换行:4 分
             return 4;
         } else if (nonAlphaNumeric1 && !whitespace1 && whitespace2) {
-            // 句尾：3 分
+            // 句尾:3 分
             return 3;
         } else if (whitespace1 || whitespace2) {
-            // 空白字符：2 分
+            // 空白字符:2 分
             return 2;
         } else if (nonAlphaNumeric1 || nonAlphaNumeric2) {
-            // 非字母数字：1 分
+            // 非字母数字:1 分
             return 1;
         }
         return 0;
@@ -933,7 +949,7 @@ public final class DiffMatchPatch {
                     postIns = true;
                 }
                 /*
-                 * 五种需要拆分的情况： <ins>A</ins><del>B</del>XY<ins>C</ins><del>D</del>
+                 * 五种需要拆分的情况: <ins>A</ins><del>B</del>XY<ins>C</ins><del>D</del>
                  * <ins>A</ins>X<ins>C</ins><del>D</del>
                  * <ins>A</ins><del>B</del>X<ins>C</ins>
                  * <ins>A</del>X<ins>C</ins><del>D</del>
@@ -1088,7 +1104,7 @@ public final class DiffMatchPatch {
         }
 
         /*
-         * 第二遍：查找两侧均为相等匹配的单次编辑,平移到一侧以消除相等项 例如：A<ins>BA</ins>C → <ins>AB</ins>AC
+         * 第二遍:查找两侧均为相等匹配的单次编辑,平移到一侧以消除相等项 例如:A<ins>BA</ins>C → <ins>AB</ins>AC
          */
         boolean changes = false;
         // 在起始位置创建新迭代器(而非回退当前迭代器)
@@ -1134,7 +1150,7 @@ public final class DiffMatchPatch {
     }
 
     /**
-     * loc 为 text1 中的位置,计算并返回 text2 中的对应位置 例如："The cat" vs "The big cat",1→1,5→8
+     * loc 为 text1 中的位置,计算并返回 text2 中的对应位置 例如:"The cat" vs "The big cat",1→1,5→8
      * @param diffs Diff 对象链表
      * @param loc text1 中的位置
      * @return text2 中的匹配位置
@@ -1261,7 +1277,7 @@ public final class DiffMatchPatch {
     }
 
     /**
-     * 将 diff 压缩为描述将 text1 转换为 text2 所需操作的编码字符串 例如：=3\t-2\t+ing 表示保留 3 个字符,删除 2 个字符,插入
+     * 将 diff 压缩为描述将 text1 转换为 text2 所需操作的编码字符串 例如:=3\t-2\t+ing 表示保留 3 个字符,删除 2 个字符,插入
      * "ing" 操作用制表符分隔,插入文本使用 %xx 编码转义
      * @param diffs Diff 对象链表
      * @return 差异文本
@@ -1377,7 +1393,7 @@ public final class DiffMatchPatch {
 
         loc = Math.clamp(loc, 0, text.length());
         if (text.equals(pattern)) {
-            // 快捷路径：完全相同
+            // 快捷路径:完全相同
             return 0;
         } else if (text.isEmpty()) {
             // 无匹配内容
@@ -1406,11 +1422,11 @@ public final class DiffMatchPatch {
 
         // 超过此分数即放弃
         double scoreThreshold = matchThreshold;
-        // 附近是否存在精确匹配？(加速)
+        // 附近是否存在精确匹配?(加速)
         int bestLoc = text.indexOf(pattern, loc);
         if (bestLoc != -1) {
             scoreThreshold = Math.min(matchBitapScore(0, bestLoc, loc, pattern), scoreThreshold);
-            // 反方向呢？(加速)
+            // 反方向呢?(加速)
             bestLoc = text.lastIndexOf(pattern, loc + pattern.length());
             if (bestLoc != -1) {
                 scoreThreshold = Math.min(matchBitapScore(0, bestLoc, loc, pattern), scoreThreshold);
@@ -1454,10 +1470,10 @@ public final class DiffMatchPatch {
                     charMatch = s.get(text.charAt(j - 1));
                 }
                 if (d == 0) {
-                    // 第一轮：精确匹配
+                    // 第一轮:精确匹配
                     rd[j] = ((rd[j + 1] << 1) | 1) & charMatch;
                 } else {
-                    // 后续轮次：模糊匹配
+                    // 后续轮次:模糊匹配
                     rd[j] = (((rd[j + 1] << 1) | 1) & charMatch) | (((lastRd[j + 1] | lastRd[j]) << 1) | 1)
                             | lastRd[j + 1];
                 }
@@ -1768,7 +1784,7 @@ public final class DiffMatchPatch {
                     text = text.substring(0, startLoc) + diffText2(aPatch.diffs)
                             + text.substring(startLoc + text1.length());
                 } else {
-                    // 非精确匹配：运行 diff 获取等效索引框架
+                    // 非精确匹配:运行 diff 获取等效索引框架
                     LinkedList<Diff> diffs = diffMain(text1, text2, false);
                     if (text1.length() > this.matchMaxBits
                             && diffLevenshtein(diffs) / (float) text1.length() > this.patchDeleteThreshold) {
@@ -2062,7 +2078,7 @@ public final class DiffMatchPatch {
     }
 
     /**
-     * Diff 操作类型枚举 链表结构示例：{Diff(Operation.DELETE, "Hello"), Diff(Operation.INSERT,
+     * Diff 操作类型枚举 链表结构示例:{Diff(Operation.DELETE, "Hello"), Diff(Operation.INSERT,
      * "Goodbye"), Diff(Operation.EQUAL, " world.")} 表示删除 "Hello",添加 "Goodbye",保留 "
      * world."
      */
@@ -2105,7 +2121,7 @@ public final class DiffMatchPatch {
     public static class Diff {
 
         /**
-         * 操作类型：INSERT DELETE 或 EQUAL
+         * 操作类型:INSERT DELETE 或 EQUAL
          */
         public Operation operation;
 
@@ -2202,7 +2218,7 @@ public final class DiffMatchPatch {
         }
 
         /**
-         * 模拟 GNU diff 格式输出 头信息：@@ -382,8 +481,9 @@ 索引从 1 开始(不是 0)
+         * 模拟 GNU diff 格式输出 头信息:@@ -382,8 +481,9 @@ 索引从 1 开始(不是 0)
          * @return GNU diff 格式字符串
          */
         @Override

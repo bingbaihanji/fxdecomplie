@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.ClassContainment;
@@ -8,7 +7,13 @@ import com.bingbaihanji.classgraph.classpath.ModuleClasspath;
 import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanResult;
-import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.type.ArrayType;
+import com.bingbaihanji.classgraph.type.BaseType;
+import com.bingbaihanji.classgraph.type.ClassRef;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.type.TypeSignature;
+import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.LogNode;
 
@@ -19,80 +24,114 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** 保存在扫描过程中遇到的类的元数据 */
 public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Named {
+
     /** 注解的修饰符位 */
     static final int ANNOTATION_CLASS_MODIFIER = 0x2000;
 
     // -------------------------------------------------------------------------------------------------------------
     // 核心属性
-    /** 类层次结构关系图（超类、子类、接口、注解关系） */
+
+    /** 类层次结构关系图(超类,子类,接口,注解关系) */
     private final ClassHierarchy hierarchy = new ClassHierarchy(this);
-    /** 类成员查询（字段、方法及其覆盖顺序） */
+
+    /** 类成员查询(字段,方法及其覆盖顺序) */
     private final ClassMembers members = new ClassMembers(this);
+
     /** 发现该类的类路径元素 */
     public transient Classpath Classpath;
+
     /** 获取该类的类加载器 */
     public transient ClassLoader classLoader;
+
     /** 类模块的信息 */
     public ModuleInfo moduleInfo;
+
     /** 包含该类的包的信息 */
     public PackageInfo packageInfo;
-    /** 类注解信息，包括可选的注解参数值 */
+
+    /** 类注解信息,包括可选的注解参数值 */
     public AnnotationInfoList annotationInfo;
+
     /** 字段信息 */
     public FieldInfoList fieldInfo;
+
     /** 方法信息 */
     public MethodInfoList methodInfo;
+
     /** 类的名称 */
     protected String name;
+
     /** 类类型签名字符串 */
     protected String typeSignatureStr;
+
     /**
-     * 如果为 true，则该类仅作为超类 / 已实现接口 / 注解被其他类的 class 文件引用，
-     * 但该类本身不是已接受（未被拒绝）的类，也不在已接受（未被拒绝）的包中
+     * 如果为 true,则该类仅作为超类 / 已实现接口 / 注解被其他类的 class 文件引用,
+     * 但该类本身不是已接受(未被拒绝)的类,也不在已接受(未被拒绝)的包中
      *
-     * 如果为 false，则该 class 文件在扫描过程中已匹配（即已读取其 class 文件内容），
-     * 即该类是已接受（且未被拒绝）的包中的已接受（且未被拒绝）的类
+     * 如果为 false,则该 class 文件在扫描过程中已匹配(即已读取其 class 文件内容),
+     * 即该类是已接受(且未被拒绝)的包中的已接受(且未被拒绝)的类
      */
     protected boolean isExternalClass = true;
+
     /**
-     * 当类实际被扫描到时设置为 true（与仅仅作为超类、接口或注解被引用的类相区别）
+     * 当类实际被扫描到时设置为 true(与仅仅作为超类,接口或注解被引用的类相区别)
      */
     protected boolean isScannedClass;
+
     /** 该类 class 文件对应的 {@link Resource} */
     protected transient Resource classfileResource;
+
     /**
-     * 此注解具有 {@link Inherited} 元注解，这意味着任何被该注解标注的类，
+     * 此注解具有 {@link Inherited} 元注解,这意味着任何被该注解标注的类,
      * 也会隐式地将该注解应用于所有子类
      */
     boolean isInherited;
-    /** 对于注解类，参数的默认值 */
+
+    /** 对于注解类,参数的默认值 */
     AnnotationParameterValueList annotationDefaultParamValues;
+
     /** {@link ClassType} 实例的类型注解装饰器 */
     transient List<ClassTypeAnnotationDecorator> typeAnnotationDecorators;
+
     /**
      * 当 annotationDefaultParamValues 中的任何 Object[] 装箱类型数组已被延迟转换为原始数组时设置为 true
      */
     transient boolean annotationDefaultParamValuesHasBeenConvertedToPrimitive;
-    /** 类修饰符标志，例如 Modifier.PUBLIC */
+
+    /** 类修饰符标志,例如 Modifier.PUBLIC */
     private int modifiers;
+
     /** 如果该类是记录类则为 true */
     private boolean isRecord;
+
     /** 该类 class 文件的 class 文件格式次版本号 */
     private int classfileMinorVersion;
+
     /** 该类 class 文件的 class 文件格式主版本号 */
     private int classfileMajorVersion;
+
     /** 已解析的类类型签名 */
     private transient com.bingbaihanji.classgraph.type.ClassType typeSignature;
+
     /** 合成的类类型描述符 */
     private transient com.bingbaihanji.classgraph.type.ClassType typeDescriptor;
+
     /** 编译该类的源文件名 */
     private String sourceFile;
+
     /** 匿名内部类的完全限定定义方法名 */
     private String fullyQualifiedDefiningMethodName;
+
     /**
      * 该类在 class 文件常量池中的类引用和类型签名中所引用的类名称
      */
@@ -100,14 +139,17 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
 
     // -------------------------------------------------------------------------------------------------------------
     // 委派字段
+
     /**
      * 该类所引用的类的 ClassInfo 对象列表由 {@link #referencedClassNames} 在相关
      * {@link ClassInfo} 对象创建时派生而来
      */
     private ClassInfoList referencedClasses;
-    /** 完整路径（用于 ClassGraphWorkspaceAdapter 简化扫描） */
+
+    /** 完整路径(用于 ClassGraphWorkspaceAdapter 简化扫描) */
     private String fullPath;
-    /** 注解信息列表，加载后的缓存 */
+
+    /** 注解信息列表,加载后的缓存 */
     private AnnotationInfoList annotationInfoRef;
 
     // -------------------------------------------------------------------------------------------------------------
@@ -121,7 +163,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     /**
      * 为 ClassGraphWorkspaceAdapter 提供的简化构造函数
      *
-     * @param name           类名（内部形式，例如 "java/lang/String"）
+     * @param name           类名(内部形式,例如 "java/lang/String")
      * @param classModifiers 类修饰符
      */
     public ClassInfo(final String name, final int classModifiers) {
@@ -156,7 +198,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     // 委派访问器
 
     /**
-     * 获取 ClassInfo 对象，如果不存在则创建注意：非线程安全，因此 ClassInfo 对象
+     * 获取 ClassInfo 对象,如果不存在则创建注意:非线程安全,因此 ClassInfo 对象
      * 应该仅由单个线程构造
      *
      * @param className            类名
@@ -172,7 +214,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
             numArrayDims++;
             baseClassName = baseClassName.substring(0, baseClassName.length() - 2);
         }
-        // 容忍使用类描述符而非类名的情况（本不应需要）
+        // 容忍使用类描述符而非类名的情况(本不应需要)
         while (baseClassName.startsWith("[")) {
             numArrayDims++;
             baseClassName = baseClassName.substring(1);
@@ -194,11 +236,11 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
                 TypeSignature elementTypeSignature;
                 final char baseTypeChar = BaseType.getTypeChar(baseClassName);
                 if (baseTypeChar != '\0') {
-                    // 元素类型是基本（原始）类型
+                    // 元素类型是基本(原始)类型
                     arrayTypeSigStrBuf.append(baseTypeChar);
                     elementTypeSignature = new BaseType(baseTypeChar);
                 } else {
-                    // 元素类型不是基本（原始）类型——为元素类型创建类型签名
+                    // 元素类型不是基本(原始)类型——为元素类型创建类型签名
                     final String eltTypeSigStr = "L" + baseClassName.replace('.', '/') + ";";
                     arrayTypeSigStrBuf.append(eltTypeSigStr);
                     try {
@@ -245,7 +287,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     // 静态工厂方法
 
     /**
-     * 添加一个刚刚被扫描到的类（与仅仅被已扫描类引用的类相区别）非线程安全，
+     * 添加一个刚刚被扫描到的类(与仅仅被已扫描类引用的类相区别)非线程安全,
      * 应在单线程上下文中运行
      *
      * @param className            类名
@@ -261,14 +303,14 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
                                             final Classpath Classpath, final Resource classfileResource) {
         ClassInfo classInfo = classNameToClassInfo.get(className);
         if (classInfo == null) {
-            // 这是第一次遇到该类，添加它
+            // 这是第一次遇到该类,添加它
             classNameToClassInfo.put(className,
                     classInfo = new ClassInfo(className, classModifiers, classfileResource));
         } else {
-            // 之前已存在一个占位 ClassInfo 对象，因为该类被作为超类、接口或注解引用
-            // 在这种情况下 isScannedClass 字段应为 false，因为在此之前尚未遇到实际的类定义
+            // 之前已存在一个占位 ClassInfo 对象,因为该类被作为超类,接口或注解引用
+            // 在这种情况下 isScannedClass 字段应为 false,因为在此之前尚未遇到实际的类定义
             if (classInfo.isScannedClass) {
-                // 由于类路径屏蔽机制，该类不应被多次扫描
+                // 由于类路径屏蔽机制,该类不应被多次扫描
                 throw new IllegalArgumentException("Class " + className
                         + " should not have been encountered more than once due to classpath masking --"
                         + " please report this bug at: https://github.com/classgraph/classgraph/issues");
@@ -284,10 +326,10 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
         // 将类标记为已扫描
         classInfo.isScannedClass = true;
 
-        // 如果该类是已接受的类，则将其标记为非外部类
+        // 如果该类是已接受的类,则将其标记为非外部类
         classInfo.isExternalClass = isExternalClass;
 
-        // 记住该类是在哪个类路径元素（zip 文件 / 类路径根目录 / 模块）中发现的
+        // 记住该类是在哪个类路径元素(zip 文件 / 类路径根目录 / 模块)中发现的
         classInfo.Classpath = Classpath;
 
         // 记住用于加载该类的类加载器
@@ -301,7 +343,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *
      * @param classes      类集合
      * @param ScanConfig   扫描规范
-     * @param strictAccept 如果为 true，则当外部类未启用时排除外部类
+     * @param strictAccept 如果为 true,则当外部类未启用时排除外部类
      * @param classTypes   类类型数组
      * @return 过滤后的类集合
      */
@@ -355,10 +397,10 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
                     || includeAnnotations && classInfo.isAnnotation() //
                     || includeEnums && classInfo.isEnum() //
                     || includeRecords && classInfo.isRecord();
-            // 如果查看类层次结构"向上"，则返回外部（非接受的）类
+            // 如果查看类层次结构"向上",则返回外部(非接受的)类
             final boolean acceptClass = !classInfo.isExternalClass || ScanConfig.enableExternalClasses
                     || !strictAccept;
-            // 如果类是正确的类型，且类被接受，且类/包未被显式拒绝
+            // 如果类是正确的类型,且类被接受,且类/包未被显式拒绝
             if (includeType && acceptClass && !ScanConfig.classOrPackageIsRejected(classInfo.name)) {
                 // 类通过了接受条件
                 classInfoSetFiltered.add(classInfo);
@@ -404,7 +446,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     }
 
     /**
-     * 获取扫描过程中发现的所有已实现接口（非注解接口）类
+     * 获取扫描过程中发现的所有已实现接口(非注解接口)类
      */
     public static ClassInfoList getAllImplementedInterfaceClasses(final Collection<ClassInfo> classes,
                                                                   final ScanConfig ScanConfig) {
@@ -456,7 +498,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // 构建器方法（内部使用，操作 hierarchy）
+    // 构建器方法(内部使用,操作 hierarchy)
 
     /**
      * 向该类添加超类
@@ -480,7 +522,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     }
 
     /**
-     * 添加包含方法名，用于匿名内部类
+     * 添加包含方法名,用于匿名内部类
      */
     public void addFullyQualifiedDefiningMethodName(final String fullyQualifiedDefiningMethodName) {
         this.fullyQualifiedDefiningMethodName = fullyQualifiedDefiningMethodName;
@@ -543,9 +585,10 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
                                     methodParamAnnotationInfo.getName(), classNameToClassInfo);
                             annotationClassInfo.setModifiers(ANNOTATION_CLASS_MODIFIER);
                             this.hierarchy.addRelation(ClassHierarchy.RelType.METHOD_PARAMETER_ANNOTATIONS, annotationClassInfo);
-                            annotationClassInfo.hierarchy().addRelation(ClassHierarchy.RelType.CLASSES_WITH_METHOD_PARAMETER_ANNOTATION,
-                                    this);
-                            // 对于非私有方法/字段，也添加到非私有（可继承）映射中
+                            annotationClassInfo.hierarchy()
+                                    .addRelation(ClassHierarchy.RelType.CLASSES_WITH_METHOD_PARAMETER_ANNOTATION,
+                                            this);
+                            // 对于非私有方法/字段,也添加到非私有(可继承)映射中
                             if (!Modifier.isPrivate(mi.getModifiers())) {
                                 annotationClassInfo.hierarchy().addRelation(
                                         ClassHierarchy.RelType.CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION, this);
@@ -1030,7 +1073,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // 注解信息（保留在 ClassInfo 中，属于核心属性查询）
+    // 注解信息(保留在 ClassInfo 中,属于核心属性查询)
 
     public void setAnnotationInfo(final AnnotationInfoList annotationInfo) {
         this.annotationInfo = annotationInfo;
@@ -1366,7 +1409,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
             }
             buf.append(useSimpleNames ? ClassInfo.getSimpleName(name) : name);
             if (isRecord) {
-                // 如果这是记录类，添加参数
+                // 如果这是记录类,添加参数
                 buf.append('(');
                 boolean isFirstParam = true;
                 for (final FieldInfo fieldInfo : members().getFieldInfo()) {
@@ -1408,15 +1451,15 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     public enum ClassType {
         /** 获取所有类类型 */
         ALL,
-        /** 标准类（非接口或注解） */
+        /** 标准类(非接口或注解) */
         STANDARD_CLASS,
         /**
-         * 接口（此处命名为"已实现接口"而非简单的"接口"，以区别于注解）
+         * 接口(此处命名为"已实现接口"而非简单的"接口",以区别于注解)
          */
         IMPLEMENTED_INTERFACE,
         /** 注解 */
         ANNOTATION,
-        /** 接口或注解（因为实际上可以实现一个注解） */
+        /** 接口或注解(因为实际上可以实现一个注解) */
         INTERFACE_OR_ANNOTATION,
         /** 枚举 */
         ENUM,

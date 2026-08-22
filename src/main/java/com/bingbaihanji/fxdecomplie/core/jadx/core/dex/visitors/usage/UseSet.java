@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 
 public class UseSet<K, V> {
+
     private final Map<K, Set<V>> useMap = new HashMap<>();
 
     public void add(K obj, V use) {

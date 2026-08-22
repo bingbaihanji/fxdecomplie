@@ -17,25 +17,45 @@ import java.util.OptionalInt;
  * @author Matt Coley
  */
 public interface ArrayValue extends ObjectValue {
+
     ArrayValue VAL_BOOLEANS = new ArrayValueImpl(Type.getType("[Z"), Nullness.NOT_NULL);
+
     ArrayValue VAL_BOOLEANS_NULL = new ArrayValueImpl(Type.getType("[Z"), Nullness.NULL);
+
     ArrayValue VAL_CHARS = new ArrayValueImpl(Type.getType("[C"), Nullness.NOT_NULL);
+
     ArrayValue VAL_CHARS_NULL = new ArrayValueImpl(Type.getType("[C"), Nullness.NULL);
+
     ArrayValue VAL_BYTES = new ArrayValueImpl(Type.getType("[B"), Nullness.NOT_NULL);
+
     ArrayValue VAL_BYTES_NULL = new ArrayValueImpl(Type.getType("[B"), Nullness.NULL);
+
     ArrayValue VAL_SHORTS = new ArrayValueImpl(Type.getType("[S"), Nullness.NOT_NULL);
+
     ArrayValue VAL_SHORTS_NULL = new ArrayValueImpl(Type.getType("[S"), Nullness.NULL);
+
     ArrayValue VAL_INTS = new ArrayValueImpl(Type.getType("[I"), Nullness.NOT_NULL);
+
     ArrayValue VAL_INTS_NULL = new ArrayValueImpl(Type.getType("[I"), Nullness.NULL);
+
     ArrayValue VAL_FLOATS = new ArrayValueImpl(Type.getType("[F"), Nullness.NOT_NULL);
+
     ArrayValue VAL_FLOATS_NULL = new ArrayValueImpl(Type.getType("[F"), Nullness.NULL);
+
     ArrayValue VAL_DOUBLES = new ArrayValueImpl(Type.getType("[D"), Nullness.NOT_NULL);
+
     ArrayValue VAL_DOUBLES_NULL = new ArrayValueImpl(Type.getType("[D"), Nullness.NULL);
+
     ArrayValue VAL_LONGS = new ArrayValueImpl(Type.getType("[J"), Nullness.NOT_NULL);
+
     ArrayValue VAL_LONGS_NULL = new ArrayValueImpl(Type.getType("[J"), Nullness.NULL);
+
     ArrayValue VAL_OBJECTS = new ArrayValueImpl(Type.getType("[Ljava/lang/Object;"), Nullness.NOT_NULL);
+
     ArrayValue VAL_OBJECTS_NULL = new ArrayValueImpl(Type.getType("[Ljava/lang/Object;"), Nullness.NULL);
+
     ArrayValue VAL_STRINGS = new ArrayValueImpl(Type.getType("[Ljava/lang/String;"), Nullness.NOT_NULL);
+
     ArrayValue VAL_STRINGS_NULL = new ArrayValueImpl(Type.getType("[Ljava/lang/String;"), Nullness.NULL);
 
     /**
@@ -130,7 +150,7 @@ public interface ArrayValue extends ObjectValue {
     Type type();
 
     /**
-     * 元素类型是任意数组的基础类型考虑以下情形：
+     * 元素类型是任意数组的基础类型考虑以下情形:
      * <ul>
      *     <li>{@code int[]}</li>
      *     <li>{@code int[][]}</li>
@@ -146,7 +166,7 @@ public interface ArrayValue extends ObjectValue {
     }
 
     /**
-     * 考虑以下情形：
+     * 考虑以下情形:
      * <ul>
      *     <li>1: {@code int[]}</li>
      *     <li>2: {@code int[][]}</li>
@@ -160,7 +180,7 @@ public interface ArrayValue extends ObjectValue {
     }
 
     /**
-     * 考虑以下情形：
+     * 考虑以下情形:
      * <table>
      *     <tr><th>长度</th><th>数组定义</th></tr>
      *     <tr><td>{@code 7}</td><td>{@code int[7]}</td></tr>
@@ -178,7 +198,7 @@ public interface ArrayValue extends ObjectValue {
      * @param index
      *        {@link #getFirstDimensionLength()} 范围内的索引
      *
-     * @return 若已知则返回给定索引处的值；否则返回数组元素类型对应的 {@link ReValue}
+     * @return 若已知则返回给定索引处的值;否则返回数组元素类型对应的 {@link ReValue}
      */
 
     ReValue getValue(int index);

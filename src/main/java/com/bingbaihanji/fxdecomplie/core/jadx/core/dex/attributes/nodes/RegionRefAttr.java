@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
  * Region created based on parent instruction
  */
 public class RegionRefAttr implements IJadxAttribute {
+
     private final IRegion region;
 
     public RegionRefAttr(IRegion region) {

@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.classpath.ModuleClasspath;
@@ -14,7 +13,12 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /** 扫描过程中 ClassGraph 所发现类的 {@link ClassLoader} */
 public class ScanClassLoader extends ClassLoader {
@@ -24,12 +28,16 @@ public class ScanClassLoader extends ClassLoader {
 
     /** 是否初始化已加载的类 */
     private final boolean initializeLoadedClasses;
+
     /** 由类路径上的 URL 组成的 {@link URLClassLoader} */
     private final ClassLoader classpathClassLoader;
+
     /** 尝试委托到的环境类加载器的有序集合 */
     private Set<ClassLoader> environmentClassLoaderDelegationOrder;
+
     /** 任何覆盖类加载器 */
     private List<ClassLoader> overrideClassLoaders;
+
     /** 尝试委托到的覆盖或添加的类加载器的有序集合 */
     private Set<ClassLoader> addedClassLoaderDelegationOrder;
 
@@ -73,19 +81,19 @@ public class ScanClassLoader extends ClassLoader {
         classpathClassLoader = classpathURLs.isEmpty() ? null
                 : new URLClassLoader(classpathURLs.toArray(new URL[0]));
 
-        // 如果类加载器被覆盖，仅使用覆盖类加载器，如果找不到类则失败
+        // 如果类加载器被覆盖,仅使用覆盖类加载器,如果找不到类则失败
         overrideClassLoaders = classloadersOverridden ? ScanConfig.overrideClassLoaders : null;
 
-        // 如果类路径被覆盖但类加载器未被覆盖，则尝试从类路径 URL 加载类作为覆盖类加载器，
+        // 如果类路径被覆盖但类加载器未被覆盖,则尝试从类路径 URL 加载类作为覆盖类加载器,
         // 如果找不到类则失败
         //
-        // 注意：如果 ScanResult 已关闭，某些类路径 URL 可能无效(例如，在极少数情况下，
+        // 注意:如果 ScanResult 已关闭,某些类路径 URL 可能无效(例如,在极少数情况下,
         // 内部 jar 必须提取到磁盘上的临时文件中)
         if (overrideClassLoaders == null && classpathOverridden && classpathClassLoader != null) {
             overrideClassLoaders = Collections.singletonList(classpathClassLoader);
         }
 
-        // 如果添加了类加载器，尝试通过这些类加载器加载
+        // 如果添加了类加载器,尝试通过这些类加载器加载
         if (clasloadersAdded) {
             addedClassLoaderDelegationOrder = new LinkedHashSet<>();
             addedClassLoaderDelegationOrder.addAll(ScanConfig.addedClassLoaders);
@@ -116,7 +124,7 @@ public class ScanClassLoader extends ClassLoader {
             }
         }
 
-        // 如果设置了 overrideClassLoaders，仅使用覆盖加载器
+        // 如果设置了 overrideClassLoaders,仅使用覆盖加载器
         if (overrideClassLoaders != null) {
             for (final ClassLoader overrideClassLoader : overrideClassLoaders) {
                 try {
@@ -131,7 +139,7 @@ public class ScanClassLoader extends ClassLoader {
             }
         }
 
-        // 首先尝试环境类加载器，因为这是通常的默认行为
+        // 首先尝试环境类加载器,因为这是通常的默认行为
         if (overrideClassLoaders == null && environmentClassLoaderDelegationOrder != null
                 && !environmentClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader envClassLoader : environmentClassLoaderDelegationOrder) {
@@ -147,16 +155,16 @@ public class ScanClassLoader extends ClassLoader {
             }
         }
 
-        // 尝试获取指定类的 ClassInfo，然后从 ClassInfo 获取 ClassLoader
-        // 即使 ScanResult 已关闭，这应该仍然有效，因为 ScanResult#close() 会保留
-        // classNameToClassInfo 映射不变但即便如此，仅在所有上述尝试均失败后才尝试此方法，
+        // 尝试获取指定类的 ClassInfo,然后从 ClassInfo 获取 ClassLoader
+        // 即使 ScanResult 已关闭,这应该仍然有效,因为 ScanResult#close() 会保留
+        // classNameToClassInfo 映射不变但即便如此,仅在所有上述尝试均失败后才尝试此方法,
         // 以避免在 ScanResult 关闭后访问 ClassInfo 对象(#399)
         ClassLoader classInfoClassLoader = null;
         final ClassInfo classInfo = scanResult.classNameToClassInfo == null ? null
                 : scanResult.classNameToClassInfo.get(className);
         if (classInfo != null) {
             classInfoClassLoader = classInfo.classLoader;
-            // 尝试使用获取类文件的类路径元素对应的特定类加载器，
+            // 尝试使用获取类文件的类路径元素对应的特定类加载器,
             // 只要它尚未被尝试过
             if (classInfoClassLoader != null && (environmentClassLoaderDelegationOrder == null
                     || !environmentClassLoaderDelegationOrder.contains(classInfoClassLoader))) {
@@ -171,10 +179,10 @@ public class ScanClassLoader extends ClassLoader {
                 }
             }
 
-            // 如果类来自模块，且环境类加载器无法加载它，那么它很可能是一个非公共类，
+            // 如果类来自模块,且环境类加载器无法加载它,那么它很可能是一个非公共类,
             // ClassGraph 是通过在直接读取导出包中的资源时忽略类可见性来发现它的
-            // 强制 ClassGraph 遵守 JPMS 封装规则，拒绝加载上下文/系统类加载器
-            // 无法加载的模块类(正常情况下上面应该抛出 SecurityException，但这里是为了完整性)
+            // 强制 ClassGraph 遵守 JPMS 封装规则,拒绝加载上下文/系统类加载器
+            // 无法加载的模块类(正常情况下上面应该抛出 SecurityException,但这里是为了完整性)
             if (classInfo.Classpath instanceof ModuleClasspath && !classInfo.isPublic()) {
                 throw new ClassNotFoundException("ClassParser for class " + className + " was found in a module, "
                         + "but the context and system classloaders could not load the class, probably because "
@@ -212,23 +220,23 @@ public class ScanClassLoader extends ClassLoader {
             }
         }
 
-        // 作为最后的尝试，如果上述所有努力都失败了，尝试将类文件作为资源获取，
-        // 并从资源内容定义类这应在尝试环境类加载之后执行，
+        // 作为最后的尝试,如果上述所有努力都失败了,尝试将类文件作为资源获取,
+        // 并从资源内容定义类这应在尝试环境类加载之后执行,
         // 以避免类由环境类加载器和直接手动类加载混合加载而导致类兼容性问题
-        // 仅在万不得已时才访问 ScanResult(获取资源)，以便尽可能在
-        // ScanResult 关闭后再加载链接的类否则，如果在 ScanResult 关闭前加载类，
-        // 然后关闭 ScanResult，再尝试访问 ScanResult 中类型尚未加载的字段，
+        // 仅在万不得已时才访问 ScanResult(获取资源),以便尽可能在
+        // ScanResult 关闭后再加载链接的类否则,如果在 ScanResult 关闭前加载类,
+        // 然后关闭 ScanResult,再尝试访问 ScanResult 中类型尚未加载的字段,
         // 可能会触发 ScanResult 在关闭后被访问的异常(#399)
         final ResourceList classfileResources = scanResult
                 .resources().getResourcesWithPath(JarUtils.classNameToClassfilePath(className));
         if (classfileResources != null) {
             for (final Resource resource : classfileResources) {
                 // 遍历资源(仅尝试加载列表中的第一个资源)
-                // 加载资源内容，并从中定义类
+                // 加载资源内容,并从中定义类
                 try (Resource resourceToClose = resource) {
                     // TODO: 是否需要通过反射尝试 java.lang.invoke.MethodHandles.Lookup.defineClass
-                    // (它在 JDK 9 中已实现)，如果以下方法失败？
-                    // 参见：https://bugs.openjdk.java.net/browse/JDK-8202999
+                    // (它在 JDK 9 中已实现),如果以下方法失败?
+                    // 参见:https://bugs.openjdk.java.net/browse/JDK-8202999
                     return defineClass(className, resourceToClose.read(), (ProtectionDomain) null);
                 } catch (final IOException e) {
                     throw new ClassNotFoundException("Could not load ClassParser for class " + className + " : " + e);
@@ -242,7 +250,7 @@ public class ScanClassLoader extends ClassLoader {
 
         if (linkageError != null) {
             if (VersionFinder.OS == OperatingSystem.Windows) {
-                // LinkageError 表示找到了类文件，但无法加载该类
+                // LinkageError 表示找到了类文件,但无法加载该类
                 // 通过巧妙的方式检测 Windows 文件系统上存在两个大小写不敏感的同名类文件
                 // 的情况(#494)
                 final String msg = linkageError.getMessage();
@@ -303,8 +311,8 @@ public class ScanClassLoader extends ClassLoader {
             }
         }
 
-        // 如果上述尝试均失败，则尝试从 ScanResult 获取资源
-        // 如果 ScanResult 已关闭，这将抛出异常(#399)
+        // 如果上述尝试均失败,则尝试从 ScanResult 获取资源
+        // 如果 ScanResult 已关闭,这将抛出异常(#399)
         final ResourceList resourceList = scanResult.resources().getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return super.getResource(path);
@@ -340,13 +348,14 @@ public class ScanClassLoader extends ClassLoader {
             }
         }
 
-        // 如果上述尝试均失败，则尝试从 ScanResult 获取资源
-        // 如果 ScanResult 已关闭，这将抛出异常(#399)
+        // 如果上述尝试均失败,则尝试从 ScanResult 获取资源
+        // 如果 ScanResult 已关闭,这将抛出异常(#399)
         final ResourceList resourceList = scanResult.resources().getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return Collections.emptyEnumeration();
         } else {
             return new Enumeration<URL>() {
+
                 /** 索引 */
                 int idx;
 
@@ -390,8 +399,8 @@ public class ScanClassLoader extends ClassLoader {
             }
         }
 
-        // 如果上述尝试均失败，则尝试从 ScanResult 打开资源
-        // 如果 ScanResult 已关闭，这将抛出异常(#399)
+        // 如果上述尝试均失败,则尝试从 ScanResult 打开资源
+        // 如果 ScanResult 已关闭,这将抛出异常(#399)
         final ResourceList resourceList = scanResult.resources().getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return super.getResourceAsStream(path);

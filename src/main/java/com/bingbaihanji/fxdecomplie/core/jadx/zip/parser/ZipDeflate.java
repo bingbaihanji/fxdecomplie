@@ -9,6 +9,7 @@ import java.util.zip.InflaterInputStream;
 import static com.bingbaihanji.fxdecomplie.core.jadx.zip.parser.JadxZipParser.bufferToStream;
 
 final class ZipDeflate {
+
     private static final int BUFFER_SIZE = 4096;
 
     static byte[] decompressEntryToBytes(ByteBuffer buf, JadxZipEntry entry) throws DataFormatException {

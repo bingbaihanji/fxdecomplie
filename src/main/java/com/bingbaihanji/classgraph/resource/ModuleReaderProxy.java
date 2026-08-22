@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
@@ -11,14 +10,18 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-/** ModuleReader 代理，使用反射编写以保持与 JDK 7 和 8 的向后兼容性 */
+/** ModuleReader 代理,使用反射编写以保持与 JDK 7 和 8 的向后兼容性 */
 public class ModuleReaderProxy implements Closeable {
+
     /** Class<Collector> collectorClass = Class.forName("java.util.stream.Collector"); */
     private static Class<?> collectorClass;
+
     /** Collector<Object, ?, List<Object>> collectorsToList = Collectors.toList(); */
     private static Object collectorsToList;
+
     /** 模块读取器 */
     private final AutoCloseable moduleReader;
+
     private ReflectionUtils reflectionUtils;
 
     /**
@@ -63,10 +66,10 @@ public class ModuleReaderProxy implements Closeable {
     /**
      * 获取 ModuleReader 可访问的资源列表
      *
-     * 来自 ModuleReader#list() 的文档说明："元素的流是否包含与模块中目录相对应的名称取决于
-     * 具体的模块读取器实现在惰性实现中，当使用流列出模块内容时可能会抛出 IOException
-     * 如果发生这种情况，IOException 将被包装在 java.io.UncheckedIOException 中，
-     * 并从导致访问尝试的方法中抛出当使用流列出模块内容且安全管理器拒绝访问时，
+     * 来自 ModuleReader#list() 的文档说明:"元素的流是否包含与模块中目录相对应的名称取决于
+     * 具体的模块读取器实现在惰性实现中,当使用流列出模块内容时可能会抛出 IOException
+     * 如果发生这种情况,IOException 将被包装在 java.io.UncheckedIOException 中,
+     * 并从导致访问尝试的方法中抛出当使用流列出模块内容且安全管理器拒绝访问时,
      * 也可能抛出 SecurityException"
      *
      * @return 模块中资源路径的列表
@@ -87,7 +90,8 @@ public class ModuleReaderProxy implements Closeable {
         if (resourcesList == null) {
             throw new IllegalArgumentException("无法调用 moduleReader.list().collect(Collectors.toList())");
         }
-        @SuppressWarnings("unchecked") final List<String> resourcesListTyped = (List<String>) resourcesList;
+        @SuppressWarnings("unchecked")
+        final List<String> resourcesListTyped = (List<String>) resourcesList;
         return resourcesListTyped;
     }
 

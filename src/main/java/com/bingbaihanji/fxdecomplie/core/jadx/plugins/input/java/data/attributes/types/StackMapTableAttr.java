@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Map;
 
 public class StackMapTableAttr implements IJavaAttribute {
+
     public static final StackMapTableAttr EMPTY = new StackMapTableAttr(Collections.emptyMap());
 
     private final Map<Integer, StackFrame> map;

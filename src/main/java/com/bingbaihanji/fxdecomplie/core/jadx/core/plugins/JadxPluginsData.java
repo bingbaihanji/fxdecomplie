@@ -9,6 +9,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 public class JadxPluginsData implements IJadxPlugins {
 
     private final JadxDecompiler decompiler;
+
     private final JadxPluginManager pluginManager;
 
     public JadxPluginsData(JadxDecompiler decompiler, JadxPluginManager pluginManager) {

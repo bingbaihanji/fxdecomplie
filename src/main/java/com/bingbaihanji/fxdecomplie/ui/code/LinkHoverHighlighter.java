@@ -30,30 +30,41 @@ final class LinkHoverHighlighter {
                     + "|(?<NUMBER>\\b\\d+\\.?\\d*[fFlLdD]?\\b)"
                     + "|(?<IDENTIFIER>\\b[a-zA-Z_][a-zA-Z0-9_]*\\b)"
     );
+
     private static final String PROPERTY_KEY = "fxdecomplie.linkHoverHighlighter";
+
     private static final StyleAttributeMap LINK_STYLE = StyleAttributeMap.builder()
             .setTextColor(Color.web("#4fc1ff"))
             .setUnderline(true)
             .build();
 
     private final CodeArea codeArea;
+
     private final RegexHighlighter baseHighlighter;
+
     private final javafx.event.EventHandler<KeyEvent> keyPressedHandler = event -> {
         if (event.isControlDown()) {
             ctrlDown = true;
         }
     };
+
     private final javafx.event.EventHandler<MouseEvent> mouseMovedHandler = this::handleMouseMoved;
+
     private final javafx.event.EventHandler<MouseEvent> mouseExitedHandler = event -> clearHover();
+
     private final javafx.event.EventHandler<KeyEvent> keyReleasedHandler = event -> {
         if (!event.isControlDown()) {
             ctrlDown = false;
             clearHover();
         }
     };
+
     private boolean ctrlDown;
+
     private int hoverStart = -1;
+
     private int hoverEnd = -1;
+
     private boolean disposed;
 
     private LinkHoverHighlighter(CodeArea codeArea, RegexHighlighter baseHighlighter) {
@@ -148,7 +159,9 @@ final class LinkHoverHighlighter {
     private static final class LinkSyntaxDecorator implements SyntaxDecorator {
 
         private final RegexHighlighter highlighter;
+
         private final int linkStart;
+
         private final int linkEnd;
 
         LinkSyntaxDecorator(RegexHighlighter highlighter, int linkStart, int linkEnd) {

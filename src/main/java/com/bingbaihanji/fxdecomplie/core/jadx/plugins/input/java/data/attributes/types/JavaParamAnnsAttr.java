@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class JavaParamAnnsAttr implements IJavaAttribute {
+
     private final List<List<IAnnotation>> list;
 
     public JavaParamAnnsAttr(List<List<IAnnotation>> list) {

@@ -24,8 +24,10 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
 
     /** 包(文件夹)图标 */
     private static final Image PACKAGE_ICON = loadIcon("/icon/package.png");
+
     /** 字节码(.class)图标 */
     private static final Image CLASS_FILE_ICON = loadIcon("/icon/javabytecode.png");
+
     private final Function<FileTreeNode, String> displayNameProvider;
 
     /**
@@ -54,7 +56,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
         this.iconView.setFitHeight(ICON_SIZE);
         this.iconView.setPreserveRatio(true);
         this.iconView.setSmooth(true);
-        // 开启位图缓存：滚动时复用已渲染的像素快照,减少重绘开销
+        // 开启位图缓存:滚动时复用已渲染的像素快照,减少重绘开销
         setCache(true);
     }
 

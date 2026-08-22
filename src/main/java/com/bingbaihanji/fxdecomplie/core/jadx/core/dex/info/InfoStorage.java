@@ -9,9 +9,12 @@ import java.util.Map;
 public class InfoStorage {
 
     private final Map<ArgType, ClassInfo> classes = new HashMap<>();
+
     private final Map<FieldInfo, FieldInfo> fields = new HashMap<>();
+
     // use only one MethodInfo instance
     private final Map<MethodInfo, MethodInfo> uniqueMethods = new HashMap<>();
+
     // can contain same method with different ids (from different files)
     private final Map<Integer, MethodInfo> methods = new HashMap<>();
 

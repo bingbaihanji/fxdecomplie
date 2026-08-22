@@ -13,7 +13,8 @@ public class ConstValueAttr implements IJavaAttribute {
     }
 
     public static IJavaAttributeReader reader() {
-        return (clsData, reader) -> new ConstValueAttr(clsData.getConstPoolReader().readAsEncodedValue(reader.readU2()));
+        return (clsData, reader) -> new ConstValueAttr(clsData.getConstPoolReader()
+                .readAsEncodedValue(reader.readU2()));
     }
 
     public EncodedValue getValue() {

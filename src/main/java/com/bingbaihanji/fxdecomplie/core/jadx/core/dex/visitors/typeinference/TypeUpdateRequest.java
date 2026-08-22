@@ -5,9 +5,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg
 import org.jetbrains.annotations.Nullable;
 
 public class TypeUpdateRequest {
+
     private final InsnArg arg;
+
     private final ArgType candidateType;
+
     private final boolean direct;
+
     private final @Nullable ITypeUpdateCallback callback;
 
     public TypeUpdateRequest(InsnArg arg, ArgType candidateType, boolean direct, @Nullable ITypeUpdateCallback callback) {

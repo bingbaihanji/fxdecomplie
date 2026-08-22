@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.service.decompile;
 import java.util.Optional;
 
 /**
- * 代码缓存存储抽象 — L2（内存）和 L3（磁盘）的统一接口。
+ * 代码缓存存储抽象 — L2(内存)和 L3(磁盘)的统一接口.
  *
  * @author bingbaihanji
  * @date 2026-07-26

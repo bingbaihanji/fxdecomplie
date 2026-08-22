@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.zip.parser;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.zip.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.zip.IZipEntry;
+import com.bingbaihanji.fxdecomplie.core.jadx.zip.IZipParser;
+import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipContent;
+import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReaderFlags;
+import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReaderOptions;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.fallback.FallbackZipParser;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.io.ByteBufferBackedInputStream;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.io.LimitedInputStream;
@@ -30,22 +34,33 @@ import java.util.Set;
  * - Multi file archives
  */
 public final class JadxZipParser implements IZipParser {
+
     private static final Logger LOG = LoggerFactory.getLogger(JadxZipParser.class);
 
     private static final byte LOCAL_FILE_HEADER_START = 0x50;
+
     private static final int LOCAL_FILE_HEADER_SIGN = 0x04034b50;
+
     private static final int CD_SIGN = 0x02014b50;
+
     private static final int END_OF_CD_SIGN = 0x06054b50;
 
     private final File zipFile;
+
     private final ZipReaderOptions options;
+
     private final IJadxZipSecurity zipSecurity;
+
     private final Set<ZipReaderFlags> flags;
+
     private final boolean verify;
+
     private final boolean useLimitedDataStream;
 
     private @Nullable RandomAccessFile file;
+
     private @Nullable FileChannel fileChannel;
+
     private @Nullable ByteBuffer byteBuffer;
 
     private int endOfCDStart = -2;
@@ -203,7 +218,7 @@ public final class JadxZipParser implements IZipParser {
                 byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
             }
         } finally {
-            // 小文件路径：关闭 RAF 大文件路径：file 字段持有引用，延迟关闭
+            // 小文件路径:关闭 RAF 大文件路径:file 字段持有引用,延迟关闭
             if (file != raFile) {
                 raFile.close();
             }

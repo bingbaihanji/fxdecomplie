@@ -2,10 +2,13 @@ package com.bingbaihanji.fxdecomplie.util.value.impl;
 
 import com.bingbaihanji.fxdecomplie.model.Nullness;
 import com.bingbaihanji.fxdecomplie.util.reflect.asm.Types;
-import com.bingbaihanji.fxdecomplie.util.value.*;
-
+import com.bingbaihanji.fxdecomplie.util.value.ArrayValue;
+import com.bingbaihanji.fxdecomplie.util.value.IllegalValueException;
+import com.bingbaihanji.fxdecomplie.util.value.ObjectValue;
+import com.bingbaihanji.fxdecomplie.util.value.ReValue;
+import com.bingbaihanji.fxdecomplie.util.value.UncheckedFunction;
+import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 import org.objectweb.asm.Type;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +23,13 @@ import java.util.function.IntFunction;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class ArrayValueImpl implements ArrayValue {
+
     private final Type type;
+
     private final Nullness nullness;
+
     private final OptionalInt length;
+
     private final List<ReValue> contents;
 
     /**
@@ -86,7 +93,7 @@ public class ArrayValueImpl implements ArrayValue {
                 contents.add(indexValueFunction.apply(i));
             }
         } else {
-            // 数组长度为负数因此存在两种可能：
+            // 数组长度为负数因此存在两种可能:
             // - 我们的栈求值存在 bug
             // - 我们正在分析故意抛出异常的混淆代码
             this.length = OptionalInt.empty();
@@ -117,7 +124,7 @@ public class ArrayValueImpl implements ArrayValue {
             return copy;
         }
 
-        // 值未知，因此无需创建副本
+        // 值未知,因此无需创建副本
         return this;
     }
 
@@ -127,12 +134,12 @@ public class ArrayValueImpl implements ArrayValue {
             for (int i = 0; i < contents.size(); i++) {
                 ReValue content = contents.get(i);
 
-                // 情形 1：该值是此数组中的直接条目
+                // 情形 1:该值是此数组中的直接条目
                 if (content == originalValue) {
                     return setValue(i, updatedValue);
                 }
 
-                // 情形 2：此数组是多维的，该值位于嵌套的子数组中
+                // 情形 2:此数组是多维的,该值位于嵌套的子数组中
                 else if (content instanceof ArrayValue subArray) {
                     ArrayValue updatedSubArray = subArray.updatedCopyIfContained(originalValue, updatedValue);
                     if (subArray != updatedSubArray) {
@@ -142,7 +149,7 @@ public class ArrayValueImpl implements ArrayValue {
             }
         }
 
-        // 未包含该值，无需改动
+        // 未包含该值,无需改动
         return this;
     }
 
@@ -155,7 +162,8 @@ public class ArrayValueImpl implements ArrayValue {
     public boolean hasKnownValue() {
         return nullness == Nullness.NOT_NULL
                 && length.isPresent()
-                && contents != null && contents.stream().allMatch(v -> v.hasKnownValue() || v instanceof ObjectValue ro && ro.isNull());
+                && contents != null && contents.stream()
+                .allMatch(v -> v.hasKnownValue() || v instanceof ObjectValue ro && ro.isNull());
     }
 
     @Override
@@ -238,6 +246,7 @@ public class ArrayValueImpl implements ArrayValue {
     }
 
     private record ConstProvider(ReValue defaultValue) implements IntFunction<ReValue> {
+
         @Override
         public ReValue apply(int value) {
             return defaultValue;

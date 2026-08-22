@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
 /**
- * 反编译失败原因分类 — 替代字符串匹配判断。
+ * 反编译失败原因分类 — 替代字符串匹配判断.
  *
  * @author bingbaihanji
  * @date 2026-07-26

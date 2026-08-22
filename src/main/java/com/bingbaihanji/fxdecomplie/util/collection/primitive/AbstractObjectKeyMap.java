@@ -16,6 +16,7 @@ import java.util.Objects;
 abstract class AbstractObjectKeyMap<K> {
 
     // ---------- 常量 ----------
+
     /** 默认初始容量(必须为 2 的幂) */
     protected static final int DEFAULT_CAPACITY = 16;
 
@@ -23,6 +24,7 @@ abstract class AbstractObjectKeyMap<K> {
     protected static final float LOAD_FACTOR = 0.75f;
 
     // ---------- 字段 ----------
+
     /** 存储键的数组(元素类型为 Object) */
     protected Object[] keys;
 
@@ -169,7 +171,7 @@ abstract class AbstractObjectKeyMap<K> {
     // ---------- 私有辅助方法 ----------
 
     /**
-     * 删除操作后的“闭合删除”处理 
+     * 删除操作后的"闭合删除"处理 
      * 从被删除位置开始向后扫描,将后续冲突元素前移,并清空最后一个被移动的位置 
      *
      * @param deletedIndex 被删除元素的起始索引

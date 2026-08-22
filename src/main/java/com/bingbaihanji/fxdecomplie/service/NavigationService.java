@@ -1,6 +1,11 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.ClassPathNode;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.PathNode;
+import com.bingbaihanji.fxdecomplie.model.ResourcePathNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspacePathNode;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -16,8 +21,10 @@ public final class NavigationService {
 
     /** 后退导航历史(LIFO 栈) */
     private final Deque<PathNode<?>> backStack = new ArrayDeque<>();
+
     /** 前进导航历史(新导航时清空) */
     private final Deque<PathNode<?>> forwardStack = new ArrayDeque<>();
+
     /** 当前活跃的导航路径 */
     private PathNode<?> currentPath;
 
@@ -85,7 +92,7 @@ public final class NavigationService {
     }
 
     /**
-     * 核心导航方法：解析路径节点并打开对应的类/资源文件
+     * 核心导航方法:解析路径节点并打开对应的类/资源文件
      * 在锁内更新状态,在锁外调用回调,避免回调重入导致死锁或状态不一致
      *
      * @param path           目标路径节点

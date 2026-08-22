@@ -8,7 +8,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfCondition;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfInfo;
@@ -23,13 +27,20 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.*;
 
 final class IfRegionMaker {
+
     private static final Logger LOG = LoggerFactory.getLogger(IfRegionMaker.class);
+
     private final MethodNode mth;
+
     private final RegionMaker regionMaker;
 
     IfRegionMaker(MethodNode mth, RegionMaker regionMaker) {

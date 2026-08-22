@@ -9,23 +9,26 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import java.util.Objects;
 
 /**
- * 字段信息类，表示 DEX 字节码中一个字段的完整描述信息
+ * 字段信息类,表示 DEX 字节码中一个字段的完整描述信息
  * 包含字段所属类 字段名 字段类型以及可选的别名
- * 实现了 {@link IFieldInfoRef} 接口，作为字段信息的统一引用
+ * 实现了 {@link IFieldInfoRef} 接口,作为字段信息的统一引用
  */
 public final class FieldInfo implements IFieldInfoRef {
 
     /** 字段所属的类信息 */
     private final ClassInfo declClass;
+
     /** 字段名称 */
     private final String name;
+
     /** 字段类型 */
     private final ArgType type;
-    /** 字段别名 (用于重命名后的显示，默认与字段名相同) */
+
+    /** 字段别名 (用于重命名后的显示,默认与字段名相同) */
     private String alias;
 
     /**
-     * 私有构造方法，通过所属类 字段名和类型创建字段信息实例
+     * 私有构造方法,通过所属类 字段名和类型创建字段信息实例
      *
      * @param declClass 字段所属的类信息
      * @param name      字段名称
@@ -40,9 +43,9 @@ public final class FieldInfo implements IFieldInfoRef {
 
     /**
      * 根据类信息 字段名和类型创建或获取已有的字段信息实例
-     * 通过根节点的信息存储进行去重，确保相同字段只存在一个实例
+     * 通过根节点的信息存储进行去重,确保相同字段只存在一个实例
      *
-     * @param root      根节点，用于获取信息存储
+     * @param root      根节点,用于获取信息存储
      * @param declClass 字段所属的类信息
      * @param name      字段名称
      * @param type      字段类型
@@ -57,7 +60,7 @@ public final class FieldInfo implements IFieldInfoRef {
      * 根据字段引用创建或获取已有的字段信息实例
      * 从 {@link IFieldRef} 中解析出类信息 字段名和类型
      *
-     * @param root     根节点，用于获取信息存储
+     * @param root     根节点,用于获取信息存储
      * @param fieldRef 字段引用接口
      * @return 字段信息实例
      */
@@ -92,7 +95,7 @@ public final class FieldInfo implements IFieldInfoRef {
         this.alias = alias;
     }
 
-    /** 移除字段别名，恢复为原始字段名 */
+    /** 移除字段别名,恢复为原始字段名 */
     public void removeAlias() {
         this.alias = name;
     }
@@ -103,7 +106,7 @@ public final class FieldInfo implements IFieldInfoRef {
     }
 
     /**
-     * 获取字段的完整标识符，格式为：全限定类名.字段名:类型签名
+     * 获取字段的完整标识符,格式为:全限定类名.字段名:类型签名
      *
      * @return 字段完整标识符字符串
      */
@@ -112,7 +115,7 @@ public final class FieldInfo implements IFieldInfoRef {
     }
 
     /**
-     * 获取字段的短标识符，格式为：字段名:类型签名 (不含类名)
+     * 获取字段的短标识符,格式为:字段名:类型签名 (不含类名)
      *
      * @return 字段短标识符字符串
      */
@@ -121,8 +124,8 @@ public final class FieldInfo implements IFieldInfoRef {
     }
 
     /**
-     * 获取字段的原始完整标识符 (使用原始类型名称，未经过泛型擦除)，
-     * 格式为：原始全限定类名.字段名:类型签名
+     * 获取字段的原始完整标识符 (使用原始类型名称,未经过泛型擦除),
+     * 格式为:原始全限定类名.字段名:类型签名
      *
      * @return 字段原始完整标识符字符串
      */
@@ -140,7 +143,7 @@ public final class FieldInfo implements IFieldInfoRef {
         return name.equals(other.name) && type.equals(other.type);
     }
 
-    /** 实现 {@link IFieldInfoRef} 接口，返回自身实例 */
+    /** 实现 {@link IFieldInfoRef} 接口,返回自身实例 */
     @Override
     public FieldInfo getFieldInfo() {
         return this;
@@ -148,7 +151,7 @@ public final class FieldInfo implements IFieldInfoRef {
 
     /**
      * 判断两个字段信息是否相等
-     * 当所属类 字段名和字段类型都相同时，认为两个字段相等
+     * 当所属类 字段名和字段类型都相同时,认为两个字段相等
      */
     @Override
     public boolean equals(Object o) {
@@ -173,7 +176,7 @@ public final class FieldInfo implements IFieldInfoRef {
         return result;
     }
 
-    /** 返回字段的可读字符串表示，格式为：所属类.字段名 字段类型 */
+    /** 返回字段的可读字符串表示,格式为:所属类.字段名 字段类型 */
     @Override
     public String toString() {
         return declClass + "." + name + ' ' + type;

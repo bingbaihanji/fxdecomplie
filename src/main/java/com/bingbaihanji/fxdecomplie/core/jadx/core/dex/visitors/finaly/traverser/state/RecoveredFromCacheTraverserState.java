@@ -57,6 +57,7 @@ public final class RecoveredFromCacheTraverserState extends TraverserState {
     }
 
     private static final class RecoveredFromCacheStateFactory extends TraverserStateFactory<RecoveredFromCacheTraverserState> {
+
         private final TraverserState underlying;
 
         private RecoveredFromCacheStateFactory(TraverserState underlying) {

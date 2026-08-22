@@ -8,7 +8,12 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 大纲方法实现查询服务 —— 查找接口/抽象类方法的所有实现/重写
@@ -22,6 +27,7 @@ import java.util.*;
 public final class OutlineService {
 
     private static final Logger log = LoggerFactory.getLogger(OutlineService.class);
+
     private static final int MAX_IMPLEMENTATIONS = 50;
 
     private OutlineService() {
@@ -230,7 +236,7 @@ public final class OutlineService {
     }
 
     /**
-     * 结果记录：某个方法在特定实现类中的位置信息
+     * 结果记录:某个方法在特定实现类中的位置信息
      *
      * @param implementingClass 实现类内部名称(如 com/example/UserServiceImpl)
      * @param classPath         实现类文件路径

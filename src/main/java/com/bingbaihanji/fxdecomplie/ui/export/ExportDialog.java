@@ -8,7 +8,14 @@ import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -207,7 +214,7 @@ public final class ExportDialog {
         return null;
     }
 
-    /** 格式切换时自动调整路径：ZIP→DIR 去掉 .zip 后缀,DIR→ZIP 加上 .zip */
+    /** 格式切换时自动调整路径:ZIP→DIR 去掉 .zip 后缀,DIR→ZIP 加上 .zip */
     private static String switchPathFormat(String currentPath, ExportConfig.Format newFormat) {
         if (currentPath == null || currentPath.isBlank()) {
             return currentPath;
@@ -267,11 +274,16 @@ public final class ExportDialog {
 
     /** 导出进度控制器,封装对话框的进度更新和取消逻辑 */
     public static final class ProgressHandle {
+
         private final Dialog<Void> dialog;
+
         private final ProgressBar progressBar;
+
         private final Label currentFileLabel;
+
         private Runnable onCancel = () -> {
         };
+
         /** 正常完成关闭标记,防止 setOnCloseRequest 误触发取消 UI */
         private boolean closing;
 

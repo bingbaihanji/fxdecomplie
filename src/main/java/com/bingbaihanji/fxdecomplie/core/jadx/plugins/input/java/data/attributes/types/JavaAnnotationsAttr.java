@@ -9,7 +9,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.ConstPoolReader;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.DataReader;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.JavaClassData;
-import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.EncodedValueReader;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.IJavaAttribute;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.IJavaAttributeReader;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.JavaAttrStorage;
+import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes.JavaAttrType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 public class JavaAnnotationsAttr implements IJavaAttribute {
+
     private final List<IAnnotation> list;
 
     public JavaAnnotationsAttr(List<IAnnotation> list) {

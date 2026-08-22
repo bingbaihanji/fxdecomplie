@@ -10,19 +10,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 /**
- * 扫描上下文 — 在管道各步骤间传递共享状态。
+ * 扫描上下文 — 在管道各步骤间传递共享状态.
  *
- * <p>线程安全。管道执行期间由 {@link ScanPipeline} 创建和管理。
- * 支持通过类型安全的键存储和检索任意中间结果。</p>
+ * <p>线程安全.管道执行期间由 {@link ScanPipeline} 创建和管理.
+ * 支持通过类型安全的键存储和检索任意中间结果.</p>
  */
 public class ScanContext {
 
     private final ScanOptions options;
+
     private final ExecutorService executor;
+
     private final InterruptionChecker interruptionChecker;
+
     private final int numParallelTasks;
+
     private final LogNode log;
+
     private final ConcurrentMap<String, Object> attributes;
+
     private volatile boolean cancelled;
 
     /**
@@ -47,21 +53,25 @@ public class ScanContext {
 
     // ─── 访问器 ───
 
-    public ScanOptions options() { return options; }
-    public ExecutorService executor() { return executor; }
-    public InterruptionChecker interruptionChecker() { return interruptionChecker; }
-    public int numParallelTasks() { return numParallelTasks; }
-    public LogNode log() { return log; }
+    public ScanOptions options() {return options;}
+
+    public ExecutorService executor() {return executor;}
+
+    public InterruptionChecker interruptionChecker() {return interruptionChecker;}
+
+    public int numParallelTasks() {return numParallelTasks;}
+
+    public LogNode log() {return log;}
 
     // ─── 中间结果存储 ───
 
     /**
-     * 存储任意中间结果。
+     * 存储任意中间结果.
      *
-     * @param key   键（建议使用 {@code StepName.result} 命名约定）
+     * @param key   键(建议使用 {@code StepName.result} 命名约定)
      * @param value 值
      * @param <T>   值类型
-     * @return 之前与此键关联的值，或 null
+     * @return 之前与此键关联的值,或 null
      */
     @SuppressWarnings("unchecked")
     public <T> T put(String key, T value) {
@@ -69,11 +79,11 @@ public class ScanContext {
     }
 
     /**
-     * 检索中间结果。
+     * 检索中间结果.
      *
      * @param key 键
      * @param <T> 期望的类型
-     * @return 值，或 null
+     * @return 值,或 null
      */
     @SuppressWarnings("unchecked")
     public <T> T get(String key) {
@@ -81,23 +91,23 @@ public class ScanContext {
     }
 
     /**
-     * 检索中间结果，如果不存在则抛出异常。
+     * 检索中间结果,如果不存在则抛出异常.
      */
     @SuppressWarnings("unchecked")
     public <T> T getOrThrow(String key) {
         T value = (T) attributes.get(key);
         if (value == null) {
             throw new IllegalStateException(
-                "Required context attribute not found: " + key);
+                    "Required context attribute not found: " + key);
         }
         return value;
     }
 
     /** 检查是否已取消 */
-    public boolean isCancelled() { return cancelled; }
+    public boolean isCancelled() {return cancelled;}
 
     /** 取消扫描 */
-    public void cancel() { this.cancelled = true; }
+    public void cancel() {this.cancelled = true;}
 
     /** 检查中断并抛出 */
     public void checkInterrupted() throws InterruptedException, ExecutionException {

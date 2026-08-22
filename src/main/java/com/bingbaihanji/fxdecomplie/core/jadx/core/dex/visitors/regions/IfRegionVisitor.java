@@ -19,7 +19,9 @@ import java.util.List;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.RegionUtils.insnsCount;
 
 public class IfRegionVisitor extends AbstractVisitor {
+
     private static final ProcessIfRegionVisitor PROCESS_IF_REGION_VISITOR = new ProcessIfRegionVisitor();
+
     private static final RemoveRedundantElseVisitor REMOVE_REDUNDANT_ELSE_VISITOR = new RemoveRedundantElseVisitor();
 
     public static void processIfRequested(MethodNode mth) {
@@ -206,6 +208,7 @@ public class IfRegionVisitor extends AbstractVisitor {
     }
 
     private static class ProcessIfRegionVisitor extends AbstractRegionVisitor {
+
         @Override
         public boolean enterRegion(MethodNode mth, IRegion region) {
             if (region instanceof IfRegion) {
@@ -218,6 +221,7 @@ public class IfRegionVisitor extends AbstractVisitor {
     }
 
     private static class RemoveRedundantElseVisitor implements IRegionIterativeVisitor {
+
         @Override
         public boolean visitRegion(MethodNode mth, IRegion region) {
             if (region instanceof IfRegion) {

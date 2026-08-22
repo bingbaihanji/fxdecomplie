@@ -28,6 +28,7 @@ public record InheritanceReferenceNode(
         String ownerClassName,
         int lineNumber
 ) {
+
     /**
      * 向后兼容构造器 —— 类级别节点,无方法信息
      */

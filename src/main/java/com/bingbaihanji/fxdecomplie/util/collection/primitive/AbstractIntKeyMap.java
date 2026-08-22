@@ -13,6 +13,7 @@ import java.util.Arrays;
 abstract class AbstractIntKeyMap {
 
     // ---------- 常量 ----------
+
     /** 默认初始容量(必须为 2 的幂) */
     protected static final int DEFAULT_CAPACITY = 16;
 
@@ -20,6 +21,7 @@ abstract class AbstractIntKeyMap {
     protected static final float LOAD_FACTOR = 0.75f;
 
     // ---------- 字段 ----------
+
     /** 存储键的数组 */
     protected int[] keys;
 
@@ -104,7 +106,7 @@ abstract class AbstractIntKeyMap {
 
     /**
      * 清空所有键(逻辑清除),仅重置 size 并将占用标记置为 false 
-     * 注意：不会释放数组空间 
+     * 注意:不会释放数组空间 
      */
     protected final void clearKeys() {
         size = 0;
@@ -168,7 +170,7 @@ abstract class AbstractIntKeyMap {
     // ---------- 私有辅助方法 ----------
 
     /**
-     * 删除操作后的“闭合删除”处理 
+     * 删除操作后的"闭合删除"处理 
      * 从被删除位置开始向后扫描,将后续冲突元素前移,并清空最后一个被移动的位置 
      *
      * @param deletedIndex 被删除元素的起始索引

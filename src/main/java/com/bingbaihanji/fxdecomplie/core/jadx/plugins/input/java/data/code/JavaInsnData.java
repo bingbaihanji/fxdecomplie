@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICallSite;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodHandle;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodProto;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodRef;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.InsnData;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.InsnIndexType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.Opcode;
@@ -15,18 +19,31 @@ public class JavaInsnData implements InsnData {
     private final CodeDecodeState state;
 
     private JavaInsnInfo insnInfo;
+
     private Opcode opcode;
+
     private boolean decoded;
+
     private int opcodeUnit;
+
     private int payloadSize;
+
     private int insnStart;
+
     private int offset;
+
     private int regsCount;
+
     private int[] argsReg = new int[16];
+
     private int resultReg;
+
     private long literal;
+
     private int target;
+
     private int index;
+
     @Nullable
     private ICustomPayload payload;
 

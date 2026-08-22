@@ -7,7 +7,7 @@ import java.util.Objects;
  * ArrayMap 底层工具类
  *
  * <p>
- * 提供：
+ * 提供:
  * <ul>
  *     <li>二分查找</li>
  *     <li>空安全对象比较</li>
@@ -38,7 +38,7 @@ public final class ContainerHelpers {
     /**
      * 对 int 数组进行二分查找
      *
-     * <p>返回值与 {@link Arrays#binarySearch(int[], int, int, int)} 完全一致：
+     * <p>返回值与 {@link Arrays#binarySearch(int[], int, int, int)} 完全一致:
      *
      * <pre>
      * >=0   找到元素索引
@@ -69,7 +69,7 @@ public final class ContainerHelpers {
      * 根据当前容量计算下一次扩容后的建议容量
      *
      * <p>
-     * 增长策略(入参为当前容量,返回扩容后的新容量)：
+     * 增长策略(入参为当前容量,返回扩容后的新容量):
      *
      * <pre>
      * ≤ 0    -> 4              (BASE_SIZE,首次分配)
@@ -78,7 +78,7 @@ public final class ContainerHelpers {
      * </pre>
      *
      * <p>
-     * Android 原版按 {@code 4 8 12 18……} 固定步长增长 JVM 上改用 1.5 倍增长,可在批量写入时摊薄数组复制次数
+     * Android 原版按 {@code 4 8 12 18......} 固定步长增长 JVM 上改用 1.5 倍增长,可在批量写入时摊薄数组复制次数
      *
      * @param currentCapacity 当前容量
      * @return 扩容后的新容量
@@ -151,7 +151,7 @@ public final class ContainerHelpers {
     /**
      * 将 key 存放在 Object[] 中的位置
      *
-     * 每个 Entry 占两个槽：
+     * 每个 Entry 占两个槽:
      *
      * <pre>
      * key0 value0

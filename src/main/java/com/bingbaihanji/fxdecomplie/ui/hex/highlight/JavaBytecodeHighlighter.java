@@ -8,13 +8,13 @@ import javafx.scene.paint.Color;
 /**
  * 识别并高亮 Java {@code .class} 文件结构的 {@link BuiltinHighlighter} 实现 
  * <p>
- * 参照《Java 虚拟机规范》§4 定义的类文件格式,对以下结构进行颜色标记：
+ * 参照《Java 虚拟机规范》§4 定义的类文件格式,对以下结构进行颜色标记:
  * <ul>
  *   <li>魔数(Magic)</li>
  *   <li>次/主版本号</li>
  *   <li>常量池(Constant Pool)及其各项条目</li>
  *   <li>访问标志(Access Flags)</li>
- *   <li>当前类、父类、接口列表</li>
+ *   <li>当前类,父类,接口列表</li>
  *   <li>字段(Fields)和属性(Attributes)</li>
  *   <li>方法(Methods)和属性</li>
  *   <li>类级属性</li>

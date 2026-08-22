@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.scan.ScanResult;
@@ -11,16 +10,17 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 保存数组类的元数据此类扩展了 {@link ClassInfo}，添加了与数组类相关的额外方法，特别是
- * {@link #getArrayType()}、{@link #getTypeSignatureStr()}、
- * {@link #getElementTypeSignature()}、{@link #getElementClassInfo()}、{@link #loadElementClass()} 和
+ * 保存数组类的元数据此类扩展了 {@link ClassInfo},添加了与数组类相关的额外方法,特别是
+ * {@link #getArrayType()},{@link #getTypeSignatureStr()},
+ * {@link #getElementTypeSignature()},{@link #getElementClassInfo()},{@link #loadElementClass()} 和
  * {@link #getNumDimensions()}
  *
  * <p>
- * {@link ArrayClassInfo} 对象不会有任何方法、字段或注解
- * 对于 {@link ClassInfo} 的这个子类，{@link ClassInfo#isArrayClass()} 将返回 true
+ * {@link ArrayClassInfo} 对象不会有任何方法,字段或注解
+ * 对于 {@link ClassInfo} 的这个子类,{@link ClassInfo#isArrayClass()} 将返回 true
  */
 public class ArrayClassInfo extends ClassInfo {
+
     /** 数组类型签名 */
     private ArrayType ArrayType;
 
@@ -56,7 +56,7 @@ public class ArrayClassInfo extends ClassInfo {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取数组类的原始类型签名字符串，例如 "[[I" 表示 "int[][]"
+     * 获取数组类的原始类型签名字符串,例如 "[[I" 表示 "int[][]"
      *
      * @return 数组类的原始类型签名字符串
      */
@@ -66,7 +66,7 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /**
-     * 返回 null，因为数组类没有 ClassType请改用 {@link #getArrayType()}
+     * 返回 null,因为数组类没有 ClassType请改用 {@link #getArrayType()}
      *
      * @return null(始终)
      */
@@ -78,7 +78,7 @@ public class ArrayClassInfo extends ClassInfo {
     /**
      * 获取类的类型签名
      *
-     * @return 类的类型签名(如果可用)，否则返回 null
+     * @return 类的类型签名(如果可用),否则返回 null
      */
     public ArrayType getArrayType() {
         return ArrayType;
@@ -107,8 +107,8 @@ public class ArrayClassInfo extends ClassInfo {
     /**
      * 获取数组元素类型的 {@link ClassInfo} 实例
      *
-     * @return 数组元素类型的 {@link ClassInfo} 实例如果在扫描期间未找到元素类型，则返回 null
-     *         特别是，对于具有基本类型元素的数组将返回 null
+     * @return 数组元素类型的 {@link ClassInfo} 实例如果在扫描期间未找到元素类型,则返回 null
+     *         特别是,对于具有基本类型元素的数组将返回 null
      */
     public ClassInfo getElementClassInfo() {
         if (elementClassInfo == null) {
@@ -133,7 +133,7 @@ public class ArrayClassInfo extends ClassInfo {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载，会导致 ClassLoader 加载它
+     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载,会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
      *            是否忽略异常
@@ -144,7 +144,7 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /**
-     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载，会导致 ClassLoader 加载它
+     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载,会导致 ClassLoader 加载它
      *
      * @return 数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
@@ -153,12 +153,12 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /**
-     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载,
      * 会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
      *            是否忽略异常
-     * @return 类引用，如果 ignoreExceptions 为 true 且在加载类时发生了异常或错误，则返回 null
+     * @return 类引用,如果 ignoreExceptions 为 true 且在加载类时发生了异常或错误,则返回 null
      * @throws IllegalArgumentException
      *             如果 ignoreExceptions 为 false 且加载类时出现问题
      */
@@ -171,7 +171,7 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /**
-     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载,
      * 会导致 ClassLoader 加载它
      *
      * @return 类引用

@@ -8,7 +8,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IFieldInfoRef;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BetterName;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.EntryConfig;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.RawNamedValue;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.RawValue;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ValuesParser;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,19 +21,30 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.StringJoiner;
 
 public class ResTableBinaryParser extends CommonBinaryParser implements IResTableParser {
+
     private static final Logger LOG = LoggerFactory.getLogger(ResTableBinaryParser.class);
+
     private static final ResourceEntry STUB_ENTRY = new ResourceEntry(-1, "stub", "stub", "stub", "");
+
     /**
      * No renaming, pattern checking or name generation. Required for res-map.txt building
      */
     private final boolean useRawResName;
+
     private final RootNode root;
 
     private ResourceStorage resStorage;
+
     private BinaryXMLStrings strings;
+
     private String baseFileName = "";
 
     public ResTableBinaryParser(RootNode root) {
@@ -568,9 +583,13 @@ public class ResTableBinaryParser extends CommonBinaryParser implements IResTabl
     }
 
     private static final class PackageChunk {
+
         private final int id;
+
         private final String name;
+
         private final BinaryXMLStrings typeStrings;
+
         private final BinaryXMLStrings keyStrings;
 
         private PackageChunk(int id, String name, BinaryXMLStrings typeStrings, BinaryXMLStrings keyStrings) {
@@ -598,7 +617,9 @@ public class ResTableBinaryParser extends CommonBinaryParser implements IResTabl
     }
 
     private static class EntryOffset {
+
         private final int idx;
+
         private final int offset;
 
         private EntryOffset(int idx, int offset) {

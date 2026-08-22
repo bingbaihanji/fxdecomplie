@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class BoxedFloatValueImpl extends ObjectValueBoxImpl<Float> {
+
     private static final Type TYPE = Type.getType(Float.class);
 
     /**

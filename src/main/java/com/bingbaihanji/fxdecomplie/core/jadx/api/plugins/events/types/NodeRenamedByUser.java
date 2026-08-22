@@ -9,7 +9,9 @@ import org.jetbrains.annotations.Nullable;
 public class NodeRenamedByUser implements IJadxEvent {
 
     private final ICodeNodeRef node;
+
     private final String oldName;
+
     private final String newName;
 
     /**

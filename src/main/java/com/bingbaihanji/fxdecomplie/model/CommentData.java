@@ -26,6 +26,7 @@ public record CommentData(
         String author,
         String time
 ) {
+
     public CommentData {
         if (className == null || className.isBlank()) {
             throw new IllegalArgumentException("className must not be blank");

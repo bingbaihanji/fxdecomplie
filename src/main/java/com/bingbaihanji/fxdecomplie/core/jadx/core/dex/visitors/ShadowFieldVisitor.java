@@ -6,13 +6,24 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IndexInsnNod
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrinkVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeInferenceVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @JadxVisitor(
         name = "ShadowFieldVisitor",
@@ -21,6 +32,7 @@ import java.util.*;
         runBefore = CodeShrinkVisitor.class
 )
 public class ShadowFieldVisitor extends AbstractVisitor {
+
     private Map<String, FieldFixInfo> fixInfoMap;
 
     private static Map<FieldInfo, FieldFixType> searchShadowedFields(ClassNode thisCls) {
@@ -172,6 +184,7 @@ public class ShadowFieldVisitor extends AbstractVisitor {
     }
 
     private static class FieldFixInfo {
+
         Map<FieldInfo, FieldFixType> fieldFixMap;
     }
 }

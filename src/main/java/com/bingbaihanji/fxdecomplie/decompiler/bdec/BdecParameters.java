@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * bdec 反编译引擎可配置参数定义
  *
- * <p>从 bdec {@code BdecConfig} 的配置项映射,key 使用 BdecConfig builder 字段名。</p>
+ * <p>从 bdec {@code BdecConfig} 的配置项映射,key 使用 BdecConfig builder 字段名.</p>
  *
  * @author bingbaihanji
  * @date 2026-08-17

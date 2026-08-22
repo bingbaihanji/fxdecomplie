@@ -18,19 +18,26 @@ import java.util.List;
 /**
  * 参数信息辅助类
  * <p>
- * 用于代码收缩 (shrink)阶段记录单条指令及其寄存器参数的分布情况，
- * 并判断某条赋值指令能否安全地向下移动并内联 (inline，即包装)到使用它的指令中，
+ * 用于代码收缩 (shrink)阶段记录单条指令及其寄存器参数的分布情况,
+ * 并判断某条赋值指令能否安全地向下移动并内联 (inline,即包装)到使用它的指令中,
  * 从而在保证语义不变的前提下减少中间变量 生成更紧凑的表达式
  */
 final class ArgsInfo {
+
     private final InsnNode insn;
+
     private final List<ArgsInfo> argsList;
+
     private final List<RegisterArg> args;
+
     private final int pos;
+
     /** 允许内联移动的边界位置 (不能越过该位置向上移动) */
     private int inlineBorder;
-    /** 若当前指令已被内联到其它指令中，则指向承载它的那条指令信息 */
+
+    /** 若当前指令已被内联到其它指令中,则指向承载它的那条指令信息 */
     private ArgsInfo inlinedInsn;
+
     /** 被内联 (包装)进当前指令的其它指令信息列表 */
     private @Nullable List<ArgsInfo> wrappedInsns;
 
@@ -120,7 +127,7 @@ final class ArgsInfo {
      *
      * @param assignPos 赋值指令在指令列表中的位置
      * @param arg       当前指令中引用该赋值结果的寄存器参数
-     * @return 可内联时返回包装信息，否则返回 {@code null}
+     * @return 可内联时返回包装信息,否则返回 {@code null}
      */
     public WrapInfo checkInline(int assignPos, RegisterArg arg) {
         if (assignPos >= inlineBorder || !canMove(assignPos, inlineBorder)) {

@@ -4,6 +4,7 @@ package com.bingbaihanji.classgraph.util;
  * 字符串工具类
  */
 public final class StringUtils {
+
     /**
      * 构造方法
      */
@@ -12,8 +13,8 @@ public final class StringUtils {
     }
 
     /**
-     * 读取 Java 类文件规范中定义的"改良 UTF8"格式，
-     * 可选择将 '/' 替换为 '.'，并可选择移除前缀 "L" 和后缀 ";"
+     * 读取 Java 类文件规范中定义的"改良 UTF8"格式,
+     * 可选择将 '/' 替换为 '.',并可选择移除前缀 "L" 和后缀 ";"
      *
      * @param arr
      *            要从中读取字符串的数组
@@ -22,9 +23,9 @@ public final class StringUtils {
      * @param numBytes
      *            字符串 UTF8 编码的字节数
      * @param replaceSlashWithDot
-     *            如果为 true，将 '/' 替换为 '.'
+     *            如果为 true,将 '/' 替换为 '.'
      * @param stripLSemicolon
-     *            如果为 true，剥离字符串末尾的 ';' 字符
+     *            如果为 true,剥离字符串末尾的 ';' 字符
      * @return 字符串
      * @throws IllegalArgumentException
      *             如果无法解析字符串

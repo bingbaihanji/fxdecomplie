@@ -32,15 +32,17 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * {@link java.nio.ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
+ * {@link java.nio.ByteBuffer} 的包装类,实现了 {@link Closeable} 接口,在不再需要时释放
  * {@link java.nio.ByteBuffer}
  */
 public class ByteBuffer implements Closeable {
+
     private java.nio.ByteBuffer byteBuffer;
+
     private Runnable onClose;
 
     /**
-     * {@link java.nio.ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
+     * {@link java.nio.ByteBuffer} 的包装类,实现了 {@link Closeable} 接口,在不再需要时释放
      * {@link java.nio.ByteBuffer}
      *
      * @param byteBuffer

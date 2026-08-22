@@ -8,7 +8,13 @@ import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.ContextMenuEvent;
@@ -17,10 +23,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * 文件树右键上下文菜单 — 从 {@link WorkspaceTabManager} 中提取的独立子系统。
+ * 文件树右键上下文菜单 — 从 {@link WorkspaceTabManager} 中提取的独立子系统.
  *
- * <p>负责在文件树视图中安装右键菜单并响应各类节点操作：
- * 打开、Hex查看、导航、导出、搜索、复制路径、展开/折叠等。</p>
+ * <p>负责在文件树视图中安装右键菜单并响应各类节点操作:
+ * 打开,Hex查看,导航,导出,搜索,复制路径,展开/折叠等.</p>
  *
  * @author bingbaihanji
  * @date 2026-07-26
@@ -32,7 +38,7 @@ final class TreeContextMenuHelper {
     }
 
     /**
-     * 在文件树视图中安装右键上下文菜单。
+     * 在文件树视图中安装右键上下文菜单.
      *
      * @param treeView          文件树
      * @param workspace         当前工作区
@@ -46,13 +52,13 @@ final class TreeContextMenuHelper {
      * @param onHexClick        Hex查看回调
      */
     static void installTreeContextMenu(FileTreeView treeView, Workspace workspace,
-                                        TabPane codeTabPane, NavigationService navigationService,
-                                        BiConsumer<FileTreeNode, TabPane> onClassClick,
-                                        BiConsumer<FileTreeNode, TabPane> onTextFileClick,
-                                        WorkspaceTabManager.TreeItemAction onExportNode,
-                                        Consumer<FileTreeNode> onFindUsage,
-                                        Consumer<FileTreeNode> onSearchPackage,
-                                        BiConsumer<FileTreeNode, TabPane> onHexClick) {
+                                       TabPane codeTabPane, NavigationService navigationService,
+                                       BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                       BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                       WorkspaceTabManager.TreeItemAction onExportNode,
+                                       Consumer<FileTreeNode> onFindUsage,
+                                       Consumer<FileTreeNode> onSearchPackage,
+                                       BiConsumer<FileTreeNode, TabPane> onHexClick) {
         String workspaceHash = CommentScope.workspaceHash(workspace);
         treeView.setCellFactory(tv -> new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell(
                 node -> displayTreeNodeName(workspaceHash, node)));
@@ -60,7 +66,9 @@ final class TreeContextMenuHelper {
         ContextMenu cachedMenu = new ContextMenu();
         treeView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
             TreeItem<FileTreeNode> item = findTreeItemForContextMenuEvent(event, treeView);
-            if (item == null || item.getValue() == null) return;
+            if (item == null || item.getValue() == null) {
+                return;
+            }
             treeView.getSelectionModel().select(item);
             rebuildTreeContextMenuItems(cachedMenu, item, workspace, codeTabPane,
                     navigationService, onClassClick, onTextFileClick, onExportNode,
@@ -84,24 +92,28 @@ final class TreeContextMenuHelper {
     }
 
     static String displayTreeNodeName(String workspaceHash, FileTreeNode node) {
-        if (node == null) return "";
-        if (!node.isClassFile() || workspaceHash.isBlank()) return node.getName();
+        if (node == null) {
+            return "";
+        }
+        if (!node.isClassFile() || workspaceHash.isBlank()) {
+            return node.getName();
+        }
         String displayName = RenameService.displayClassName(node.getFullPath(), workspaceHash);
         return displayName == null || displayName.isBlank()
                 ? node.getName() : displayName + ".class";
     }
 
     private static void rebuildTreeContextMenuItems(ContextMenu menu,
-                                                     TreeItem<FileTreeNode> item,
-                                                     Workspace workspace,
-                                                     TabPane codeTabPane,
-                                                     NavigationService navigationService,
-                                                     BiConsumer<FileTreeNode, TabPane> onClassClick,
-                                                     BiConsumer<FileTreeNode, TabPane> onTextFileClick,
-                                                     WorkspaceTabManager.TreeItemAction onExportNode,
-                                                     Consumer<FileTreeNode> onFindUsage,
-                                                     Consumer<FileTreeNode> onSearchPackage,
-                                                     BiConsumer<FileTreeNode, TabPane> onHexClick) {
+                                                    TreeItem<FileTreeNode> item,
+                                                    Workspace workspace,
+                                                    TabPane codeTabPane,
+                                                    NavigationService navigationService,
+                                                    BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                                    BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                                    WorkspaceTabManager.TreeItemAction onExportNode,
+                                                    Consumer<FileTreeNode> onFindUsage,
+                                                    Consumer<FileTreeNode> onSearchPackage,
+                                                    BiConsumer<FileTreeNode, TabPane> onHexClick) {
         menu.getItems().clear();
         FileTreeNode node = item.getValue();
 

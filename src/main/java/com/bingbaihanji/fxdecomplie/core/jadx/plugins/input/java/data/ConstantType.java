@@ -40,6 +40,7 @@ public enum ConstantType {
     }
 
     private final byte tag;
+
     private final int dataSize;
 
     ConstantType(int tag, int dataSize) {

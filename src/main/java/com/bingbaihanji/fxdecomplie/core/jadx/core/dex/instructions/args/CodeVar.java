@@ -8,23 +8,28 @@ import java.util.List;
 
 /**
  * 代码变量
- * 表示反编译生成代码中的一个变量，可关联多个 SSA 变量，
+ * 表示反编译生成代码中的一个变量,可关联多个 SSA 变量,
  * 并携带名称 类型及 final/this/已声明等标记信息
  */
 public class CodeVar {
+
     private String name;
-    /** 变量类型 在类型推断之前可能为 null，仅对不可变类型提前设置 */
+
+    /** 变量类型 在类型推断之前可能为 null,仅对不可变类型提前设置 */
     private ArgType type;
+
     private List<SSAVar> ssaVars = Collections.emptyList();
 
     private boolean isFinal;
+
     private boolean isThis;
+
     private boolean isDeclared;
 
     /** 缓存的变量节点 在代码生成阶段设置和使用 */
     private VarNode cachedVarNode;
 
-    /** 由方法参数寄存器创建代码变量，可选是否关联寄存器对应的 SSA 变量 */
+    /** 由方法参数寄存器创建代码变量,可选是否关联寄存器对应的 SSA 变量 */
     public static CodeVar fromMthArg(RegisterArg mthArg, boolean linkRegister) {
         CodeVar var = new CodeVar();
         var.setType(mthArg.getInitType());
@@ -127,7 +132,7 @@ public class CodeVar {
     }
 
     /**
-     * 以“或”运算合并另一个代码变量的标记 (已声明/this/final)
+     * 以"或"运算合并另一个代码变量的标记 (已声明/this/final)
      */
     public void mergeFlagsFrom(CodeVar other) {
         if (other.isDeclared()) {

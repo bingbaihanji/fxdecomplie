@@ -3,7 +3,13 @@ package com.bingbaihanji.fxdecomplie.util.collection;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -12,10 +18,10 @@ import java.util.function.Predicate;
  *
  * <p>
  * 本类参考 Android {@code ArraySet} 的数据结构思想,但实现完全基于 Java SE,不依赖 Android Lombok 或第三方库
- * 与它的姊妹类 {@link ArrayMap} 类似,内部使用两个平行数组保存数据：
+ * 与它的姊妹类 {@link ArrayMap} 类似,内部使用两个平行数组保存数据:
  * <ul>
- * <li>{@code int[] hashes}：按升序保存元素的 hash</li>
- * <li>{@code Object[] array}：按同样顺序保存元素本身(每个元素占一个槽位,而非像 Map 那样成对存放)</li>
+ * <li>{@code int[] hashes}:按升序保存元素的 hash</li>
+ * <li>{@code Object[] array}:按同样顺序保存元素本身(每个元素占一个槽位,而非像 Map 那样成对存放)</li>
  * </ul>
  *
  * <p>
@@ -24,11 +30,11 @@ import java.util.function.Predicate;
  * 元素数量达到数千以上时,{@link java.util.HashSet} 仍是更好的选择
  *
  * <p>
- * <b>相较 Android 原版的现代化改造：</b>
+ * <b>相较 Android 原版的现代化改造:</b>
  * <ul>
  * <li>移除了全局静态数组缓存({@code sBaseCache} / {@code sTwiceBaseCache} 及其锁)
  * 该缓存是为 Android 受限堆减少 GC 而设计的,在 JVM 上属于反模式(锁竞争 内存滞留 线程安全隐患)</li>
- * <li>移除了 {@code identityHashCode} 模式：始终使用 {@link Object#hashCode()} / {@link Object#equals(Object)},
+ * <li>移除了 {@code identityHashCode} 模式:始终使用 {@link Object#hashCode()} / {@link Object#equals(Object)},
  * 从而保证 {@link #hashCode()} 满足 {@link Set} 契约</li>
  * <li>移除了 Android {@code Log} {@code UtilConfig} 等平台依赖</li>
  * <li>引入 {@code modCount},迭代器具备 fail-fast 能力</li>
@@ -458,7 +464,7 @@ public final class ArraySet<E> implements Set<E>, Cloneable, Serializable {
      * 删除所有满足条件的元素
      *
      * <p>
-     * 采用「原地压缩」策略：一次遍历把保留元素前移,避免逐个删除时的多次数组移位这是比标准
+     * 采用「原地压缩」策略:一次遍历把保留元素前移,避免逐个删除时的多次数组移位这是比标准
      * {@link Set#removeIf(Predicate)} 默认迭代器实现更高效的写法
      *
      * @param filter 判定函数,返回 true 表示删除,不能为 null
@@ -602,7 +608,7 @@ public final class ArraySet<E> implements Set<E>, Cloneable, Serializable {
      * 判断内容是否与另一个集合相同
      *
      * <p>
-     * 比较规则与 {@link Set#equals(Object)} 契约一致：对象也是 {@link Set} 元素数量相同 且互相包含
+     * 比较规则与 {@link Set#equals(Object)} 契约一致:对象也是 {@link Set} 元素数量相同 且互相包含
      *
      * @param object 比较对象
      * @return 内容相同时返回 true

@@ -1,14 +1,23 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.PrimitiveType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.SSAVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -21,15 +30,21 @@ import java.util.stream.Collectors;
  * - run search by checking all candidates
  */
 public class TypeSearch {
+
     private static final Logger LOG = LoggerFactory.getLogger(TypeSearch.class);
 
     private static final int VARS_PROCESS_LIMIT = 5_000;
+
     private static final int CANDIDATES_COUNT_LIMIT = 10;
+
     private static final int SEARCH_ITERATION_LIMIT = 1_000_000;
 
     private final MethodNode mth;
+
     private final TypeSearchState state;
+
     private final TypeCompare typeCompare;
+
     private final TypeUpdate typeUpdate;
 
     public TypeSearch(MethodNode mth) {
@@ -363,6 +378,7 @@ public class TypeSearch {
             return null;
         }
         return new AbstractTypeConstraint(insn, arg) {
+
             @Override
             public boolean check(TypeSearchState state) {
                 ArgType resType = state.getArgType(insn.getResult());
@@ -375,6 +391,7 @@ public class TypeSearch {
 
     private ITypeConstraint makePhiConstraint(InsnNode insn, RegisterArg arg) {
         return new AbstractTypeConstraint(insn, arg) {
+
             @Override
             public boolean check(TypeSearchState state) {
                 ArgType resType = state.getArgType(insn.getResult());

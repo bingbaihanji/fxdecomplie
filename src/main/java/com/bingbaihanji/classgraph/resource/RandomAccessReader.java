@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 
 /** 用于按字节顺序随机访问各值的接口 */
 public interface RandomAccessReader {
+
     /**
      * 将字节读入 {@link ByteBuffer}
      *
@@ -44,7 +45,7 @@ public interface RandomAccessReader {
      *            目标缓冲区中开始写入的偏移量
      * @param numBytes
      *            要读取的字节数
-     * @return 实际读取的字节数，如果无法读取更多字节则返回 -1
+     * @return 实际读取的字节数,如果无法读取更多字节则返回 -1
      * @throws IOException
      *             如果读取时发生异常
      */
@@ -61,7 +62,7 @@ public interface RandomAccessReader {
      *            目标数组中开始写入的偏移量
      * @param numBytes
      *            要读取的字节数
-     * @return 实际读取的字节数，如果无法读取更多字节则返回 -1
+     * @return 实际读取的字节数,如果无法读取更多字节则返回 -1
      * @throws IOException
      *             如果读取时发生异常
      */
@@ -127,7 +128,7 @@ public interface RandomAccessReader {
      *
      * @param offset
      *            要读取的缓冲区偏移量
-     * @return 该偏移量处的 int，以 long 形式返回
+     * @return 该偏移量处的 int,以 long 形式返回
      * @throws IOException
      *             如果读取时发生异常
      */
@@ -145,7 +146,7 @@ public interface RandomAccessReader {
     long readLong(final long offset) throws IOException;
 
     /**
-     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
+     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式,可选地将 '/' 替换为 '.',
      * 并可选择去除前缀 "L" 和后缀 ";"
      *
      * @param offset
@@ -153,9 +154,9 @@ public interface RandomAccessReader {
      * @param numBytes
      *            字符串 UTF8 编码的字节数
      * @param replaceSlashWithDot
-     *            如果为 true，将 '/' 替换为 '.'
+     *            如果为 true,将 '/' 替换为 '.'
      * @param stripLSemicolon
-     *            如果为 true，去除字符串末尾的 ';' 字符
+     *            如果为 true,去除字符串末尾的 ';' 字符
      * @return 字符串
      * @throws IOException
      *             如果发生 I/O 异常

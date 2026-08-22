@@ -10,26 +10,33 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeCompareEnum.*;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.isEmpty;
 
 /**
- * 类型比较器，用于比较两个类型之间的关系 (相等 更窄 更宽或冲突)
+ * 类型比较器,用于比较两个类型之间的关系 (相等 更窄 更宽或冲突)
  * 支持基本类型 对象类型 数组类型 泛型类型和通配符类型的比较
  */
 public class TypeCompare {
+
     private static final Logger LOG = LoggerFactory.getLogger(TypeCompare.class);
 
     private final RootNode root;
+
     private final Comparator<ArgType> comparator;
+
     private final Comparator<ArgType> reversedComparator;
 
     /**
      * 构造类型比较器
      *
-     * @param root 根节点，用于类继承关系查询
+     * @param root 根节点,用于类继承关系查询
      */
     public TypeCompare(RootNode root) {
         this.root = root;
@@ -99,7 +106,7 @@ public class TypeCompare {
             }
         }
         if (firstArray /* && secondArray */) {
-            // 两个都是数组类型，比较数组元素类型
+            // 两个都是数组类型,比较数组元素类型
             return compareTypes(first.getArrayElement(), second.getArrayElement());
         }
         if (!firstKnown /* && !secondKnown */) {
@@ -326,7 +333,7 @@ public class TypeCompare {
     }
 
     /**
-     * 比较两个类型变量 (泛型类型)，依据其上界 (extends 类型)判断宽窄关系
+     * 比较两个类型变量 (泛型类型),依据其上界 (extends 类型)判断宽窄关系
      *
      * @param first 第一个类型变量
      * @param second 第二个类型变量
@@ -373,7 +380,7 @@ public class TypeCompare {
     }
 
     /**
-     * 比较两个基本类型的宽窄关系 (依据类型宽度，例如 int 比 byte 更宽)
+     * 比较两个基本类型的宽窄关系 (依据类型宽度,例如 int 比 byte 更宽)
      *
      * @param type1 第一个基本类型
      * @param type2 第二个基本类型
@@ -408,7 +415,7 @@ public class TypeCompare {
     }
 
     /**
-     * 返回基本类型对应的宽度序号，用于宽窄比较 (BYTE 最小，DOUBLE 最大)
+     * 返回基本类型对应的宽度序号,用于宽窄比较 (BYTE 最小,DOUBLE 最大)
      * 对于 BOOLEAN OBJECT ARRAY VOID 等不参与宽窄比较的类型抛出异常
      *
      * @param type 基本类型
@@ -460,9 +467,10 @@ public class TypeCompare {
 
     /**
      * 基于 {@link #compareTypes(ArgType, ArgType)} 结果实现的 {@link ArgType} 比较器
-     * 冲突返回 -2，更宽返回 -1，更窄返回 1，相等返回 0
+     * 冲突返回 -2,更宽返回 -1,更窄返回 1,相等返回 0
      */
     private final class ArgTypeComparator implements Comparator<ArgType> {
+
         @Override
         public int compare(ArgType a, ArgType b) {
             TypeCompareEnum result = compareTypes(a, b);

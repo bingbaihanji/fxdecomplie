@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.scan.ScanResult;
@@ -12,17 +11,20 @@ import java.util.Set;
  * 可从 {@link ScanResult} 中访问且与一个 {@link ClassInfo} 对象相关联的对象的超类
  */
 public abstract class MetadataNode {
+
     /** 扫描结果 */
     transient public ScanResult scanResult;
-    /** 类引用，在类被加载后设置 */
+
+    /** 类引用,在类被加载后设置 */
     protected transient Class<?> classRef;
+
     /** 关联的 {@link ClassInfo} 对象 */
     private transient ClassInfo classInfo;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 在扫描完成后，在信息对象中设置 {@link ScanResult} 的反向引用
+     * 在扫描完成后,在信息对象中设置 {@link ScanResult} 的反向引用
      *
      * @param scanResult
      *            扫描结果
@@ -67,15 +69,15 @@ public abstract class MetadataNode {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 类的名称(由 {@link #getClassInfo()} 使用，用于获取该类的 {@link ClassInfo} 对象)
+     * 类的名称(由 {@link #getClassInfo()} 使用,用于获取该类的 {@link ClassInfo} 对象)
      *
      * @return 类名
      */
     public abstract String getClassName();
 
     /**
-     * 获取被引用类的 {@link ClassInfo} 对象，如果在扫描期间未遇到被引用的类(即在扫描期间未为该类创建
-     * ClassInfo 对象)，则返回 null注意，即使此方法返回 null，{@link #loadClass()} 也可能能够通过名称加载被引用的类
+     * 获取被引用类的 {@link ClassInfo} 对象,如果在扫描期间未遇到被引用的类(即在扫描期间未为该类创建
+     * ClassInfo 对象),则返回 null注意,即使此方法返回 null,{@link #loadClass()} 也可能能够通过名称加载被引用的类
      *
      * @return 被引用类的 {@link ClassInfo} 对象
      */
@@ -94,7 +96,7 @@ public abstract class MetadataNode {
     }
 
     /**
-     * 通过调用 getClassInfo().getName() 获取类名，或者作为回退，通过调用 getClassName() 获取
+     * 通过调用 getClassInfo().getName() 获取类名,或者作为回退,通过调用 getClassName() 获取
      *
      * @return 类名
      */
@@ -125,28 +127,28 @@ public abstract class MetadataNode {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
-     * 返回该类的 {@code Class<?>} 引用，并将其转换为请求的超类或接口类型
+     * 加载由 {@link #getClassInfo()} 返回名称的类,如果返回 null,则加载由 {@link #getClassName()} 返回名称的类
+     * 返回该类的 {@code Class<?>} 引用,并将其转换为请求的超类或接口类型
      *
      * @param <T>
      *            超类或接口类型
      * @param superclassOrInterfaceType
      *            要将结果类引用转换到的类型
      * @param ignoreExceptions
-     *            如果为 true，则忽略类加载异常并在失败时返回 null
-     * @return 被引用类的 {@code Class<?>} 引用，如果类无法加载(或转换失败)且 ignoreExceptions 为 true，则返回 null
+     *            如果为 true,则忽略类加载异常并在失败时返回 null
+     * @return 被引用类的 {@code Class<?>} 引用,如果类无法加载(或转换失败)且 ignoreExceptions 为 true,则返回 null
      * @throws IllegalArgumentException
-     *             如果类无法加载或转换，且 ignoreExceptions 为 false
+     *             如果类无法加载或转换,且 ignoreExceptions 为 false
      */
     public <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType, final boolean ignoreExceptions) {
         synchronized (this) {
-            // 如果类尚未加载，尝试加载类
+            // 如果类尚未加载,尝试加载类
             if (classRef == null) {
                 final String className = getClassInfoNameOrClassName();
                 try {
                     classRef = scanResult != null
                             ? scanResult.loadClass(className, superclassOrInterfaceType, ignoreExceptions)
-                            // 回退，如果 scanResult 未设置
+                            // 回退,如果 scanResult 未设置
                             : Class.forName(className);
                     if (classRef == null && !ignoreExceptions) {
                         throw new IllegalArgumentException("Could not load class " + className);
@@ -157,34 +159,35 @@ public abstract class MetadataNode {
                     }
                 }
             }
-            @SuppressWarnings("unchecked") final Class<T> classT = (Class<T>) classRef;
+            @SuppressWarnings("unchecked")
+            final Class<T> classT = (Class<T>) classRef;
             return classT;
         }
     }
 
     /**
-     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
-     * 返回该类的 {@code Class<?>} 引用，并将其转换为请求的超类或接口类型
+     * 加载由 {@link #getClassInfo()} 返回名称的类,如果返回 null,则加载由 {@link #getClassName()} 返回名称的类
+     * 返回该类的 {@code Class<?>} 引用,并将其转换为请求的超类或接口类型
      *
      * @param <T>
      *            超类或接口类型
      * @param superclassOrInterfaceType
      *            要将结果类引用转换到的类型
-     * @return 被引用类的 {@code Class<?>} 引用，如果类无法加载(或转换失败)且 ignoreExceptions 为 true，则返回 null
+     * @return 被引用类的 {@code Class<?>} 引用,如果类无法加载(或转换失败)且 ignoreExceptions 为 true,则返回 null
      * @throws IllegalArgumentException
-     *             如果类无法加载或转换，且 ignoreExceptions 为 false
+     *             如果类无法加载或转换,且 ignoreExceptions 为 false
      */
     public <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
         return loadClass(superclassOrInterfaceType, /* ignoreExceptions = */ false);
     }
 
     /**
-     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
+     * 加载由 {@link #getClassInfo()} 返回名称的类,如果返回 null,则加载由 {@link #getClassName()} 返回名称的类
      * 返回该类的 {@code Class<?>} 引用
      *
      * @param ignoreExceptions
-     *            如果为 true，则忽略类加载异常并在失败时返回 null
-     * @return 被引用类的 {@code Class<?>} 引用，如果类无法加载且 ignoreExceptions 为 true，则返回 null
+     *            如果为 true,则忽略类加载异常并在失败时返回 null
+     * @return 被引用类的 {@code Class<?>} 引用,如果类无法加载且 ignoreExceptions 为 true,则返回 null
      * @throws IllegalArgumentException
      *             如果类无法加载且 ignoreExceptions 为 false
      */
@@ -194,7 +197,7 @@ public abstract class MetadataNode {
             if (scanResult != null) {
                 classRef = scanResult.loadClass(className, ignoreExceptions);
             } else {
-                // 回退，如果 scanResult 未设置
+                // 回退,如果 scanResult 未设置
                 try {
                     classRef = Class.forName(className);
                 } catch (final Throwable t) {
@@ -208,7 +211,7 @@ public abstract class MetadataNode {
     }
 
     /**
-     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
+     * 加载由 {@link #getClassInfo()} 返回名称的类,如果返回 null,则加载由 {@link #getClassName()} 返回名称的类
      * 返回该类的 {@code Class<?>} 引用
      *
      * @return 被引用类的 {@code Class<?>} 引用
@@ -225,17 +228,17 @@ public abstract class MetadataNode {
      * 渲染为字符串
      *
      * @param useSimpleNames
-     *            如果为 true，则仅使用每个类的简单名称
+     *            如果为 true,则仅使用每个类的简单名称
      * @param buf
      *            缓冲区
      */
     protected abstract void toString(final boolean useSimpleNames, StringBuilder buf);
 
     /**
-     * 渲染为字符串，如果 useSimpleNames 为 true，则使用类的简单名称
+     * 渲染为字符串,如果 useSimpleNames 为 true,则使用类的简单名称
      *
      * @param useSimpleNames
-     *            如果为 true，则仅使用每个类的简单名称
+     *            如果为 true,则仅使用每个类的简单名称
      * @return 字符串表示
      */
     public String toString(final boolean useSimpleNames) {
@@ -245,10 +248,10 @@ public abstract class MetadataNode {
     }
 
     /**
-     * 渲染为字符串，仅使用类的<a href=
+     * 渲染为字符串,仅使用类的<a href=
      * "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">简单名称</a>
      *
-     * @return 字符串表示，使用类的简单名称
+     * @return 字符串表示,使用类的简单名称
      */
     public String toStringWithSimpleNames() {
         final StringBuilder buf = new StringBuilder();

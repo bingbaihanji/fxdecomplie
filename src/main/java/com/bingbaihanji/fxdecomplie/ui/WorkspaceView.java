@@ -28,7 +28,8 @@ public record WorkspaceView(
         Tab workspaceTab,
         NavigationService navigationService
 ) {
-    /** 向后兼容：返回主 TabPane(cell 0) */
+
+    /** 向后兼容:返回主 TabPane(cell 0) */
     public TabPane codeTabPane() {
         return splitEditorPane.primaryTabPane();
     }

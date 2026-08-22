@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * HexView单例控制器用于管理全局的 HexView 配置和服务
  * <p>
  * 提供数据分析器({@link DataAnalyzer})和内建高亮器({@link BuiltinHighlighter})的注册与获取
- * 以及颜色主题、悬停回调等全局配置 
+ * 以及颜色主题,悬停回调等全局配置 
  * </p>
  *
  * @author BingBaiHanJi
@@ -43,13 +43,21 @@ public final class HexViewController {
 
     // 以下为各类型数据块的标记颜色
     private final Color magicColor = rgba(0xF4, 0x47, 0x47, 0x40);      // Magic 标识
+
     private final Color versionColor = rgba(0x44, 0x9F, 0xD8, 0x40);    // 版本信息
+
     private final Color poolColor = rgba(0x6E, 0xC0, 0x77, 0x35);       // 常量池
+
     private final Color accessColor = rgba(0xF0, 0x90, 0x30, 0x45);     // 访问标志
+
     private final Color methodColor = rgba(0xA0, 0x70, 0xD0, 0x40);     // 方法
+
     private final Color fieldColor = rgba(0xD0, 0x90, 0xD0, 0x40);      // 字段
+
     private final Color interfaceColor = rgba(0x40, 0xC0, 0xC0, 0x40);  // 接口
+
     private final Color attributeColor = rgba(0xC0, 0xC0, 0x40, 0x40);  // 属性
+
     private final Color unknownColor = rgba(0x80, 0x80, 0x80, 0x30);    // 未知区域
 
     /**
@@ -60,7 +68,7 @@ public final class HexViewController {
     }
 
     /**
-     * 辅助方法：创建带 Alpha 通道的 {@link Color}
+     * 辅助方法:创建带 Alpha 通道的 {@link Color}
      *
      * @param r 红色分量 (0-255)
      * @param g 绿色分量 (0-255)
@@ -106,7 +114,7 @@ public final class HexViewController {
     /**
      * 获取当前所有已注册的数据分析器列表 
      *
-     * @return 不可修改的视图？实际返回的是可变的 {@link CopyOnWriteArrayList}但请勿直接修改
+     * @return 不可修改的视图?实际返回的是可变的 {@link CopyOnWriteArrayList}但请勿直接修改
      */
     public List<DataAnalyzer> getAnalyzers() {
         return analyzers;

@@ -1,6 +1,11 @@
 package com.bingbaihanji.fxdecomplie;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.text.JavaSourceAnalyzer;
@@ -41,7 +46,7 @@ public final class ClassNodeResolver {
         return findClassPathRaw(workspace, original);
     }
 
-    /** 在工作区中按 token 查找文件树节点(多策略回退：直接查找→同包→import→重命名→索引→遍历) */
+    /** 在工作区中按 token 查找文件树节点(多策略回退:直接查找→同包→import→重命名→索引→遍历) */
     public static FileTreeNode findNodeForToken(Workspace workspace, WorkspaceIndex index,
                                                 String token, String currentClassName,
                                                 String sourceCode, boolean allowClassLookup) {
@@ -368,7 +373,8 @@ public final class ClassNodeResolver {
         String wsHash = CommentScope.workspaceHash(workspace);
         String original = RenameService
                 .originalInternalName(internalName, wsHash);
-        if (!JavaSourceAnalyzer.normalizeInternalClassName(original).equals(JavaSourceAnalyzer.normalizeInternalClassName(internalName))) {
+        if (!JavaSourceAnalyzer.normalizeInternalClassName(original)
+                .equals(JavaSourceAnalyzer.normalizeInternalClassName(internalName))) {
             return findClassPathRaw(workspace, original);
         }
         return null;

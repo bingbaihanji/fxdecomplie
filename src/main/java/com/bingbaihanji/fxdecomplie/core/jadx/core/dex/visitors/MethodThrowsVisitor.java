@@ -15,7 +15,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.CatchAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExceptionHandler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.RegionMakerVisitor;
@@ -25,7 +29,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @JadxVisitor(
         name = "MethodThrowsVisitor",
@@ -280,6 +288,9 @@ public class MethodThrowsVisitor extends AbstractVisitor {
     }
 
     private enum ExceptionType {
-        THROWS_REQUIRED, RUNTIME, UNKNOWN_TYPE, NO_EXCEPTION
+        THROWS_REQUIRED,
+        RUNTIME,
+        UNKNOWN_TYPE,
+        NO_EXCEPTION
     }
 }

@@ -1,12 +1,12 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import java.lang.reflect.Field;
 
 /**
- * 用于包装枚举常量值(拆分为类名和常量名)的类，作为注解参数值使用
+ * 用于包装枚举常量值(拆分为类名和常量名)的类,作为注解参数值使用
  */
 public class AnnotationEnumValue extends MetadataNode implements Comparable<AnnotationEnumValue> {
+
     /** 类名 */
     private String className;
 
@@ -56,20 +56,20 @@ public class AnnotationEnumValue extends MetadataNode implements Comparable<Anno
     /**
      * 获取名称
      *
-     * @return 枚举常量值的完全限定名，即 ({@link #getClassName()} + {#getValueName()})
+     * @return 枚举常量值的完全限定名,即 ({@link #getClassName()} + {#getValueName()})
      */
     public String getName() {
         return className + "." + valueName;
     }
 
     /**
-     * 加载枚举类，实例化该类的枚举常量，并返回此 {@link AnnotationEnumValue} 所代表的枚举常量值
+     * 加载枚举类,实例化该类的枚举常量,并返回此 {@link AnnotationEnumValue} 所代表的枚举常量值
      *
      * @param ignoreExceptions
-     *            如果为 true，则忽略类加载异常，在失败时返回 null
+     *            如果为 true,则忽略类加载异常,在失败时返回 null
      * @return 此 {@link AnnotationEnumValue} 所代表的枚举常量值
      * @throws IllegalArgumentException
-     *             如果类无法加载且 ignoreExceptions 为 false，或者枚举常量无效
+     *             如果类无法加载且 ignoreExceptions 为 false,或者枚举常量无效
      */
     public Object loadClassAndReturnEnumValue(final boolean ignoreExceptions) throws IllegalArgumentException {
         final Class<?> classRef = super.loadClass(ignoreExceptions);
@@ -100,11 +100,11 @@ public class AnnotationEnumValue extends MetadataNode implements Comparable<Anno
     }
 
     /**
-     * 加载枚举类，实例化该类的枚举常量，并返回此 {@link AnnotationEnumValue} 所代表的枚举常量值
+     * 加载枚举类,实例化该类的枚举常量,并返回此 {@link AnnotationEnumValue} 所代表的枚举常量值
      *
      * @return 此 {@link AnnotationEnumValue} 所代表的枚举常量值
      * @throws IllegalArgumentException
-     *             如果类无法加载，或枚举常量无效
+     *             如果类无法加载,或枚举常量无效
      */
     public Object loadClassAndReturnEnumValue() throws IllegalArgumentException {
         return loadClassAndReturnEnumValue(/* ignoreExceptions = */ false);

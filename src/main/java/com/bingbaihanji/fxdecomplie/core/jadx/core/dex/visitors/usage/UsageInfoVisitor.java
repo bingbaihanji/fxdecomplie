@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.usage;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICallSite;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICodeReader;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodHandle;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodRef;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.IAnnotation;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
@@ -14,7 +18,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.usage.IUsageInfoData;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ICodeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.OverrideMethodVisitor;
@@ -39,6 +47,7 @@ import java.util.List;
         }
 )
 public class UsageInfoVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(UsageInfoVisitor.class);
 
     private static void apply(IUsageInfoData usageInfoData) {

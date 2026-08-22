@@ -13,7 +13,7 @@ import java.util.Map;
  * 这可以简化调用代码,使其即使缓存未命中也能假定总会返回一个值 
  * <p>
  * 默认情况下,缓存大小以条目数计量 重写 {@link #sizeOf} 可以使用不同的单位 
- * 例如,该缓存限制为 4MiB 的位图：
+ * 例如,该缓存限制为 4MiB 的位图:
  * <pre>   {@code
  *   int cacheSize = 4 * 1024 * 1024; // 4MiB
  *   LruCache<String, Bitmap> bitmapCache = new LruCache<String, Bitmap>(cacheSize) {
@@ -22,7 +22,7 @@ import java.util.Map;
  *       }
  *   }}</pre>
  * <p>
- * 此类是线程安全的 如需原子地执行多个缓存操作,可在缓存对象上同步：
+ * 此类是线程安全的 如需原子地执行多个缓存操作,可在缓存对象上同步:
  * <pre>   {@code
  *   synchronized (cache) {
  *     if (cache.get(key) == null) {
@@ -31,7 +31,7 @@ import java.util.Map;
  *   }}</pre>
  * <p>
  * 此类不允许使用 null 作为键或值 从 {@link #get} {@link #put} 或 {@link #remove}
- * 返回 null 是明确的：表示该键不在缓存中 
+ * 返回 null 是明确的:表示该键不在缓存中 
  * <p>
  * 此类源自 Android 3.1(Honeycomb MR1) 对于早期版本,可作为 Android 支持库的一部分使用 
  *
@@ -45,12 +45,17 @@ public class LruCache<K, V> {
 
     /** 此缓存的当前大小(以单位计),不一定是元素个数  */
     private int size;
+
     private int maxSize;
 
     private int putCount;
+
     private int createCount;
+
     private int evictionCount;
+
     private int hitCount;
+
     private int missCount;
 
     /**
@@ -181,7 +186,7 @@ public class LruCache<K, V> {
             synchronized (this) {
                 if (size < 0 || (map.isEmpty() && size != 0)) {
                     throw new IllegalStateException(getClass().getName()
-                            + ".sizeOf() 报告的结果不一致！");
+                            + ".sizeOf() 报告的结果不一致!");
                 }
 
                 if (size <= maxSize) {
@@ -246,7 +251,7 @@ public class LruCache<K, V> {
      * 当条目被逐出或移除时调用此方法 在值被逐出以腾出空间 通过调用 {@link #remove}
      * 移除或通过调用 {@link #put} 替换时,会调用此方法 默认实现不做任何事 
      *
-     * <p>此方法在无同步的情况下调用：其他线程可能在此方法执行期间访问缓存 
+     * <p>此方法在无同步的情况下调用:其他线程可能在此方法执行期间访问缓存 
      *
      * @param evicted  如果条目正被移除以腾出空间则为 true 
      *                 如果移除是由 {@link #put} 或 {@link #remove} 引起的则为 false 
@@ -260,7 +265,7 @@ public class LruCache<K, V> {
      * 在缓存未命中后调用,用于计算对应键的值 返回计算出的值,如果无法计算则返回 null 
      * 默认实现返回 null 
      *
-     * <p>此方法在无同步的情况下调用：其他线程可能在此方法执行期间访问缓存 
+     * <p>此方法在无同步的情况下调用:其他线程可能在此方法执行期间访问缓存 
      *
      * <p>如果此方法返回时 {@code key} 对应的值已存在于缓存中,则创建的值将通过
      * {@link #entryRemoved} 被释放并丢弃 当多个线程同时请求同一个键(导致多次创建值),

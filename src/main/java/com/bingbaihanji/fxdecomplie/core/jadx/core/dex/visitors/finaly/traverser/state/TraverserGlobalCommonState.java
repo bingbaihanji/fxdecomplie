@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 public final class TraverserGlobalCommonState {
+
     private final MethodNode mth;
+
     private final Map<Pair<BlockNode, BlockNode>, List<TraverserActivePathState>> searchedStates;
 
     public TraverserGlobalCommonState(MethodNode mth) {

@@ -3,10 +3,15 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.cls;
 import java.util.List;
 
 public class JsonMethod extends JsonNode {
+
     private String signature;
+
     private String returnType;
+
     private List<String> arguments;
+
     private List<JsonCodeLine> lines;
+
     private String offset;
 
     public String getSignature() {

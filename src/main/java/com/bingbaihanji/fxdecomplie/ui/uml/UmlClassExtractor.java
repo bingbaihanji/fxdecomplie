@@ -16,18 +16,24 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 用 ASM 从 class 字节码提取 {@link UmlClass}。
- * 类型名优先取泛型签名（signature），否则回退描述符。
+ * 用 ASM 从 class 字节码提取 {@link UmlClass}.
+ * 类型名优先取泛型签名(signature),否则回退描述符.
  */
 public final class UmlClassExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(UmlClassExtractor.class);
 
+    /** 无操作访问器,用于吞掉类级/方法级泛型声明(类型参数绑定) */
+    private static final SignatureVisitor NO_OP = new SignatureVisitor(Opcodes.ASM9) {
+    };
+
     private UmlClassExtractor() {
         throw new AssertionError("utility class");
     }
 
-    /** 解析 class 字节为 UML 类；输入为空或解析失败返回 null */
+    // ======================== 访问器 ========================
+
+    /** 解析 class 字节为 UML 类;输入为空或解析失败返回 null */
     public static UmlClass extract(String internalName, byte[] classBytes) {
         if (classBytes == null || classBytes.length == 0) {
             return null;
@@ -43,19 +49,133 @@ public final class UmlClassExtractor {
         }
     }
 
-    // ======================== 访问器 ========================
+    // ======================== 可见性 ========================
+
+    private static Visibility visibility(int access) {
+        if ((access & Opcodes.ACC_PUBLIC) != 0) {
+            return Visibility.PUBLIC;
+        }
+        if ((access & Opcodes.ACC_PROTECTED) != 0) {
+            return Visibility.PROTECTED;
+        }
+        if ((access & Opcodes.ACC_PRIVATE) != 0) {
+            return Visibility.PRIVATE;
+        }
+        return Visibility.PACKAGE;
+    }
+
+    // ======================== 类型名渲染 ========================
+
+    /** 字段类型:有泛型签名走签名渲染,否则描述符 */
+    private static String readableType(String sigOrDesc) {
+        try {
+            if (sigOrDesc != null) {
+                String rendered = renderTypeSignature(sigOrDesc);
+                if (rendered != null && !rendered.isEmpty()) {
+                    return rendered;
+                }
+            }
+            if (sigOrDesc == null || sigOrDesc.isEmpty()) {
+                return "";
+            }
+            return Type.getType(sigOrDesc).getClassName();
+        } catch (RuntimeException e) {
+            return sigOrDesc == null ? "" : sigOrDesc;
+        }
+    }
+
+    private static List<String> methodParams(String signature, String descriptor) {
+        List<String> fromDesc = new ArrayList<>();
+        try {
+            for (Type t : Type.getArgumentTypes(descriptor)) {
+                fromDesc.add(t.getClassName());
+            }
+        } catch (RuntimeException e) {
+            fromDesc.clear();
+        }
+        if (signature != null) {
+            try {
+                MethodSigParser parser = new MethodSigParser();
+                new SignatureReader(signature).accept(parser);
+                if (!parser.params().isEmpty()) {
+                    return List.copyOf(parser.params());
+                }
+            } catch (RuntimeException ignored) {
+                // 签名解析失败,回退描述符
+            }
+        }
+        return List.copyOf(fromDesc);
+    }
+
+    private static String methodReturn(String signature, String descriptor) {
+        try {
+            if (signature != null) {
+                MethodSigParser parser = new MethodSigParser();
+                new SignatureReader(signature).accept(parser);
+                String fromSig = parser.returnType();
+                if (fromSig != null && !fromSig.isEmpty()) {
+                    return fromSig;
+                }
+            }
+            return Type.getReturnType(descriptor).getClassName();
+        } catch (RuntimeException e) {
+            return "";
+        }
+    }
+
+    /** 渲染纯类型签名(如 {@code Ljava/util/List<Lcom/Order;>;})为可读点分文本 */
+    private static String renderTypeSignature(String signature) {
+        SigBuilder builder = new SigBuilder();
+        new SignatureReader(signature).acceptType(builder);
+        return builder.toString();
+    }
+
+    // ======================== 泛型签名渲染 ========================
+
+    private static String baseTypeName(char d) {
+        return switch (d) {
+            case 'B' -> "byte";
+            case 'C' -> "char";
+            case 'D' -> "double";
+            case 'F' -> "float";
+            case 'I' -> "int";
+            case 'J' -> "long";
+            case 'S' -> "short";
+            case 'Z' -> "boolean";
+            case 'V' -> "void";
+            default -> String.valueOf(d);
+        };
+    }
+
+    private static String simpleName(String internalName) {
+        int idx = internalName.lastIndexOf('/');
+        return idx >= 0 ? internalName.substring(idx + 1) : internalName;
+    }
+
+    private static String packageName(String internalName) {
+        int idx = internalName.lastIndexOf('/');
+        return idx < 0 ? "" : internalName.substring(0, idx).replace('/', '.');
+    }
 
     private static final class UmlClassVisitor extends ClassVisitor {
 
         private final String expectedName;
-        private String internalName;
-        private String signature;
-        private int access;
-        private String superName;
-        private String[] interfaces;
+
         private final List<UmlField> fields = new ArrayList<>();
+
         private final List<UmlMethod> methods = new ArrayList<>();
+
         private final List<String> annotations = new ArrayList<>();
+
+        private String internalName;
+
+        private String signature;
+
+        private int access;
+
+        private String superName;
+
+        private String[] interfaces;
 
         UmlClassVisitor(String expectedName) {
             super(Opcodes.ASM9);
@@ -101,7 +221,7 @@ public final class UmlClassExtractor {
             if ((access & Opcodes.ACC_SYNTHETIC) != 0 || "<clinit>".equals(name)) {
                 return null;
             }
-            // javac 生成的枚举 values()/valueOf(String) 并非 SYNTHETIC，需显式过滤（枚举内这两个名字被保留，无法用户重载）
+            // javac 生成的枚举 values()/valueOf(String) 并非 SYNTHETIC,需显式过滤(枚举内这两个名字被保留,无法用户重载)
             boolean isEnumClass = (this.access & Opcodes.ACC_ENUM) != 0;
             if (isEnumClass && ("values".equals(name) || "valueOf".equals(name))) {
                 return null;
@@ -131,108 +251,17 @@ public final class UmlClassExtractor {
             String simple = internalName == null ? "" : simpleName(internalName);
             String pkg = internalName == null ? "" : packageName(internalName);
             return new UmlClass(internalName, pkg, simple, kind,
-                    (access & Opcodes.ACC_ABSTRACT) != 0, true,
+                    (access & Opcodes.ACC_ABSTRACT) != 0, (access & Opcodes.ACC_FINAL) != 0, true,
                     List.copyOf(fields), List.copyOf(methods),
                     superName, List.of(interfaces), List.copyOf(annotations));
         }
     }
 
-    // ======================== 可见性 ========================
-
-    private static Visibility visibility(int access) {
-        if ((access & Opcodes.ACC_PUBLIC) != 0) {
-            return Visibility.PUBLIC;
-        }
-        if ((access & Opcodes.ACC_PROTECTED) != 0) {
-            return Visibility.PROTECTED;
-        }
-        if ((access & Opcodes.ACC_PRIVATE) != 0) {
-            return Visibility.PRIVATE;
-        }
-        return Visibility.PACKAGE;
-    }
-
-    // ======================== 类型名渲染 ========================
-
-    /** 字段类型：有泛型签名走签名渲染，否则描述符 */
-    private static String readableType(String sigOrDesc) {
-        try {
-            if (sigOrDesc != null) {
-                String rendered = renderTypeSignature(sigOrDesc);
-                if (rendered != null && !rendered.isEmpty()) {
-                    return rendered;
-                }
-            }
-            if (sigOrDesc == null || sigOrDesc.isEmpty()) {
-                return "";
-            }
-            return Type.getType(sigOrDesc).getClassName();
-        } catch (RuntimeException e) {
-            return sigOrDesc == null ? "" : sigOrDesc;
-        }
-    }
-
-    private static List<String> methodParams(String signature, String descriptor) {
-        List<String> fromDesc = new ArrayList<>();
-        try {
-            for (Type t : Type.getArgumentTypes(descriptor)) {
-                fromDesc.add(t.getClassName());
-            }
-        } catch (RuntimeException e) {
-            fromDesc.clear();
-        }
-        if (signature != null) {
-            try {
-                MethodSigParser parser = new MethodSigParser();
-                new SignatureReader(signature).accept(parser);
-                if (!parser.params().isEmpty()) {
-                    return List.copyOf(parser.params());
-                }
-            } catch (RuntimeException ignored) {
-                // 签名解析失败，回退描述符
-            }
-        }
-        return List.copyOf(fromDesc);
-    }
-
-    private static String methodReturn(String signature, String descriptor) {
-        try {
-            if (signature != null) {
-                MethodSigParser parser = new MethodSigParser();
-                new SignatureReader(signature).accept(parser);
-                String fromSig = parser.returnType();
-                if (fromSig != null && !fromSig.isEmpty()) {
-                    return fromSig;
-                }
-            }
-            return Type.getReturnType(descriptor).getClassName();
-        } catch (RuntimeException e) {
-            return "";
-        }
-    }
-
-    /** 渲染纯类型签名（如 {@code Ljava/util/List<Lcom/Order;>;}）为可读点分文本 */
-    private static String renderTypeSignature(String signature) {
-        SigBuilder builder = new SigBuilder();
-        new SignatureReader(signature).acceptType(builder);
-        return builder.toString();
-    }
-
-    // ======================== 泛型签名渲染 ========================
-
-    /** 无操作访问器，用于吞掉类级/方法级泛型声明（类型参数绑定） */
-    private static final SignatureVisitor NO_OP = new SignatureVisitor(Opcodes.ASM9) {
-    };
-
-    /** 将一段类型签名渲染为 Java 风格文本；数组元素由独立子构建器负责并在 visitEnd 补 "[]" */
+    /** 将一段类型签名渲染为 Java 风格文本;数组元素由独立子构建器负责并在 visitEnd 补 "[]" */
     private static class SigBuilder extends SignatureVisitor {
 
-        private static final class Frame {
-            boolean angleOpened;
-            int args;
-        }
-
         private final StringBuilder sb = new StringBuilder();
+
         private final Deque<Frame> frames = new ArrayDeque<>();
 
         SigBuilder() {
@@ -320,6 +349,7 @@ public final class UmlClassExtractor {
         @Override
         public SignatureVisitor visitArrayType() {
             return new SignatureVisitor(Opcodes.ASM9) {
+
                 private final SigBuilder element = new SigBuilder();
 
                 @Override
@@ -335,6 +365,7 @@ public final class UmlClassExtractor {
                 @Override
                 public SignatureVisitor visitArrayType() {
                     return new SignatureVisitor(Opcodes.ASM9) {
+
                         private final SigBuilder inner = new SigBuilder();
 
                         @Override
@@ -350,6 +381,7 @@ public final class UmlClassExtractor {
                         @Override
                         public SignatureVisitor visitArrayType() {
                             return new SignatureVisitor(Opcodes.ASM9) {
+
                                 private final SigBuilder inner2 = new SigBuilder();
 
                                 @Override
@@ -452,16 +484,24 @@ public final class UmlClassExtractor {
         public String toString() {
             return sb.toString();
         }
+
+        private static final class Frame {
+
+            boolean angleOpened;
+
+            int args;
+        }
     }
 
     /**
-     * 解析方法签名，逐个收集参数类型与返回类型。
-     * 注意：ASM 对类型变量（{@code TT;}）与基元类型不会回调 visitEnd，
-     * 因此依赖 {@link CaptureBuilder} 在「顶层类型完成」时收集。
+     * 解析方法签名,逐个收集参数类型与返回类型.
+     * 注意:ASM 对类型变量({@code TT;})与基元类型不会回调 visitEnd,
+     * 因此依赖 {@link CaptureBuilder} 在「顶层类型完成」时收集.
      */
     private static final class MethodSigParser extends SignatureVisitor {
 
         private final List<String> params = new ArrayList<>();
+
         private String returnType = "";
 
         MethodSigParser() {
@@ -502,10 +542,11 @@ public final class UmlClassExtractor {
         }
     }
 
-    /** 类型渲染构建器：在顶层类型完成时（含无 visitEnd 的类型变量/基元类型/数组）向 sink 回调渲染文本 */
+    /** 类型渲染构建器:在顶层类型完成时(含无 visitEnd 的类型变量/基元类型/数组)向 sink 回调渲染文本 */
     private static final class CaptureBuilder extends SigBuilder {
 
         private final Consumer<String> sink;
+
         private int depth;
 
         CaptureBuilder(Consumer<String> sink) {
@@ -548,9 +589,10 @@ public final class UmlClassExtractor {
 
         @Override
         public SignatureVisitor visitArrayType() {
-            // 注意：基元/类型变量的数组元素 ASM 不回调 visitEnd，将回退到描述符路径
+            // 注意:基元/类型变量的数组元素 ASM 不回调 visitEnd,将回退到描述符路径
             SignatureVisitor element = super.visitArrayType();
             return new DelegatingSignatureVisitor(element) {
+
                 @Override
                 public void visitEnd() {
                     super.visitEnd();
@@ -562,7 +604,7 @@ public final class UmlClassExtractor {
         }
     }
 
-    /** 通用转发访问器：将全部签名事件原样转发给委托访问器，用于在数组子访问器外再包一层钩子 */
+    /** 通用转发访问器:将全部签名事件原样转发给委托访问器,用于在数组子访问器外再包一层钩子 */
     private static class DelegatingSignatureVisitor extends SignatureVisitor {
 
         private final SignatureVisitor delegate;
@@ -651,30 +693,5 @@ public final class UmlClassExtractor {
         public void visitEnd() {
             delegate.visitEnd();
         }
-    }
-
-    private static String baseTypeName(char d) {
-        return switch (d) {
-            case 'B' -> "byte";
-            case 'C' -> "char";
-            case 'D' -> "double";
-            case 'F' -> "float";
-            case 'I' -> "int";
-            case 'J' -> "long";
-            case 'S' -> "short";
-            case 'Z' -> "boolean";
-            case 'V' -> "void";
-            default -> String.valueOf(d);
-        };
-    }
-
-    private static String simpleName(String internalName) {
-        int idx = internalName.lastIndexOf('/');
-        return idx >= 0 ? internalName.substring(idx + 1) : internalName;
-    }
-
-    private static String packageName(String internalName) {
-        int idx = internalName.lastIndexOf('/');
-        return idx < 0 ? "" : internalName.substring(0, idx).replace('/', '.');
     }
 }

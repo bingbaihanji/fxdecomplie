@@ -13,16 +13,16 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 /**
- * 扫描管道 — 将扫描分解为一系列有序的 {@link ScanStep} 步骤。
+ * 扫描管道 — 将扫描分解为一系列有序的 {@link ScanStep} 步骤.
  *
- * <p>管道保证按注册顺序执行步骤。每个步骤可以：
+ * <p>管道保证按注册顺序执行步骤.每个步骤可以:
  * <ul>
  *   <li>从 {@link ScanContext} 读取前一步骤的结果</li>
  *   <li>执行其处理逻辑</li>
  *   <li>将结果写回 {@link ScanContext} 供后续步骤使用</li>
  * </ul>
  *
- * <p>使用示例：
+ * <p>使用示例:
  * <pre>{@code
  * ScanPipeline<String, ScanResult> pipeline = ScanPipeline
  *     .startingWith(new ClasspathDiscoveryStep())
@@ -47,7 +47,7 @@ public final class ScanPipeline<I, O> {
     }
 
     /**
-     * 创建管道构建器，以初始步骤开始。
+     * 创建管道构建器,以初始步骤开始.
      *
      * @param firstStep 第一个处理步骤
      * @param <I> 初始输入类型
@@ -63,7 +63,18 @@ public final class ScanPipeline<I, O> {
     }
 
     /**
-     * 执行管道。
+     * 创建带有基本配置的 ScanContext.
+     */
+    public static ScanContext createContext(ScanOptions options,
+                                            ExecutorService executor,
+                                            InterruptionChecker checker,
+                                            int parallelism) {
+        return new ScanContext(options, executor, checker, parallelism,
+                new LogNode());
+    }
+
+    /**
+     * 执行管道.
      *
      * @param input   初始输入
      * @param context 共享上下文
@@ -83,10 +94,10 @@ public final class ScanPipeline<I, O> {
                 continue;
             }
             log.debug("Executing step {}/{}: {}", ++stepIdx, steps.size(),
-                descriptor.step.name());
+                    descriptor.step.name());
             try {
                 currentInput = ((ScanStep<Object, Object>) descriptor.step)
-                    .execute(currentInput, context);
+                        .execute(currentInput, context);
             } catch (Exception e) {
                 log.error("Pipeline step failed: {}", descriptor.step.name(), e);
                 throw e;
@@ -101,30 +112,33 @@ public final class ScanPipeline<I, O> {
         return steps.size();
     }
 
+    // ─── 内部类型 ───
+
     /** 返回管道中步骤名称的不可变列表 */
     public List<String> stepNames() {
         return steps.stream()
-            .map(d -> d.step.name())
-            .toList();
+                .map(d -> d.step.name())
+                .toList();
     }
-
-    // ─── 内部类型 ───
 
     private record StepDescriptor<I, O>(ScanStep<I, O> step) {}
 
+    // ─── 工厂方法 ───
+
     /**
-     * 流式管道构建器。
+     * 流式管道构建器.
      *
      * @param <I> 当前阶段的输入类型
      * @param <O> 当前阶段的输出类型
      */
     public static final class PipelineBuilder<I, O> {
+
         private final List<StepDescriptor<?, ?>> steps = new ArrayList<>();
 
         private PipelineBuilder() {}
 
         /**
-         * 添加下一个步骤。新步骤的输入类型必须与前一步骤的输出类型兼容。
+         * 添加下一个步骤.新步骤的输入类型必须与前一步骤的输出类型兼容.
          */
         public <N> PipelineBuilder<I, N> then(ScanStep<O, N> nextStep) {
             Objects.requireNonNull(nextStep, "nextStep");
@@ -141,18 +155,5 @@ public final class ScanPipeline<I, O> {
             }
             return new ScanPipeline<>(steps);
         }
-    }
-
-    // ─── 工厂方法 ───
-
-    /**
-     * 创建带有基本配置的 ScanContext。
-     */
-    public static ScanContext createContext(ScanOptions options,
-                                            ExecutorService executor,
-                                            InterruptionChecker checker,
-                                            int parallelism) {
-        return new ScanContext(options, executor, checker, parallelism,
-            new LogNode());
     }
 }

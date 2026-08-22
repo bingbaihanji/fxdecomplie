@@ -20,7 +20,9 @@ import java.util.concurrent.Future;
 public final class InheritanceReferenceIndexService {
 
     private static final Logger log = LoggerFactory.getLogger(InheritanceReferenceIndexService.class);
+
     private static final WeakHashMap<Workspace, IndexState> STATES = new WeakHashMap<>();
+
     private static final ClassScanService classScanService = new ClassGraphClassScanService();
 
     private InheritanceReferenceIndexService() {
@@ -123,8 +125,11 @@ public final class InheritanceReferenceIndexService {
     }
 
     private static final class IndexState {
+
         final CompletableFuture<InheritanceReferenceIndex> future = new CompletableFuture<>();
+
         volatile boolean started;
+
         volatile Future<?> task;
     }
 }

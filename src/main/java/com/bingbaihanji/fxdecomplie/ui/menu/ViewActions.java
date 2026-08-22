@@ -7,6 +7,7 @@ package com.bingbaihanji.fxdecomplie.ui.menu;
  * @date 2026-06-17
  */
 public interface ViewActions {
+
     /** 放大 */
     void zoomIn();
 

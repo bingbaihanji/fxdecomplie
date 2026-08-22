@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -15,6 +14,7 @@ import java.io.File;
  * @author lukehutch
  */
 class OSGiDefaultClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public OSGiDefaultClassLoaderHandler() {
     }
@@ -26,7 +26,7 @@ class OSGiDefaultClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {

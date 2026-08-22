@@ -8,8 +8,11 @@ import java.util.List;
 public class OrderedJadxPassInfo implements JadxPassInfo {
 
     private final String name;
+
     private final String desc;
+
     private final List<String> runAfter;
+
     private final List<String> runBefore;
 
     public OrderedJadxPassInfo(String name, String desc) {

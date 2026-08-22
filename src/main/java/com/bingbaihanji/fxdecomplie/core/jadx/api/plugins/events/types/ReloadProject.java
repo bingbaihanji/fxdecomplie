@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.events.JadxEvents;
 /**
  * 重新加载项目事件
  * <p>
- * 该事件为无状态的单例事件，通过 {@link #EVENT} 常量获取实例，
+ * 该事件为无状态的单例事件,通过 {@link #EVENT} 常量获取实例,
  * 用于通知监听者需要重新加载当前项目
  */
 public class ReloadProject implements IJadxEvent {

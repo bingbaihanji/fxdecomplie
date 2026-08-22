@@ -25,7 +25,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.ProcessIn
 /**
  * Try/Catch 附加访问器
  * <p>
- * 将方法中的 try/catch 信息 (异常处理块 try 块边界)附加到对应的指令上，
+ * 将方法中的 try/catch 信息 (异常处理块 try 块边界)附加到对应的指令上,
  * 为后续的异常处理分析和代码生成做准备该访问器在
  * {@link ProcessInstructionsVisitor} 之前运行
  */
@@ -37,10 +37,11 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.ProcessIn
         }
 )
 public class AttachTryCatchVisitor extends AbstractVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(AttachTryCatchVisitor.class);
 
     /**
-     * 初始化方法中的所有 try/catch 块，将异常处理器转换并标记 try 块边界
+     * 初始化方法中的所有 try/catch 块,将异常处理器转换并标记 try 块边界
      *
      * @param mth          目标方法节点
      * @param insnByOffset 以偏移量为索引的指令数组
@@ -64,7 +65,7 @@ public class AttachTryCatchVisitor extends AbstractVisitor {
     }
 
     /**
-     * 标记 try 块的起止边界，为范围内的指令附加 catch 属性，
+     * 标记 try 块的起止边界,为范围内的指令附加 catch 属性,
      * 并在首条和末条指令上分别添加 TRY_ENTER / TRY_LEAVE 标志
      */
     private static void markTryBounds(InsnNode[] insnByOffset, ITry aTry, CatchAttr catchAttr) {
@@ -100,7 +101,7 @@ public class AttachTryCatchVisitor extends AbstractVisitor {
     }
 
     /**
-     * 为指令附加 catch 属性 若指令上已存在 catch 属性，则合并两者的异常处理器
+     * 为指令附加 catch 属性 若指令上已存在 catch 属性,则合并两者的异常处理器
      */
     private static void attachCatchAttr(CatchAttr catchAttr, InsnNode insn) {
         CatchAttr existAttr = insn.get(AType.EXC_CATCH);
@@ -114,7 +115,7 @@ public class AttachTryCatchVisitor extends AbstractVisitor {
     }
 
     /**
-     * 将 catch 块转换为异常处理器列表，包含具体类型的处理器以及可能存在的
+     * 将 catch 块转换为异常处理器列表,包含具体类型的处理器以及可能存在的
      * catch-all (捕获所有异常)处理器
      */
     private static List<ExceptionHandler> convertToHandlers(MethodNode mth, ICatch catchBlock, InsnNode[] insnByOffset) {
@@ -136,10 +137,10 @@ public class AttachTryCatchVisitor extends AbstractVisitor {
     }
 
     /**
-     * 在指定偏移处创建异常处理器若该处已存在处理器则复用 (并可能追加捕获类型)，
+     * 在指定偏移处创建异常处理器若该处已存在处理器则复用 (并可能追加捕获类型),
      * 否则新建处理器并将其注册到方法上
      *
-     * @param type 捕获的异常类型，null 表示 catch-all 处理器
+     * @param type 捕获的异常类型,null 表示 catch-all 处理器
      * @return 创建或复用的异常处理器 若仅更新了已有处理器则返回 null
      */
     @Nullable
@@ -166,7 +167,7 @@ public class AttachTryCatchVisitor extends AbstractVisitor {
     }
 
     /**
-     * 在指定偏移处插入一条合成的 NOP 指令，并将其登记到指令数组中
+     * 在指定偏移处插入一条合成的 NOP 指令,并将其登记到指令数组中
      */
     private static InsnNode insertNOP(InsnNode[] insnByOffset, int offset) {
         InsnNode nop = new InsnNode(InsnType.NOP, 0);

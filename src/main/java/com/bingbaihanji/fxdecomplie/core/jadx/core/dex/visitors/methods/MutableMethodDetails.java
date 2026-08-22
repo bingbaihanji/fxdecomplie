@@ -10,11 +10,17 @@ import java.util.List;
 public class MutableMethodDetails implements IMethodDetails {
 
     private final MethodInfo mthInfo;
+
     private ArgType retType;
+
     private List<ArgType> argTypes;
+
     private List<ArgType> typeParams;
+
     private List<ArgType> throwTypes;
+
     private boolean varArg;
+
     private int accFlags;
 
     public MutableMethodDetails(IMethodDetails base) {

@@ -12,12 +12,14 @@ import java.util.Map;
  * {@link com.bingbaihanji.fxdecomplie.decompiler.JadxParameters}
  * {@link com.bingbaihanji.fxdecomplie.util.jadx.JadxOptionsBridge}
  * 和 {@link com.bingbaihanji.fxdecomplie.service.DecompilerOptions#hash}
- * 均消费此 schema，确保 key/默认值/类型定义一致
+ * 均消费此 schema,确保 key/默认值/类型定义一致
  *
  * @author bingbaihanji
  */
 public final class JadxOptionSchema {
+
     private static final Logger log = LoggerFactory.getLogger(JadxOptionSchema.class);
+
     private static final List<OptionDef> SCHEMA = List.of(
             def("showInconsistentCode", OptionType.BOOLEAN, true, "engine.jadx.showInconsistentCode"),
             def("useImports", OptionType.BOOLEAN, true, "engine.jadx.useImports"),
@@ -60,7 +62,7 @@ public final class JadxOptionSchema {
         return SCHEMA;
     }
 
-    /** 从 Map 解析 JadxEngineOptions，缺失 key 使用 schema 默认值 */
+    /** 从 Map 解析 JadxEngineOptions,缺失 key 使用 schema 默认值 */
     public static JadxEngineOptions fromOptionsMap(Map<String, String> options) {
         if (options == null || options.isEmpty()) {
             return JadxEngineOptions.DEFAULTS;
@@ -149,7 +151,10 @@ public final class JadxOptionSchema {
         }
     }
 
-    public enum OptionType {BOOLEAN, INTEGER}
+    public enum OptionType {
+        BOOLEAN,
+        INTEGER
+    }
 
     public record OptionDef(String key, OptionType type, Object defaultValue, String i18nKey) {
     }

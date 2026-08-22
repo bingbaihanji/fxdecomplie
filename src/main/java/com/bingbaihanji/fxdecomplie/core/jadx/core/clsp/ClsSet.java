@@ -14,34 +14,50 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
  * Classes list for import into classpath graph
  */
 public class ClsSet {
+
     private static final Logger LOG = LoggerFactory.getLogger(ClsSet.class);
 
     private static final String CLST_EXTENSION = ".jcst";
+
     private static final String CLST_FILENAME = "core" + CLST_EXTENSION;
 
     private static final String CLST_PATH = "/clst/" + CLST_FILENAME;
 
     private static final String JADX_CLS_SET_HEADER = "jadx-cst";
+
     private static final int VERSION = 5;
 
     private static final String STRING_CHARSET = "US-ASCII";
 
     private static final ArgType[] EMPTY_ARGTYPE_ARRAY = new ArgType[0];
+
     private static final ArgType[] OBJECT_ARGTYPE_ARRAY = new ArgType[]{ArgType.OBJECT};
 
     private final RootNode root;
 
     private int androidApiLevel;
+
     private ClspClass[] classes;
 
     public ClsSet(RootNode root) {

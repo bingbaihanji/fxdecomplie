@@ -11,6 +11,7 @@ import org.objectweb.asm.Type;
  * @author Matt Coley
  */
 public class BoxedCharacterValueImpl extends ObjectValueBoxImpl<Character> {
+
     private static final Type TYPE = Type.getType(Character.class);
 
     /**

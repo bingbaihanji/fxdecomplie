@@ -2,7 +2,17 @@ package com.bingbaihanji.fxdecomplie.util.collection;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -336,7 +346,7 @@ public final class ListUtils {
 
 
     /**
-     * 返回列表的第一个元素，列表为 null 或空时返回 null
+     * 返回列表的第一个元素,列表为 null 或空时返回 null
      *
      * @param list 列表
      * @return 第一个元素或 null
@@ -350,7 +360,7 @@ public final class ListUtils {
 
 
     /**
-     * 移除并返回列表的最后一个元素，列表为 null 或空时返回 null
+     * 移除并返回列表的最后一个元素,列表为 null 或空时返回 null
      *
      * @param list 列表
      * @return 被移除的最后一个元素或 null
@@ -367,7 +377,7 @@ public final class ListUtils {
     }
 
     /**
-     * 合并两个已排序列表并去重，返回有序结果
+     * 合并两个已排序列表并去重,返回有序结果
      *
      * @param first  第一个列表
      * @param second 第二个列表
@@ -449,7 +459,7 @@ public final class ListUtils {
     }
 
     /**
-     * 安全移除元素，若移除后列表为空则返回不可变空列表
+     * 安全移除元素,若移除后列表为空则返回不可变空列表
      *
      * @param list 源列表
      * @param obj  待移除的元素
@@ -468,7 +478,7 @@ public final class ListUtils {
     }
 
     /**
-     * 安全地向列表添加元素，若列表为 null 或空则新建可变列表
+     * 安全地向列表添加元素,若列表为 null 或空则新建可变列表
      *
      * @param list 源列表
      * @param obj  待添加的元素
@@ -485,7 +495,7 @@ public final class ListUtils {
     }
 
     /**
-     * 按谓词过滤集合，返回满足条件的元素列表
+     * 按谓词过滤集合,返回满足条件的元素列表
      *
      * @param list   源集合
      * @param filter 过滤谓词

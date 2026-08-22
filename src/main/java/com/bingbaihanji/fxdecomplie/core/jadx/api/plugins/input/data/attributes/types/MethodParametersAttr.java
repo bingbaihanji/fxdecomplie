@@ -31,7 +31,9 @@ public class MethodParametersAttr extends PinnedAttribute {
     }
 
     public static class Info {
+
         private final int accFlags;
+
         private final String name;
 
         public Info(int accFlags, String name) {

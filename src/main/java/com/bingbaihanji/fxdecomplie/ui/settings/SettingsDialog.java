@@ -13,12 +13,22 @@ import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.utils.json.JSONUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -30,8 +40,10 @@ import java.util.function.Consumer;
 public final class SettingsDialog {
 
     private static final Logger log = LoggerFactory.getLogger(SettingsDialog.class);
+
     private static final String JSON_AREA_STYLE = "-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
             + "-fx-font-family: 'Consolas', 'JetBrains Mono', monospace; -fx-font-size: 12px;";
+
     private static final String JSON_AREA_ERROR_STYLE = JSON_AREA_STYLE
             + " -fx-border-color: #f44747; -fx-border-width: 1px;";
 
@@ -554,7 +566,7 @@ public final class SettingsDialog {
         return new VBox(scroll);
     }
 
-    /** JADX 选项较多,按实际作用域分组,避免全部挤在“通用/高级”里 */
+    /** JADX 选项较多,按实际作用域分组,避免全部挤在"通用/高级"里 */
     private static VBox buildJadxParameterPanel(AppConfig config,
                                                 List<DecompilerParameter> params,
                                                 Map<String, String> engineOpts,
@@ -927,7 +939,7 @@ public final class SettingsDialog {
         }
     }
 
-    /** 刷新编辑器配色下拉框：重新扫描主题列表并选中指定主题 */
+    /** 刷新编辑器配色下拉框:重新扫描主题列表并选中指定主题 */
     private static void refreshThemeCombo(ComboBox<String> combo, String selectName) {
         String currentValue = combo.getValue();
         combo.getItems().setAll(ThemeManager.getAllThemes());

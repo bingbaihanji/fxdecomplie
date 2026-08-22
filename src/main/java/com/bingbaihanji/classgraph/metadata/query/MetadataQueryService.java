@@ -1,35 +1,38 @@
 package com.bingbaihanji.classgraph.metadata.query;
 
-import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
-import com.bingbaihanji.classgraph.metadata.FieldInfo;
-import com.bingbaihanji.classgraph.metadata.MethodInfo;
-
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * 元数据查询服务 — CQRS 读侧的统一入口。
+ * 元数据查询服务 — CQRS 读侧的统一入口.
  *
- * <p>封装对 {@link ClassMetadataReader} 集合的常见查询操作，
- * 消除调用方散布的 null 检查和手动过滤逻辑。</p>
+ * <p>封装对 {@link ClassMetadataReader} 集合的常见查询操作,
+ * 消除调用方散布的 null 检查和手动过滤逻辑.</p>
  */
 public final class MetadataQueryService {
 
     private final Map<String, ClassMetadataReader> readers;
 
     /**
-     * 使用类名到读取器的映射创建查询服务。
+     * 使用类名到读取器的映射创建查询服务.
      */
     public MetadataQueryService(Map<String, ? extends ClassMetadataReader> readers) {
         this.readers = readers == null
-            ? Map.of()
-            : Collections.unmodifiableMap(new LinkedHashMap<>(readers));
+                ? Map.of()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(readers));
     }
 
     // ─── 基本查询 ───
 
-    /** 按名称查找，可能为空 */
+    /** 按名称查找,可能为空 */
     public Optional<ClassMetadataReader> findByClass(String className) {
         return Optional.ofNullable(readers.get(className));
     }
@@ -54,8 +57,8 @@ public final class MetadataQueryService {
     /** 查找匹配谓词的所有类 */
     public List<ClassMetadataReader> filter(Predicate<ClassMetadataReader> predicate) {
         return readers.values().stream()
-            .filter(predicate)
-            .toList();
+                .filter(predicate)
+                .toList();
     }
 
     /** 查找所有接口 */
@@ -73,7 +76,7 @@ public final class MetadataQueryService {
         return filter(ClassMetadataReader::isEnum);
     }
 
-    /** 查找所有标准类（非接口、非注解、非枚举） */
+    /** 查找所有标准类(非接口,非注解,非枚举) */
     public List<ClassMetadataReader> findAllStandardClasses() {
         return filter(r -> !r.isInterface() && !r.isAnnotation() && !r.isEnum());
     }
@@ -98,18 +101,18 @@ public final class MetadataQueryService {
     /** 统计具有指定修饰符的类数量 */
     public int countByModifier(int modifierMask) {
         return (int) readers.values().stream()
-            .filter(r -> (r.modifiers() & modifierMask) != 0)
-            .count();
+                .filter(r -> (r.modifiers() & modifierMask) != 0)
+                .count();
     }
 
     /** 按包名分组 */
     public Map<String, List<ClassMetadataReader>> groupByPackage() {
         return readers.values().stream()
-            .collect(Collectors.groupingBy(r -> {
-                String name = r.className();
-                int idx = name.lastIndexOf('/');
-                return idx > 0 ? name.substring(0, idx) : "";
-            }));
+                .collect(Collectors.groupingBy(r -> {
+                    String name = r.className();
+                    int idx = name.lastIndexOf('/');
+                    return idx > 0 ? name.substring(0, idx) : "";
+                }));
     }
 
     /** 收集所有引用的外部类名 */
@@ -127,35 +130,35 @@ public final class MetadataQueryService {
     public MetadataStatistics statistics() {
         int total = readers.size();
         int interfaces = (int) readers.values().stream()
-            .filter(ClassMetadataReader::isInterface).count();
+                .filter(ClassMetadataReader::isInterface).count();
         int annotations = (int) readers.values().stream()
-            .filter(ClassMetadataReader::isAnnotation).count();
+                .filter(ClassMetadataReader::isAnnotation).count();
         int enums = (int) readers.values().stream()
-            .filter(ClassMetadataReader::isEnum).count();
+                .filter(ClassMetadataReader::isEnum).count();
         int standard = total - interfaces - annotations - enums;
 
         int totalFields = readers.values().stream()
-            .mapToInt(r -> r.fields().size()).sum();
+                .mapToInt(r -> r.fields().size()).sum();
         int totalMethods = readers.values().stream()
-            .mapToInt(r -> r.methods().size()).sum();
+                .mapToInt(r -> r.methods().size()).sum();
         int totalAnnotations = readers.values().stream()
-            .mapToInt(r -> r.annotations().size()).sum();
+                .mapToInt(r -> r.annotations().size()).sum();
 
         return new MetadataStatistics(total, interfaces, annotations, enums,
-            standard, totalFields, totalMethods, totalAnnotations);
+                standard, totalFields, totalMethods, totalAnnotations);
     }
 
     /**
-     * 元数据统计 DTO。
+     * 元数据统计 DTO.
      */
     public record MetadataStatistics(
-        int totalClasses,
-        int interfaceCount,
-        int annotationCount,
-        int enumCount,
-        int standardClassCount,
-        int totalFields,
-        int totalMethods,
-        int totalAnnotations
+            int totalClasses,
+            int interfaceCount,
+            int annotationCount,
+            int enumCount,
+            int standardClassCount,
+            int totalFields,
+            int totalMethods,
+            int totalAnnotations
     ) {}
 }

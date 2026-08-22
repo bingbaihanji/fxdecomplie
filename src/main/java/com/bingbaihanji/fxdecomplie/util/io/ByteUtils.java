@@ -21,6 +21,7 @@ public final class ByteUtils {
     private static final String[] UNITS = {"B", "KB", "MB", "GB", "TB", "PB"};
 
     private static final int UNIT = 1024;
+
     private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
     private ByteUtils() {

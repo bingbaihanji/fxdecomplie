@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -16,6 +15,7 @@ import java.util.SortedSet;
  * @author lukehutch
  */
 class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public PlexusClassWorldsClassRealmClassLoaderHandler() {
     }
@@ -49,7 +49,7 @@ class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandle
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -74,7 +74,8 @@ class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandle
         final Object foreignImports = classLoaderOrder.reflectionUtils.getFieldVal(false, classRealm,
                 "foreignImports");
         if (foreignImports != null) {
-            @SuppressWarnings("unchecked") final SortedSet<Object> foreignImportEntries = (SortedSet<Object>) foreignImports;
+            @SuppressWarnings("unchecked")
+            final SortedSet<Object> foreignImportEntries = (SortedSet<Object>) foreignImports;
             for (final Object entry : foreignImportEntries) {
                 final ClassLoader foreignImportClassLoader = (ClassLoader) classLoaderOrder.reflectionUtils
                         .invokeMethod(false, entry, "getClassLoader");
@@ -92,7 +93,7 @@ class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandle
             classLoaderOrder.add(classRealm, log);
         }
 
-        // 来自 ClassRealm#loadClassFromParent -- 注意：我们忽略了 parentImports，它用于在决定是否调用父级类加载器
+        // 来自 ClassRealm#loadClassFromParent -- 注意:我们忽略了 parentImports,它用于在决定是否调用父级类加载器
         // 之前过滤类名(因此 ClassGraph 将能够按名称加载未从父级类加载器导入的类)
         final ClassLoader parentClassLoader = (ClassLoader) classLoaderOrder.reflectionUtils.invokeMethod(false,
                 classRealm, "getParentClassLoader");

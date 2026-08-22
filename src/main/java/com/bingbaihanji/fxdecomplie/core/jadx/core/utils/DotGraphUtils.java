@@ -13,7 +13,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SynchronizedRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.TryCatchRegion;
@@ -26,23 +32,33 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.File;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.FallbackOption.BLOCK_DUMP;
 
 public class DotGraphUtils {
+
     private static final String NL = "\\l";
+
     private static final String NLQR = Matcher.quoteReplacement(NL);
+
     private static final boolean PRINT_DOMINATORS = false;
+
     private static final boolean PRINT_DOMINATORS_INFO = false;
+
     private static final int MAX_REGION_NAME_LENGTH = 2000;
 
     private final ICodeWriter dot = new SimpleCodeWriter();
+
     private final ICodeWriter conn = new SimpleCodeWriter();
 
     private final boolean useRegions;
+
     private final boolean rawInsn;
 
     // if present, this region and it's children will still be drawn when not in regions mode.
@@ -332,7 +348,8 @@ public class DotGraphUtils {
         // depending on which it has less of. This results in a more readable graph as a block with a single
         // predecessor will be placed near it.
         for (BlockNode floating : block.getSuccessors()) {
-            if (!regionBlocks.contains(floating) && floating.getPredecessors().size() <= floating.getSuccessors().size()) {
+            if (!regionBlocks.contains(floating) && floating.getPredecessors().size() <= floating.getSuccessors()
+                    .size()) {
                 // Set true on the pseudoInRegion to draw the block with a dotted outline and apply a marker to it
                 // to notify that it isn't actually in this region.
                 processBlock(mth, floating, true, true);
@@ -341,7 +358,8 @@ public class DotGraphUtils {
         }
 
         for (BlockNode floating : block.getPredecessors()) {
-            if (!regionBlocks.contains(floating) && floating.getPredecessors().size() > floating.getSuccessors().size()) {
+            if (!regionBlocks.contains(floating) && floating.getPredecessors().size() > floating.getSuccessors()
+                    .size()) {
                 processBlock(mth, floating, true, true);
                 regionBlocks.add(floating);
             }

@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
@@ -12,8 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** ModuleReference 代理，使用反射编写以保持与 JDK 7 和 8 的向后兼容性 */
+/** ModuleReference 代理,使用反射编写以保持与 JDK 7 和 8 的向后兼容性 */
 public class ModuleRef implements Comparable<ModuleRef> {
+
     /** 模块名称 */
     private final String name;
 
@@ -31,23 +31,28 @@ public class ModuleRef implements Comparable<ModuleRef> {
 
     /** 模块的位置 URI(可能为 null) */
     private final URI location;
-    /** 加载模块中类的 ClassLoader可能为 null，表示引导类加载器 */
+
+    /** 加载模块中类的 ClassLoader可能为 null,表示引导类加载器 */
     private final ClassLoader classLoader;
+
     public ReflectionUtils reflectionUtils;
-    /** 模块的位置 URI，作为缓存的字符串(可能为 null) */
+
+    /** 模块的位置 URI,作为缓存的字符串(可能为 null) */
     private String locationStr;
-    /** 由位置 URI 形成的文件如果位置 URI 是 "jrt:" URI，则该文件不存在 */
+
+    /** 由位置 URI 形成的文件如果位置 URI 是 "jrt:" URI,则该文件不存在 */
     private File locationFile;
-    /** 原始模块版本，如果没有则为 null */
+
+    /** 原始模块版本,如果没有则为 null */
     private String rawVersion;
 
     /**
      * 构造函数
      *
      * @param moduleReference
-     *            模块引用，JPMS 类型 ModuleReference
+     *            模块引用,JPMS 类型 ModuleReference
      * @param moduleLayer
-     *            模块层，JPMS 类型 ModuleLayer
+     *            模块层,JPMS 类型 ModuleLayer
      * @param reflectionUtils
      *            ReflectionUtils 实例
      */
@@ -69,7 +74,8 @@ public class ModuleRef implements Comparable<ModuleRef> {
             throw new IllegalArgumentException("moduleReference.descriptor() 不应返回 null");
         }
         this.name = (String) reflectionUtils.invokeMethod(/* throwException = */ true, this.descriptor, "name");
-        @SuppressWarnings("unchecked") final Set<String> modulePackages = (Set<String>) reflectionUtils.invokeMethod(/* throwException = */ true,
+        @SuppressWarnings("unchecked")
+        final Set<String> modulePackages = (Set<String>) reflectionUtils.invokeMethod(/* throwException = */ true,
                 this.descriptor, "packages");
         if (modulePackages == null) {
             // 不应该发生
@@ -116,9 +122,9 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * 获取模块名称，即 {@code getReference().descriptor().name()}
+     * 获取模块名称,即 {@code getReference().descriptor().name()}
      *
-     * @return 模块名称，即 {@code getReference().descriptor().name()}可能为 null 或空字符串
+     * @return 模块名称,即 {@code getReference().descriptor().name()}可能为 null 或空字符串
      */
     public String getName() {
         return name;
@@ -143,9 +149,9 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * 获取模块描述符，即 {@code getReference().descriptor()}(JPMS 类型 ModuleDescriptor)
+     * 获取模块描述符,即 {@code getReference().descriptor()}(JPMS 类型 ModuleDescriptor)
      *
-     * @return 模块描述符，即 {@code getReference().descriptor()}(JPMS 类型 ModuleDescriptor)
+     * @return 模块描述符,即 {@code getReference().descriptor()}(JPMS 类型 ModuleDescriptor)
      */
     public Object getDescriptor() {
         return descriptor;
@@ -161,18 +167,18 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * 获取模块位置，即 {@code getReference().location()}对于没有位置的模块返回 null
+     * 获取模块位置,即 {@code getReference().location()}对于没有位置的模块返回 null
      *
-     * @return 模块位置，即 {@code getReference().location()}对于没有位置的模块返回 null
+     * @return 模块位置,即 {@code getReference().location()}对于没有位置的模块返回 null
      */
     public URI getLocation() {
         return location;
     }
 
     /**
-     * 以字符串形式获取模块位置，即 {@code getReference().location().toString()}对于没有位置的模块返回 null
+     * 以字符串形式获取模块位置,即 {@code getReference().location().toString()}对于没有位置的模块返回 null
      *
-     * @return 以字符串形式表示的模块位置，即 {@code getReference().location().toString()}对于没有位置的模块返回 null
+     * @return 以字符串形式表示的模块位置,即 {@code getReference().location().toString()}对于没有位置的模块返回 null
      */
     public String getLocationStr() {
         if (locationStr == null && location != null) {
@@ -182,10 +188,10 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * 以 File 形式获取模块位置，即 {@code new File(getReference().location())}对于没有位置的模块，
-     * 或者对于系统(或 jlinked)模块(其 "jrt:" 位置 URI 仅包含模块名称而不包含模块 jar 位置)，返回 null
+     * 以 File 形式获取模块位置,即 {@code new File(getReference().location())}对于没有位置的模块,
+     * 或者对于系统(或 jlinked)模块(其 "jrt:" 位置 URI 仅包含模块名称而不包含模块 jar 位置),返回 null
      *
-     * @return 以 File 形式表示的模块位置，即 {@code new File(getReference().location())}对于没有位置的模块，
+     * @return 以 File 形式表示的模块位置,即 {@code new File(getReference().location())}对于没有位置的模块,
      *         或者位置为 "jrt:" URI 的模块返回 null
      */
     public File getLocationFile() {
@@ -196,9 +202,9 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * 获取模块的原始版本字符串，如果模块未提供则返回 null
+     * 获取模块的原始版本字符串,如果模块未提供则返回 null
      *
-     * @return 模块的原始版本，通过 {@code ModuleReference#rawVersion().orElse(null)} 获取
+     * @return 模块的原始版本,通过 {@code ModuleReference#rawVersion().orElse(null)} 获取
      */
     public String getRawVersion() {
         return rawVersion;
@@ -220,7 +226,7 @@ public class ModuleRef implements Comparable<ModuleRef> {
     /**
      * 获取模块的类加载器
      *
-     * @return 模块的类加载器，即
+     * @return 模块的类加载器,即
      *         {@code moduleLayer.findLoader(getReference().descriptor().name())}
      */
     public ClassLoader getClassLoader() {
@@ -269,7 +275,7 @@ public class ModuleRef implements Comparable<ModuleRef> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 打开模块，返回一个 {@link ModuleReaderProxy}
+     * 打开模块,返回一个 {@link ModuleReaderProxy}
      *
      * @return 模块的 {@link ModuleReaderProxy}
      * @throws IOException

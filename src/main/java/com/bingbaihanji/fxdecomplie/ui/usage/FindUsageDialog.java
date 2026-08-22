@@ -10,7 +10,12 @@ import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -75,6 +80,7 @@ public final class FindUsageDialog {
         resultTree.setShowRoot(false);
         VBox.setVgrow(resultTree, Priority.ALWAYS);
         resultTree.setCellFactory(tv -> new TreeCell<>() {
+
             @Override
             protected void updateItem(UsageResult result, boolean empty) {
                 super.updateItem(result, empty);
@@ -188,6 +194,7 @@ public final class FindUsageDialog {
     /** 跳转回调接口,双击搜索结果时导航到对应文件和行号 */
     @FunctionalInterface
     public interface JumpCallback {
+
         /** 跳转到指定文件的指定行 */
         void jump(String fullPath, int lineNumber);
     }

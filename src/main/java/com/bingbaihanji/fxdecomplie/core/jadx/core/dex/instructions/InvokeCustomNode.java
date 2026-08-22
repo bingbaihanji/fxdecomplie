@@ -9,10 +9,15 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
 import org.jetbrains.annotations.Nullable;
 
 public class InvokeCustomNode extends InvokeNode {
+
     private MethodInfo implMthInfo;
+
     private MethodHandleType handleType;
+
     private InsnNode callInsn;
+
     private boolean inlineInsn;
+
     private boolean useRef;
 
     public InvokeCustomNode(MethodInfo lambdaInfo, InsnData insn, boolean instanceCall, boolean isRange) {

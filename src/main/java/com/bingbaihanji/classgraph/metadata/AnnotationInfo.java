@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
@@ -17,8 +16,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-/** 保存类、方法、方法参数或字段上特定注解实例的元数据 */
+/** 保存类,方法,方法参数或字段上特定注解实例的元数据 */
 public class AnnotationInfo extends MetadataNode implements Comparable<AnnotationInfo>, Named {
+
     /** 名称 */
     private String name;
 
@@ -26,7 +26,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     private AnnotationParameterValueList annotationParamValues;
 
     /**
-     * 当 annotationParamValues 中任何包装类型的 Object[] 数组被延迟转换为基本类型数组后，设置为 true
+     * 当 annotationParamValues 中任何包装类型的 Object[] 数组被延迟转换为基本类型数组后,设置为 true
      */
     private transient boolean annotationParamValuesHasBeenConvertedToPrimitive;
 
@@ -58,7 +58,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
      * @param name
      *            注解的名称
      * @param annotationParamValues
-     *            注解参数值，如果没有则为 null
+     *            注解参数值,如果没有则为 null
      */
     public AnnotationInfo(final String name, final AnnotationParameterValueList annotationParamValues) {
         super();
@@ -81,7 +81,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     /**
      * 检查注解是否被继承
      *
-     * @return 如果此注解被 {@link Inherited} 元注解修饰，则返回 true
+     * @return 如果此注解被 {@link Inherited} 元注解修饰,则返回 true
      */
     public boolean isInherited() {
         final ClassInfo classInfo = getClassInfo();
@@ -91,7 +91,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     /**
      * 获取默认参数值
      *
-     * @return 此注解的默认参数值列表，如果没有则返回空列表
+     * @return 此注解的默认参数值列表,如果没有则返回空列表
      */
     public AnnotationParameterValueList getDefaultParameterValues() {
         return getClassInfo().getAnnotationDefaultParameterValues();
@@ -101,14 +101,14 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
      * 获取参数值
      *
      * @param includeDefaultValues
-     *            如果为 true，则为任何缺失的注解参数值包含默认值
-     * @return 此注解的参数值，包括(如果需要的话)从注解类定义继承的默认参数值，如果没有则返回空列表
+     *            如果为 true,则为任何缺失的注解参数值包含默认值
+     * @return 此注解的参数值,包括(如果需要的话)从注解类定义继承的默认参数值,如果没有则返回空列表
      */
     public AnnotationParameterValueList getParameterValues(final boolean includeDefaultValues) {
         final ClassInfo classInfo = getClassInfo();
         if (classInfo == null) {
-            // ClassInfo 尚未设置，只返回不带默认值的值
-            // (在扫描期间尝试记录 AnnotationInfo 时发生，此时 ScanResult 尚不可用)
+            // ClassInfo 尚未设置,只返回不带默认值的值
+            // (在扫描期间尝试记录 AnnotationInfo 时发生,此时 ScanResult 尚不可用)
             return annotationParamValues == null ? AnnotationParameterValueList.EMPTY_LIST : annotationParamValues;
         }
         // 延迟将任何包装类型的 Object[] 数组转换为基本类型数组
@@ -134,7 +134,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     }
 
     /**
-     * 构建包含默认值的注解参数值列表(线程不安全，应在同步块内调用)
+     * 构建包含默认值的注解参数值列表(线程不安全,应在同步块内调用)
      *
      * @param classInfo
      *            注解类信息
@@ -168,14 +168,14 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
 
         // 将注解值按与注解方法相同的顺序排列(每个注解常量对应一个方法)
         if (classInfo.methodInfo == null) {
-            // 不应发生(读取 class 文件时，无论 ScanConfig.enableMethodInfo 是否为 true，方法总是会被读取)
+            // 不应发生(读取 class 文件时,无论 ScanConfig.enableMethodInfo 是否为 true,方法总是会被读取)
             throw new IllegalArgumentException("Could not find methods for annotation " + classInfo.getName());
         }
         final AnnotationParameterValueList result = new AnnotationParameterValueList();
         for (final MethodInfo mi : classInfo.methodInfo) {
             final String paramName = mi.getName();
             switch (paramName) {
-                // 这些方法名称不应出现在 @interface 类本身中，它应该只包含注解常量的方法
+                // 这些方法名称不应出现在 @interface 类本身中,它应该只包含注解常量的方法
                 // (但为了安全起见还是跳过它们)这些方法只应存在于注解的具体实例中
                 case "<init>":
                 case "<clinit>":
@@ -201,7 +201,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     /**
      * 获取参数值
      *
-     * @return 此注解的参数值，包括从注解类定义继承的默认参数值，如果没有则返回空列表
+     * @return 此注解的参数值,包括从注解类定义继承的默认参数值,如果没有则返回空列表
      */
     public AnnotationParameterValueList getParameterValues() {
         return getParameterValues(true);
@@ -210,7 +210,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取注解类的名称，供 {@link #getClassInfo()} 使用
+     * 获取注解类的名称,供 {@link #getClassInfo()} 使用
      *
      * @return 类名
      */
@@ -260,27 +260,27 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     }
 
     /**
-     * 通过调用 {@code getClassInfo().loadClass()} 加载与此 {@link AnnotationInfo} 对象对应的 {@link Annotation} 类，
-     * 然后创建一个新的注解实例，注解参数值来自此 {@link AnnotationInfo} 对象，可能会覆盖通过调用
+     * 通过调用 {@code getClassInfo().loadClass()} 加载与此 {@link AnnotationInfo} 对象对应的 {@link Annotation} 类,
+     * 然后创建一个新的注解实例,注解参数值来自此 {@link AnnotationInfo} 对象,可能会覆盖通过调用
      * {@link AnnotationInfo#getClassInfo()} 然后 {@link ClassInfo#getAnnotationDefaultParameterValues()}
      * 获取的默认注解参数值
      *
      * <p>
-     * 注意，返回的 {@link Annotation} 将具有某种 {@link InvocationHandler} 代理类型，
+     * 注意,返回的 {@link Annotation} 将具有某种 {@link InvocationHandler} 代理类型,
      * 例如 {@code com.bingbaihanji.classgraph.core.features.$Proxy4} 或 {@code com.sun.proxy.$Proxy6}
      * 这是具体 {@link Annotation} 实例无法直接实例化这一事实的不可避免的副作用
      * (ClassGraph 使用了<a href=
      * "http://hg.openjdk.java.net/jdk7/jdk7/jdk/file/9b8c96f96a0f/src/share/classes/sun/reflect/annotation/AnnotationParser.java#l255">
-     * 与 JDK 从 map 实例化注解相同的方法</a>)然而，代理实例在类型转换和 {@code instanceof}
+     * 与 JDK 从 map 实例化注解相同的方法</a>)然而,代理实例在类型转换和 {@code instanceof}
      * 方面<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/reflect/Proxy.html">
-     * 会被特殊处理</a>：你可以将返回的代理实例强制转换为注解类型，
+     * 会被特殊处理</a>:你可以将返回的代理实例强制转换为注解类型,
      * 并且针对注解类的 {@code instanceof} 检查也会成功
      *
      * <p>
-     * 当然，获取具体注解的另一种选择(而不是通过此方法实例化 {@link ClassInfo} 对象上的注解)
-     * 是调用 {@link ClassInfo#loadClass()}，并直接从返回的 {@link Class} 对象读取注解
+     * 当然,获取具体注解的另一种选择(而不是通过此方法实例化 {@link ClassInfo} 对象上的注解)
+     * 是调用 {@link ClassInfo#loadClass()},并直接从返回的 {@link Class} 对象读取注解
      *
-     * @return 新的 {@link Annotation} 实例，作为一个可以强制转换为预期注解类型的动态代理对象
+     * @return 新的 {@link Annotation} 实例,作为一个可以强制转换为预期注解类型的动态代理对象
      */
     public Annotation loadClassAndInstantiate() {
         final Class<? extends Annotation> annotationClass = getClassInfo().loadClass(Annotation.class);
@@ -406,7 +406,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
             this.annotationClass = annotationClass;
             this.annotationInfo = annotationInfo;
 
-            // 实例化注解参数值(这会加载并获取类字面量、枚举常量等的引用)
+            // 实例化注解参数值(这会加载并获取类字面量,枚举常量等的引用)
             for (final AnnotationParameterValue apv : annotationInfo.getParameterValues()) {
                 final Object instantiatedValue = apv.instantiate(annotationInfo.getClassInfo());
                 if (instantiatedValue == null) {
@@ -449,7 +449,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
                         final Object otherParamVal = reflectionUtils.invokeMethod(/* throwException = */ false,
                                 args[0], paramName);
                         if ((paramVal == null) != (otherParamVal == null)) {
-                            // 注解值不应为 null，但为了安全起见
+                            // 注解值不应为 null,但为了安全起见
                             return false;
                         } else if (paramVal == null && otherParamVal == null) {
                             return true;
@@ -463,7 +463,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
                     throw new IllegalArgumentException();
                 }
             } else if (paramTypes.length == 0) {
-                // 处理 .toString()、.hashCode()、.annotationType()
+                // 处理 .toString(),.hashCode(),.annotationType()
                 switch (methodName) {
                     case "toString":
                         return annotationInfo.toString();
@@ -476,7 +476,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
                             final Object paramVal = ent.getValue();
                             int paramValHashCode;
                             if (paramVal == null) {
-                                // 注解值不应为 null，但为了安全起见
+                                // 注解值不应为 null,但为了安全起见
                                 paramValHashCode = 0;
                             } else {
                                 final Class<?> type = paramVal.getClass();
@@ -517,14 +517,14 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
                 throw new IllegalArgumentException();
             }
 
-            // 实例化注解参数值(这会加载并获取类字面量、枚举常量等的引用)
+            // 实例化注解参数值(这会加载并获取类字面量,枚举常量等的引用)
             final Object annotationParameterValue = annotationParameterValuesInstantiated.get(methodName);
             if (annotationParameterValue == null) {
                 // 未定义的枚举常量(枚举值不能为 null)
                 throw new IncompleteAnnotationException(annotationClass, methodName);
             }
 
-            // 克隆任何数组类型的注解参数值，以符合 Java 注解 API 的规范
+            // 克隆任何数组类型的注解参数值,以符合 Java 注解 API 的规范
             final Class<?> annotationParameterValueClass = annotationParameterValue.getClass();
             if (annotationParameterValueClass.isArray()) {
                 // 处理数组类型

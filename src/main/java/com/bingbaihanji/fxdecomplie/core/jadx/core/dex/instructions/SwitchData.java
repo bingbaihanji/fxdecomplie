@@ -5,8 +5,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
 
 public class SwitchData extends InsnNode {
+
     private final int size;
+
     private final int[] keys;
+
     private final int[] targets;
 
     public SwitchData(ISwitchPayload payload) {

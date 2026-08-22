@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Consumer;
 
 public class JadxEventsImpl implements IJadxEvents {
+
     private static final Logger LOG = LoggerFactory.getLogger(JadxEventsImpl.class);
 
     private final JadxEventsManager manager = new JadxEventsManager();

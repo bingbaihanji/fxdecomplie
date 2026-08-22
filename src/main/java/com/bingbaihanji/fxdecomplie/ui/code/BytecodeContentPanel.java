@@ -13,6 +13,7 @@ import org.objectweb.asm.ClassReader;
 public class BytecodeContentPanel extends AbstractCodeContentPanel {
 
     private final byte[] classBytes;
+
     private CodeArea codeArea;
 
     /**

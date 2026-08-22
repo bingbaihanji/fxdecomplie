@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.outline;
 
 /**
- * 大纲成员记录,从反编译源码或字节码分析中提取的字段、方法、内部类或方法实现
+ * 大纲成员记录,从反编译源码或字节码分析中提取的字段,方法,内部类或方法实现
  *
  * @param name                成员名称
  * @param type                成员类型
@@ -24,7 +24,7 @@ public record OutlineMember(
 ) {
 
     /**
-     * 向后兼容的构造器 —— 用于顶层成员(字段、方法、内部类),
+     * 向后兼容的构造器 —— 用于顶层成员(字段,方法,内部类),
      * 不包含实现类相关信息
      */
     public OutlineMember(String name, MemberType type, String modifiers, int lineNumber) {
@@ -63,5 +63,10 @@ public record OutlineMember(
                 targetClassName, targetClassPath, descriptor);
     }
 
-    public enum MemberType {FIELD, METHOD, INNER_CLASS, IMPLEMENTATION}
+    public enum MemberType {
+        FIELD,
+        METHOD,
+        INNER_CLASS,
+        IMPLEMENTATION
+    }
 }

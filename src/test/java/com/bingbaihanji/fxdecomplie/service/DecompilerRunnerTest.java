@@ -57,9 +57,9 @@ class DecompilerRunnerTest {
     void maybeRebuildExecutorRequiresThreshold() {
         // reset counter first to start from a clean state
         DecompilerRunner.resetTimeoutCounter();
-        // 单次调用不应重建（阈值 = 3）
+        // 单次调用不应重建(阈值 = 3)
         boolean rebuilt = DecompilerRunner.maybeRebuildExecutor();
-        // 计数从 0 开始，调用后 = 1，小于阈值 3，所以不应重建
+        // 计数从 0 开始,调用后 = 1,小于阈值 3,所以不应重建
         assertFalse(rebuilt, "should not rebuild on first timeout");
         DecompilerRunner.resetTimeoutCounter();
     }

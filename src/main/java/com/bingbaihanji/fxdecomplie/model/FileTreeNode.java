@@ -17,20 +17,28 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FileTreeNode {
 
     private static final Logger log = LoggerFactory.getLogger(FileTreeNode.class);
+
     private static final Set<String> IMAGE_EXTENSIONS = Set.of(
             ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".ico", ".webp");
+
     /** 节点显示名称 */
     private final String name;
+
     /** 完整内部路径(如 "com/example/Main.class") */
     private final String fullPath;
+
     /** 节点类型 */
     private final NodeTypeEnum nodeType;
+
     /** 可选资源清理回调,例如关闭归档句柄通过 AtomicReference 保证单次执行 */
     private final AtomicReference<Runnable> cleanupRef = new AtomicReference<>();
+
     /** 缓存的文件字节,按需加载后保留,避免重复读取同一打开文件使用 SoftReference 允许 GC 在内存压力下回收 */
     private volatile SoftReference<byte[]> cachedBytesRef;
+
     /** 懒加载字节来源,用于 JAR/ZIP/目录条目 */
     private volatile ByteLoader byteLoader;
+
     /** 条目原始大小,未知时为 -1 */
     private volatile long size = -1L;
 
@@ -194,6 +202,7 @@ public class FileTreeNode {
     /** 字节懒加载接口,用于延迟读取归档条目或文件系统中的字节内容 */
     @FunctionalInterface
     public interface ByteLoader {
+
         /** @return 加载到的字节数组 */
         byte[] load() throws IOException;
     }

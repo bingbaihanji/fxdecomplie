@@ -111,8 +111,11 @@ public class SourceFileRename extends AbstractVisitor {
     }
 
     private static final class ClsRename {
+
         private final ClassNode cls;
+
         private final String alias;
+
         private final int suffix;
 
         private ClsRename(ClassNode cls, String alias, int suffix) {

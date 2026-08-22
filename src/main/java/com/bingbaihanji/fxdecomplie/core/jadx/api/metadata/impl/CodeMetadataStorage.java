@@ -8,13 +8,18 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.annotations.NodeDecla
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.function.BiFunction;
 
 public class CodeMetadataStorage implements ICodeMetadata {
 
     // <decomp file line number> -> <dex debug line number>
     private final Map<Integer, Integer> lines;
+
     // <character index into the file> -> <code annotation>
     // the key is what is returned by AbstractCodeArea#getCaretPos() when clicking in a code panel.
     private final NavigableMap<Integer, ICodeAnnotation> navMap;

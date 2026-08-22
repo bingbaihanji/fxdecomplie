@@ -13,7 +13,9 @@ import java.util.Objects;
 abstract class AbstractPathNode<T> implements PathNode<T> {
 
     private final PathNode<?> parent;
+
     private final T value;
+
     private final Class<T> valueType;
 
     AbstractPathNode(PathNode<?> parent, T value, Class<T> valueType) {

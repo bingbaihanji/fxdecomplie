@@ -9,6 +9,7 @@ public record InheritanceReferenceGroup(
         List<InheritanceReferenceNode> children,
         boolean collapsible
 ) {
+
     public InheritanceReferenceGroup {
         Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(title, "title");

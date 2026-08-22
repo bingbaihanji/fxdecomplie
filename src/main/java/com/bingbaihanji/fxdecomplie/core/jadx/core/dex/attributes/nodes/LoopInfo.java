@@ -13,21 +13,24 @@ import java.util.Set;
 /**
  * 描述控制流图中一个循环结构的信息
  * <p>
- * 包含循环的起始块 结束块以及构成循环体的所有基本块集合，
- * 同时维护循环的编号与父循环引用，用于表示嵌套循环关系
+ * 包含循环的起始块 结束块以及构成循环体的所有基本块集合,
+ * 同时维护循环的编号与父循环引用,用于表示嵌套循环关系
  * </p>
  */
 public class LoopInfo {
 
     /** 循环的起始块 (循环头) */
     private final BlockNode start;
+
     /** 循环的结束块 (回边的源块) */
     private final BlockNode end;
+
     /** 构成循环体的所有基本块集合 */
     private final Set<BlockNode> loopBlocks;
 
     /** 循环编号 */
     private int id;
+
     /** 父循环 (用于表示嵌套循环关系) */
     private LoopInfo parentLoop;
 
@@ -81,7 +84,7 @@ public class LoopInfo {
         Set<BlockNode> nodes = new HashSet<>();
         Set<BlockNode> blocks = getLoopBlocks();
         for (BlockNode block : blocks) {
-            // 退出：后继节点不属于本循环 (不要改用 getCleanSuccessors)
+            // 退出:后继节点不属于本循环 (不要改用 getCleanSuccessors)
             for (BlockNode s : block.getSuccessors()) {
                 if (!blocks.contains(s) && !s.contains(AType.EXC_HANDLER)) {
                     nodes.add(block);
@@ -100,7 +103,7 @@ public class LoopInfo {
         List<Edge> edges = new ArrayList<>();
         Set<BlockNode> blocks = getLoopBlocks();
         for (BlockNode block : blocks) {
-            for (BlockNode s : block.getSuccessors()) { // 不使用 clean successors，以便包含循环回边
+            for (BlockNode s : block.getSuccessors()) { // 不使用 clean successors,以便包含循环回边
                 if (!blocks.contains(s) && !BlockUtils.isExceptionHandlerPath(s)) {
                     edges.add(new Edge(block, s));
                 }
@@ -139,7 +142,7 @@ public class LoopInfo {
     /**
      * 获取父循环
      *
-     * @return 父循环，若无则为 null
+     * @return 父循环,若无则为 null
      */
     public LoopInfo getParentLoop() {
         return parentLoop;
@@ -158,7 +161,7 @@ public class LoopInfo {
      * 判断指定循环是否为当前循环的祖先循环
      *
      * @param searchLoop 待查找的循环
-     * @return 若 searchLoop 是当前循环的某一级父循环则返回 true，否则返回 false
+     * @return 若 searchLoop 是当前循环的某一级父循环则返回 true,否则返回 false
      */
     public boolean hasParent(LoopInfo searchLoop) {
         LoopInfo parent = parentLoop;

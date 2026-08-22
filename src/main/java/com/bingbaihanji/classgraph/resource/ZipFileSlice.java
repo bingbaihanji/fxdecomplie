@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.scan.Filter.FilterLeafname;
@@ -10,12 +9,16 @@ import java.util.Objects;
 
 /** ZIP 文件切片(PhysicalZipFile 中的一个字节子范围) */
 public class ZipFileSlice {
+
     /** 底层的物理 ZIP 文件 */
     protected final PhysicalZipFile physicalZipFile;
-    /** 父切片，如果这是顶层切片(整个 ZIP 文件)则为 null */
+
+    /** 父切片,如果这是顶层切片(整个 ZIP 文件)则为 null */
     private final ZipFileSlice parentZipFileSlice;
-    /** 对于顶层 ZIP 文件切片，表示 ZIP 文件路径；对于嵌套切片，表示 ZIP 文件条目的名称/路径 */
+
+    /** 对于顶层 ZIP 文件切片,表示 ZIP 文件路径;对于嵌套切片,表示 ZIP 文件条目的名称/路径 */
     private final String pathWithinParentZipFileSlice;
+
     /** 包含 ZIP 文件的 {@link Slice} */
     public Slice slice;
 
@@ -33,7 +36,7 @@ public class ZipFileSlice {
     }
 
     /**
-     * 创建一个 ZipFileSlice，包装从嵌套 JAR 解压或膨胀到内存或磁盘的 {@link PhysicalZipFile}
+     * 创建一个 ZipFileSlice,包装从嵌套 JAR 解压或膨胀到内存或磁盘的 {@link PhysicalZipFile}
      *
      * @param physicalZipFile
      *            已解压到 RAM 的物理 ZIP 文件
@@ -48,7 +51,7 @@ public class ZipFileSlice {
     }
 
     /**
-     * 创建一个 ZipFileSlice，包装单个已存储(未压缩)的 {@link FastZipEntry}
+     * 创建一个 ZipFileSlice,包装单个已存储(未压缩)的 {@link FastZipEntry}
      *
      * @param zipEntry
      *            ZIP 条目
@@ -82,7 +85,7 @@ public class ZipFileSlice {
      *
      * @param jarAcceptReject
      *            JAR 文件接受/拒绝条件
-     * @return 如果此 ZIP 文件切片及其所有父切片在 JAR 文件接受/拒绝条件中被接受且未被拒绝，则返回 true
+     * @return 如果此 ZIP 文件切片及其所有父切片在 JAR 文件接受/拒绝条件中被接受且未被拒绝,则返回 true
      */
     public boolean isAcceptedAndNotRejected(final FilterLeafname jarAcceptReject) {
         return jarAcceptReject.isAcceptedAndNotRejected(pathWithinParentZipFileSlice) //
@@ -90,16 +93,16 @@ public class ZipFileSlice {
     }
 
     /**
-     * 获取父 ZipFileSlice，如果这是顶层切片(即此切片包装整个物理 ZIP 文件)，则返回 null
+     * 获取父 ZipFileSlice,如果这是顶层切片(即此切片包装整个物理 ZIP 文件),则返回 null
      *
-     * @return 父 ZipFileSlice，如果这是顶层切片则返回 null
+     * @return 父 ZipFileSlice,如果这是顶层切片则返回 null
      */
     public ZipFileSlice getParentZipFileSlice() {
         return parentZipFileSlice;
     }
 
     /**
-     * 获取切片的名称(父 ZIP 文件切片中的条目名称/路径，或者如果此切片是顶层切片(即此切片包装整个物理 ZIP 文件)，
+     * 获取切片的名称(父 ZIP 文件切片中的条目名称/路径,或者如果此切片是顶层切片(即此切片包装整个物理 ZIP 文件),
      * 则为物理 ZIP 文件的路径)
      *
      * @return 切片的名称
@@ -125,7 +128,7 @@ public class ZipFileSlice {
     }
 
     /**
-     * 获取此 ZIP 文件切片的路径，例如 "/path/to/jarfile.jar!/nestedjar1.jar"
+     * 获取此 ZIP 文件切片的路径,例如 "/path/to/jarfile.jar!/nestedjar1.jar"
      *
      * @return 此 ZIP 文件切片的路径
      */
@@ -138,7 +141,7 @@ public class ZipFileSlice {
     /**
      * 获取此 ZipFileSlice 所属的物理 {@link File}
      *
-     * @return 此 ZipFileSlice 所属的物理 {@link File}，如果此文件是从 URL 直接下载到 RAM 则返回 null
+     * @return 此 ZipFileSlice 所属的物理 {@link File},如果此文件是从 URL 直接下载到 RAM 则返回 null
      */
     public File getPhysicalFile() {
         final Path path = physicalZipFile.getPath();

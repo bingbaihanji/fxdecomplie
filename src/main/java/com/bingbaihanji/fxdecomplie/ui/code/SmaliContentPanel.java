@@ -7,7 +7,7 @@ import org.objectweb.asm.ClassReader;
 /**
  * JVM 指令视图面板,使用自定义 SmaliTextBuilder 生成 smali 风格输出
  *
- * <p>输出格式类似 jadx smali 视图：以 .class/.method/.field/.line/.end method 等
+ * <p>输出格式类似 jadx smali 视图:以 .class/.method/.field/.line/.end method 等
  * 指令组织,操作码使用小写助记符,保留行号和局部变量调试信息</p>
  *
  * @author bingbaihanji
@@ -16,6 +16,7 @@ import org.objectweb.asm.ClassReader;
 public class SmaliContentPanel extends AbstractCodeContentPanel {
 
     private final byte[] classBytes;
+
     private CodeArea codeArea;
 
     /**

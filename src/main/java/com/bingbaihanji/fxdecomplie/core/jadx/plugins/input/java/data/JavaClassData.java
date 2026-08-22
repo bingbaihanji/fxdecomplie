@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.AccessFlags;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IClassData;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldData;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodData;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ISeqConsumer;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaClassReader;
@@ -19,21 +23,26 @@ import java.util.List;
 /**
  * Java 类数据解析器
  * <p>
- * 基于 {@link JavaClassReader} 读取到的原始字节，解析 {@code .class} 文件的结构 (访问标志 类型 
- * 父类 接口 字段 方法及各类属性)，并对外提供 {@link IClassData} 接口所需的访问能力
+ * 基于 {@link JavaClassReader} 读取到的原始字节,解析 {@code .class} 文件的结构 (访问标志 类型 
+ * 父类 接口 字段 方法及各类属性),并对外提供 {@link IClassData} 接口所需的访问能力
  * 解析过程借助 {@link ClassOffsets} 记录的各段偏移量 {@link ConstPoolReader} 常量池读取器
  * 以及 {@link AttributesReader} 属性读取器完成
  */
 public class JavaClassData implements IClassData {
-    /** 底层类字节读取器，提供原始字节及文件名等信息 */
+
+    /** 底层类字节读取器,提供原始字节及文件名等信息 */
     private final JavaClassReader clsReader;
-    /** 类字节数据读取器，负责按偏移量读取具体字段 */
+
+    /** 类字节数据读取器,负责按偏移量读取具体字段 */
     private final DataReader data;
+
     /** 类文件各结构段的偏移量信息 */
     private final ClassOffsets offsets;
-    /** 常量池读取器，用于解析常量池中的类 字符串 UTF8 等 */
+
+    /** 常量池读取器,用于解析常量池中的类 字符串 UTF8 等 */
     private final ConstPoolReader constPoolReader;
-    /** 属性读取器，用于加载字段 方法及类级别的属性 */
+
+    /** 属性读取器,用于加载字段 方法及类级别的属性 */
     private final AttributesReader attributesReader;
 
     /**
@@ -58,7 +67,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回当前实例自身作为副本 (本实现为不可变解析器，无需真正复制)
+     * 返回当前实例自身作为副本 (本实现为不可变解析器,无需真正复制)
      */
     @Override
     public IClassData copy() {
@@ -113,7 +122,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 依次遍历类中的所有字段和方法，并将其提供给对应的消费者
+     * 依次遍历类中的所有字段和方法,并将其提供给对应的消费者
      *
      * @param fieldsConsumer 字段消费者
      * @param mthConsumer    方法消费者
@@ -148,7 +157,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 解析单个字段，将访问标志 名称 类型及属性写入给定的字段对象
+     * 解析单个字段,将访问标志 名称 类型及属性写入给定的字段对象
      *
      * @param reader 定位到字段起始位置的读取器
      * @param field  用于承载解析结果的字段对象 (会被复用)
@@ -166,11 +175,11 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 解析单个方法，构建方法引用并将访问标志 属性写入给定的方法对象
+     * 解析单个方法,构建方法引用并将访问标志 属性写入给定的方法对象
      *
      * @param reader 定位到方法起始位置的读取器
      * @param method 用于承载解析结果的方法对象 (会被复用)
-     * @param id     方法在类中的序号，用于生成唯一 id
+     * @param id     方法在类中的序号,用于生成唯一 id
      */
     private void parseMethod(DataReader reader, JavaMethodData method, int id) {
         int accessFlags = reader.readU2();
@@ -185,7 +194,7 @@ public class JavaClassData implements IClassData {
         methodRef.setDescr(constPoolReader.getUtf8(descriptorIdx));
 
         if ("<init>".equals(methodRef.getName())) {
-            accessFlags |= AccessFlags.CONSTRUCTOR; // Java 字节码本身不使用该标志，这里手动补上构造方法标志
+            accessFlags |= AccessFlags.CONSTRUCTOR; // Java 字节码本身不使用该标志,这里手动补上构造方法标志
         }
 
         method.setData(accessFlags, attributes);

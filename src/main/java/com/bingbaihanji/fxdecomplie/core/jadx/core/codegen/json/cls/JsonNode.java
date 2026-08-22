@@ -1,9 +1,13 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.cls;
 
 public class JsonNode {
+
     private String name;
+
     private String alias;
+
     private String declaration;
+
     private int accessFlags;
 
     public String getName() {

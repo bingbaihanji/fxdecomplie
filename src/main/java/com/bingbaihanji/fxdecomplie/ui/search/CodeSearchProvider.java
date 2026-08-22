@@ -22,7 +22,7 @@ public class CodeSearchProvider implements SearchProvider {
     private static final int MAX_RESULTS = 500;
 
     /**
-     * 基本搜索：遍历所有已反编译源码文件,逐行匹配关键字(不区分大小写)
+     * 基本搜索:遍历所有已反编译源码文件,逐行匹配关键字(不区分大小写)
      * 支持中断检测,以便搜索任务取消后立即停止
      */
     @Override
@@ -54,7 +54,7 @@ public class CodeSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.CODE;
     }
 
-    /** 高级搜索：支持正则 大小写 全词匹配等选项的源码全文搜索 */
+    /** 高级搜索:支持正则 大小写 全词匹配等选项的源码全文搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

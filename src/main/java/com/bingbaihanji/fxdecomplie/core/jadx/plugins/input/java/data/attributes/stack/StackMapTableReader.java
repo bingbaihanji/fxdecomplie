@@ -141,8 +141,11 @@ public class StackMapTableReader implements IJavaAttributeReader {
     }
 
     private static final class FrameContext {
+
         private final DataReader dataReader;
+
         private final int typeData;
+
         private final StackFrame prevFrame;
 
         private StackFrame frame;

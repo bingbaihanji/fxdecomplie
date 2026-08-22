@@ -8,7 +8,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 public class AnonymousClassAttr extends PinnedAttribute {
 
     private final ClassNode outerCls;
+
     private final ArgType baseType;
+
     private final InlineType inlineType;
 
     public AnonymousClassAttr(ClassNode outerCls, ArgType baseType, InlineType inlineType) {

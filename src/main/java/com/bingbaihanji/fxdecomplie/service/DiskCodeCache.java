@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * L3 磁盘持久化缓存将反编译结果序列化到 {@code <appDir>/cache/} 下。
- * 实现 {@link CodeCacheStore} 以支持注入和测试替换。
+ * L3 磁盘持久化缓存将反编译结果序列化到 {@code <appDir>/cache/} 下.
+ * 实现 {@link CodeCacheStore} 以支持注入和测试替换.
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -29,18 +29,21 @@ public final class DiskCodeCache implements CodeCacheStore {
 
     private static final Logger log = LoggerFactory.getLogger(DiskCodeCache.class);
 
-    private final Path cacheRoot;
     private static final long MAX_CACHE_SIZE_BYTES = 500L * 1024 * 1024;
+
     private static final int CACHE_SCHEMA_VERSION = 2;
 
     private static volatile DiskCodeCache defaultInstance;
+
+    private final Path cacheRoot;
+
     private volatile boolean cleanupInProgress;
 
     public DiskCodeCache(Path cacheRoot) {
         this.cacheRoot = cacheRoot;
     }
 
-    /** 获取默认实例（使用 AppPaths.cacheDir() 作为根目录） */
+    /** 获取默认实例(使用 AppPaths.cacheDir() 作为根目录) */
     public static DiskCodeCache getDefault() {
         if (defaultInstance == null) {
             synchronized (DiskCodeCache.class) {
@@ -52,11 +55,66 @@ public final class DiskCodeCache implements CodeCacheStore {
         return defaultInstance;
     }
 
-    public Path root() {
-        return cacheRoot;
+    /** @deprecated 使用 {@link #getDefault()} 获取实例后调用 {@link #load(CodeCacheKey)} */
+    @Deprecated
+    public static Path cacheRoot() {
+        return getDefault().cacheRoot;
     }
 
     // ─── CodeCacheStore 实现 ───
+
+    public static String load(String workspaceHash, String internalName, DecompilerTypeEnum engine) {
+        return getDefault().loadInternal(workspaceHash, internalName, engine, "default");
+    }
+
+    public static String load(String workspaceHash, String internalName,
+                              DecompilerTypeEnum engine, String optionsHash) {
+        return getDefault().loadInternal(workspaceHash, internalName, engine, optionsHash);
+    }
+
+    public static void save(String workspaceHash, String internalName,
+                            DecompilerTypeEnum engine, String sourceCode) {
+        getDefault().saveInternal(workspaceHash, internalName, engine, "default", sourceCode);
+    }
+
+    // ─── 向后兼容: 静态方法 ───
+
+    public static void save(String workspaceHash, String internalName,
+                            DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
+        getDefault().saveInternal(workspaceHash, internalName, engine, optionsHash, sourceCode);
+    }
+
+    public static void invalidate(String workspaceHash, String internalName) {
+        getDefault().invalidateInternal(workspaceHash, internalName);
+    }
+
+    public static void cleanAll() {
+        getDefault().cleanAllInternal();
+    }
+
+    public static void cleanIfNeeded() {
+        getDefault().cleanIfNeededInternal();
+    }
+
+    private static String sanitizePathPart(String value) {
+        if (value == null || value.isBlank()) {
+            return "_";
+        }
+        return value.replace('/', '_').replace('\\', '_').replace(':', '_')
+                .replace('*', '_').replace('?', '_').replace('"', '_')
+                .replace('<', '_').replace('>', '_').replace('|', '_');
+    }
+
+    private static String optionsId(String optionsHash) {
+        if (optionsHash == null || optionsHash.isBlank() || "default".equals(optionsHash)) {
+            return "default";
+        }
+        return ByteUtils.sha256Hex(optionsHash).substring(0, 16);
+    }
+
+    public Path root() {
+        return cacheRoot;
+    }
 
     @Override
     public Optional<String> load(CodeCacheKey key) {
@@ -82,38 +140,27 @@ public final class DiskCodeCache implements CodeCacheStore {
                     if (Files.exists(wsDir)) {
                         try (var files = Files.walk(wsDir).sorted(Comparator.reverseOrder())) {
                             files.forEach(p -> {
-                                try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                                try {
+                                    Files.deleteIfExists(p);
+                                } catch (IOException ignored) {
+                                }
                             });
                         }
                     }
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             }
             case ALL -> cleanAll();
         }
     }
 
-    // ─── 向后兼容: 静态方法 ───
-
-    /** @deprecated 使用 {@link #getDefault()} 获取实例后调用 {@link #load(CodeCacheKey)} */
-    @Deprecated
-    public static Path cacheRoot() {
-        return getDefault().cacheRoot;
-    }
-
-    public static String load(String workspaceHash, String internalName, DecompilerTypeEnum engine) {
-        return getDefault().loadInternal(workspaceHash, internalName, engine, "default");
-    }
-
-    public static String load(String workspaceHash, String internalName,
-                              DecompilerTypeEnum engine, String optionsHash) {
-        return getDefault().loadInternal(workspaceHash, internalName, engine, optionsHash);
-    }
-
     private String loadInternal(String workspaceHash, String internalName,
-                                 DecompilerTypeEnum engine, String optionsHash) {
+                                DecompilerTypeEnum engine, String optionsHash) {
         Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
         try {
-            if (!Files.exists(file)) return null;
+            if (!Files.exists(file)) {
+                return null;
+            }
             String content = Files.readString(file, StandardCharsets.UTF_8);
             return content.isEmpty() ? null : content;
         } catch (IOException e) {
@@ -122,19 +169,11 @@ public final class DiskCodeCache implements CodeCacheStore {
         }
     }
 
-    public static void save(String workspaceHash, String internalName,
-                            DecompilerTypeEnum engine, String sourceCode) {
-        getDefault().saveInternal(workspaceHash, internalName, engine, "default", sourceCode);
-    }
-
-    public static void save(String workspaceHash, String internalName,
-                            DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
-        getDefault().saveInternal(workspaceHash, internalName, engine, optionsHash, sourceCode);
-    }
-
     private void saveInternal(String workspaceHash, String internalName,
-                               DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
-        if (sourceCode == null || sourceCode.isBlank()) return;
+                              DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
+        if (sourceCode == null || sourceCode.isBlank()) {
+            return;
+        }
         try {
             Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
             Files.createDirectories(file.getParent());
@@ -153,24 +192,40 @@ public final class DiskCodeCache implements CodeCacheStore {
     }
 
     private void checkAndCleanLazy() {
-        if (cleanupInProgress) return;
+        if (cleanupInProgress) {
+            return;
+        }
         try {
-            if (!Files.exists(cacheRoot)) return;
+            if (!Files.exists(cacheRoot)) {
+                return;
+            }
             long totalSize;
             try (var stream = Files.walk(cacheRoot)) {
                 totalSize = stream.filter(Files::isRegularFile)
                         .mapToLong(p -> {
-                            try { return Files.size(p); } catch (IOException e) { return 0L; }
+                            try {
+                                return Files.size(p);
+                            } catch (IOException e) {
+                                return 0L;
+                            }
                         }).sum();
             }
             if (totalSize > MAX_CACHE_SIZE_BYTES) {
                 cleanupInProgress = true;
                 var cleanupTask = BackgroundTasks.run(BackgroundTasks.PoolType.IO,
                         "DiskCache-Cleanup", () -> {
-                            try { cleanIfNeeded(); } finally { cleanupInProgress = false; }
+                            try {
+                                cleanIfNeeded();
+                            } finally {
+                                cleanupInProgress = false;
+                            }
                         });
                 if (cleanupTask.isDone()) {
-                    try { cleanupTask.get(); } catch (Exception e) { cleanupInProgress = false; }
+                    try {
+                        cleanupTask.get();
+                    } catch (Exception e) {
+                        cleanupInProgress = false;
+                    }
                 }
             }
         } catch (IOException e) {
@@ -178,16 +233,16 @@ public final class DiskCodeCache implements CodeCacheStore {
         }
     }
 
-    public static void invalidate(String workspaceHash, String internalName) {
-        getDefault().invalidateInternal(workspaceHash, internalName);
-    }
-
     private void invalidateInternal(String workspaceHash, String internalName) {
-        if (workspaceHash == null || internalName == null) return;
+        if (workspaceHash == null || internalName == null) {
+            return;
+        }
         String safeWorkspace = sanitizePathPart(workspaceHash);
         String safeName = sanitizePathPart(internalName);
         Path dir = cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWorkspace);
-        if (!Files.exists(dir)) return;
+        if (!Files.exists(dir)) {
+            return;
+        }
         try (var engineDirs = Files.list(dir)) {
             engineDirs.filter(Files::isDirectory).forEach(engineDir -> {
                 try (var files = Files.list(engineDir)) {
@@ -195,15 +250,16 @@ public final class DiskCodeCache implements CodeCacheStore {
                         String fname = f.getFileName().toString();
                         return fname.startsWith(safeName + ".");
                     }).forEach(f -> {
-                        try { Files.deleteIfExists(f); } catch (IOException ignored) {}
+                        try {
+                            Files.deleteIfExists(f);
+                        } catch (IOException ignored) {
+                        }
                     });
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             });
-        } catch (IOException ignored) {}
-    }
-
-    public static void cleanAll() {
-        getDefault().cleanAllInternal();
+        } catch (IOException ignored) {
+        }
     }
 
     private void cleanAllInternal() {
@@ -211,25 +267,31 @@ public final class DiskCodeCache implements CodeCacheStore {
             if (Files.exists(cacheRoot)) {
                 try (var files = Files.walk(cacheRoot).sorted(Comparator.reverseOrder())) {
                     files.forEach(p -> {
-                        try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                        try {
+                            Files.deleteIfExists(p);
+                        } catch (IOException ignored) {
+                        }
                     });
                 }
             }
-        } catch (IOException ignored) {}
-    }
-
-    public static void cleanIfNeeded() {
-        getDefault().cleanIfNeededInternal();
+        } catch (IOException ignored) {
+        }
     }
 
     private void cleanIfNeededInternal() {
         try {
-            if (!Files.exists(cacheRoot)) return;
+            if (!Files.exists(cacheRoot)) {
+                return;
+            }
             long totalSize;
             try (var stream = Files.walk(cacheRoot)) {
                 totalSize = stream.filter(Files::isRegularFile)
                         .mapToLong(p -> {
-                            try { return Files.size(p); } catch (IOException e) { return 0L; }
+                            try {
+                                return Files.size(p);
+                            } catch (IOException e) {
+                                return 0L;
+                            }
                         }).sum();
             }
             if (totalSize <= MAX_CACHE_SIZE_BYTES) {
@@ -244,19 +306,25 @@ public final class DiskCodeCache implements CodeCacheStore {
             try (var stream = Files.walk(cacheRoot)) {
                 files = stream.filter(Files::isRegularFile)
                         .sorted(Comparator.comparingLong(p -> {
-                            try { return Files.getLastModifiedTime(p).toMillis(); }
-                            catch (IOException e) { return Long.MAX_VALUE; }
+                            try {
+                                return Files.getLastModifiedTime(p).toMillis();
+                            } catch (IOException e) {
+                                return Long.MAX_VALUE;
+                            }
                         })).toList();
             }
             int deleted = 0;
             for (Path f : files) {
-                if (totalSize <= targetSize) break;
+                if (totalSize <= targetSize) {
+                    break;
+                }
                 try {
                     long sz = Files.size(f);
                     Files.deleteIfExists(f);
                     totalSize -= sz;
                     deleted++;
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             }
             log.info("磁盘缓存清理完成: 删除 {} 个文件, 剩余 {} MB",
                     deleted, totalSize / (1024 * 1024));
@@ -266,25 +334,12 @@ public final class DiskCodeCache implements CodeCacheStore {
     }
 
     private Path cachePath(String workspaceHash, String internalName,
-                            DecompilerTypeEnum engine, String optionsHash) {
+                           DecompilerTypeEnum engine, String optionsHash) {
         String safeWorkspace = sanitizePathPart(workspaceHash);
         String safeInternalName = sanitizePathPart(internalName);
         String safeEngine = engine.name().toLowerCase();
         return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION)
                 .resolve(safeWorkspace).resolve(safeEngine)
                 .resolve(safeInternalName + "." + optionsId(optionsHash) + ".java");
-    }
-
-    private static String sanitizePathPart(String value) {
-        if (value == null || value.isBlank()) return "_";
-        return value.replace('/', '_').replace('\\', '_').replace(':', '_')
-                .replace('*', '_').replace('?', '_').replace('"', '_')
-                .replace('<', '_').replace('>', '_').replace('|', '_');
-    }
-
-    private static String optionsId(String optionsHash) {
-        if (optionsHash == null || optionsHash.isBlank() || "default".equals(optionsHash))
-            return "default";
-        return ByteUtils.sha256Hex(optionsHash).substring(0, 16);
     }
 }

@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg
 public class FieldReplaceAttr extends PinnedAttribute {
 
     private final ReplaceWith replaceType;
+
     private final Object replaceObj;
 
     public FieldReplaceAttr(ClassInfo cls) {

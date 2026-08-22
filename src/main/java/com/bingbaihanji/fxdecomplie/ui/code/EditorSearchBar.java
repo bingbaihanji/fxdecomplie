@@ -26,12 +26,19 @@ import java.util.List;
 public final class EditorSearchBar extends HBox {
 
     private final TextField input;
+
     private final Label statusLabel;
+
     private final Button prevBtn;
+
     private final Button nextBtn;
+
     private final Button closeBtn;
+
     private final List<Integer> matchPositions = new ArrayList<>();
+
     private CodeArea codeArea;
+
     private int currentMatch = -1;
 
     /**
@@ -170,7 +177,7 @@ public final class EditorSearchBar extends HBox {
             updateStatus();
             return;
         }
-        // 使用取模实现循环导航：正向+1 取模,反向先加 size 再取模避免负数
+        // 使用取模实现循环导航:正向+1 取模,反向先加 size 再取模避免负数
         if (direction > 0) {
             currentMatch = (currentMatch + 1) % matchPositions.size();
         } else {

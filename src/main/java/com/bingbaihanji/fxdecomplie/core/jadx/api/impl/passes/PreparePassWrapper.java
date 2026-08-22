@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PreparePassWrapper extends AbstractVisitor implements IPassWrapperVisitor {
+
     private static final Logger LOG = LoggerFactory.getLogger(PreparePassWrapper.class);
 
     private final JadxPreparePass preparePass;

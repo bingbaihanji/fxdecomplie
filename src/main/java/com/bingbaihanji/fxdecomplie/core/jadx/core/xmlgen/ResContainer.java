@@ -12,8 +12,11 @@ import java.util.Objects;
 public class ResContainer implements Comparable<ResContainer> {
 
     private final DataType dataType;
+
     private final String name;
+
     private final Object data;
+
     private final List<ResContainer> subFiles;
 
     private ResContainer(String name, List<ResContainer> subFiles, Object data, DataType dataType) {
@@ -95,6 +98,9 @@ public class ResContainer implements Comparable<ResContainer> {
     }
 
     public enum DataType {
-        TEXT, DECODED_DATA, RES_LINK, RES_TABLE
+        TEXT,
+        DECODED_DATA,
+        RES_LINK,
+        RES_TABLE
     }
 }

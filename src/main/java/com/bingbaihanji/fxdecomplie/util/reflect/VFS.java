@@ -20,7 +20,7 @@ import java.util.List;
  */
 abstract class VFS {
 
-    /** 内置 VFS 实现类列表,按优先级排列：JBoss6 → Default */
+    /** 内置 VFS 实现类列表,按优先级排列:JBoss6 → Default */
     public static final Class<?>[] IMPLEMENTATIONS = {JBoss6VFS.class, DefaultVFS.class};
 
     /** 用户自定义 VFS 实现类列表,优先级高于内置实现 */

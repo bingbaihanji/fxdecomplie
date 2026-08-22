@@ -3,7 +3,12 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
@@ -20,14 +25,23 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.input.*;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,45 +55,69 @@ public final class CodeOnlyWindow {
 
     public static final DataFormat CODE_TAB_FORMAT =
             new DataFormat("application/x-fxdecomplie-code-tab");
+
     private static final String DRAG_SOURCE_INSTALLED =
             "fxdecomplie.codeTabDragSourceInstalled";
+
     private static final String ENGINE_SWITCH_TASK =
             "fxdecomplie.codeOnly.engineSwitchTask";
+
     private static final String ENGINE_SWITCH_REQUEST =
             "fxdecomplie.codeOnly.engineSwitchRequest";
+
     /** 每个标签页当前有效的引擎切换请求 ID,支持跨线程安全读取 */
     private static final java.util.concurrent.ConcurrentMap<CodeEditorTab, AtomicLong>
             ACTIVE_ENGINE_REQUESTS = new java.util.concurrent.ConcurrentHashMap<>();
+
     private static final String CODE_ONLY_TARGET =
             "fxdecomplie.codeOnly.target";
+
     private static final String CODE_ONLY_SPLIT_EDITOR =
             "fxdecomplie.codeOnly.splitEditor";
+
     private static final String CODE_ONLY_CLOSE_CLEANUP =
             "fxdecomplie.codeOnly.closeCleanup";
+
     private static final String ORIGINAL_HANDLERS_SAVED =
             "fxdecomplie.codeOnly.originalHandlersSaved";
+
     private static final String ORIGINAL_SPLIT_HANDLER =
             "fxdecomplie.codeOnly.originalSplitHandler";
+
     private static final String ORIGINAL_ENGINE_HANDLER =
             "fxdecomplie.codeOnly.originalEngineHandler";
+
     private static final String TOKEN_PREFIX = "fxdecomplie-code-tab:";
+
     private static final int MAX_DRAG_PAYLOADS = 128;
+
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
+
     /** 拖拽负载及其创建时间戳(毫秒),用于定期清理过期条目 */
     private static final Map<String, TimestampedPayload> DRAG_PAYLOADS =
             new ConcurrentHashMap<>();
+
     private static final Map<String, TabPane> DRAG_SOURCES =
             new ConcurrentHashMap<>();
+
     private static final Map<String, CodeEditorTab> DRAG_SOURCE_TABS =
             new ConcurrentHashMap<>();
+
     private static final AtomicLong ENGINE_SWITCH_IDS = new AtomicLong();
+
     /** 拖拽负载存活时间阈值(毫秒),超过此时间的条目在 trim 时被清理 */
     private static final long DRAG_PAYLOAD_TTL_MS = 60_000L;
+
     private static final Logger log = LoggerFactory.getLogger(CodeOnlyWindow.class);
+
     private final AppConfig config;
+
     private final VsCodeThemeLoader.ThemeData editorTheme;
+
     private final SplitEditorPane splitEditorPane;
+
     private final TabPane tabPane;
+
     private final Stage stage;
 
     private CodeOnlyWindow(AppConfig config, Stage stage) {
@@ -592,7 +630,7 @@ public final class CodeOnlyWindow {
                         ? OutlineParser.extractMetadata(source, preResolvedBytes)
                         : new CodeMetadata(Map.of());
                 OpenFile updated = new OpenFile(previous.className(), previous.fullPath(), source, engine);
-                // 回到 FX 线程更新 UI：替换源码面板内容
+                // 回到 FX 线程更新 UI:替换源码面板内容
                 Platform.runLater(() -> {
                     if (!isEngineSwitchCurrent(tab, requestId)) {
                         return;
@@ -807,6 +845,7 @@ public final class CodeOnlyWindow {
             implements javafx.event.EventHandler<DragEvent> {
 
         private final Node source;
+
         private final String token;
 
         private DragCleanupHandler(Node source, String token) {

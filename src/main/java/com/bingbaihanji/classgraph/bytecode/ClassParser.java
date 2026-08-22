@@ -1,30 +1,59 @@
- 
 package com.bingbaihanji.classgraph.bytecode;
 
 import com.bingbaihanji.classgraph.classpath.Classpath;
-import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationClassRef;
+import com.bingbaihanji.classgraph.metadata.AnnotationEnumValue;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.AnnotationParameterValue;
+import com.bingbaihanji.classgraph.metadata.AnnotationParameterValueList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.FieldInfo;
+import com.bingbaihanji.classgraph.metadata.FieldInfoList;
+import com.bingbaihanji.classgraph.metadata.MethodInfo;
+import com.bingbaihanji.classgraph.metadata.MethodInfoList;
+import com.bingbaihanji.classgraph.metadata.ModuleInfo;
+import com.bingbaihanji.classgraph.metadata.PackageInfo;
 import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.type.ClassType;
+import com.bingbaihanji.classgraph.type.MethodType;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.ReferenceType;
+import com.bingbaihanji.classgraph.type.TypeParam;
+import com.bingbaihanji.classgraph.type.TypeRef;
+import com.bingbaihanji.classgraph.type.TypeSignature;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.StringUtils;
+import com.bingbaihanji.classgraph.util.WorkQueue;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ClassParser 二进制格式解析器实现了自己的缓冲机制以避免使用 DataInputStream 的开销
- * 此类在同一时间仅应由单线程使用，但可以重复用于按顺序扫描多个 ClassParser，以避免重新分配缓冲区内存
+ * 此类在同一时间仅应由单线程使用,但可以重复用于按顺序扫描多个 ClassParser,以避免重新分配缓冲区内存
  *
  * <p>
  * 参见 <a href="https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html">class 文件格式规范</a>
  */
 public class ClassParser {
+
     /** 当没有注解时使用的空数组 */
     private static final AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
+
     /** 包含此 ClassParser 的类路径元素 */
     private final Classpath Classpath;
 
@@ -39,82 +68,111 @@ public class ClassParser {
 
     /** 字符串内部化映射 */
     private final ConcurrentHashMap<String, String> stringInternMap;
+
     /** 此是否为外部类 */
     private final boolean isExternalClass;
+
     /** 在类路径元素内扫描路径时发现的已接受类名集合 */
     private final Set<String> acceptedClassNamesFound;
+
     /**
-     * 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类、接口和注解)
+     * 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类,接口和注解)
      */
     private final Set<String> classNamesScheduledForExtendedScanning;
+
     /** 扫描规格 */
     private final ScanConfig ScanConfig;
+
     /** 当前 ClassParser 的 {@link ClassFileReader} */
     private ClassFileReader reader;
+
     /** 类名 */
     private String className;
+
     /** ClassParser 格式的次版本号 */
     private int minorVersion;
+
     /** ClassParser 格式的主版本号 */
     private int majorVersion;
+
     /** 类修饰符 */
     private int classModifiers;
+
     /** 此类是否为接口 */
     private boolean isInterface;
+
     /** 此类是否为记录类(record) */
     private boolean isRecord;
+
     /** 此类是否为注解 */
     private boolean isAnnotation;
-    /** 超类名(如果无超类或超类被拒绝，则可为 null) */
+
+    /** 超类名(如果无超类或超类被拒绝,则可为 null) */
     private String superclassName;
+
     /** 实现的接口 */
     private List<String> implementedInterfaces;
+
     /** 类注解 */
     private AnnotationInfoList classAnnotations;
+
     /** 定义方法的完全限定名称 */
     private String fullyQualifiedDefiningMethodName;
+
     /** 类包含关系条目 */
     private List<ClassContainment> classContainmentEntries;
+
     /** 注解默认参数值 */
     private AnnotationParameterValueList annotationParamDefaultValues;
+
     /** 引用的类名 */
     private Set<String> refdClassNames;
+
     /** 字段信息列表 */
     private FieldInfoList fieldInfoList;
+
     /** 方法信息列表 */
     private MethodInfoList methodInfoList;
+
     /** 类型签名 */
     private String typeSignatureStr;
-    /** 源文件，如 ClassParser.java */
+
+    /** 源文件,如 ClassParser.java */
     private String sourceFile;
+
     /** {@link ClassType} 实例的类型注解装饰器 */
     private List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators;
 
     // -------------------------------------------------------------------------------------------------------------
+
     /** 任何已安排扫描的额外工作单元 */
     private List<ClassfileScanWorkUnit> additionalWorkUnits;
+
     /** 常量池条目数加一 */
     private int cpCount;
+
     /** 常量池中每个条目起始位置的字节偏移量 */
     private int[] entryOffset;
+
     /** 常量池中每个条目的标签(类型) */
     private int[] entryTag;
 
     // -------------------------------------------------------------------------------------------------------------
+
     /** 常量池中 String/Class 条目的间接引用索引 */
     private int[] indirectStringRefs;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 直接检查 ClassParser 二进制头内容以确定注解、实现的接口、超类等
-     * 创建一个新的 ClassInfo 对象，并将其添加到 classNameToClassInfoOut 中
-     * 假设类路径掩码已执行，因此只会添加一个给定名称的类
+     * 直接检查 ClassParser 二进制头内容以确定注解,实现的接口,超类等
+     * 创建一个新的 ClassInfo 对象,并将其添加到 classNameToClassInfoOut 中
+     * 假设类路径掩码已执行,因此只会添加一个给定名称的类
      *
      * @param Classpath 类路径元素
      * @param classpathOrder  类路径顺序
      * @param acceptedClassNamesFound 在类路径元素内扫描路径时发现的已接受类名集合
-     * @param classNamesScheduledForExtendedScanning 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类、接口和注解)
+     * @param classNamesScheduledForExtendedScanning 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类,接口和注解)
      * @param relativePath 相对路径
      * @param classfileResource  ClassParser 资源
      * @param isExternalClass  此是否为外部类
@@ -124,7 +182,7 @@ public class ClassParser {
      * @param log 日志
      * @throws IOException  如果发生 I/O 异常
      * @throws ClassfileFormatException 如果解析 ClassParser 时发生问题
-     * @throws SkipClassException 如果 ClassParser 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
+     * @throws SkipClassException 如果 ClassParser 需要被跳过(例如类为非公开的,且 ignoreClassVisibility 为 false)
      */
     public ClassParser(final Classpath Classpath, final List<Classpath> classpathOrder,
                        final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
@@ -220,11 +278,11 @@ public class ClassParser {
             }
         }
 
-        // 检查是否有任何超类、接口或注解是外部(非接受)类，需要安排扫描，
-        // 以便为任何接受类扫描类图的整个"向上"方向，即使超类/接口/注解本身不是接受类
+        // 检查是否有任何超类,接口或注解是外部(非接受)类,需要安排扫描,
+        // 以便为任何接受类扫描类图的整个"向上"方向,即使超类/接口/注解本身不是接受类
         if (ScanConfig.extendScanningUpwardsToExternalClasses) {
             extendScanningUpwards(subLog);
-            // 如果发现任何外部类，安排它们进行扫描
+            // 如果发现任何外部类,安排它们进行扫描
             if (additionalWorkUnits != null) {
                 workQueue.addWorkUnits(additionalWorkUnits);
             }
@@ -234,7 +292,7 @@ public class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 将扫描扩展到超类、接口或注解
+     * 将扫描扩展到超类,接口或注解
      *
      * @param className
      *            类名
@@ -249,7 +307,7 @@ public class ClassParser {
         if (className != null && !"java.lang.Object".equals(className)
                 // 不安排已经发现为接受类的类进行扫描
                 && !acceptedClassNamesFound.contains(className)
-                // 在所有线程中，每个外部类只安排一次扫描
+                // 在所有线程中,每个外部类只安排一次扫描
                 && classNamesScheduledForExtendedScanning.add(className)) {
             if (ScanConfig.classAcceptReject.isRejected(className)) {
                 if (log != null) {
@@ -257,10 +315,10 @@ public class ClassParser {
                             + ", since it is rejected");
                 }
             } else {
-                // 在类路径元素中按类路径顺序搜索指定类的 ClassParser(这对每个类是 O(N)，
+                // 在类路径元素中按类路径顺序搜索指定类的 ClassParser(这对每个类是 O(N),
                 // 但向上扩展扫描的情况不应太多)
                 final String classfilePath = JarUtils.classNameToClassfilePath(className);
-                // 首先检查当前类路径元素，避免遍历其他类路径元素
+                // 首先检查当前类路径元素,避免遍历其他类路径元素
                 Resource classResource = Classpath.getResource(classfilePath);
                 Classpath foundInClasspathElt = null;
                 if (classResource != null) {
@@ -281,7 +339,7 @@ public class ClassParser {
                 if (classResource != null) {
                     // 找到了类资源
                     if (log != null) {
-                        // 将扩展扫描记录为当前类扫描日志的子 LogNode，因为外部类不是在
+                        // 将扩展扫描记录为当前类扫描日志的子 LogNode,因为外部类不是在
                         // 类路径元素层次结构遍历中的常规位置扫描的
                         classResource.scanLog = log
                                 .log("Extending scanning to external " + relationship
@@ -341,7 +399,7 @@ public class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 检查是否需要向上扩展到外部超类、接口或注解进行扫描
+     * 检查是否需要向上扩展到外部超类,接口或注解进行扫描
      *
      * @param log
      *            日志
@@ -409,7 +467,7 @@ public class ClassParser {
                 }
             }
         }
-        // 检查此类是否为内部类，如果是，则将扫描扩展到外部类
+        // 检查此类是否为内部类,如果是,则将扫描扩展到外部类
         if (classContainmentEntries != null) {
             for (final ClassContainment classContainmentEntry : classContainmentEntries) {
                 if (classContainmentEntry.innerClassName.equals(className)) {
@@ -420,7 +478,7 @@ public class ClassParser {
     }
 
     /**
-     * 链接类不是线程安全的，应在单线程上下文中运行
+     * 链接类不是线程安全的,应在单线程上下文中运行
      *
      * @param classNameToClassInfo
      *            类名到类信息的映射
@@ -490,7 +548,7 @@ public class ClassParser {
             }
         }
 
-        // 获取或创建 PackageInfo，如果这不是模块描述符(模块描述符的包是 "")
+        // 获取或创建 PackageInfo,如果这不是模块描述符(模块描述符的包是 "")
         PackageInfo packageInfo = null;
         if (!isModuleDescriptor) {
             // 获取此类或包描述符的包
@@ -500,13 +558,13 @@ public class ClassParser {
                 // 将 package-info.class 文件上的任何类注解添加到 ModuleInfo
                 packageInfo.addAnnotations(classAnnotations);
             } else if (classInfo != null) {
-                // 将 ClassInfo 添加到 PackageInfo，反之亦然
+                // 将 ClassInfo 添加到 PackageInfo,反之亦然
                 packageInfo.addClassInfo(classInfo);
                 classInfo.packageInfo = packageInfo;
             }
         }
 
-        // 获取或创建 ModuleInfo，如果有模块名
+        // 获取或创建 ModuleInfo,如果有模块名
         final String moduleName = Classpath.getModuleName();
         if (moduleName != null) {
             // 获取或创建此模块的 ModuleInfo 对象
@@ -520,7 +578,7 @@ public class ClassParser {
                 moduleInfo.addAnnotations(classAnnotations);
             }
             if (classInfo != null) {
-                // 将 ClassInfo 添加到 ModuleInfo，反之亦然
+                // 将 ClassInfo 添加到 ModuleInfo,反之亦然
                 moduleInfo.addClassInfo(classInfo);
                 classInfo.moduleInfo = moduleInfo;
             }
@@ -552,13 +610,13 @@ public class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取缓冲区中常量池字符串的字节偏移量，对于空字符串返回 0
+     * 获取缓冲区中常量池字符串的字节偏移量,对于空字符串返回 0
      *
      * @param cpIdx
      *            常量池索引
      * @param subFieldIdx
-     *            对于 CONSTANT_Utf8、CONSTANT_Class 和 CONSTANT_String 应为 0；
-     *            对于 CONSTANT_NameAndType_info，值为 0 时获取名称，值为 1 时获取类型描述符
+     *            对于 CONSTANT_Utf8,CONSTANT_Class 和 CONSTANT_String 应为 0;
+     *            对于 CONSTANT_NameAndType_info,值为 0 时获取名称,值为 1 时获取类型描述符
      * @return 常量池字符串偏移量
      * @throws ClassfileFormatException
      *             如果检测到问题
@@ -584,7 +642,7 @@ public class ClassParser {
             // CONSTANT_Utf8
             cpIdxToUse = cpIdx;
         } else if (t == 7 || t == 8 || t == 19) {
-            // t == 7 => CONSTANT_Class，例如 "[[I", "[Ljava/lang/Thread;";
+            // t == 7 => CONSTANT_Class,例如 "[[I", "[Ljava/lang/Thread;";
             // t == 8 => CONSTANT_String;
             // t == 19 => CONSTANT_Method_Info
             final int indirIdx = indirectStringRefs[cpIdx];
@@ -594,7 +652,7 @@ public class ClassParser {
                         + "Please report this at https://github.com/classgraph/classgraph/issues");
             }
             if (indirIdx == 0) {
-                // 假设这表示空字符串，因为第零个条目未被使用
+                // 假设这表示空字符串,因为第零个条目未被使用
                 return 0;
             }
             cpIdxToUse = indirIdx;
@@ -629,14 +687,14 @@ public class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 从常量池获取字符串，可选择将 '/' 替换为 '.'
+     * 从常量池获取字符串,可选择将 '/' 替换为 '.'
      *
      * @param cpIdx
      *            常量池索引
      * @param replaceSlashWithDot
-     *            如果为 true，将结果中的斜杠替换为点号
+     *            如果为 true,将结果中的斜杠替换为点号
      * @param stripLSemicolon
-     *            如果为 true，在返回之前从开头去掉 'L' 并从末尾去掉 ';'(用于类引用常量)
+     *            如果为 true,在返回之前从开头去掉 'L' 并从末尾去掉 ';'(用于类引用常量)
      * @return 常量池字符串
      * @throws ClassfileFormatException
      *             如果发生问题
@@ -663,8 +721,8 @@ public class ClassParser {
      * @param cpIdx
      *            常量池索引
      * @param subFieldIdx
-     *            对于 CONSTANT_Utf8、CONSTANT_Class 和 CONSTANT_String 应为 0；
-     *            对于 CONSTANT_NameAndType_info，值为 0 时获取名称，值为 1 时获取类型描述符
+     *            对于 CONSTANT_Utf8,CONSTANT_Class 和 CONSTANT_String 应为 0;
+     *            对于 CONSTANT_NameAndType_info,值为 0 时获取名称,值为 1 时获取类型描述符
      * @return 常量池字符串
      * @throws ClassfileFormatException
      *             如果发生问题
@@ -701,7 +759,7 @@ public class ClassParser {
     }
 
     /**
-     * 获取常量池中字符串的第一个 UTF8 字节，如果字符串为 null 或空则返回 '\0'
+     * 获取常量池中字符串的第一个 UTF8 字节,如果字符串为 null 或空则返回 '\0'
      *
      * @param cpIdx
      *            常量池索引
@@ -724,7 +782,7 @@ public class ClassParser {
     }
 
     /**
-     * 从常量池获取字符串，并通过将 '/' 替换为 '.' 来解释为类名
+     * 从常量池获取字符串,并通过将 '/' 替换为 '.' 来解释为类名
      *
      * @param cpIdx
      *            常量池索引
@@ -739,7 +797,7 @@ public class ClassParser {
     }
 
     /**
-     * 从常量池获取表示类名内部字符串描述符("Lcom/xyz/MyClass;")的字符串，并通过将 '/' 替换为 '.'，
+     * 从常量池获取表示类名内部字符串描述符("Lcom/xyz/MyClass;")的字符串,并通过将 '/' 替换为 '.',
      * 并移除开头的 "L" 和末尾的 ";" 来解释为类名
      *
      * @param cpIdx
@@ -755,7 +813,7 @@ public class ClassParser {
     }
 
     /**
-     * 将常量池中的字符串与给定的 ASCII 字符串进行比较，而不构造常量池 String 对象
+     * 将常量池中的字符串与给定的 ASCII 字符串进行比较,而不构造常量池 String 对象
      *
      * @param cpIdx
      *            常量池索引
@@ -848,7 +906,7 @@ public class ClassParser {
                                              final int cpIdx) throws ClassfileFormatException, IOException {
         switch (tag) {
             case 1: // Modified UTF8
-            case 7: // Class -- 注意：未使用？类引用似乎实际上不会作为常量初始化器存储
+            case 7: // Class -- 注意:未使用?类引用似乎实际上不会作为常量初始化器存储
             case 8: // String
                 // 对 Modified UTF8 条目的前向或后向间接引用
                 return getConstantPoolString(cpIdx);
@@ -879,7 +937,7 @@ public class ClassParser {
                 return Double.longBitsToDouble(cpReadLong(cpIdx));
             default:
                 // ClassGraph 不需要其他类型
-                // (注意：特别地，枚举值不存储在常量池中，因此不需要处理)
+                // (注意:特别地,枚举值不存储在常量池中,因此不需要处理)
                 throw new ClassfileFormatException("Unknown field constant pool tag " + tag + ", "
                         + "cannot continue reading class. Please report this at "
                         + "https://github.com/classgraph/classgraph/issues");
@@ -889,7 +947,7 @@ public class ClassParser {
     /**
      * 从 ClassParser 读取注解条目
      *
-     * @return 注解，作为 {@link AnnotationInfo} 对象
+     * @return 注解,作为 {@link AnnotationInfo} 对象
      * @throws IOException
      *             如果发生 I/O 异常
      */
@@ -1021,7 +1079,7 @@ public class ClassParser {
             entryTag[i] = reader.readUnsignedByte();
             entryOffset[i] = reader.currPos();
             switch (entryTag[i]) {
-                case 0: // 不可能，可能是缓冲区欠载
+                case 0: // 不可能,可能是缓冲区欠载
                     throw new ClassfileFormatException("Invalid constant pool tag 0 in ClassParser " + relativePath
                             + " (possible buffer underflow issue). Please report this at "
                             + "https://github.com/classgraph/classgraph/issues");
@@ -1043,7 +1101,7 @@ public class ClassParser {
                     // 对 Modified UTF8 条目的前向或后向间接引用
                     indirectStringRefs[i] = reader.readUnsignedShort();
                     if (classNameCpIdxs != null) {
-                        // 如果这是类引用，且启用了类间依赖，则记录依赖关系
+                        // 如果这是类引用,且启用了类间依赖,则记录依赖关系
                         classNameCpIdxs.add(indirectStringRefs[i]);
                     }
                     break;
@@ -1052,15 +1110,15 @@ public class ClassParser {
                     indirectStringRefs[i] = reader.readUnsignedShort();
                     break;
                 case 9: // 字段引用
-                    // 引用一个类引用(case 7)，然后是一个名称和类型(case 12)
+                    // 引用一个类引用(case 7),然后是一个名称和类型(case 12)
                     reader.skip(4);
                     break;
                 case 10: // 方法引用
-                    // 引用一个类引用(case 7)，然后是一个名称和类型(case 12)
+                    // 引用一个类引用(case 7),然后是一个名称和类型(case 12)
                     reader.skip(4);
                     break;
                 case 11: // 接口方法引用
-                    // 引用一个类引用(case 7)，然后是一个名称和类型(case 12)
+                    // 引用一个类引用(case 7),然后是一个名称和类型(case 12)
                     reader.skip(4);
                     break;
                 case 12: // 名称和类型
@@ -1099,10 +1157,10 @@ public class ClassParser {
             }
         }
 
-        // 查找常量池中引用的类注意，有些类引用无法通过此方式找到，
-        // 例如枚举类和注解参数值中的类引用，因为它们被引用为字符串(标签 1)
+        // 查找常量池中引用的类注意,有些类引用无法通过此方式找到,
+        // 例如枚举类和注解参数值中的类引用,因为它们被引用为字符串(标签 1)
         // 而非类(标签 7)或类型签名(标签 12 的一部分)
-        // 因此，需要采用混合方法，从 ClassInfo 图中提取这些其他类引用，
+        // 因此,需要采用混合方法,从 ClassInfo 图中提取这些其他类引用,
         // 并将其与此处从常量池中提取的类名结合
         if (classNameCpIdxs != null) {
             refdClassNames = new HashSet<>();
@@ -1112,7 +1170,7 @@ public class ClassParser {
                         /* stripLSemicolon = */ false);
                 if (refdClassName != null) {
                     if (refdClassName.startsWith("[")) {
-                        // 解析数组类型签名，例如 "[Ljava.lang.String;" -- 使用 '.' 而非 '/'
+                        // 解析数组类型签名,例如 "[Ljava.lang.String;" -- 使用 '.' 而非 '/'
                         try {
                             final TypeSignature typeSig = TypeSignature.parse(refdClassName.replace('.', '/'),
                                     /* definingClass = */ null);
@@ -1172,7 +1230,7 @@ public class ClassParser {
      * @throws ClassfileFormatException
      *             如果 ClassParser 格式不正确
      * @throws SkipClassException
-     *             如果 ClassParser 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
+     *             如果 ClassParser 需要被跳过(例如类为非公开的,且 ignoreClassVisibility 为 false)
      */
     private void readBasicClassInfo() throws IOException, ClassfileFormatException, SkipClassException {
         // 修饰符标志
@@ -1181,14 +1239,14 @@ public class ClassParser {
         isInterface = (classModifiers & 0x0200) != 0;
         isAnnotation = (classModifiers & 0x2000) != 0;
 
-        // 此类的完全限定类名，斜杠替换为点号
+        // 此类的完全限定类名,斜杠替换为点号
         final String classNamePath = getConstantPoolString(reader.readUnsignedShort());
         if (classNamePath == null) {
             throw new ClassfileFormatException("Class name is null");
         }
         className = classNamePath.replace('/', '.');
         if ("java.lang.Object".equals(className)) {
-            // 不处理 java.lang.Object(它有空超类)，但你仍然可以搜索作为
+            // 不处理 java.lang.Object(它有空超类),但你仍然可以搜索作为
             // java.lang.Object 子类的类(作为外部类)
             throw new SkipClassException("No need to scan java.lang.Object");
         }
@@ -1212,7 +1270,7 @@ public class ClassParser {
                     "Relative path " + relativePath + " does not match class name " + className);
         }
 
-        // 超类名，斜杠替换为点号
+        // 超类名,斜杠替换为点号
         final int superclassNameCpIdx = reader.readUnsignedShort();
         if (superclassNameCpIdx > 0) {
             superclassName = getConstantPoolClassName(superclassNameCpIdx);
@@ -1249,7 +1307,7 @@ public class ClassParser {
         // 字段
         final int fieldCount = reader.readUnsignedShort();
         for (int i = 0; i < fieldCount; i++) {
-            // 修饰符标志信息：http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.5
+            // 修饰符标志信息:http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.5
             final int fieldModifierFlags = reader.readUnsignedShort();
             final boolean isPublicField = ((fieldModifierFlags & 0x0001) == 0x0001);
             final boolean fieldIsVisible = isPublicField || ScanConfig.ignoreFieldVisibility;
@@ -1282,7 +1340,7 @@ public class ClassParser {
                 for (int j = 0; j < attributesCount; j++) {
                     final int attributeNameCpIdx = reader.readUnsignedShort();
                     final int attributeLength = reader.readInt(); // == 2
-                    // 查看字段名是否匹配此类的请求名称之一，如果匹配，检查是否用常量值初始化
+                    // 查看字段名是否匹配此类的请求名称之一,如果匹配,检查是否用常量值初始化
                     if ((getStaticFinalFieldConstValue)
                             && constantPoolStringEquals(attributeNameCpIdx, "ConstantValue")) {
                         // http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.2
@@ -1332,6 +1390,7 @@ public class ClassParser {
                                 final List<TypePathNode> typePath = readTypePath();
                                 final AnnotationInfo annotationInfo = readAnnotation();
                                 fieldTypeAnnotationDecorators.add(new TypeAnnotationDecorator() {
+
                                     @Override
                                     public void decorate(final TypeSignature typeSignature) {
                                         typeSignature.addTypeAnnotation(typePath, annotationInfo);
@@ -1340,7 +1399,7 @@ public class ClassParser {
                             }
                         }
                     } else {
-                        // 不匹配，直接跳过属性
+                        // 不匹配,直接跳过属性
                         reader.skip(attributeLength);
                     }
                 }
@@ -1368,7 +1427,7 @@ public class ClassParser {
         // 方法
         final int methodCount = reader.readUnsignedShort();
         for (int i = 0; i < methodCount; i++) {
-            // 修饰符标志信息：http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.6
+            // 修饰符标志信息:http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.6
             final int methodModifierFlags = reader.readUnsignedShort();
             final boolean isPublicMethod = ((methodModifierFlags & 0x0001) == 0x0001);
             final boolean methodIsVisible = isPublicMethod || ScanConfig.ignoreMethodVisibility;
@@ -1426,7 +1485,7 @@ public class ClassParser {
                             || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                             attributeNameCpIdx, "RuntimeInvisibleParameterAnnotations")))) {
                         // 将运行时可见和运行时不可见注解合并到每个方法参数的单个注解数组中
-                        // (运行时可见和运行时不可见注解在单独的属性中给出，因此如果两个属性都存在，
+                        // (运行时可见和运行时不可见注解在单独的属性中给出,因此如果两个属性都存在,
                         // 在遇到第二个属性时需要扩大参数注解数组)
                         final int numParams = reader.readUnsignedByte();
                         if (methodParameterAnnotations == null) {
@@ -1474,7 +1533,7 @@ public class ClassParser {
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x10) {
-                                    // 此 target_type 不应添加方法，它用于 ClassParser 注解，
+                                    // 此 target_type 不应添加方法,它用于 ClassParser 注解,
                                     // 但 Google 的 Java 编译器出于某种原因将此类注解添加到 guava 的方法中
                                     // 直接忽略这些注解(#861)
                                     reader.readUnsignedShort();
@@ -1491,15 +1550,15 @@ public class ClassParser {
                                 } else if (targetType == 0x13) {
                                     // 字段或记录组件声明中的类型
                                     // (空目标)
-                                    // 此 target_type 不应添加到方法中，但似乎 JDK 17 编译器有 bug，
-                                    // 仍然将此 target_type 添加到记录的方法中(#797)因此接受它，
+                                    // 此 target_type 不应添加到方法中,但似乎 JDK 17 编译器有 bug,
+                                    // 仍然将此 target_type 添加到记录的方法中(#797)因此接受它,
                                     // 但忽略它(相同的 target_type 也应该添加到记录的字段中)
                                     TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x14) {
-                                    // 方法的返回类型，或新构造对象的类型
+                                    // 方法的返回类型,或新构造对象的类型
                                     // (空目标)
                                     TypeParamIndex = -1;
                                     boundIndex = -1;
@@ -1513,7 +1572,7 @@ public class ClassParser {
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x16) {
-                                    // 方法、构造函数或 Lambda 表达式的形式参数声明中的类型
+                                    // 方法,构造函数或 Lambda 表达式的形式参数声明中的类型
                                     TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = reader.readUnsignedByte();
@@ -1535,6 +1594,7 @@ public class ClassParser {
                                 final List<TypePathNode> typePath = readTypePath();
                                 final AnnotationInfo annotationInfo = readAnnotation();
                                 methodTypeAnnotationDecorators.add(new MethodTypeAnnotationDecorator() {
+
                                     @Override
                                     public void decorate(final MethodType MethodType) {
                                         if (targetType == 0x01) {
@@ -1546,7 +1606,7 @@ public class ClassParser {
                                                 TypeParams.get(TypeParamIndex).addTypeAnnotation(typePath,
                                                         annotationInfo);
                                             }
-                                            // 否则这是方法类型描述符，而不是方法类型签名，因此没有类型参数
+                                            // 否则这是方法类型描述符,而不是方法类型签名,因此没有类型参数
                                         } else if (targetType == 0x12) {
                                             // 泛型方法或构造函数类型参数声明的边界中的类型
                                             final List<TypeParam> TypeParams = MethodType
@@ -1555,7 +1615,7 @@ public class ClassParser {
                                                     && TypeParamIndex < TypeParams.size()) {
                                                 final TypeParam TypeParam = TypeParams
                                                         .get(TypeParamIndex);
-                                                // boundIndex == 0 => 类边界；boundIndex > 0 => 接口边界
+                                                // boundIndex == 0 => 类边界;boundIndex > 0 => 接口边界
                                                 if (boundIndex == 0) {
                                                     final ReferenceType classBound = TypeParam
                                                             .getClassBound();
@@ -1572,27 +1632,27 @@ public class ClassParser {
                                                     }
                                                 }
                                             }
-                                            // 否则这是方法类型描述符，而不是方法类型签名，因此没有类型参数
+                                            // 否则这是方法类型描述符,而不是方法类型签名,因此没有类型参数
                                         } else if (targetType == 0x14) {
-                                            // 方法的返回类型，或新构造对象的类型
+                                            // 方法的返回类型,或新构造对象的类型
                                             MethodType.getResultType().addTypeAnnotation(typePath,
                                                     annotationInfo);
                                         } else if (targetType == 0x15) {
                                             // 方法或构造函数的接收者类型(显式接收者参数)
                                             MethodType.addRecieverTypeAnnotation(annotationInfo);
                                         } else if (targetType == 0x16) {
-                                            // 方法、构造函数或 Lambda 表达式的形式参数声明中的类型
-                                            // 注意：形式参数索引不可靠，因为并非所有编译器以相同方式索引参数 --
+                                            // 方法,构造函数或 Lambda 表达式的形式参数声明中的类型
+                                            // 注意:形式参数索引不可靠,因为并非所有编译器以相同方式索引参数 --
                                             // 所以这里需要健壮处理
-                                            // ClassParser 规范说："A formal_parameter_index value of i may,
+                                            // ClassParser 规范说:"A formal_parameter_index value of i may,
                                             // but is not required to, correspond to the i'th parameter descriptor
-                                            // in the method descriptor"还有：
+                                            // in the method descriptor"还有:
                                             // "The formal_parameter_target item records that a formal parameter's
                                             // type is annotated, but does not record the type itself. The type
                                             // may be found by inspecting the method descriptor, although a
                                             // formal_parameter_index value of 0 does not always indicate the
                                             // first parameter descriptor in the method descriptor."
-                                            // 真是够了，伙计们
+                                            // 真是够了,伙计们
                                             final List<TypeSignature> parameterTypeSignatures = MethodType
                                                     .getParameterTypeSignatures();
                                             if (formalParameterIndex < parameterTypeSignatures.size()) {
@@ -1614,14 +1674,14 @@ public class ClassParser {
                             }
                         }
                     } else if (constantPoolStringEquals(attributeNameCpIdx, "MethodParameters")) {
-                        // 读取方法参数对于 Java，这些仅在 JDK8+ 中生成，且仅在编译时
+                        // 读取方法参数对于 Java,这些仅在 JDK8+ 中生成,且仅在编译时
                         // 提供了命令行开关 `-parameters` 时才生成
                         final int paramCount = reader.readUnsignedByte();
                         methodParameterNames = new String[paramCount];
                         methodParameterModifiers = new int[paramCount];
                         for (int k = 0; k < paramCount; k++) {
                             final int cpIdx = reader.readUnsignedShort();
-                            // 如果常量池索引为零，则参数是未命名的 => 使用 null
+                            // 如果常量池索引为零,则参数是未命名的 => 使用 null
                             methodParameterNames[k] = cpIdx == 0 ? null : getConstantPoolString(cpIdx);
                             methodParameterModifiers[k] = reader.readUnsignedShort();
                         }
@@ -1692,7 +1752,7 @@ public class ClassParser {
      *             如果 ClassParser 格式不正确
      */
     private void readClassAttributes() throws IOException, ClassfileFormatException {
-        // 类属性(包括类注解、类类型变量、模块信息等)
+        // 类属性(包括类注解,类类型变量,模块信息等)
         final int attributesCount = reader.readUnsignedShort();
         for (int i = 0; i < attributesCount; i++) {
             final int attributeNameCpIdx = reader.readUnsignedShort();
@@ -1729,7 +1789,7 @@ public class ClassParser {
                             boundIndex = -1;
                         } else if (targetType == 0x10) {
                             // 类声明的 extends 或 implements 子句中的类型(包括匿名类声明的
-                            // 直接超类或直接超接口)，或接口声明的 extends 子句中的类型
+                            // 直接超类或直接超接口),或接口声明的 extends 子句中的类型
                             supertypeIndex = reader.readUnsignedShort();
                             TypeParamIndex = -1;
                             boundIndex = -1;
@@ -1748,6 +1808,7 @@ public class ClassParser {
                         final List<TypePathNode> typePath = readTypePath();
                         final AnnotationInfo annotationInfo = readAnnotation();
                         classTypeAnnotationDecorators.add(new ClassTypeAnnotationDecorator() {
+
                             @Override
                             public void decorate(final ClassType ClassType) {
                                 if (targetType == 0x00) {
@@ -1760,7 +1821,7 @@ public class ClassParser {
                                     }
                                 } else if (targetType == 0x10) {
                                     // 类声明的 extends 或 implements 子句中的类型(包括匿名类声明的
-                                    // 直接超类或直接超接口)，或接口声明的 extends 子句中的类型
+                                    // 直接超类或直接超接口),或接口声明的 extends 子句中的类型
                                     if (supertypeIndex == 65535) {
                                         // 类声明的 extends 子句中的类型
                                         ClassType.getSuperclassSignature().addTypeAnnotation(typePath,
@@ -1776,7 +1837,7 @@ public class ClassParser {
                                             .getTypeParams();
                                     if (TypeParams != null && TypeParamIndex < TypeParams.size()) {
                                         final TypeParam TypeParam = TypeParams.get(TypeParamIndex);
-                                        // boundIndex == 0 => 类边界；boundIndex > 0 => 接口边界
+                                        // boundIndex == 0 => 类边界;boundIndex > 0 => 接口边界
                                         if (boundIndex == 0) {
                                             final ReferenceType classBound = TypeParam.getClassBound();
                                             if (classBound != null) {
@@ -1800,7 +1861,7 @@ public class ClassParser {
             } else if (constantPoolStringEquals(attributeNameCpIdx, "Record")) {
                 isRecord = true;
                 // 不需要读取 record_components_info 条目 -- 记录组件与同名的字段和方法
-                // 存在一一对应关系，因此我们可以依赖字段和方法的读取代码正确处理记录
+                // 存在一一对应关系,因此我们可以依赖字段和方法的读取代码正确处理记录
                 reader.skip(attributeLength);
             } else if (constantPoolStringEquals(attributeNameCpIdx, "InnerClasses")) {
                 final int numInnerClasses = reader.readUnsignedShort();
@@ -1833,7 +1894,7 @@ public class ClassParser {
                     }
                 }
             } else if (constantPoolStringEquals(attributeNameCpIdx, "Signature")) {
-                // 获取类类型签名，包括类型变量
+                // 获取类类型签名,包括类型变量
                 typeSignatureStr = getConstantPoolString(reader.readUnsignedShort());
             } else if (constantPoolStringEquals(attributeNameCpIdx, "SourceFile")) {
                 sourceFile = getConstantPoolString(reader.readUnsignedShort());
@@ -1842,11 +1903,11 @@ public class ClassParser {
                 final int enclosingMethodCpIdx = reader.readUnsignedShort();
                 String definingMethodName;
                 if (enclosingMethodCpIdx == 0) {
-                    // cpIdx 为 0(无效值)用于在类初始化代码中声明的匿名内部类，例如赋值给类字段
+                    // cpIdx 为 0(无效值)用于在类初始化代码中声明的匿名内部类,例如赋值给类字段
                     definingMethodName = "<clinit>";
                 } else {
                     definingMethodName = getConstantPoolString(enclosingMethodCpIdx, /* subFieldIdx = */ 0);
-                    // 如果需要，也可以使用 subFieldIdx = 1 获取方法类型签名
+                    // 如果需要,也可以使用 subFieldIdx = 1 获取方法类型签名
                 }
                 // 将匿名内部类链接到其包含方法所在的类
                 if (classContainmentEntries == null) {
@@ -1854,12 +1915,12 @@ public class ClassParser {
                 }
                 classContainmentEntries
                         .add(new ClassContainment(className, classModifiers, innermostEnclosingClassName));
-                // 同时存储包含方法的完全限定名称，以标记此为匿名内部类
+                // 同时存储包含方法的完全限定名称,以标记此为匿名内部类
                 this.fullyQualifiedDefiningMethodName = innermostEnclosingClassName + "." + definingMethodName;
             } else if (constantPoolStringEquals(attributeNameCpIdx, "Module")) {
                 final int moduleNameCpIdx = reader.readUnsignedShort();
                 Classpath.moduleNameFromModuleDescriptor = getConstantPoolString(moduleNameCpIdx);
-                // (未来工作)：解析模块描述符字段的其余部分，并添加到 ModuleInfo：
+                // (未来工作):解析模块描述符字段的其余部分,并添加到 ModuleInfo:
                 // https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25
                 reader.skip(attributeLength - 2);
             } else {
@@ -1871,18 +1932,21 @@ public class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     public interface ClassTypeAnnotationDecorator {
+
         void decorate(ClassType ClassType);
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     public interface MethodTypeAnnotationDecorator {
+
         void decorate(MethodType MethodType);
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     public interface TypeAnnotationDecorator {
+
         void decorate(TypeSignature typeSignature);
     }
 
@@ -1892,6 +1956,7 @@ public class ClassParser {
      * 类包含关系
      */
     public static class ClassContainment {
+
         /** 内部类名 */
         public final String innerClassName;
 
@@ -1923,6 +1988,7 @@ public class ClassParser {
 
     /** 当 ClassParser 的内容格式不正确时抛出 */
     public static class ClassfileFormatException extends IOException {
+
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
 
@@ -1963,6 +2029,7 @@ public class ClassParser {
 
     /** 当 ClassParser 需要被跳过时抛出 */
     public static class SkipClassException extends IOException {
+
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
 
@@ -1990,7 +2057,9 @@ public class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     public static class TypePathNode {
+
         public short typePathKind;
+
         public short TypeArgIdx;
 
         public TypePathNode(final int typePathKind, final int TypeArgIdx) {

@@ -6,12 +6,19 @@ import java.io.File;
 import java.io.InputStream;
 
 public final class JadxZipEntry implements IZipEntry {
+
     private final JadxZipParser parser;
+
     private final String fileName;
+
     private final int compressMethod;
+
     private final int entryStart;
+
     private final int dataStart;
+
     private final long compressedSize;
+
     private final long uncompressedSize;
 
     JadxZipEntry(JadxZipParser parser, String fileName, int entryStart, int dataStart,

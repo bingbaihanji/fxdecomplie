@@ -2,6 +2,7 @@ package com.bingbaihanji.classgraph.util;
 
 /** String utility methods for ClassGraph. Pure JDK — no external dependencies. */
 public final class Strings {
+
     private Strings() {
         throw new AssertionError("utility class");
     }

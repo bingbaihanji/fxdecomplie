@@ -14,11 +14,15 @@ import java.io.IOException;
 import java.util.List;
 
 public class SimpleJavaGradleGenerator implements IExportGradleGenerator {
+
     private final RootNode root;
+
     private final File projectDir;
+
     private final List<ResourceFile> resources;
 
     private OutDirs outDirs;
+
     private File appDir;
 
     public SimpleJavaGradleGenerator(RootNode root, File projectDir, List<ResourceFile> resources) {

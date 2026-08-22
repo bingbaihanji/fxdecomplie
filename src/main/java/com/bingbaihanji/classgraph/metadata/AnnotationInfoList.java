@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.ClassHierarchy.RelType;
@@ -8,12 +7,18 @@ import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** {@link AnnotationInfo} 对象的列表 */
 public class AnnotationInfoList extends InfoList<AnnotationInfo> {
+
     /** 一个不可修改的空 {@link AnnotationInfoList} */
     static final AnnotationInfoList EMPTY_LIST = new AnnotationInfoList();
+
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
@@ -22,8 +27,8 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     }
 
     /**
-     * 与类或方法直接相关、且不是通过元注解继承的注解集合
-     * 此字段可为 null，因为注解信息列表是增量构建的参见 {@link #directOnly()}
+     * 与类或方法直接相关,且不是通过元注解继承的注解集合
+     * 此字段可为 null,因为注解信息列表是增量构建的参见 {@link #directOnly()}
      */
     private AnnotationInfoList directlyRelatedAnnotations;
 
@@ -35,7 +40,7 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     }
 
     /**
-     * 构造一个新的可修改的空 {@link AnnotationInfo} 对象列表，并给出大小提示
+     * 构造一个新的可修改的空 {@link AnnotationInfo} 对象列表,并给出大小提示
      *
      * @param sizeHint
      *            大小提示
@@ -45,13 +50,13 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     }
 
     /**
-     * 构造一个新的可修改的空 {@link AnnotationInfoList}，并给出初始的 {@link AnnotationInfo} 对象列表
+     * 构造一个新的可修改的空 {@link AnnotationInfoList},并给出初始的 {@link AnnotationInfo} 对象列表
      *
      * @param reachableAnnotations
      *            可达的注解
      */
     public AnnotationInfoList(final AnnotationInfoList reachableAnnotations) {
-        // 如果只给出了可达的注解，则将它们全部视为直接注解
+        // 如果只给出了可达的注解,则将它们全部视为直接注解
         this(reachableAnnotations, reachableAnnotations);
     }
 
@@ -117,9 +122,9 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
      * 获取类上的间接注解(元注解和/或继承的注解)
      *
      * @param directAnnotationInfo
-     *            类、方法、方法参数或字段上的直接注解
+     *            类,方法,方法参数或字段上的直接注解
      * @param annotatedClass
-     *            对于类注解，这是被注解的类，否则为 null
+     *            对于类注解,这是被注解的类,否则为 null
      * @return 间接注解
      */
     static AnnotationInfoList getIndirectAnnotations(final AnnotationInfoList directAnnotationInfo,
@@ -144,7 +149,7 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
             for (final ClassInfo superclass : annotatedClass.getSuperclasses()) {
                 if (superclass.annotationInfo != null) {
                     for (final AnnotationInfo sai : superclass.annotationInfo) {
-                        // 如果继承的超类注解在子类中被覆盖，则不添加
+                        // 如果继承的超类注解在子类中被覆盖,则不添加
                         if (sai.isInherited() && directOrInheritedAnnotationClasses.add(sai.getClassInfo())) {
                             reachableAnnotationInfo.add(sai);
                             final AnnotationInfoList reachableMetaAnnotationInfo = new AnnotationInfoList(2);
@@ -175,7 +180,7 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
      * 通过注解名称获取 {@link AnnotationInfo}
      *
      * @param annotationName 注解名称
-     * @return 注解信息，若不存在则返回 null
+     * @return 注解信息,若不存在则返回 null
      */
     public AnnotationInfo get(final String annotationName) {
         for (final AnnotationInfo ai : this) {
@@ -212,7 +217,7 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
      *
      * @param annotationName
      *            注解名称
-     * @return 如果此列表包含具有给定名称的 {@link AnnotationInfo} 对象，则返回 true
+     * @return 如果此列表包含具有给定名称的 {@link AnnotationInfo} 对象,则返回 true
      */
     public boolean containsName(final String annotationName) {
         for (final AnnotationInfo ai : this) {
@@ -287,12 +292,13 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
                                     final AnnotationInfo ai = (AnnotationInfo) value;
                                     add(ai);
 
-                                    // 如果需要，链接注解
+                                    // 如果需要,链接注解
                                     if (forwardRelType != null
                                             && (reverseRelType0 != null || reverseRelType1 != null)) {
                                         final ClassInfo annotationClass = ai.getClassInfo();
                                         if (annotationClass != null) {
-                                            containingClassInfo.hierarchy().addRelation(forwardRelType, annotationClass);
+                                            containingClassInfo.hierarchy()
+                                                    .addRelation(forwardRelType, annotationClass);
                                             if (reverseRelType0 != null) {
                                                 annotationClass.hierarchy().addRelation(reverseRelType0,
                                                         containingClassInfo);
@@ -313,16 +319,16 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     }
 
     /**
-     * 返回直接注解的列表，不包括元注解如果此 {@link AnnotationInfoList} 由类注解组成，
-     * 即通过 `ClassInfo#getAnnotationInfo()` 生成，则返回的列表也会排除从超类或实现的接口
+     * 返回直接注解的列表,不包括元注解如果此 {@link AnnotationInfoList} 由类注解组成,
+     * 即通过 `ClassInfo#getAnnotationInfo()` 生成,则返回的列表也会排除从超类或实现的接口
      * 继承的注解(这些超类或接口被 {@link java.lang.annotation.Inherited @Inherited} 元注解修饰)
      *
      * @return 直接相关注解的列表
      */
     public AnnotationInfoList directOnly() {
-        // 如果 directlyRelatedAnnotations == null，则这已经是一个直接注解列表
+        // 如果 directlyRelatedAnnotations == null,则这已经是一个直接注解列表
         // (即读取 class 文件时创建的 AnnotationInfo 对象列表)
-        // 否则，返回一个仅包含直接注解的新列表
+        // 否则,返回一个仅包含直接注解的新列表
         return this.directlyRelatedAnnotations == null ? this
                 // 使 .directOnly() 幂等
                 : new AnnotationInfoList(directlyRelatedAnnotations, /* directlyRelatedAnnotations = */ null);
@@ -331,11 +337,11 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取具有给定类的 {@link Repeatable} 注解，如果没有找到则返回空列表
+     * 获取具有给定类的 {@link Repeatable} 注解,如果没有找到则返回空列表
      *
      * @param annotationClass
      *            要搜索的类
-     * @return 具有给定类的注解列表，如果没有找到则返回空列表
+     * @return 具有给定类的注解列表,如果没有找到则返回空列表
      */
     public AnnotationInfoList getRepeatable(final Class<? extends Annotation> annotationClass) {
         Assert.isAnnotation(annotationClass);
@@ -345,11 +351,11 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 获取具有给定名称的 {@link Repeatable} 注解，如果没有找到则返回空列表
+     * 获取具有给定名称的 {@link Repeatable} 注解,如果没有找到则返回空列表
      *
      * @param name
      *            要搜索的名称
-     * @return 具有给定名称的注解列表，如果没有找到则返回空列表
+     * @return 具有给定名称的注解列表,如果没有找到则返回空列表
      */
     public AnnotationInfoList getRepeatable(final String name) {
         final AnnotationInfoList matchingAnnotations = new AnnotationInfoList();
@@ -396,17 +402,18 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     }
 
     /**
-     * 使用一个将 {@link AnnotationInfo} 对象映射为布尔值的谓词来过滤 {@link AnnotationInfoList}，
-     * 生成另一个 {@link AnnotationInfoList}，包含列表中所有谓词为 true 的元素
+     * 使用一个将 {@link AnnotationInfo} 对象映射为布尔值的谓词来过滤 {@link AnnotationInfoList},
+     * 生成另一个 {@link AnnotationInfoList},包含列表中所有谓词为 true 的元素
      */
     @FunctionalInterface
     public interface AnnotationInfoFilter {
+
         /**
          * 是否允许 {@link AnnotationInfo} 列表项通过过滤器
          *
          * @param annotationInfo
          *            要过滤的 {@link AnnotationInfo} 项
-         * @return 是否允许该项通过过滤器如果为 true，则该项被复制到输出列表；如果为 false，则被排除
+         * @return 是否允许该项通过过滤器如果为 true,则该项被复制到输出列表;如果为 false,则被排除
          */
         boolean accept(AnnotationInfo annotationInfo);
     }

@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import org.jetbrains.annotations.Nullable;
 
 public interface IRegionPartialVisitor<R> {
+
     /**
      * Visit all containers in region until stopped
      *

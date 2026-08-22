@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
@@ -9,6 +8,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
 
 /** 从 Uno-Jar 的 JarClassLoader 和 One-Jar 的 JarClassLoader 提取类路径条目 */
 class UnoOneJarClassLoaderHandler implements ClassLoaderHandler {
+
     /** 类不可构造 */
     public UnoOneJarClassLoaderHandler() {
     }
@@ -20,7 +20,7 @@ class UnoOneJarClassLoaderHandler implements ClassLoaderHandler {
      *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader},则返回 true
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
@@ -63,34 +63,34 @@ class UnoOneJarClassLoaderHandler implements ClassLoaderHandler {
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
                                    final ScanConfig ScanConfig, final LogNode log) {
 
-        // 对于 Uno-Jar：
+        // 对于 Uno-Jar:
 
         final String unoJarOneJarPath = (String) classpathOrder.reflectionUtils.invokeMethod(false, classLoader,
                 "getOneJarPath");
         classpathOrder.addClasspathEntry(unoJarOneJarPath, classLoader, ScanConfig, log);
 
-        // 如果定义了此属性，则表示在命令行上指定了 Uno-Jar JAR 路径否则，JAR 路径应包含在
-        // java.class.path 中(只要类加载器/类路径未被重载且父级类加载器未被忽略，
+        // 如果定义了此属性,则表示在命令行上指定了 Uno-Jar JAR 路径否则,JAR 路径应包含在
+        // java.class.path 中(只要类加载器/类路径未被重载且父级类加载器未被忽略,
         // ClassGraph 将单独获取该路径)
         final String unoJarJarPath = System.getProperty("uno-jar.jar.path");
         classpathOrder.addClasspathEntry(unoJarJarPath, classLoader, ScanConfig, log);
 
-        // 对于 One-Jar：
+        // 对于 One-Jar:
 
-        // 如果定义了此属性，则表示在命令行上指定了 One-Jar JAR 路径否则，JAR 路径应包含在
-        // java.class.path 中(只要类加载器/类路径未被重载且父级类加载器未被忽略，
+        // 如果定义了此属性,则表示在命令行上指定了 One-Jar JAR 路径否则,JAR 路径应包含在
+        // java.class.path 中(只要类加载器/类路径未被重载且父级类加载器未被忽略,
         // ClassGraph 将单独获取该路径)
         final String oneJarJarPath = System.getProperty("one-jar.jar.path");
         classpathOrder.addClasspathEntry(oneJarJarPath, classLoader, ScanConfig, log);
 
-        // 如果定义了此属性，则表示在命令行上以 OneJar 格式指定了额外的类路径条目，
+        // 如果定义了此属性,则表示在命令行上以 OneJar 格式指定了额外的类路径条目,
         // 以 '|' 作为分隔符
         final String oneJarClassPath = System.getProperty("one-jar.class.path");
         if (oneJarClassPath != null) {
             classpathOrder.addClasspathEntryObject(oneJarClassPath.split("\\|"), classLoader, ScanConfig, log);
         }
 
-        // 对于 UnoJar 和 OneJar，"libs/" 和 "main/" 都将基于
+        // 对于 UnoJar 和 OneJar,"libs/" 和 "main/" 都将基于
         // HandlerRegistry.AUTOMATIC_LIB_DIR_PREFIXES 自动作为嵌套 JAR 的库根目录被获取
         // ("main/" 包含 "main.jar")
     }

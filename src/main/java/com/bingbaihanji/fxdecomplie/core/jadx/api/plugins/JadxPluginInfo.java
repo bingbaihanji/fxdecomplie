@@ -3,9 +3,13 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins;
 import org.jetbrains.annotations.Nullable;
 
 public class JadxPluginInfo {
+
     private final String pluginId;
+
     private final String name;
+
     private final String description;
+
     private String homepage;
 
     /**

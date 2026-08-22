@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.types;
 
 public class JadxPassType {
+
     private final String cls;
 
     public JadxPassType(String clsName) {

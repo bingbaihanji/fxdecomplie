@@ -11,11 +11,15 @@ import java.util.regex.Matcher;
 public class DotGraphVisitor extends AbstractVisitor {
 
     private static final String NL = "\\l";
+
     private static final String NLQR = Matcher.quoteReplacement(NL);
+
     private static final boolean PRINT_DOMINATORS = false;
+
     private static final boolean PRINT_DOMINATORS_INFO = false;
 
     private final boolean useRegions;
+
     private final boolean rawInsn;
 
     // if present, this region and it's children will still be drawn when not in regions mode.

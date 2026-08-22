@@ -4,7 +4,12 @@ import com.bingbaihanji.fxdecomplie.model.CommentData;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.stage.Window;
@@ -89,13 +94,13 @@ public final class CommentDialog {
         // 应用原生窗口样式
         DialogHelper.applyNativeStyle(dialog);
 
-        // 结果转换器：点击确定时构建 CommentData,取消时返回 null
+        // 结果转换器:点击确定时构建 CommentData,取消时返回 null
         dialog.setResultConverter(button -> {
             if (button != ButtonType.OK) {
                 return null;
             }
             String text = textArea.getText();
-            // 空文本处理：编辑模式允许清空(删除注释),新增模式拒绝空输入
+            // 空文本处理:编辑模式允许清空(删除注释),新增模式拒绝空输入
             if (text == null || text.isBlank()) {
                 return existing != null ? new CommentData(className, memberSignature, line,
                         sourceHash, optionsHash, styleCombo.getValue(),

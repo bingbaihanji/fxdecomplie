@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils.notEmpty;
 
 /**
- * 名称映射工具类，提供 Java 标识符验证 可打印字符检查以及无效字符移除等功能
+ * 名称映射工具类,提供 Java 标识符验证 可打印字符检查以及无效字符移除等功能
  */
 public class NameMapper {
 
@@ -22,7 +22,7 @@ public class NameMapper {
     private static final Pattern VALID_JAVA_FULL_IDENTIFIER = Pattern.compile(
             "(" + VALID_JAVA_IDENTIFIER + "\\.)*" + VALID_JAVA_IDENTIFIER);
 
-    /** Java 语言保留字 (关键字)集合，不能用作标识符 */
+    /** Java 语言保留字 (关键字)集合,不能用作标识符 */
     private static final Set<String> RESERVED_NAMES = new HashSet<>(
             Arrays.asList(
                     "_",
@@ -80,7 +80,7 @@ public class NameMapper {
                     "volatile",
                     "while"));
 
-    /** 私有构造方法，禁止实例化 (本类为工具类，仅提供静态方法) */
+    /** 私有构造方法,禁止实例化 (本类为工具类,仅提供静态方法) */
     private NameMapper() {
     }
 
@@ -169,7 +169,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定码点是否可打印 (排除控制字符 格式字符 私有区 代理区及未分配字符，
+     * 判断给定码点是否可打印 (排除控制字符 格式字符 私有区 代理区及未分配字符,
      * 空白字符中仅允许标准空格)
      *
      * @param codePoint Unicode 码点
@@ -180,7 +180,7 @@ public class NameMapper {
             return false;
         }
         if (Character.isWhitespace(codePoint)) {
-            // 除标准空格外，不打印其他空白字符
+            // 除标准空格外,不打印其他空白字符
             return codePoint == ' ';
         }
         switch (Character.getType(codePoint)) {
@@ -214,12 +214,12 @@ public class NameMapper {
     }
 
     /**
-     * 返回移除以下字符后的字符串：
+     * 返回移除以下字符后的字符串:
      * <ul>
      * <li>不可打印字符 (包括 Unicode 字符)
      * <li>不能作为 Java 标识符组成部分的字符
      * </ul>
-     * 注意：此“中间段”方法必须与带前缀的字符串配合使用：
+     * 注意:此"中间段"方法必须与带前缀的字符串配合使用:
      * <ul>
      * <li>可能保留对 Java 标识符起始位置无效的字符 (例如数字)
      * <li>结果不会检查是否为保留字
@@ -240,9 +240,9 @@ public class NameMapper {
     }
 
     /**
-     * 返回移除无效字符后的字符串，参见 {@link #removeInvalidCharsMiddle}
+     * 返回移除无效字符后的字符串,参见 {@link #removeInvalidCharsMiddle}
      * <p>
-     * 若首字符不能作为 Java 标识符的起始字符，则在前面加上前缀
+     * 若首字符不能作为 Java 标识符的起始字符,则在前面加上前缀
      */
     public static String removeInvalidChars(String name, String prefix) {
         String result = removeInvalidCharsMiddle(name);

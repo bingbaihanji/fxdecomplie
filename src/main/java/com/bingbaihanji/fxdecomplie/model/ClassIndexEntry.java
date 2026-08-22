@@ -25,14 +25,23 @@ public final class ClassIndexEntry {
     private static final Logger log = LoggerFactory.getLogger(ClassIndexEntry.class);
 
     private final String fullPath;
+
     private final String internalName;
+
     private final String simpleName;
+
     private final FileTreeNode.ByteLoader byteLoader;
+
     private final List<MemberIndexEntry> methods;
+
     private final List<MemberIndexEntry> fields;
+
     private final String superName;
+
     private final List<String> interfaces;
+
     private final FileTreeNode node;
+
     private volatile String bytecodeText;
 
     public ClassIndexEntry(String fullPath, String internalName, String simpleName,

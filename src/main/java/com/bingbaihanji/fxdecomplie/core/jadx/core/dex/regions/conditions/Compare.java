@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfOp;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 
 public final class Compare {
+
     private final IfNode insn;
 
     public Compare(IfNode insn) {

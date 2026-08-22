@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
@@ -7,30 +6,41 @@ import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 import com.bingbaihanji.classgraph.scan.ClassGraph;
 import com.bingbaihanji.classgraph.util.LogNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /** 用于查找所有唯一类加载器的类 */
 public class ClassLoaderOrder {
+
     /** {@link ClassLoader} 顺序 */
     private final Map<ClassLoader, List<HandlerRegistryEntry>> classLoaderOrder = new LinkedHashMap<>();
+
     /**
-     * 已添加到顺序中的所有 {@link ClassLoader} 实例集合，用于防止类加载器被重复添加
+     * 已添加到顺序中的所有 {@link ClassLoader} 实例集合,用于防止类加载器被重复添加
      */
-    // 这里必须使用 IdentityHashMap 作为映射和集合，因为 TomEE 会异常地使
+    // 这里必须使用 IdentityHashMap 作为映射和集合,因为 TomEE 会异常地使
     // CxfContainerClassLoader 实例(通过 .equals())等于它所委托的
     // TomEEWebappClassLoader 实例(#515)
     private final Set<ClassLoader> added = Collections.newSetFromMap(new IdentityHashMap<ClassLoader, Boolean>());
+
     /**
-     * 已委托的所有 {@link ClassLoader} 实例集合，用于防止委托中的无限循环
+     * 已委托的所有 {@link ClassLoader} 实例集合,用于防止委托中的无限循环
      */
     private final Set<ClassLoader> delegatedTo = Collections
             .newSetFromMap(new IdentityHashMap<ClassLoader, Boolean>());
+
     /**
-     * 已委托的所有父级 {@link ClassLoader} 实例集合，用于支持 {@link ClassGraph#withoutParentClassLoaders()}
+     * 已委托的所有父级 {@link ClassLoader} 实例集合,用于支持 {@link ClassGraph#withoutParentClassLoaders()}
      */
     private final Set<ClassLoader> allParentClassLoaders = Collections
             .newSetFromMap(new IdentityHashMap<ClassLoader, Boolean>());
+
     public ReflectionUtils reflectionUtils;
 
     // -------------------------------------------------------------------------------------------------------------
@@ -60,7 +70,7 @@ public class ClassLoaderOrder {
     /**
      * 获取 {@link ClassLoader} 顺序
      *
-     * @return {@link ClassLoader} 顺序，以键值对形式返回：{@link ClassLoader}、
+     * @return {@link ClassLoader} 顺序,以键值对形式返回:{@link ClassLoader},
      *         {@link HandlerRegistryEntry}
      */
     public List<Entry<ClassLoader, List<HandlerRegistryEntry>>> getClassLoaderOrder() {
@@ -107,8 +117,8 @@ public class ClassLoaderOrder {
         if (classLoader == null) {
             return;
         }
-        // 在检查类加载器是否已在 delegatedTo 集合中之前，先检查它是否为父级，
-        // 这样即使类加载器是上下文类加载器同时也是父级，它仍会被标记为
+        // 在检查类加载器是否已在 delegatedTo 集合中之前,先检查它是否为父级,
+        // 这样即使类加载器是上下文类加载器同时也是父级,它仍会被标记为
         // 父级类加载器
         if (isParent) {
             allParentClassLoaders.add(classLoader);
@@ -117,7 +127,7 @@ public class ClassLoaderOrder {
         if (delegatedTo.add(classLoader)) {
             add(classLoader, log);
             // 递归获取委托顺序
-            // (注意：如果有多个 ClassLoaderHandler 可以处理此 classloader，结果可能不正确)
+            // (注意:如果有多个 ClassLoaderHandler 可以处理此 classloader,结果可能不正确)
             for (final HandlerRegistryEntry entry : getClassLoaderHandlerRegistryEntries(classLoader,
                     /* 不重复记录日志 -- 上面的 add 方法也会记录 */ null)) {
                 entry.findClassLoaderOrder(classLoader, this, log);

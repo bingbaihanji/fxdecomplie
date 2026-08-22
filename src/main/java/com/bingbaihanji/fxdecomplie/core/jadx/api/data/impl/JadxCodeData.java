@@ -8,7 +8,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class JadxCodeData implements ICodeData {
+
     private List<ICodeComment> comments = Collections.emptyList();
+
     private List<ICodeRename> renames = Collections.emptyList();
 
     @Override

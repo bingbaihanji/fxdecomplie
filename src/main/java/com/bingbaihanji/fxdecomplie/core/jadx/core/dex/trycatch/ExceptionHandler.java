@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 异常处理器类，表示 try-catch 语句中的 catch 处理块
+ * 异常处理器类,表示 try-catch 语句中的 catch 处理块
  * 管理异常捕获类型 处理代码块以及与 try 块的关联关系
  */
 public class ExceptionHandler {
@@ -30,19 +30,25 @@ public class ExceptionHandler {
 
     /** 捕获的异常类型列表 */
     private final List<ClassInfo> catchTypes = new ArrayList<>(1);
+
     /** 处理器代码的偏移地址 */
     private final int handlerOffset;
+
     /** 处理器包含的所有基本块 */
     private final List<BlockNode> blocks = new ArrayList<>();
+
     /** 处理器的入口基本块 */
     private BlockNode handlerBlock;
+
     /** 处理器所在的区域 */
     private IRegion handlerRegion;
+
     /** 异常参数 */
     private InsnArg arg;
 
     /** 关联的 try 块属性 */
     private TryCatchBlockAttr tryBlock;
+
     /** 是否为 finally 块 */
     private boolean isFinally;
 
@@ -50,7 +56,7 @@ public class ExceptionHandler {
     private boolean removed = false;
 
     /**
-     * 私有构造函数，通过 {@link #build} 工厂方法创建实例
+     * 私有构造函数,通过 {@link #build} 工厂方法创建实例
      *
      * @param addr 处理器的偏移地址
      */
@@ -63,7 +69,7 @@ public class ExceptionHandler {
      *
      * @param mth  所属方法节点
      * @param addr 处理器的偏移地址
-     * @param type 捕获的异常类型，null 表示捕获所有异常
+     * @param type 捕获的异常类型,null 表示捕获所有异常
      * @return 新创建的异常处理器实例
      */
     public static ExceptionHandler build(MethodNode mth, int addr, @Nullable ClassInfo type) {
@@ -76,8 +82,8 @@ public class ExceptionHandler {
      * 向 catch 块添加异常类型
      *
      * @param mth  所属方法节点
-     * @param type 异常类型，null 表示捕获所有异常 (Throwable)
-     * @return 如果添加成功返回 true，否则返回 false
+     * @param type 异常类型,null 表示捕获所有异常 (Throwable)
+     * @return 如果添加成功返回 true,否则返回 false
      */
     public boolean addCatchType(MethodNode mth, @Nullable ClassInfo type) {
         if (type != null) {
@@ -117,7 +123,7 @@ public class ExceptionHandler {
 
     /**
      * 获取异常处理器的参数类型
-     * 如果是捕获所有异常或有多个异常类型，返回 Throwable 类型
+     * 如果是捕获所有异常或有多个异常类型,返回 Throwable 类型
      *
      * @return 异常参数类型
      */
@@ -136,7 +142,7 @@ public class ExceptionHandler {
     /**
      * 判断是否捕获所有异常 (catch 块为空或包含 Throwable 类型)
      *
-     * @return 如果捕获所有异常返回 true，否则返回 false
+     * @return 如果捕获所有异常返回 true,否则返回 false
      */
     public boolean isCatchAll() {
         if (catchTypes.isEmpty()) {
@@ -228,7 +234,7 @@ public class ExceptionHandler {
      * 获取异常处理器的底部分割块
      * 用于确定 try-catch 结构中 catch 块的结束位置
      *
-     * @return 底部分割块，如果没有找到则返回 null
+     * @return 底部分割块,如果没有找到则返回 null
      */
     @Nullable
     public BlockNode getBottomSplitter() {
@@ -296,7 +302,7 @@ public class ExceptionHandler {
     /**
      * 获取捕获异常类型的字符串表示
      *
-     * @return 异常类型字符串，多个类型用 " | " 分隔，无类型时返回 "all"
+     * @return 异常类型字符串,多个类型用 " | " 分隔,无类型时返回 "all"
      */
     public String catchTypeStr() {
         return catchTypes.isEmpty() ? "all" : Utils.listToString(catchTypes, " | ", ClassInfo::getShortName);

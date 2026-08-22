@@ -15,37 +15,49 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * SSA (静态单赋值)变量表示类
  * <p>
- * 每个 SSA 变量由寄存器编号 (regNum)和版本号 (version)唯一标识，
- * 记录了变量的赋值点 (assign)和所有使用点 (useList)，
+ * 每个 SSA 变量由寄存器编号 (regNum)和版本号 (version)唯一标识,
+ * 记录了变量的赋值点 (assign)和所有使用点 (useList),
  * 并维护类型推断信息 (typeInfo)和关联的代码变量 (codeVar)
  * </p>
  */
 public class SSAVar implements Comparable<SSAVar> {
+
     private static final Logger LOG = LoggerFactory.getLogger(SSAVar.class);
 
-    /** SSA 变量比较器：先按寄存器编号排序，编号相同则按版本号排序 */
+    /** SSA 变量比较器:先按寄存器编号排序,编号相同则按版本号排序 */
     private static final Comparator<SSAVar> SSA_VAR_COMPARATOR =
             Comparator.comparingInt(SSAVar::getRegNum).thenComparingInt(SSAVar::getVersion);
 
     /** 寄存器编号 */
     private final int regNum;
-    /** SSA 版本号，同一寄存器的不同版本代表不同的赋值 */
+
+    /** SSA 版本号,同一寄存器的不同版本代表不同的赋值 */
     private final int version;
-    /** 使用点列表：所有引用该 SSA 变量的寄存器参数 */
+
+    /** 使用点列表:所有引用该 SSA 变量的寄存器参数 */
     private final List<RegisterArg> useList = new ArrayList<>(2);
+
     /** 类型推断信息 */
     private final TypeInfo typeInfo = new TypeInfo();
-    /** 赋值点：定义该 SSA 变量的寄存器参数 */
+
+    /** 赋值点:定义该 SSA 变量的寄存器参数 */
     private RegisterArg assign;
+
     /** 在 Phi 指令中作为输入使用的列表 */
     private List<PhiInsn> usedInPhi = null;
-    /** 关联的代码变量，由 InitCodeVariables 阶段设置 */
+
+    /** 关联的代码变量,由 InitCodeVariables 阶段设置 */
     @Nullable("Set in InitCodeVariables pass")
     private CodeVar codeVar;
 
@@ -80,7 +92,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 设置新的赋值点如果存在旧赋值点且与新赋值点不同，
+     * 设置新的赋值点如果存在旧赋值点且与新赋值点不同,
      * 会先重置旧赋值点的 SSA 变量引用
      *
      * @param assign 新的赋值点寄存器参数
@@ -95,7 +107,7 @@ public class SSAVar implements Comparable<SSAVar> {
         }
     }
 
-    /** 获取赋值点所在指令，如果赋值参数没有父指令则返回 null */
+    /** 获取赋值点所在指令,如果赋值参数没有父指令则返回 null */
     public @Nullable InsnNode getAssignInsn() {
         return assign.getParentInsn();
     }
@@ -111,7 +123,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 如果类型已标记为不可变，则返回赋值点的初始类型 否则返回 null
+     * 如果类型已标记为不可变,则返回赋值点的初始类型 否则返回 null
      */
     @Nullable
     public ArgType getImmutableType() {
@@ -127,7 +139,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 将该 SSA 变量的类型标记为不可变如果指定类型与当前初始类型不同，会强制更新类型
+     * 将该 SSA 变量的类型标记为不可变如果指定类型与当前初始类型不同,会强制更新类型
      *
      * @param type 要标记为不可变的类型
      */
@@ -143,7 +155,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 设置变量类型如果类型已标记为不可变且新类型不同，则抛出异常
+     * 设置变量类型如果类型已标记为不可变且新类型不同,则抛出异常
      *
      * @param type 要设置的类型
      * @throws JadxRuntimeException 当尝试更改不可变类型时
@@ -156,12 +168,12 @@ public class SSAVar implements Comparable<SSAVar> {
         updateType(type);
     }
 
-    /** 强制设置变量类型，不检查不可变标记 */
+    /** 强制设置变量类型,不检查不可变标记 */
     public void forceSetType(ArgType type) {
         updateType(type);
     }
 
-    /** 更新类型推断信息，并同步更新关联的代码变量类型 */
+    /** 更新类型推断信息,并同步更新关联的代码变量类型 */
     private void updateType(ArgType type) {
         typeInfo.setType(type);
         if (codeVar != null) {
@@ -170,7 +182,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 注册一个使用点如果该参数之前关联了其他 SSA 变量，会先从旧变量的使用列表中移除
+     * 注册一个使用点如果该参数之前关联了其他 SSA 变量,会先从旧变量的使用列表中移除
      *
      * @param arg 引用该 SSA 变量的寄存器参数
      */
@@ -204,7 +216,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 移除某个 Phi 指令的使用记录，列表清空后置为 null
+     * 移除某个 Phi 指令的使用记录,列表清空后置为 null
      *
      * @param phiInsn 要移除的 Phi 指令
      */
@@ -228,7 +240,7 @@ public class SSAVar implements Comparable<SSAVar> {
         }
     }
 
-    /** 当该变量仅在唯一一个 Phi 指令中被使用时返回该指令，否则返回 null */
+    /** 当该变量仅在唯一一个 Phi 指令中被使用时返回该指令,否则返回 null */
     @Nullable
     public PhiInsn getOnlyOneUseInPhi() {
         if (usedInPhi != null && usedInPhi.size() == 1) {
@@ -246,7 +258,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 合并赋值点的 Phi 指令与 usedInPhi 列表，返回与该变量相关的所有 Phi 指令
+     * 合并赋值点的 Phi 指令与 usedInPhi 列表,返回与该变量相关的所有 Phi 指令
      */
     public List<PhiInsn> getPhiList() {
         InsnNode assignInsn = getAssign().getParentInsn();
@@ -277,7 +289,7 @@ public class SSAVar implements Comparable<SSAVar> {
         return usedInPhi != null && !usedInPhi.isEmpty();
     }
 
-    /** 获取变量名称，代码变量未设置时返回 null */
+    /** 获取变量名称,代码变量未设置时返回 null */
     public String getName() {
         if (codeVar == null) {
             return null;
@@ -319,7 +331,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 设置关联的代码变量，并将自身注册到该代码变量中 
+     * 设置关联的代码变量,并将自身注册到该代码变量中 
      * 若类型为不可变则同步设置代码变量类型
      *
      * @param codeVar 要关联的代码变量
@@ -333,7 +345,7 @@ public class SSAVar implements Comparable<SSAVar> {
         }
     }
 
-    /** 重置类型和代码变量：非不可变类型重置为 UNKNOWN，清空类型边界并解除代码变量关联 */
+    /** 重置类型和代码变量:非不可变类型重置为 UNKNOWN,清空类型边界并解除代码变量关联 */
     public void resetTypeAndCodeVar() {
         if (!isTypeImmutable()) {
             updateType(ArgType.UNKNOWN);
@@ -348,7 +360,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 收集该 SSA 变量的详细信息，包含寄存器/版本号 调试名称集合与类型集合，用于调试输出
+     * 收集该 SSA 变量的详细信息,包含寄存器/版本号 调试名称集合与类型集合,用于调试输出
      *
      * @param mth 该变量所属的方法节点
      * @return 变量详细信息字符串
@@ -427,7 +439,7 @@ public class SSAVar implements Comparable<SSAVar> {
         return SSA_VAR_COMPARATOR.compare(this, o);
     }
 
-    /** 返回该变量的简短字符串表示，格式为 r{寄存器编号}v{版本号} */
+    /** 返回该变量的简短字符串表示,格式为 r{寄存器编号}v{版本号} */
     public String toShortString() {
         return "r" + regNum + 'v' + version;
     }
