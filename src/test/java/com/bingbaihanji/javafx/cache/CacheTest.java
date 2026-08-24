@@ -15,6 +15,7 @@ import java.util.Map;
  * @description //TODO
  */
 public class CacheTest {
+
     @Test
     public void cache() {
         VineflowerDecompiler vineflowerDecompiler = new VineflowerDecompiler();

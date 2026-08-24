@@ -21,12 +21,50 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JadxDecompilerFacadeTest {
 
+    private static CompiledSample compileSample(Path tmp) throws Exception {
+        Path srcRoot = tmp.resolve("src");
+        Path outRoot = tmp.resolve("classes");
+        Path packageDir = srcRoot.resolve("z");
+        Files.createDirectories(packageDir);
+        Files.createDirectories(outRoot);
+
+        Path source = packageDir.resolve("b.java");
+        Files.writeString(source, """
+                                  package z;
+                                  
+                                  public class b {
+                                      private final a dep = new a();
+                                  
+                                      public int targetValue() {
+                                          return dep.dependencyValue() + 1;
+                                      }
+                                  }
+                                  
+                                  class a {
+                                      int dependencyValue() {
+                                          return 41;
+                                      }
+                                  }
+                                  """);
+
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertNotNull(compiler, "tests require a JDK compiler");
+        int exit = compiler.run(null, null, null,
+                "-d", outRoot.toString(), source.toString());
+        assertEquals(0, exit, "test class should compile");
+
+        return new CompiledSample(
+                Files.readAllBytes(outRoot.resolve("z/b.class")),
+                Files.readAllBytes(outRoot.resolve("z/a.class")));
+    }
+
     @Test
     void deobfuscationUsesIsolatedRuntimeOutput() {
         JadxArgs args = JadxArgsFactory.create(Map.of("deobfuscationOn", "true"));
 
         assertTrue(args.isDeobfuscationOn());
-        assertFalse(args.getRenameCondition().shouldRename((com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode) null));
+        assertFalse(args.getRenameCondition()
+                .shouldRename((com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode) null));
         assertEquals(GeneratedRenamesMappingFileMode.IGNORE,
                 args.getGeneratedRenamesMappingFileMode());
         assertNotNull(args.getOutDir());
@@ -100,43 +138,6 @@ class JadxDecompilerFacadeTest {
         assertEquals(JadxResultStatus.EXCEPTION, result.status());
         assertFalse(result.isSuccess());
         assertNotNull(result.diagnostic());
-    }
-
-    private static CompiledSample compileSample(Path tmp) throws Exception {
-        Path srcRoot = tmp.resolve("src");
-        Path outRoot = tmp.resolve("classes");
-        Path packageDir = srcRoot.resolve("z");
-        Files.createDirectories(packageDir);
-        Files.createDirectories(outRoot);
-
-        Path source = packageDir.resolve("b.java");
-        Files.writeString(source, """
-                package z;
-
-                public class b {
-                    private final a dep = new a();
-
-                    public int targetValue() {
-                        return dep.dependencyValue() + 1;
-                    }
-                }
-
-                class a {
-                    int dependencyValue() {
-                        return 41;
-                    }
-                }
-                """);
-
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        assertNotNull(compiler, "tests require a JDK compiler");
-        int exit = compiler.run(null, null, null,
-                "-d", outRoot.toString(), source.toString());
-        assertEquals(0, exit, "test class should compile");
-
-        return new CompiledSample(
-                Files.readAllBytes(outRoot.resolve("z/b.class")),
-                Files.readAllBytes(outRoot.resolve("z/a.class")));
     }
 
     private record CompiledSample(byte[] targetBytes, byte[] dependencyBytes) {

@@ -38,7 +38,7 @@ final class SmokeTest {
     void shouldExecuteBackgroundTask() throws Exception {
         boolean[] executed = {false};
         Future<?> future = BackgroundTasks.run("smoke-test-bg",
-                () -> { /* no-op */ executed[0] = true; });
+                () -> { /* no-op */ executed[0] = true;});
 
         future.get(5, TimeUnit.SECONDS);
         assertTrue(future.isDone(), "任务应已完成");

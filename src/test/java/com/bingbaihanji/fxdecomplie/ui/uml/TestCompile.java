@@ -1,9 +1,15 @@
 package com.bingbaihanji.fxdecomplie.ui.uml;
 
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 
-import javax.tools.*;
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -32,6 +38,7 @@ final class TestCompile {
             units.add(new SimpleJavaFileObject(
                     URI.create("string:///" + className.replace('.', '/') + JavaFileObject.Kind.SOURCE.extension),
                     JavaFileObject.Kind.SOURCE) {
+
                 @Override
                 public CharSequence getCharContent(boolean ignoreEncodingErrors) {
                     return e.getValue();
@@ -62,6 +69,7 @@ final class TestCompile {
 
     /** 内存文件管理器:捕获编译输出的 class 字节 */
     private static final class MemFileManager extends ForwardingJavaFileManager<JavaFileManager> {
+
         final Map<String, byte[]> outputBytes = new HashMap<>();
 
         MemFileManager(JavaFileManager delegate) {
@@ -73,9 +81,11 @@ final class TestCompile {
                                                    JavaFileObject.Kind kind, FileObject sibling) {
             return new SimpleJavaFileObject(
                     URI.create("mem:///" + className.replace('.', '/') + kind.extension), kind) {
+
                 @Override
                 public OutputStream openOutputStream() {
                     return new ByteArrayOutputStream() {
+
                         @Override
                         public void close() throws IOException {
                             super.close();

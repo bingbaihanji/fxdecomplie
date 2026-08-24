@@ -41,6 +41,7 @@ public final class FileTreeBuilder {
         for (ClassDiscoverer.ClassEntry entry : entries) {
             FileTreeNode nodeData = new FileTreeNode(entry.name(), entry.fullPath(), entry.nodeType());
             nodeData.setSize(entry.size());
+            nodeData.setPhase(entry.phase());
             if (entry.bytes() != null) {
                 nodeData.setCachedBytes(entry.bytes());
             }

@@ -4,19 +4,19 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -93,7 +93,7 @@ public final class ClassDiscoverer {
                 }
                 String displayName = path.substring(path.lastIndexOf('/') + 1);
                 entries.add(new ClassEntry(displayName, path, type, null, loader,
-                        normalizedSize(entry.getSize()), cleanup));
+                        normalizedSize(entry.getSize()), cleanup, 1));
                 if (isArchivePath(path)) {
                     discoverNestedArchive(archive, List.of(path), entries, 1);
                 }
@@ -116,17 +116,18 @@ public final class ClassDiscoverer {
             return;
         }
         String parentSource = sourcePath(archiveChain);
-        byte[] archiveBytes;
+        SharedJarArchive nestedArchive;
         try {
-            archiveBytes = archive.readNested(archiveChain);
+            nestedArchive = archive.openNestedArchive(archiveChain);
         } catch (IOException e) {
             log.warn("读取嵌套归档失败: {}", parentSource, e);
             return;
         }
 
-        try (JarInputStream in = new JarInputStream(new ByteArrayInputStream(archiveBytes))) {
-            JarEntry entry;
-            while ((entry = in.getNextJarEntry()) != null) {
+        try {
+            Enumeration<JarEntry> nestedEntries = nestedArchive.entries();
+            while (nestedEntries.hasMoreElements()) {
+                JarEntry entry = nestedEntries.nextElement();
                 if (entry.isDirectory()) {
                     continue;
                 }
@@ -145,12 +146,12 @@ public final class ClassDiscoverer {
                 }
                 String displayName = entryName.substring(entryName.lastIndexOf('/') + 1);
                 entries.add(new ClassEntry(displayName, fullPath, type, null, loader,
-                        normalizedSize(entry.getSize()), cleanup));
+                        normalizedSize(entry.getSize()), cleanup, 2));
                 if (isArchivePath(entryName)) {
                     discoverNestedArchive(archive, append(archiveChain, entryName), entries, depth + 1);
                 }
             }
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             log.warn("解析嵌套归档失败: {}", parentSource, e);
         }
     }
@@ -204,7 +205,7 @@ public final class ClassDiscoverer {
                     log.debug("读取文件大小失败: {}", p, ex);
                 }
                 entries.add(new ClassEntry(displayName, relativePath, type, null, loader,
-                        size, null));
+                        size, null, 1));
             });
         }
         return entries;
@@ -214,7 +215,7 @@ public final class ClassDiscoverer {
     private static List<ClassEntry> discoverClassFile(File file) throws IOException {
         return List.of(new ClassEntry(file.getName(), file.getName(),
                 FileTreeNode.NodeTypeEnum.CLASS_FILE, null,
-                () -> Files.readAllBytes(file.toPath()), file.length(), null));
+                () -> Files.readAllBytes(file.toPath()), file.length(), null, 1));
     }
 
     /** 根据文件扩展名判断节点类型 */
@@ -247,19 +248,25 @@ public final class ClassDiscoverer {
             byte[] bytes,
             FileTreeNode.ByteLoader byteLoader,
             long size,
-            Runnable cleanup
+            Runnable cleanup,
+            int phase
     ) {
 
         public ClassEntry(String name, String fullPath, FileTreeNode.NodeTypeEnum nodeType,
                           byte[] bytes, FileTreeNode.ByteLoader byteLoader) {
             this(name, fullPath, nodeType, bytes, byteLoader,
-                    bytes == null ? -1L : bytes.length, null);
+                    bytes == null ? -1L : bytes.length, null, 1);
         }
 
         public ClassEntry(String name, String fullPath,
                           FileTreeNode.NodeTypeEnum nodeType, byte[] bytes) {
             this(name, fullPath, nodeType, bytes, null,
-                    bytes == null ? -1L : bytes.length, null);
+                    bytes == null ? -1L : bytes.length, null, 1);
+        }
+
+        /** 设置发现阶段(1=根归档, 2=嵌套归档) */
+        public ClassEntry withPhase(int phase) {
+            return new ClassEntry(name, fullPath, nodeType, bytes, byteLoader, size, cleanup, phase);
         }
     }
 
@@ -267,25 +274,32 @@ public final class ClassDiscoverer {
 
         private final JarFile jar;
 
+        /** 以归档链为键缓存已展开并打开的嵌套归档,避免每个 class 重复解压和线性扫描 */
+        private final Map<String, NestedArchive> nestedArchives = new HashMap<>();
+
         private final AtomicInteger references = new AtomicInteger();
 
         private final AtomicBoolean closed = new AtomicBoolean();
 
+        private final Path temporaryFile;
+
         private SharedJarArchive(File file) throws IOException {
-            this.jar = new JarFile(file);
+            this(file, null);
         }
 
-        private static byte[] readEntryFromArchiveBytes(byte[] archiveBytes, String entryName)
-                throws IOException {
-            try (JarInputStream in = new JarInputStream(new ByteArrayInputStream(archiveBytes))) {
-                JarEntry entry;
-                while ((entry = in.getNextJarEntry()) != null) {
-                    if (!entry.isDirectory() && entry.getName().equals(entryName)) {
-                        return in.readAllBytes();
-                    }
-                }
+        private SharedJarArchive(File file, Path temporaryFile) throws IOException {
+            this.jar = new JarFile(file);
+            this.temporaryFile = temporaryFile;
+        }
+
+        private static byte[] readEntry(JarFile source, String entryName) throws IOException {
+            JarEntry entry = source.getJarEntry(entryName);
+            if (entry == null || entry.isDirectory()) {
+                throw new IOException("归档条目未找到: " + entryName);
             }
-            throw new IOException("嵌套归档条目未找到: " + entryName);
+            try (var in = source.getInputStream(entry)) {
+                return in.readAllBytes();
+            }
         }
 
         private Enumeration<JarEntry> entries() {
@@ -312,13 +326,7 @@ public final class ClassDiscoverer {
 
         private byte[] read(String entryName) throws IOException {
             synchronized (jar) {
-                JarEntry entry = jar.getJarEntry(entryName);
-                if (entry == null || entry.isDirectory()) {
-                    throw new IOException("归档条目未找到: " + entryName);
-                }
-                try (var in = jar.getInputStream(entry)) {
-                    return in.readAllBytes();
-                }
+                return readEntry(jar, entryName);
             }
         }
 
@@ -326,11 +334,56 @@ public final class ClassDiscoverer {
             if (chain == null || chain.isEmpty()) {
                 return null;
             }
-            byte[] bytes = read(chain.getFirst());
-            for (int i = 1; i < chain.size(); i++) {
-                bytes = readEntryFromArchiveBytes(bytes, chain.get(i));
+            if (chain.size() == 1) {
+                return read(chain.getFirst());
             }
-            return bytes;
+            int last = chain.size() - 1;
+            SharedJarArchive parent = openNestedArchive(chain.subList(0, last));
+            return parent.read(chain.get(last));
+        }
+
+        /**
+         * 打开嵌套归档并缓存其 JarFile.
+         *
+         * <p>Spring Boot fatjar 中通常有数百个依赖 JAR.旧实现对每个 class
+         * 都从外层字节数组起点用 JarInputStream 找目标 entry,导致相同依赖 JAR
+         * 被反复解压和扫描.这里每层归档只展开一次,后续使用 JarFile 中央目录读取.</p>
+         */
+        private synchronized SharedJarArchive openNestedArchive(List<String> chain)
+                throws IOException {
+            if (chain == null || chain.isEmpty()) {
+                return this;
+            }
+            String key = sourcePath(chain);
+            NestedArchive cached = nestedArchives.get(key);
+            if (cached != null) {
+                return cached.archive();
+            }
+
+            byte[] bytes;
+            if (chain.size() == 1) {
+                bytes = read(chain.getFirst());
+            } else {
+                NestedArchive parentEntry = nestedArchives.get(
+                        sourcePath(chain.subList(0, chain.size() - 1)));
+                SharedJarArchive parent = parentEntry == null ? null : parentEntry.archive();
+                if (parent == null) {
+                    parent = openNestedArchive(
+                            chain.subList(0, chain.size() - 1));
+                }
+                bytes = parent.read(chain.getLast());
+            }
+
+            Path tempFile = Files.createTempFile("fxdecomplie-nested-", ".jar");
+            try {
+                Files.write(tempFile, bytes);
+                SharedJarArchive nested = new SharedJarArchive(tempFile.toFile(), tempFile);
+                nestedArchives.put(key, new NestedArchive(nested));
+                return nested;
+            } catch (IOException | RuntimeException e) {
+                Files.deleteIfExists(tempFile);
+                throw e;
+            }
         }
 
         @Override
@@ -338,11 +391,26 @@ public final class ClassDiscoverer {
             if (!closed.compareAndSet(false, true)) {
                 return;
             }
+            for (NestedArchive nested : nestedArchives.values()) {
+                nested.archive().close();
+            }
+            nestedArchives.clear();
             try {
                 jar.close();
             } catch (IOException e) {
                 log.debug("关闭归档失败", e);
             }
+            if (temporaryFile != null) {
+                try {
+                    Files.deleteIfExists(temporaryFile);
+                } catch (IOException e) {
+                    temporaryFile.toFile().deleteOnExit();
+                    log.debug("删除嵌套归档临时文件失败: {}", temporaryFile, e);
+                }
+            }
+        }
+
+        private record NestedArchive(SharedJarArchive archive) {
         }
     }
 }

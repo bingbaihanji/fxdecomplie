@@ -47,6 +47,7 @@ class SearchServiceTest {
         AtomicInteger classRuns = new AtomicInteger();
         AtomicInteger bytecodeRuns = new AtomicInteger();
         service.addProvider(new SearchProvider() {
+
             @Override
             public List<SearchResult> search(String query, Map<String, String> sourceCache) {
                 classRuns.incrementAndGet();
@@ -60,6 +61,7 @@ class SearchServiceTest {
             }
         });
         service.addProvider(new SearchProvider() {
+
             @Override
             public List<SearchResult> search(String query, Map<String, String> sourceCache) {
                 bytecodeRuns.incrementAndGet();

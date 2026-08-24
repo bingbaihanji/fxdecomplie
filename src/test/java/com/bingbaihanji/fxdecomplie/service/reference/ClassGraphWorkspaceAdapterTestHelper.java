@@ -13,6 +13,7 @@ import java.util.Map;
  * 测试辅助:从编译后的字节码构建 Workspace
  */
 public final class ClassGraphWorkspaceAdapterTestHelper {
+
     private ClassGraphWorkspaceAdapterTestHelper() {}
 
     public static Workspace buildWorkspace(File dir, Map<String, String> sources) throws Exception {

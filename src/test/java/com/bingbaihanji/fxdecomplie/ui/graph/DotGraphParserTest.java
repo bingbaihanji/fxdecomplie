@@ -9,14 +9,14 @@ class DotGraphParserTest {
     @Test
     void parsesQuotedInheritanceGraph() {
         String dot = """
-                digraph InheritanceGraph {
-                    rankdir=BT;
-                    node [shape=box, style=filled, fontname="Consolas"];
-                    "com/example/Child" [label="Child", fillcolor="#6a9955"];
-                    "com/example/Parent" [label="Parent", fillcolor="#569cd6"];
-                    "com/example/Child" -> "com/example/Parent";
-                }
-                """;
+                     digraph InheritanceGraph {
+                         rankdir=BT;
+                         node [shape=box, style=filled, fontname="Consolas"];
+                         "com/example/Child" [label="Child", fillcolor="#6a9955"];
+                         "com/example/Parent" [label="Parent", fillcolor="#569cd6"];
+                         "com/example/Child" -> "com/example/Parent";
+                     }
+                     """;
 
         DotGraphParser.DotGraph graph = DotGraphParser.parse(dot);
 
@@ -31,13 +31,13 @@ class DotGraphParserTest {
     @Test
     void parsesMethodGraphWithBareIds() {
         String dot = """
-                digraph MethodGraph {
-                    rankdir=LR;
-                    N0 [label="a()"];
-                    N1 [label="b(I)"];
-                    N0 -> N1;
-                }
-                """;
+                     digraph MethodGraph {
+                         rankdir=LR;
+                         N0 [label="a()"];
+                         N1 [label="b(I)"];
+                         N0 -> N1;
+                     }
+                     """;
 
         DotGraphParser.DotGraph graph = DotGraphParser.parse(dot);
 

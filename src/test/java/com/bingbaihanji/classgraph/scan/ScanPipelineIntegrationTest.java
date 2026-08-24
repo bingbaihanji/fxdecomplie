@@ -4,7 +4,12 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import com.bingbaihanji.fxdecomplie.service.classscan.*;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassGraphClassScanService;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassMetadata;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanOptions;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanRequest;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanResult;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanService;
 import com.bingbaihanji.fxdecomplie.service.reference.TestClassCompiler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,10 +19,11 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Scan pipeline 集成测试 — 端到端目录扫描 → 类信息完整性验证.
@@ -40,8 +46,8 @@ class ScanPipelineIntegrationTest {
         FileTreeModel root = new FileTreeModel(rootNode);
         for (var entry : compiled.entrySet()) {
             FileTreeNode node = new FileTreeNode(
-                entry.getKey().substring(entry.getKey().lastIndexOf('/') + 1),
-                entry.getKey(), FileTreeNode.NodeTypeEnum.CLASS_FILE);
+                    entry.getKey().substring(entry.getKey().lastIndexOf('/') + 1),
+                    entry.getKey(), FileTreeNode.NodeTypeEnum.CLASS_FILE);
             node.setByteLoader(() -> entry.getValue());
             root.getChildren().add(new FileTreeModel(node));
         }
@@ -60,18 +66,18 @@ class ScanPipelineIntegrationTest {
         void completeScanReturnsAllMetadata() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/App.java", """
-                package com.example;
-                public class App {
-                    private String name;
-                    public String getName() { return name; }
-                }
-                """);
+                                                package com.example;
+                                                public class App {
+                                                    private String name;
+                                                    public String getName() { return name; }
+                                                }
+                                                """);
             sources.put("com/example/Config.java", """
-                package com.example;
-                public interface Config {
-                    int getPort();
-                }
-                """);
+                                                   package com.example;
+                                                   public interface Config {
+                                                       int getPort();
+                                                   }
+                                                   """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -100,12 +106,12 @@ class ScanPipelineIntegrationTest {
         void returnsFieldInfo() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Model.java", """
-                package com.example;
-                public class Model {
-                    private int id;
-                    public String name;
-                }
-                """);
+                                                  package com.example;
+                                                  public class Model {
+                                                      private int id;
+                                                      public String name;
+                                                  }
+                                                  """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -114,9 +120,9 @@ class ScanPipelineIntegrationTest {
             ClassMetadata model = result.getClassOrThrow("com/example/Model");
             assertEquals(2, model.fields().size());
             assertTrue(model.fields().stream()
-                .anyMatch(f -> f.name().equals("id")));
+                    .anyMatch(f -> f.name().equals("id")));
             assertTrue(model.fields().stream()
-                .anyMatch(f -> f.name().equals("name")));
+                    .anyMatch(f -> f.name().equals("name")));
         }
 
         @Test
@@ -124,12 +130,12 @@ class ScanPipelineIntegrationTest {
         void returnsMethodInfo() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Service.java", """
-                package com.example;
-                public class Service {
-                    public void start() {}
-                    public String status() { return "ok"; }
-                }
-                """);
+                                                    package com.example;
+                                                    public class Service {
+                                                        public void start() {}
+                                                        public String status() { return "ok"; }
+                                                    }
+                                                    """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -139,9 +145,9 @@ class ScanPipelineIntegrationTest {
             // <init> + 2 declared methods = 3
             assertEquals(3, svc.methods().size());
             assertTrue(svc.methods().stream()
-                .anyMatch(m -> m.name().equals("start")));
+                    .anyMatch(m -> m.name().equals("start")));
             assertTrue(svc.methods().stream()
-                .anyMatch(m -> m.name().equals("status")));
+                    .anyMatch(m -> m.name().equals("status")));
         }
 
         @Test
@@ -149,25 +155,25 @@ class ScanPipelineIntegrationTest {
         void classLevelOnlyOption() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Data.java", """
-                package com.example;
-                public class Data {
-                    private int value;
-                    public int getValue() { return value; }
-                }
-                """);
+                                                 package com.example;
+                                                 public class Data {
+                                                     private int value;
+                                                     public int getValue() { return value; }
+                                                 }
+                                                 """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
             ClassScanRequest request = new ClassScanRequest(ws, null,
-                ClassScanOptions.CLASS_LEVEL_ONLY);
+                    ClassScanOptions.CLASS_LEVEL_ONLY);
             ClassScanResult result = service.scan(request);
 
             ClassMetadata data = result.getClassOrThrow("com/example/Data");
             // CLASS_LEVEL_ONLY disables field and method info
             assertTrue(data.fields().isEmpty(),
-                "Fields should be empty with CLASS_LEVEL_ONLY");
+                    "Fields should be empty with CLASS_LEVEL_ONLY");
             assertTrue(data.methods().isEmpty(),
-                "Methods should be empty with CLASS_LEVEL_ONLY");
+                    "Methods should be empty with CLASS_LEVEL_ONLY");
         }
     }
 
@@ -180,13 +186,13 @@ class ScanPipelineIntegrationTest {
         void capturesSuperclassRelationships() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Base.java", """
-                package com.example;
-                public class Base {}
-                """);
+                                                 package com.example;
+                                                 public class Base {}
+                                                 """);
             sources.put("com/example/Derived.java", """
-                package com.example;
-                public class Derived extends Base {}
-                """);
+                                                    package com.example;
+                                                    public class Derived extends Base {}
+                                                    """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -201,15 +207,15 @@ class ScanPipelineIntegrationTest {
         void capturesInterfaceImplementations() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Runner.java", """
-                package com.example;
-                public interface Runner { void run(); }
-                """);
+                                                   package com.example;
+                                                   public interface Runner { void run(); }
+                                                   """);
             sources.put("com/example/Task.java", """
-                package com.example;
-                public class Task implements Runner {
-                    public void run() {}
-                }
-                """);
+                                                 package com.example;
+                                                 public class Task implements Runner {
+                                                     public void run() {}
+                                                 }
+                                                 """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -224,11 +230,11 @@ class ScanPipelineIntegrationTest {
         void multiLevelInheritance() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/A.java",
-                "package com.example; public class A {}");
+                    "package com.example; public class A {}");
             sources.put("com/example/B.java",
-                "package com.example; public class B extends A {}");
+                    "package com.example; public class B extends A {}");
             sources.put("com/example/C.java",
-                "package com.example; public class C extends B {}");
+                    "package com.example; public class C extends B {}");
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -251,9 +257,9 @@ class ScanPipelineIntegrationTest {
         void externalClassFromSuperclass() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/MyList.java", """
-                package com.example;
-                public class MyList extends java.util.ArrayList {}
-                """);
+                                                   package com.example;
+                                                   public class MyList extends java.util.ArrayList {}
+                                                   """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -264,10 +270,10 @@ class ScanPipelineIntegrationTest {
 
             // 外部类(java/util/ArrayList)也应该在结果中
             assertTrue(result.containsClass("java/util/ArrayList"),
-                "java/util/ArrayList should be tracked as external class");
+                    "java/util/ArrayList should be tracked as external class");
             ClassMetadata arrayList = result.getClassOrThrow("java/util/ArrayList");
             assertTrue(arrayList.isExternalClass(),
-                "ArrayList should be marked as external");
+                    "ArrayList should be marked as external");
         }
     }
 
@@ -280,16 +286,16 @@ class ScanPipelineIntegrationTest {
         void detectsClassLevelAnnotations() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Marker.java", """
-                package com.example;
-                import java.lang.annotation.*;
-                @Retention(RetentionPolicy.RUNTIME)
-                @interface Marker {}
-                """);
+                                                   package com.example;
+                                                   import java.lang.annotation.*;
+                                                   @Retention(RetentionPolicy.RUNTIME)
+                                                   @interface Marker {}
+                                                   """);
             sources.put("com/example/Annotated.java", """
-                package com.example;
-                @Marker
-                public class Annotated {}
-                """);
+                                                      package com.example;
+                                                      @Marker
+                                                      public class Annotated {}
+                                                      """);
 
             Workspace ws = buildWorkspace(tempDir, sources);
             ClassScanService service = new ClassGraphClassScanService();
@@ -297,9 +303,9 @@ class ScanPipelineIntegrationTest {
 
             ClassMetadata annotated = result.getClassOrThrow("com/example/Annotated");
             assertFalse(annotated.annotations().isEmpty(),
-                "Should have at least @Marker annotation");
+                    "Should have at least @Marker annotation");
             assertTrue(annotated.annotations().stream()
-                .anyMatch(a -> a.className().equals("com/example/Marker")));
+                    .anyMatch(a -> a.className().equals("com/example/Marker")));
         }
     }
 }

@@ -33,29 +33,29 @@ class UsageSearchServiceTest {
         Path sourceDir = tempDir.resolve("src/com/example");
         Files.createDirectories(sourceDir);
         Files.writeString(sourceDir.resolve("Target.java"), """
-                package com.example;
-                public class Target {
-                    public static int value;
-                    public void call() {}
-                }
-                """, StandardCharsets.UTF_8);
+                                                            package com.example;
+                                                            public class Target {
+                                                                public static int value;
+                                                                public void call() {}
+                                                            }
+                                                            """, StandardCharsets.UTF_8);
         Files.writeString(sourceDir.resolve("Caller.java"), """
-                package com.example;
-                public class Caller {
-                    public void run() {
-                        Target.value = 1;
-                        new Target().call();
-                    }
-                }
-                """, StandardCharsets.UTF_8);
+                                                            package com.example;
+                                                            public class Caller {
+                                                                public void run() {
+                                                                    Target.value = 1;
+                                                                    new Target().call();
+                                                                }
+                                                            }
+                                                            """, StandardCharsets.UTF_8);
         Files.writeString(sourceDir.resolve("Holder.java"), """
-                package com.example;
-                public class Holder {
-                    private Target target;
-                    public Target getTarget() { return target; }
-                    public void setTarget(Target target) { this.target = target; }
-                }
-                """, StandardCharsets.UTF_8);
+                                                            package com.example;
+                                                            public class Holder {
+                                                                private Target target;
+                                                                public Target getTarget() { return target; }
+                                                                public void setTarget(Target target) { this.target = target; }
+                                                            }
+                                                            """, StandardCharsets.UTF_8);
 
         int exit = ToolProvider.getSystemJavaCompiler().run(null, null, null,
                 "--release", "17",

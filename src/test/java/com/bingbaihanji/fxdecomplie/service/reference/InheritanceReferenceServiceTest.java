@@ -10,7 +10,8 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InheritanceReferenceServiceTest {
 
@@ -24,7 +25,8 @@ class InheritanceReferenceServiceTest {
         InheritanceReferenceTree tree = InheritanceReferenceService.buildTree(
                 workspace, "com/example/FileServiceImpl.class", implBytes);
         assertEquals("FileServiceImpl", tree.root().displayName());
-        assertTrue(tree.partial() || tree.statusMessage().contains("正在") || tree.statusMessage().contains("Building"));
+        assertTrue(tree.partial() || tree.statusMessage().contains("正在") || tree.statusMessage()
+                .contains("Building"));
         assertTrue(hasKind(tree, Kind.INTERFACE));
         assertTrue(hasKind(tree, Kind.OVERRIDES));
     }

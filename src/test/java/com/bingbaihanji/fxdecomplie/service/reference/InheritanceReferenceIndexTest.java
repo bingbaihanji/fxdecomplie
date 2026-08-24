@@ -12,14 +12,17 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InheritanceReferenceIndexTest {
 
+    private static final ClassScanService classScanService = new ClassGraphClassScanService();
+
     @TempDir
     Path tempDir;
-
-    private static final ClassScanService classScanService = new ClassGraphClassScanService();
 
     @Test
     void indexProvidesImplementations() throws Exception {
@@ -65,7 +68,7 @@ class InheritanceReferenceIndexTest {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("com/example/Service.java",
                 "package com.example; import java.lang.annotation.*; " +
-                "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
+                        "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
         sources.put("com/example/FileService.java",
                 "package com.example; public interface FileService {}");
         sources.put("com/example/FileServiceImpl.java",

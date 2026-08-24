@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PumlExporterTest {
 
@@ -17,7 +19,7 @@ class PumlExporterTest {
         sources.put("com.example.Order", "package com.example;\npublic class Order {}\n");
         sources.put("com.example.AbstractService",
                 "package com.example;\nimport java.util.List;\n"
-                + "public abstract class AbstractService {\n    private List<Order> orders;\n}\n");
+                        + "public abstract class AbstractService {\n    private List<Order> orders;\n}\n");
         sources.put("com.example.ServiceImpl",
                 "package com.example;\npublic class ServiceImpl extends AbstractService {}\n");
         Map<String, byte[]> bytes = TestCompile.compile(sources);

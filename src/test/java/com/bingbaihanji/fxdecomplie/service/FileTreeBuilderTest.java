@@ -7,9 +7,19 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileTreeBuilderTest {
+
+    private static FileTreeModel child(FileTreeModel parent, String name) {
+        return parent.getChildren().stream()
+                .filter(item -> item.getValue().getName().equals(name))
+                .findFirst()
+                .orElseThrow();
+    }
 
     @Test
     void buildsTreeWithPackages() {
@@ -72,12 +82,5 @@ class FileTreeBuilderTest {
         assertEquals("ExceptionMatchEvaluator.class",
                 child(child(child(child(child(ch, "qos"), "logback"), "classic"), "boolex"),
                         "ExceptionMatchEvaluator.class").getValue().getName());
-    }
-
-    private static FileTreeModel child(FileTreeModel parent, String name) {
-        return parent.getChildren().stream()
-                .filter(item -> item.getValue().getName().equals(name))
-                .findFirst()
-                .orElseThrow();
     }
 }

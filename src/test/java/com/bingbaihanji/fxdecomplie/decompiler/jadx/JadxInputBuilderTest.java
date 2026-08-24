@@ -15,6 +15,42 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class JadxInputBuilderTest {
 
+    private static CompiledSample compileSample(Path tmp) throws Exception {
+        Path srcRoot = tmp.resolve("src");
+        Path outRoot = tmp.resolve("classes");
+        Path packageDir = srcRoot.resolve("com").resolve("example");
+        Files.createDirectories(packageDir);
+        Files.createDirectories(outRoot);
+        Path source = packageDir.resolve("UsesDependency.java");
+        Files.writeString(source, """
+                                  package com.example;
+                                  
+                                  public class UsesDependency {
+                                      private final Dependency dependency = new Dependency();
+                                  
+                                      public String name() {
+                                          return dependency.name();
+                                      }
+                                  }
+                                  
+                                  class Dependency {
+                                      String name() {
+                                          return "ok";
+                                      }
+                                  }
+                                  """);
+
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertNotNull(compiler, "tests require a JDK compiler");
+        int exit = compiler.run(null, null, null,
+                "-d", outRoot.toString(), source.toString());
+        assertEquals(0, exit, "test class should compile");
+
+        return new CompiledSample(
+                Files.readAllBytes(outRoot.resolve("com/example/UsesDependency.class")),
+                Files.readAllBytes(outRoot.resolve("com/example/Dependency.class")));
+    }
+
     @Test
     void includesWorkspaceDependenciesFromContext(@TempDir Path tmp) throws Exception {
         CompiledSample sample = compileSample(tmp);
@@ -47,42 +83,6 @@ class JadxInputBuilderTest {
 
         assertEquals(1, plan.totalClasses());
         assertEquals(0, plan.dependencyClasses());
-    }
-
-    private static CompiledSample compileSample(Path tmp) throws Exception {
-        Path srcRoot = tmp.resolve("src");
-        Path outRoot = tmp.resolve("classes");
-        Path packageDir = srcRoot.resolve("com").resolve("example");
-        Files.createDirectories(packageDir);
-        Files.createDirectories(outRoot);
-        Path source = packageDir.resolve("UsesDependency.java");
-        Files.writeString(source, """
-                package com.example;
-
-                public class UsesDependency {
-                    private final Dependency dependency = new Dependency();
-
-                    public String name() {
-                        return dependency.name();
-                    }
-                }
-
-                class Dependency {
-                    String name() {
-                        return "ok";
-                    }
-                }
-                """);
-
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        assertNotNull(compiler, "tests require a JDK compiler");
-        int exit = compiler.run(null, null, null,
-                "-d", outRoot.toString(), source.toString());
-        assertEquals(0, exit, "test class should compile");
-
-        return new CompiledSample(
-                Files.readAllBytes(outRoot.resolve("com/example/UsesDependency.class")),
-                Files.readAllBytes(outRoot.resolve("com/example/Dependency.class")));
     }
 
     private record CompiledSample(byte[] targetBytes, byte[] dependencyBytes) {

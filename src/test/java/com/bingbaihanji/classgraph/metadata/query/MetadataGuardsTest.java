@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("MetadataGuards")
 class MetadataGuardsTest {
@@ -148,7 +151,7 @@ class MetadataGuardsTest {
         @DisplayName("queryServiceFor creates single-reader service")
         void queryServiceFor() {
             ClassMetadataReader reader = new MutableClassMetadata("test")
-                .freeze();
+                    .freeze();
             MetadataQueryService svc = MetadataGuards.queryServiceFor(reader);
             assertEquals(1, svc.classCount());
         }

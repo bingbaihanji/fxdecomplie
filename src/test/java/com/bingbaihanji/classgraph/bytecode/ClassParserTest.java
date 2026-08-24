@@ -44,9 +44,9 @@ class ClassParserTest {
         @DisplayName("parses class name and modifiers")
         void parsesClassNameAndModifiers() {
             byte[] bytes = compile("com.example.Hello", """
-                package com.example;
-                public class Hello {}
-                """);
+                                                        package com.example;
+                                                        public class Hello {}
+                                                        """);
 
             ClassFileMetadata meta = parse(bytes);
             assertEquals("com/example/Hello", meta.internalName());
@@ -59,9 +59,9 @@ class ClassParserTest {
         @DisplayName("parses interface flag")
         void parsesInterfaceFlag() {
             byte[] bytes = compile("com.example.MyInterface", """
-                package com.example;
-                public interface MyInterface {}
-                """);
+                                                              package com.example;
+                                                              public interface MyInterface {}
+                                                              """);
 
             ClassFileMetadata meta = parse(bytes);
             assertNotEquals(0, meta.accessFlags() & 0x0200, "Should be an interface");
@@ -72,11 +72,11 @@ class ClassParserTest {
         @DisplayName("parses annotation flag")
         void parsesAnnotationFlag() {
             byte[] bytes = compile("com.example.MyAnnotation", """
-                package com.example;
-                import java.lang.annotation.*;
-                @Retention(RetentionPolicy.RUNTIME)
-                @interface MyAnnotation {}
-                """);
+                                                               package com.example;
+                                                               import java.lang.annotation.*;
+                                                               @Retention(RetentionPolicy.RUNTIME)
+                                                               @interface MyAnnotation {}
+                                                               """);
 
             ClassFileMetadata meta = parse(bytes);
             assertNotEquals(0, meta.accessFlags() & 0x2000, "Should be an annotation");
@@ -86,9 +86,9 @@ class ClassParserTest {
         @DisplayName("parses superclass name")
         void parsesSuperclassName() {
             byte[] bytes = compile("com.example.Child", """
-                package com.example;
-                public class Child extends java.util.ArrayList {}
-                """);
+                                                        package com.example;
+                                                        public class Child extends java.util.ArrayList {}
+                                                        """);
 
             ClassFileMetadata meta = parse(bytes);
             assertEquals("java/util/ArrayList", meta.superName());
@@ -98,17 +98,17 @@ class ClassParserTest {
         @DisplayName("parses implemented interfaces")
         void parsesInterfaces() {
             byte[] bytes = compile("com.example.Impl", """
-                package com.example;
-                import java.io.Serializable;
-                import java.lang.Comparable;
-                public class Impl implements Serializable, Comparable<Impl> {
-                    public int compareTo(Impl o) { return 0; }
-                }
-                """);
+                                                       package com.example;
+                                                       import java.io.Serializable;
+                                                       import java.lang.Comparable;
+                                                       public class Impl implements Serializable, Comparable<Impl> {
+                                                           public int compareTo(Impl o) { return 0; }
+                                                       }
+                                                       """);
 
             ClassFileMetadata meta = parse(bytes);
             assertTrue(meta.interfaces().size() >= 2,
-                "Should implement at least 2 interfaces");
+                    "Should implement at least 2 interfaces");
             assertTrue(meta.interfaces().contains("java/io/Serializable"));
         }
     }
@@ -121,45 +121,45 @@ class ClassParserTest {
         @DisplayName("parses primitive fields")
         void parsesPrimitiveFields() {
             byte[] bytes = compile("com.example.Data", """
-                package com.example;
-                public class Data {
-                    private int count;
-                    public String name;
-                    protected double value;
-                }
-                """);
+                                                       package com.example;
+                                                       public class Data {
+                                                           private int count;
+                                                           public String name;
+                                                           protected double value;
+                                                       }
+                                                       """);
 
             ClassFileMetadata meta = parse(bytes);
             assertEquals(3, meta.fields().size());
             assertTrue(meta.fields().stream()
-                .anyMatch(f -> f.name().equals("count")));
+                    .anyMatch(f -> f.name().equals("count")));
             assertTrue(meta.fields().stream()
-                .anyMatch(f -> f.name().equals("name")));
+                    .anyMatch(f -> f.name().equals("name")));
             assertTrue(meta.fields().stream()
-                .anyMatch(f -> f.name().equals("value")));
+                    .anyMatch(f -> f.name().equals("value")));
         }
 
         @Test
         @DisplayName("parses field descriptors correctly")
         void parsesFieldDescriptors() {
             byte[] bytes = compile("com.example.Types", """
-                package com.example;
-                public class Types {
-                    int intField;
-                    String strField;
-                    long longField;
-                }
-                """);
+                                                        package com.example;
+                                                        public class Types {
+                                                            int intField;
+                                                            String strField;
+                                                            long longField;
+                                                        }
+                                                        """);
 
             ClassFileMetadata meta = parse(bytes);
             assertEquals(3, meta.fields().size());
 
             var intField = meta.fields().stream()
-                .filter(f -> f.name().equals("intField")).findFirst().orElseThrow();
+                    .filter(f -> f.name().equals("intField")).findFirst().orElseThrow();
             assertEquals("I", intField.descriptor());
 
             var strField = meta.fields().stream()
-                .filter(f -> f.name().equals("strField")).findFirst().orElseThrow();
+                    .filter(f -> f.name().equals("strField")).findFirst().orElseThrow();
             assertEquals("Ljava/lang/String;", strField.descriptor());
         }
 
@@ -167,21 +167,21 @@ class ClassParserTest {
         @DisplayName("parses static final constant fields")
         void parsesConstantFields() {
             byte[] bytes = compile("com.example.Constants", """
-                package com.example;
-                public class Constants {
-                    public static final int MAX = 100;
-                    public static final String NAME = "test";
-                }
-                """);
+                                                            package com.example;
+                                                            public class Constants {
+                                                                public static final int MAX = 100;
+                                                                public static final String NAME = "test";
+                                                            }
+                                                            """);
 
             ClassFileMetadata meta = parse(bytes);
             assertEquals(2, meta.fields().size());
             // Constant values are extracted from ConstantValue attribute
             // ClassFileParser records field name+descriptor for indexing
             assertTrue(meta.fields().stream()
-                .anyMatch(f -> f.name().equals("MAX")));
+                    .anyMatch(f -> f.name().equals("MAX")));
             assertTrue(meta.fields().stream()
-                .anyMatch(f -> f.name().equals("NAME")));
+                    .anyMatch(f -> f.name().equals("NAME")));
         }
     }
 
@@ -193,83 +193,83 @@ class ClassParserTest {
         @DisplayName("parses method names and descriptors")
         void parsesMethods() {
             byte[] bytes = compile("com.example.Methods", """
-                package com.example;
-                public class Methods {
-                    public void noArgs() {}
-                    public String getValue() { return ""; }
-                    public void setValue(String v) {}
-                }
-                """);
+                                                          package com.example;
+                                                          public class Methods {
+                                                              public void noArgs() {}
+                                                              public String getValue() { return ""; }
+                                                              public void setValue(String v) {}
+                                                          }
+                                                          """);
 
             ClassFileMetadata meta = parse(bytes);
             // methods: <init> + 3 declared methods
             assertTrue(meta.methods().size() >= 3,
-                "Should have at least 3 methods");
+                    "Should have at least 3 methods");
 
             assertTrue(meta.methods().stream()
-                .anyMatch(m -> m.name().equals("noArgs")
-                    && m.descriptor().equals("()V")));
+                    .anyMatch(m -> m.name().equals("noArgs")
+                            && m.descriptor().equals("()V")));
             assertTrue(meta.methods().stream()
-                .anyMatch(m -> m.name().equals("getValue")
-                    && m.descriptor().equals("()Ljava/lang/String;")));
+                    .anyMatch(m -> m.name().equals("getValue")
+                            && m.descriptor().equals("()Ljava/lang/String;")));
             assertTrue(meta.methods().stream()
-                .anyMatch(m -> m.name().equals("setValue")
-                    && m.descriptor().equals("(Ljava/lang/String;)V")));
+                    .anyMatch(m -> m.name().equals("setValue")
+                            && m.descriptor().equals("(Ljava/lang/String;)V")));
         }
 
         @Test
         @DisplayName("parses method with primitive parameters")
         void parsesMethodsWithPrimitiveParams() {
             byte[] bytes = compile("com.example.Calc", """
-                package com.example;
-                public class Calc {
-                    public int add(int a, int b) { return a + b; }
-                    public long multiply(long x, long y) { return x * y; }
-                }
-                """);
+                                                       package com.example;
+                                                       public class Calc {
+                                                           public int add(int a, int b) { return a + b; }
+                                                           public long multiply(long x, long y) { return x * y; }
+                                                       }
+                                                       """);
 
             ClassFileMetadata meta = parse(bytes);
             assertTrue(meta.methods().stream()
-                .anyMatch(m -> m.name().equals("add")
-                    && m.descriptor().equals("(II)I")));
+                    .anyMatch(m -> m.name().equals("add")
+                            && m.descriptor().equals("(II)I")));
             assertTrue(meta.methods().stream()
-                .anyMatch(m -> m.name().equals("multiply")
-                    && m.descriptor().equals("(JJ)J")));
+                    .anyMatch(m -> m.name().equals("multiply")
+                            && m.descriptor().equals("(JJ)J")));
         }
 
         @Test
         @DisplayName("parses methods with object parameters and return types")
         void parsesMethodsWithObjectParams() {
             byte[] bytes = compile("com.example.Processor", """
-                package com.example;
-                import java.util.List;
-                import java.util.Map;
-                public class Processor {
-                    public List<String> process(Map<String, Object> input) {
-                        return java.util.Collections.emptyList();
-                    }
-                }
-                """);
+                                                            package com.example;
+                                                            import java.util.List;
+                                                            import java.util.Map;
+                                                            public class Processor {
+                                                                public List<String> process(Map<String, Object> input) {
+                                                                    return java.util.Collections.emptyList();
+                                                                }
+                                                            }
+                                                            """);
 
             ClassFileMetadata meta = parse(bytes);
             assertTrue(meta.methods().stream()
-                .anyMatch(m -> m.name().equals("process")));
+                    .anyMatch(m -> m.name().equals("process")));
         }
 
         @Test
         @DisplayName("parses methods that throw exceptions")
         void parsesMethodsWithExceptions() {
             byte[] bytes = compile("com.example.Thrower", """
-                package com.example;
-                import java.io.IOException;
-                public class Thrower {
-                    public void risky() throws IOException, RuntimeException {}
-                }
-                """);
+                                                          package com.example;
+                                                          import java.io.IOException;
+                                                          public class Thrower {
+                                                              public void risky() throws IOException, RuntimeException {}
+                                                          }
+                                                          """);
 
             ClassFileMetadata meta = parse(bytes);
             assertTrue(meta.methods().stream()
-                .anyMatch(m -> m.name().equals("risky")));
+                    .anyMatch(m -> m.name().equals("risky")));
         }
     }
 

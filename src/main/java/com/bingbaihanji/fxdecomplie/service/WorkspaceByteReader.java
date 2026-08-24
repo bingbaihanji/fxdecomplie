@@ -63,7 +63,7 @@ public final class WorkspaceByteReader {
      *
      * @param cacheNode 读取成功后是否回存到节点缓存
      */
-    static byte[] readClassBytes(Workspace workspace, String internalName, boolean cacheNode)
+    public static byte[] readClassBytes(Workspace workspace, String internalName, boolean cacheNode)
             throws IOException {
         if (workspace == null || internalName == null || internalName.isBlank()) {
             return null;

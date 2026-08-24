@@ -42,6 +42,9 @@ public class FileTreeNode {
     /** 条目原始大小,未知时为 -1 */
     private volatile long size = -1L;
 
+    /** 发现阶段:1=根归档(BOOT-INF/classes), 2=嵌套归档(BOOT-INF/lib) */
+    private volatile int phase = 1;
+
     /**
      * 构造文件树节点
      *
@@ -93,6 +96,16 @@ public class FileTreeNode {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    /** @return 发现阶段(1=根归档, 2=嵌套归档) */
+    public int getPhase() {
+        return phase;
+    }
+
+    /** @param phase 发现阶段 */
+    public void setPhase(int phase) {
+        this.phase = phase;
     }
 
     /**

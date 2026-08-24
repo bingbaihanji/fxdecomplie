@@ -16,11 +16,13 @@ import javafx.stage.Stage;
  * @description //TODO
  */
 public class WindowsTest {
+
     static void main() {
         Windows.main();
     }
 
     public static class Windows extends Application {
+
         private final static String WINDOW_TITLE = "这是一个牛逼窗口";
 
         static void main() {

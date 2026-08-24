@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.Callable;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DisplayName("PrivilegedActionInvocationHandler")
 class PrivilegedActionInvocationHandlerTest {
@@ -16,13 +18,13 @@ class PrivilegedActionInvocationHandlerTest {
     void invokeDelegatesToCallable() throws Throwable {
         Callable<String> callable = () -> "result";
         PrivilegedActionInvocationHandler<String> handler =
-            new PrivilegedActionInvocationHandler<>(callable);
+                new PrivilegedActionInvocationHandler<>(callable);
 
         Object result = handler.invoke(
-            Proxy.newProxyInstance(getClass().getClassLoader(),
-                new Class[]{Runnable.class}, handler),
-            Object.class.getMethod("toString"),
-            null);
+                Proxy.newProxyInstance(getClass().getClassLoader(),
+                        new Class[]{Runnable.class}, handler),
+                Object.class.getMethod("toString"),
+                null);
 
         assertEquals("result", result);
     }
@@ -34,10 +36,10 @@ class PrivilegedActionInvocationHandlerTest {
             throw new IllegalArgumentException("test error");
         };
         PrivilegedActionInvocationHandler<String> handler =
-            new PrivilegedActionInvocationHandler<>(callable);
+                new PrivilegedActionInvocationHandler<>(callable);
 
         assertThrows(IllegalArgumentException.class, () ->
-            handler.invoke(null, null, null));
+                handler.invoke(null, null, null));
     }
 
     @Test

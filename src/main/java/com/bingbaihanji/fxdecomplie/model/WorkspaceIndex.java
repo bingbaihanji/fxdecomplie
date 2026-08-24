@@ -61,6 +61,74 @@ public final class WorkspaceIndex {
 
     public static WorkspaceIndex build(FileTreeModel root,
                                        Consumer<BuildProgress> progressListener) {
+        List<FileTreeNode> nodes = collectNodes(root);
+        return build(nodes, progressListener);
+    }
+
+    /**
+     * 按阶段构建索引:先 phase1(BOOT-INF/classes),后 phase2(BOOT-INF/lib)
+     *
+     * @param root 文件树根节点
+     * @param phase 要构建的阶段(1 或 2)
+     * @param progressListener 进度回调
+     * @return 该阶段的索引
+     */
+    public static WorkspaceIndex buildPhase(FileTreeModel root, int phase,
+                                            Consumer<BuildProgress> progressListener) {
+        List<FileTreeNode> nodes = collectNodes(root);
+        List<FileTreeNode> filtered = new ArrayList<>();
+        for (FileTreeNode node : nodes) {
+            if (node != null && node.getPhase() == phase) {
+                filtered.add(node);
+            }
+        }
+        return build(filtered, progressListener);
+    }
+
+    /**
+     * 从缓存数据构建索引(不读取字节码,不含 ByteLoader)
+     *
+     * @param classes 缓存的 class 索引条目
+     * @return 重建的索引(资源列表为空,需从文件树重新索引)
+     */
+    public static WorkspaceIndex buildFromCache(List<ClassIndexEntry> classes) {
+        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
+        for (ClassIndexEntry entry : classes) {
+            putClassEntry(classEntries, entry);
+        }
+        return new WorkspaceIndex(classes, List.of(), classEntries);
+    }
+
+    public static WorkspaceIndex buildFromCache(List<ClassIndexEntry> classes,
+                                                List<ResourceIndexEntry> resources) {
+        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
+        List<ClassIndexEntry> safeClasses = classes == null ? List.of() : classes;
+        for (ClassIndexEntry entry : safeClasses) {
+            if (entry != null) {
+                putClassEntry(classEntries, entry);
+            }
+        }
+        List<ClassIndexEntry> validClasses = safeClasses.stream()
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        return new WorkspaceIndex(validClasses,
+                resources == null ? List.of() : resources, classEntries);
+    }
+
+    /**
+     * 合并两个索引,返回合并后的新索引(this 的条目在前,other 的条目在后)
+     */
+    public static WorkspaceIndex merge(WorkspaceIndex a, WorkspaceIndex b) {
+        List<ClassIndexEntry> mergedClasses = new ArrayList<>(a.classes());
+        mergedClasses.addAll(b.classes());
+        List<ResourceIndexEntry> mergedResources = new ArrayList<>(a.resources());
+        mergedResources.addAll(b.resources());
+        Map<String, ClassIndexEntry> mergedMap = new LinkedHashMap<>(a.classesByInternalName);
+        mergedMap.putAll(b.classesByInternalName);
+        return new WorkspaceIndex(mergedClasses, mergedResources, mergedMap);
+    }
+
+    private static List<FileTreeNode> collectNodes(FileTreeModel root) {
         List<FileTreeNode> nodes = new ArrayList<>();
         ArrayDeque<FileTreeModel> queue = new ArrayDeque<>();
         queue.add(root);
@@ -72,7 +140,7 @@ public final class WorkspaceIndex {
             }
             queue.addAll(item.getChildren());
         }
-        return build(nodes, progressListener);
+        return nodes;
     }
 
     /**
@@ -98,12 +166,15 @@ public final class WorkspaceIndex {
         List<ResourceIndexEntry> resources = new ArrayList<>();
         Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
 
+        // 分离 class 和 resource 节点
+        List<FileTreeNode> classNodes = new ArrayList<>();
         int total = 0;
         for (FileTreeNode node : nodes) {
             if (node == null) {
                 continue;
             }
             if (node.isClassFile() && node.hasByteSource()) {
+                classNodes.add(node);
                 total++;
             } else if (node.isTextFile() && node.hasByteSource()
                     && isIndexableResourceSize(node)) {
@@ -111,21 +182,26 @@ public final class WorkspaceIndex {
             }
         }
 
-        int processed = 0;
         if (total == 0) {
             notifyProgress(progressListener, 1, 1, "done");
+            return new WorkspaceIndex(classes, resources, classEntries);
         }
 
+        // 串行解析 class 元数据,避免为超大 fatjar 创建海量待执行任务
+        int processed = 0;
+        for (FileTreeNode node : classNodes) {
+            ClassIndexEntry entry = indexClass(node);
+            if (entry != null) {
+                classes.add(entry);
+                putClassEntry(classEntries, entry);
+            }
+            processed++;
+            notifyProgress(progressListener, processed, total, "class");
+        }
+
+        // 串行处理 resource(通常较小,不值得并行)
         for (FileTreeNode node : nodes) {
-            if (node.isClassFile() && node.hasByteSource()) {
-                ClassIndexEntry entry = indexClass(node);
-                if (entry != null) {
-                    classes.add(entry);
-                    putClassEntry(classEntries, entry);
-                }
-                processed++;
-                notifyProgress(progressListener, processed, total, "class");
-            } else if (node.isTextFile() && node.hasByteSource()
+            if (node != null && node.isTextFile() && node.hasByteSource()
                     && shouldIndexResource(node)) {
                 byte[] bytes = readNodeBytes(node);
                 if (bytes != null) {

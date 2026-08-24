@@ -5,7 +5,10 @@ import org.junit.jupiter.api.Test;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UmlClassExtractorTest {
 
@@ -15,14 +18,14 @@ class UmlClassExtractorTest {
         sources.put("com.example.Order", "package com.example;\npublic class Order {}\n");
         sources.put("com.example.Person",
                 "package com.example;\n"
-                + "import java.util.List;\n"
-                + "public abstract class Person {\n"
-                + "    private String name;\n"
-                + "    protected static int count;\n"
-                + "    public List<Order> orders;\n"
-                + "    public abstract void run();\n"
-                + "    public static String greet(String who) { return \"hi\"; }\n"
-                + "}\n");
+                        + "import java.util.List;\n"
+                        + "public abstract class Person {\n"
+                        + "    private String name;\n"
+                        + "    protected static int count;\n"
+                        + "    public List<Order> orders;\n"
+                        + "    public abstract void run();\n"
+                        + "    public static String greet(String who) { return \"hi\"; }\n"
+                        + "}\n");
         Map<String, byte[]> bytes = TestCompile.compile(sources);
 
         UmlClass cls = UmlClassExtractor.extract("com/example/Person", bytes.get("com/example/Person.class"));
@@ -92,10 +95,10 @@ class UmlClassExtractorTest {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("com.example.Box",
                 "package com.example;\npublic class Box<T> {\n"
-                + "    private T value;\n"
-                + "    public void set(T v) { this.value = v; }\n"
-                + "    public T get() { return value; }\n"
-                + "}\n");
+                        + "    private T value;\n"
+                        + "    public void set(T v) { this.value = v; }\n"
+                        + "    public T get() { return value; }\n"
+                        + "}\n");
         Map<String, byte[]> bytes = TestCompile.compile(sources);
 
         UmlClass cls = UmlClassExtractor.extract("com/example/Box", bytes.get("com/example/Box.class"));

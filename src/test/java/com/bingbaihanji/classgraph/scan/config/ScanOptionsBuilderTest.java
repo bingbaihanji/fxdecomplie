@@ -4,7 +4,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("ScanOptionsBuilder")
 class ScanOptionsBuilderTest {
@@ -24,12 +27,12 @@ class ScanOptionsBuilderTest {
     @DisplayName("builds with direct setters")
     void buildsWithDirectSetters() {
         ScanOptions opts = new ScanOptionsBuilder()
-            .enableClassInfo(true)
-            .enableFieldInfo(true)
-            .enableMethodInfo(true)
-            .scanJars(false)
-            .maxThreads(4)
-            .build();
+                .enableClassInfo(true)
+                .enableFieldInfo(true)
+                .enableMethodInfo(true)
+                .scanJars(false)
+                .maxThreads(4)
+                .build();
 
         assertTrue(opts.enableClassInfo());
         assertTrue(opts.enableFieldInfo());
@@ -42,9 +45,9 @@ class ScanOptionsBuilderTest {
     @DisplayName("builds with lambda configurator")
     void buildsWithLambdaConfigurator() {
         ScanOptions opts = new ScanOptionsBuilder()
-            .metadata(m -> m.withAll())
-            .classpath(c -> c.scanDirs(false).scanJars(false))
-            .build();
+                .metadata(m -> m.withAll())
+                .classpath(c -> c.scanDirs(false).scanJars(false))
+                .build();
 
         assertTrue(opts.enableFieldInfo());
         assertTrue(opts.enableAnnotationInfo());
@@ -57,14 +60,14 @@ class ScanOptionsBuilderTest {
     @DisplayName("toBuilder preserves values")
     void toBuilderPreservesValues() {
         ScanOptions original = new ScanOptionsBuilder()
-            .enableFieldInfo(true)
-            .enableAnnotationInfo(true)
-            .maxThreads(8)
-            .build();
+                .enableFieldInfo(true)
+                .enableAnnotationInfo(true)
+                .maxThreads(8)
+                .build();
 
         ScanOptions modified = original.toBuilder()
-            .enableFieldInfo(false)
-            .build();
+                .enableFieldInfo(false)
+                .build();
 
         assertTrue(original.enableFieldInfo(), "Original should be unchanged");
         assertFalse(modified.enableFieldInfo(), "Modified should have new value");
@@ -85,7 +88,7 @@ class ScanOptionsBuilderTest {
     @DisplayName("immutability — modifying builder does not affect built options")
     void builderIsIndependent() {
         ScanOptionsBuilder builder = new ScanOptionsBuilder()
-            .enableFieldInfo(true);
+                .enableFieldInfo(true);
 
         ScanOptions opts1 = builder.build();
         assertTrue(opts1.enableFieldInfo());
@@ -110,7 +113,7 @@ class ScanOptionsBuilderTest {
         @DisplayName("MetadataBuilder.withAll enables everything")
         void metadataWithAll() {
             ScanMetadataOptions m = new ScanOptionsBuilder.MetadataBuilder(
-                ScanMetadataOptions.DEFAULT).withAll().build();
+                    ScanMetadataOptions.DEFAULT).withAll().build();
             assertTrue(m.enableClassInfo());
             assertTrue(m.enableFieldInfo());
             assertTrue(m.enableMethodInfo());
@@ -124,9 +127,9 @@ class ScanOptionsBuilderTest {
         @DisplayName("ClasspathBuilder.addURLScheme works")
         void classpathBuilderURLScheme() {
             ScanClasspathOptions c = new ScanOptionsBuilder.ClasspathBuilder(
-                ScanClasspathOptions.DEFAULT)
-                .addURLScheme("http")
-                .build();
+                    ScanClasspathOptions.DEFAULT)
+                    .addURLScheme("http")
+                    .build();
             assertTrue(c.allowedURLSchemes().contains("http"));
         }
     }

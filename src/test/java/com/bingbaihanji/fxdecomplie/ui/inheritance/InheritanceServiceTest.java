@@ -39,13 +39,13 @@ class InheritanceServiceTest {
         Path sourceDir = tempDir.resolve("src/com/example");
         Files.createDirectories(sourceDir);
         Files.writeString(sourceDir.resolve("Parent.java"), """
-                package com.example;
-                public class Parent {}
-                """, StandardCharsets.UTF_8);
+                                                            package com.example;
+                                                            public class Parent {}
+                                                            """, StandardCharsets.UTF_8);
         Files.writeString(sourceDir.resolve("Child.java"), """
-                package com.example;
-                public class Child extends Parent {}
-                """, StandardCharsets.UTF_8);
+                                                           package com.example;
+                                                           public class Child extends Parent {}
+                                                           """, StandardCharsets.UTF_8);
 
         int exit = ToolProvider.getSystemJavaCompiler().run(null, null, null,
                 "--release", "17",
@@ -74,13 +74,13 @@ class InheritanceServiceTest {
         Path sourceDir = tempDir.resolve("immediate-src/com/example");
         Files.createDirectories(sourceDir);
         Files.writeString(sourceDir.resolve("Parent.java"), """
-                package com.example;
-                public class Parent {}
-                """, StandardCharsets.UTF_8);
+                                                            package com.example;
+                                                            public class Parent {}
+                                                            """, StandardCharsets.UTF_8);
         Files.writeString(sourceDir.resolve("Child.java"), """
-                package com.example;
-                public class Child extends Parent {}
-                """, StandardCharsets.UTF_8);
+                                                           package com.example;
+                                                           public class Child extends Parent {}
+                                                           """, StandardCharsets.UTF_8);
 
         Path classesDir = tempDir.resolve("immediate-classes");
         int exit = ToolProvider.getSystemJavaCompiler().run(null, null, null,
@@ -106,17 +106,17 @@ class InheritanceServiceTest {
         Path sourceDir = tempDir.resolve("recursive-src/com/example");
         Files.createDirectories(sourceDir);
         Files.writeString(sourceDir.resolve("Parent.java"), """
-                package com.example;
-                public class Parent {}
-                """, StandardCharsets.UTF_8);
+                                                            package com.example;
+                                                            public class Parent {}
+                                                            """, StandardCharsets.UTF_8);
         Files.writeString(sourceDir.resolve("Child.java"), """
-                package com.example;
-                public class Child extends Parent {}
-                """, StandardCharsets.UTF_8);
+                                                           package com.example;
+                                                           public class Child extends Parent {}
+                                                           """, StandardCharsets.UTF_8);
         Files.writeString(sourceDir.resolve("GrandChild.java"), """
-                package com.example;
-                public class GrandChild extends Child {}
-                """, StandardCharsets.UTF_8);
+                                                                package com.example;
+                                                                public class GrandChild extends Child {}
+                                                                """, StandardCharsets.UTF_8);
 
         Path classesDir = tempDir.resolve("recursive-classes");
         int exit = ToolProvider.getSystemJavaCompiler().run(null, null, null,

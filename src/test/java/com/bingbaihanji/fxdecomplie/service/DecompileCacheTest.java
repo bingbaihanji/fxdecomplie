@@ -114,8 +114,12 @@ class DecompileCacheTest {
         assertNotNull(cache.get("ws", "com/C", DecompilerTypeEnum.VINEFLOWER, "h"));
 
         int present = 0;
-        if (cache.get("ws", "com/A", DecompilerTypeEnum.VINEFLOWER, "h") != null) present++;
-        if (cache.get("ws", "com/B", DecompilerTypeEnum.VINEFLOWER, "h") != null) present++;
+        if (cache.get("ws", "com/A", DecompilerTypeEnum.VINEFLOWER, "h") != null) {
+            present++;
+        }
+        if (cache.get("ws", "com/B", DecompilerTypeEnum.VINEFLOWER, "h") != null) {
+            present++;
+        }
         assertTrue(present <= 1, "expected at most 1 of A/B to survive eviction, got: " + present);
     }
 

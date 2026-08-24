@@ -4,7 +4,11 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import com.bingbaihanji.fxdecomplie.service.classscan.*;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassGraphClassScanService;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanRequest;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanResult;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanService;
+import com.bingbaihanji.fxdecomplie.service.classscan.ScanStatistics;
 import com.bingbaihanji.fxdecomplie.service.reference.TestClassCompiler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,7 +24,8 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Classpath 层回归测试 — JAR classpath + 重复 class 遮蔽规则.
@@ -53,8 +58,8 @@ class ClasspathRegressionTest {
 
     private Workspace workspaceFromJar(File jarFile) throws Exception {
         FileTreeNode rootNode = new FileTreeNode(
-            jarFile.getName(), jarFile.getAbsolutePath(),
-            FileTreeNode.NodeTypeEnum.PACKAGE);
+                jarFile.getName(), jarFile.getAbsolutePath(),
+                FileTreeNode.NodeTypeEnum.PACKAGE);
         FileTreeModel root = new FileTreeModel(rootNode);
         return new Workspace(jarFile.getName(), jarFile, root, true);
     }
@@ -70,8 +75,8 @@ class ClasspathRegressionTest {
         FileTreeModel root = new FileTreeModel(rootNode);
         for (var entry : classEntries.entrySet()) {
             FileTreeNode node = new FileTreeNode(
-                entry.getKey().substring(entry.getKey().lastIndexOf('/') + 1),
-                entry.getKey(), FileTreeNode.NodeTypeEnum.CLASS_FILE);
+                    entry.getKey().substring(entry.getKey().lastIndexOf('/') + 1),
+                    entry.getKey(), FileTreeNode.NodeTypeEnum.CLASS_FILE);
             node.setByteLoader(() -> entry.getValue());
             root.getChildren().add(new FileTreeModel(node));
         }
@@ -90,11 +95,11 @@ class ClasspathRegressionTest {
         void discoversAllClasses() throws Exception {
             Map<String, byte[]> entries = new LinkedHashMap<>();
             entries.put("com/example/A.class", compile("com.example.A",
-                "package com.example; public class A {}"));
+                    "package com.example; public class A {}"));
             entries.put("com/example/B.class", compile("com.example.B",
-                "package com.example; public class B {}"));
+                    "package com.example; public class B {}"));
             entries.put("com/example/C.class", compile("com.example.C",
-                "package com.example; public class C {}"));
+                    "package com.example; public class C {}"));
 
             Workspace ws = workspaceFromDir(tempDir, entries);
             ClassScanService service = new ClassGraphClassScanService();
@@ -111,9 +116,9 @@ class ClasspathRegressionTest {
         void handlesSubdirectories() throws Exception {
             Map<String, byte[]> entries = new LinkedHashMap<>();
             entries.put("com/example/pkg1/X.class", compile("com.example.pkg1.X",
-                "package com.example.pkg1; public class X {}"));
+                    "package com.example.pkg1; public class X {}"));
             entries.put("com/example/pkg2/Y.class", compile("com.example.pkg2.Y",
-                "package com.example.pkg2; public class Y {}"));
+                    "package com.example.pkg2; public class Y {}"));
 
             Workspace ws = workspaceFromDir(tempDir, entries);
             ClassScanService service = new ClassGraphClassScanService();
@@ -132,13 +137,13 @@ class ClasspathRegressionTest {
         void sameClassReplacesEarlierEntry() throws Exception {
             // 两个不同版本的同名类
             byte[] v1 = compile("com.example.Foo", """
-                package com.example;
-                public class Foo { public String version() { return "v1"; } }
-                """);
+                                                   package com.example;
+                                                   public class Foo { public String version() { return "v1"; } }
+                                                   """);
             byte[] v2 = compile("com.example.Foo", """
-                package com.example;
-                public class Foo { public String version() { return "v2"; } }
-                """);
+                                                   package com.example;
+                                                   public class Foo { public String version() { return "v2"; } }
+                                                   """);
 
             Map<String, byte[]> entries = new LinkedHashMap<>();
             entries.put("com/example/Foo.class", v2); // v2 wins
@@ -162,11 +167,11 @@ class ClasspathRegressionTest {
             // 编译所有相关类(需要一起编译以解析跨类引用)
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/P.java",
-                "package com.example; public class P {}");
+                    "package com.example; public class P {}");
             sources.put("com/example/Q.java",
-                "package com.example; public class Q extends P {}");
+                    "package com.example; public class Q extends P {}");
             sources.put("com/example/R.java",
-                "package com.example; public class R extends Q {}");
+                    "package com.example; public class R extends Q {}");
             Map<String, byte[]> compiled = TestClassCompiler.compile(sources);
 
             Map<String, byte[]> entries = new LinkedHashMap<>();
@@ -182,7 +187,7 @@ class ClasspathRegressionTest {
             assertEquals(3, stats.scannedClasses());
             assertTrue(stats.elapsedMs() >= 0);
             assertTrue(stats.totalClasses() >= 3,
-                "External classes (like java/lang/Object) should also be counted");
+                    "External classes (like java/lang/Object) should also be counted");
         }
     }
 }

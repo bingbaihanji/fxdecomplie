@@ -10,7 +10,10 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassGraphWorkspaceAdapterTest {
 
@@ -45,7 +48,7 @@ class ClassGraphWorkspaceAdapterTest {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("com/example/Service.java",
                 "package com.example; import java.lang.annotation.*; " +
-                "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
+                        "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
         sources.put("com/example/UserService.java",
                 "package com.example; @Service public class UserService {}");
 

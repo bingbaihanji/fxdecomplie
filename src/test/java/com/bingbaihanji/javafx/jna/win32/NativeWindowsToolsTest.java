@@ -4,7 +4,10 @@ import com.bingbaihanji.windows.platform.WindowOperationStatus;
 import com.bingbaihanji.windows.platform.win32.NativeWindowsTools;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NativeWindowsToolsTest {
 

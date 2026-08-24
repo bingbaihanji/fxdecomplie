@@ -1,8 +1,8 @@
 package com.bingbaihanji.fxdecomplie;
 
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameEntry;
@@ -27,9 +27,9 @@ class ClassNodeResolverTest {
 
         FileTreeNode node = ClassNodeResolver.findPackageNodeForToken(workspace,
                 "com.example.a", "com/example/a/Foo", """
-                        package com.example.a;
-                        public class Foo {}
-                        """, 1);
+                                                      package com.example.a;
+                                                      public class Foo {}
+                                                      """, 1);
 
         assertNotNull(node);
         assertEquals(FileTreeNode.NodeTypeEnum.PACKAGE, node.getNodeType());

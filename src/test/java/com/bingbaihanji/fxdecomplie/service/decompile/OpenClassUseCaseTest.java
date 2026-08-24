@@ -21,51 +21,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("OpenClassUseCase")
 class OpenClassUseCaseTest {
 
-    /** 内存缓存实现,用于测试 */
-    static final class InMemoryCacheStore implements CodeCacheStore {
-        private final Map<String, String> store = new ConcurrentHashMap<>();
-
-        @Override
-        public Optional<String> load(CodeCacheKey key) {
-            return Optional.ofNullable(store.get(key.compositeKey()));
-        }
-
-        @Override
-        public void save(CodeCacheKey key, String source) {
-            store.put(key.compositeKey(), source);
-        }
-
-        @Override
-        public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
-            if (scope == CodeCacheScope.ALL) store.clear();
-            else store.remove(key.compositeKey());
-        }
-    }
-
-    /** 测试用反编译执行服务 — 总是返回成功 */
-    static final class StubDecompilerExecutionService implements DecompilerExecutionService {
-        private final String stubSource;
-
-        StubDecompilerExecutionService(String stubSource) {
-            this.stubSource = stubSource;
-        }
-
-        @Override
-        public Future<DecompileResult> submit(DecompileRequest request) {
-            DecompileOutcome.Success outcome = new DecompileOutcome.Success(stubSource);
-            DecompileResult result = new DecompileResult(outcome, request.requestId(), 1, 0);
-            return CompletableFuture.completedFuture(result);
-        }
-
-        @Override public void cancel(String requestId) {}
-        @Override public int activeCount() { return 0; }
-        @Override public int timeoutCount() { return 0; }
-    }
-
     private InMemoryCacheStore cache;
+
     private DecompileCancellation cancellation;
+
     private OpenClassUseCase useCase;
+
     private Workspace workspace;
+
     private FileTreeNode classNode;
 
     @BeforeEach
@@ -84,6 +47,57 @@ class OpenClassUseCaseTest {
 
         classNode = new FileTreeNode("Test.class", "com/example/Test",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
+    }
+
+    /** 内存缓存实现,用于测试 */
+    static final class InMemoryCacheStore implements CodeCacheStore {
+
+        private final Map<String, String> store = new ConcurrentHashMap<>();
+
+        @Override
+        public Optional<String> load(CodeCacheKey key) {
+            return Optional.ofNullable(store.get(key.compositeKey()));
+        }
+
+        @Override
+        public void save(CodeCacheKey key, String source) {
+            store.put(key.compositeKey(), source);
+        }
+
+        @Override
+        public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
+            if (scope == CodeCacheScope.ALL) {
+                store.clear();
+            } else {
+                store.remove(key.compositeKey());
+            }
+        }
+    }
+
+    /** 测试用反编译执行服务 — 总是返回成功 */
+    static final class StubDecompilerExecutionService implements DecompilerExecutionService {
+
+        private final String stubSource;
+
+        StubDecompilerExecutionService(String stubSource) {
+            this.stubSource = stubSource;
+        }
+
+        @Override
+        public Future<DecompileResult> submit(DecompileRequest request) {
+            DecompileOutcome.Success outcome = new DecompileOutcome.Success(stubSource);
+            DecompileResult result = new DecompileResult(outcome, request.requestId(), 1, 0);
+            return CompletableFuture.completedFuture(result);
+        }
+
+        @Override
+        public void cancel(String requestId) {}
+
+        @Override
+        public int activeCount() {return 0;}
+
+        @Override
+        public int timeoutCount() {return 0;}
     }
 
     @Nested

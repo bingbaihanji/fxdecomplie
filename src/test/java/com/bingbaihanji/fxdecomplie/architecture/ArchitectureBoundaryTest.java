@@ -27,20 +27,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class ArchitectureBoundaryTest {
 
     private static final Path MAIN_SRC = Paths.get("src/main/java");
+
     private static final Pattern IMPORT_PATTERN =
             Pattern.compile("^import\\s+(com\\.bingbaihanji\\.[\\w.*]+);", Pattern.MULTILINE);
+
     private static final Pattern PACKAGE_PATTERN =
             Pattern.compile("^package\\s+([\\w.]+);", Pattern.MULTILINE);
 
     private static final String BASE = "com.bingbaihanji.fxdecomplie";
-    private static final String CG = "com.bingbaihanji.classgraph";
-    private static final String WINDOWS = "com.bingbaihanji.windows";
 
-    /**
-     * 每条禁止规则: {源包前缀, 禁止import的包前缀, 规则描述}
-     */
-    record ForbiddenRule(String srcPkg, String forbiddenImport, String description) {
-    }
+    private static final String CG = "com.bingbaihanji.classgraph";
+
+    private static final String WINDOWS = "com.bingbaihanji.windows";
 
     private static final List<ForbiddenRule> RULES = List.of(
             new ForbiddenRule(BASE + ".service", BASE + ".controller",
@@ -70,7 +68,38 @@ final class ArchitectureBoundaryTest {
             // 添加新条目格式: "service/SomeFile.java::com.bingbaihanji.fxdecomplie.ui.SomeUI"
     );
 
+    private static Map<String, String> readAllJavaSources(Path root) throws IOException {
+        Map<String, String> result = new LinkedHashMap<>();
+        try (Stream<Path> stream = Files.walk(root)) {
+            stream.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".java"))
+                    .forEach(p -> {
+                        try {
+                            String content = Files.readString(p);
+                            String rel = root.relativize(p).toString().replace('\\', '/');
+                            result.put(rel, content);
+                        } catch (IOException ignored) {
+                            System.err.println("读取失败: " + p);
+                        }
+                    });
+        }
+        return result;
+    }
+
     // ─── 测试 1: 禁止的包依赖方向 ───
+
+    private static String extractPackage(String source) {
+        Matcher m = PACKAGE_PATTERN.matcher(source);
+        return m.find() ? m.group(1) : null;
+    }
+
+    // ─── 测试 2: ClassGraph 隔离 ───
+
+    private static boolean isSamePackage(String pkg, String imported) {
+        // 同包或子包不算违规
+        return imported.startsWith(pkg + ".");
+    }
+
+    // ─── 测试 3: Model 包不依赖重量级包 ───
 
     @Test
     @DisplayName("禁止的包依赖方向 (R1-R5)")
@@ -119,7 +148,7 @@ final class ArchitectureBoundaryTest {
                         + String.join("\n", violations));
     }
 
-    // ─── 测试 2: ClassGraph 隔离 ───
+    // ─── helper methods ───
 
     @Test
     @DisplayName("ClassGraph 内核隔离 (R6-R8)")
@@ -171,8 +200,6 @@ final class ArchitectureBoundaryTest {
                         + String.join("\n", violations));
     }
 
-    // ─── 测试 3: Model 包不依赖重量级包 ───
-
     @Test
     @DisplayName("Model 包不依赖 controller/ui/service (R9)")
     void shouldNotDependOnHeavyweightPackagesInModel() throws IOException {
@@ -217,32 +244,9 @@ final class ArchitectureBoundaryTest {
                         + String.join("\n", violations));
     }
 
-    // ─── helper methods ───
-
-    private static Map<String, String> readAllJavaSources(Path root) throws IOException {
-        Map<String, String> result = new LinkedHashMap<>();
-        try (Stream<Path> stream = Files.walk(root)) {
-            stream.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".java"))
-                    .forEach(p -> {
-                        try {
-                            String content = Files.readString(p);
-                            String rel = root.relativize(p).toString().replace('\\', '/');
-                            result.put(rel, content);
-                        } catch (IOException ignored) {
-                            System.err.println("读取失败: " + p);
-                        }
-                    });
-        }
-        return result;
-    }
-
-    private static String extractPackage(String source) {
-        Matcher m = PACKAGE_PATTERN.matcher(source);
-        return m.find() ? m.group(1) : null;
-    }
-
-    private static boolean isSamePackage(String pkg, String imported) {
-        // 同包或子包不算违规
-        return imported.startsWith(pkg + ".");
+    /**
+     * 每条禁止规则: {源包前缀, 禁止import的包前缀, 规则描述}
+     */
+    record ForbiddenRule(String srcPkg, String forbiddenImport, String description) {
     }
 }

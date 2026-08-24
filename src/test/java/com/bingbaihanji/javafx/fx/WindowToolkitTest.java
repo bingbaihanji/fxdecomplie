@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WindowToolkitTest {
 
@@ -48,6 +50,7 @@ class WindowToolkitTest {
     }
 
     private static final class StubProvider implements WindowPlatformProvider {
+
         @Override
         public String platformId() {
             return "stub";

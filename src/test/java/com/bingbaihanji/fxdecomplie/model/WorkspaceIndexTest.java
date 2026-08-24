@@ -43,12 +43,12 @@ class WorkspaceIndexTest {
         FileTreeNode clsNode = new FileTreeNode("Test.class", "com/example/Test.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
         clsNode.setCachedBytes(compileClass("com.example", "Test", """
-                package com.example;
-                public class Test {
-                    private String value;
-                    public String getValue() { return value; }
-                }
-                """));
+                                                                   package com.example;
+                                                                   public class Test {
+                                                                       private String value;
+                                                                       public String getValue() { return value; }
+                                                                   }
+                                                                   """));
         FileTreeModel clsItem = new FileTreeModel(clsNode);
         root.getChildren().add(clsItem);
 
@@ -70,15 +70,15 @@ class WorkspaceIndexTest {
         FileTreeNode parent = new FileTreeNode("Parent.class", "com/example/Parent.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
         parent.setCachedBytes(compileClass("com.example", "Parent", """
-                package com.example;
-                public class Parent {}
-                """));
+                                                                    package com.example;
+                                                                    public class Parent {}
+                                                                    """));
         FileTreeNode child = new FileTreeNode("Child.class", "com/example/Child.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
         child.setCachedBytes(compileClass("com.example", "Child", """
-                package com.example;
-                public class Child extends Parent {}
-                """));
+                                                                  package com.example;
+                                                                  public class Child extends Parent {}
+                                                                  """));
         root.getChildren().add(new FileTreeModel(parent));
         root.getChildren().add(new FileTreeModel(child));
 
@@ -97,11 +97,11 @@ class WorkspaceIndexTest {
         FileTreeNode clsNode = new FileTreeNode("Test.class", "com/example/Test.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
         clsNode.setCachedBytes(withMajorVersion(compileClass("com.example", "Test", """
-                package com.example;
-                public class Test {
-                    public void run() {}
-                }
-                """), 69));
+                                                                                    package com.example;
+                                                                                    public class Test {
+                                                                                        public void run() {}
+                                                                                    }
+                                                                                    """), 69));
         root.getChildren().add(new FileTreeModel(clsNode));
 
         WorkspaceIndex index = WorkspaceIndex.build(root);
@@ -166,11 +166,11 @@ class WorkspaceIndexTest {
     @Test
     void indexReadsLazyClassBytesWithoutCachingNodeDuringBuild() throws Exception {
         byte[] bytes = compileClass("com.example", "Lazy", """
-                package com.example;
-                public class Lazy {
-                    public int value() { return 1; }
-                }
-                """);
+                                                           package com.example;
+                                                           public class Lazy {
+                                                               public int value() { return 1; }
+                                                           }
+                                                           """);
         FileTreeNode clsNode = new FileTreeNode("Lazy.class", "com/example/Lazy.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
         java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();

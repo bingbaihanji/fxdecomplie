@@ -12,7 +12,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RenameServiceTest {
 
@@ -33,17 +36,17 @@ class RenameServiceTest {
                 new RenameEntry("param", "com/example/Foo", "input", "amount", "run(I)V"));
 
         String source = """
-                package com.example;
-                public class Foo {
-                    private int value;
-                    public void run(int input) {
-                        this.value = input;
-                    }
-                    public void other(int input) {
-                        run(input);
-                    }
-                }
-                """;
+                        package com.example;
+                        public class Foo {
+                            private int value;
+                            public void run(int input) {
+                                this.value = input;
+                            }
+                            public void other(int input) {
+                                run(input);
+                            }
+                        }
+                        """;
 
         String renamed = RenameService.applyRenames(source, workspaceHash, "com/example/Foo");
 
@@ -84,24 +87,24 @@ class RenameServiceTest {
     @Test
     void resolveTargetUsesBytecodeMetadataForMembers() throws Exception {
         byte[] bytes = compileClass("com.example", "Foo", """
-                package com.example;
-                public class Foo {
-                    private int value;
-                    public void run(int input) {
-                        this.value = input;
-                    }
-                }
-                """);
+                                                          package com.example;
+                                                          public class Foo {
+                                                              private int value;
+                                                              public void run(int input) {
+                                                                  this.value = input;
+                                                              }
+                                                          }
+                                                          """);
         WorkspaceIndex index = index(bytes);
         String source = """
-                package com.example;
-                public class Foo {
-                    private int value;
-                    public void run(int input) {
-                        this.value = input;
-                    }
-                }
-                """;
+                        package com.example;
+                        public class Foo {
+                            private int value;
+                            public void run(int input) {
+                                this.value = input;
+                            }
+                        }
+                        """;
 
         RenameService.RenameTarget method = RenameService.resolveTarget(
                         source, source.indexOf("run(int"), "com/example/Foo", bytes, index)
@@ -147,13 +150,13 @@ class RenameServiceTest {
                 new RenameEntry("method", "com/example/Foo", "run", "execute", "(I)V"));
 
         String source = """
-                package com.example;
-                public class Foo {
-                    public void execute(int input) {
-                        System.out.println(input);
-                    }
-                }
-                """;
+                        package com.example;
+                        public class Foo {
+                            public void execute(int input) {
+                                System.out.println(input);
+                            }
+                        }
+                        """;
         RenameService.RenameTarget target = RenameService.resolveTarget(
                         source, source.indexOf("input)"), "com/example/Foo",
                         null, WorkspaceIndex.EMPTY, workspaceHash)

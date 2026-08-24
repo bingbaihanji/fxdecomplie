@@ -19,15 +19,15 @@ class UmlDiagramBuilderTest {
                 "package com.example;\npublic interface IOrderService { Order find(String id); }\n");
         sources.put("com.example.AbstractOrderService",
                 "package com.example;\nimport java.util.List;\n"
-                + "public abstract class AbstractOrderService implements IOrderService {\n"
-                + "    private List<Order> orders;\n"
-                + "}\n");
+                        + "public abstract class AbstractOrderService implements IOrderService {\n"
+                        + "    private List<Order> orders;\n"
+                        + "}\n");
         sources.put("com.example.OrderServiceImpl",
                 "package com.example;\npublic class OrderServiceImpl extends AbstractOrderService {\n"
-                + "    private double total;\n"
-                + "    public Order find(String id) { return null; }\n"
-                + "    public void save(Order o) { }\n"
-                + "}\n");
+                        + "    private double total;\n"
+                        + "    public Order find(String id) { return null; }\n"
+                        + "    public void save(Order o) { }\n"
+                        + "}\n");
         Map<String, byte[]> bytes = TestCompile.compile(sources);
         WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(bytes));
 

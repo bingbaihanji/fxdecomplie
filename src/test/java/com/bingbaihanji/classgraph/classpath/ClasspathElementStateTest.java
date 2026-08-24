@@ -4,7 +4,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("ClasspathElementState")
 class ClasspathElementStateTest {
@@ -13,11 +14,11 @@ class ClasspathElementStateTest {
     @DisplayName("ordinal progression is correct")
     void ordinalProgression() {
         assertTrue(ClasspathElementState.CREATED.ordinal()
-            < ClasspathElementState.INITIALIZED.ordinal());
+                < ClasspathElementState.INITIALIZED.ordinal());
         assertTrue(ClasspathElementState.INITIALIZED.ordinal()
-            < ClasspathElementState.PATHS_SCANNED.ordinal());
+                < ClasspathElementState.PATHS_SCANNED.ordinal());
         assertTrue(ClasspathElementState.PATHS_SCANNED.ordinal()
-            < ClasspathElementState.CLASSES_LINKED.ordinal());
+                < ClasspathElementState.CLASSES_LINKED.ordinal());
     }
 
     @Nested
@@ -28,21 +29,21 @@ class ClasspathElementStateTest {
         @DisplayName("same state is at least itself")
         void sameState() {
             assertTrue(ClasspathElementState.INITIALIZED
-                .isAtLeast(ClasspathElementState.INITIALIZED));
+                    .isAtLeast(ClasspathElementState.INITIALIZED));
         }
 
         @Test
         @DisplayName("later state is at least earlier state")
         void laterState() {
             assertTrue(ClasspathElementState.CLASSES_LINKED
-                .isAtLeast(ClasspathElementState.CREATED));
+                    .isAtLeast(ClasspathElementState.CREATED));
         }
 
         @Test
         @DisplayName("earlier state is not at least later state")
         void earlierStateNotAtLeastLater() {
             assertFalse(ClasspathElementState.CREATED
-                .isAtLeast(ClasspathElementState.INITIALIZED));
+                    .isAtLeast(ClasspathElementState.INITIALIZED));
         }
     }
 

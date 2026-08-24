@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("ScanLogger")
 class ScanLoggerTest {
@@ -36,15 +38,6 @@ class ScanLoggerTest {
     @DisplayName("In-memory capture")
     class InMemoryCapture {
 
-        private static class CapturingLogger implements ScanLogger {
-            final List<String> messages = new ArrayList<>();
-
-            @Override
-            public void log(Level level, String message, Object... args) {
-                messages.add("[" + level + "] " + message);
-            }
-        }
-
         @Test
         @DisplayName("captures all log levels")
         void capturesAllLevels() {
@@ -65,6 +58,7 @@ class ScanLoggerTest {
         @DisplayName("lazy supplier only evaluates when level enabled")
         void lazySupplierConditional() {
             CapturingLogger capturer = new CapturingLogger() {
+
                 @Override
                 public boolean isEnabled(Level level) {
                     return level == Level.ERROR;
@@ -73,19 +67,35 @@ class ScanLoggerTest {
             AtomicInteger evalCount = new AtomicInteger();
 
             java.util.function.Supplier<String> msgSupplier =
-                () -> { evalCount.incrementAndGet(); return "should not log"; };
+                    () -> {
+                        evalCount.incrementAndGet();
+                        return "should not log";
+                    };
             capturer.debugLazy(msgSupplier);
             assertEquals(0, evalCount.get(), "Supplier should not be evaluated for disabled level");
 
             java.util.function.Supplier<String> errorMsg =
-                () -> { evalCount.incrementAndGet(); return "should log"; };
+                    () -> {
+                        evalCount.incrementAndGet();
+                        return "should log";
+                    };
             capturer.debugLazy(errorMsg);
             assertEquals(0, evalCount.get(),
-                "Supplier should NOT be evaluated for disabled DEBUG level");
+                    "Supplier should NOT be evaluated for disabled DEBUG level");
             // ERROR level is enabled, so direct log call should work
             capturer.log(ScanLogger.Level.ERROR, errorMsg.get());
             assertEquals(1, evalCount.get(),
-                "Supplier should be evaluated once for enabled level");
+                    "Supplier should be evaluated once for enabled level");
+        }
+
+        private static class CapturingLogger implements ScanLogger {
+
+            final List<String> messages = new ArrayList<>();
+
+            @Override
+            public void log(Level level, String message, Object... args) {
+                messages.add("[" + level + "] " + message);
+            }
         }
     }
 

@@ -44,10 +44,10 @@ class ClassGraphClassScanServiceTest {
         @DisplayName("returns empty result for workspace with EMPTY index")
         void emptyIndex() {
             Workspace ws = new Workspace("empty", tempDir.toFile(),
-                new com.bingbaihanji.fxdecomplie.model.FileTreeModel(
-                    new com.bingbaihanji.fxdecomplie.model.FileTreeNode(
-                        "root", "", com.bingbaihanji.fxdecomplie.model.FileTreeNode.NodeTypeEnum.PACKAGE)),
-                false);
+                    new com.bingbaihanji.fxdecomplie.model.FileTreeModel(
+                            new com.bingbaihanji.fxdecomplie.model.FileTreeNode(
+                                    "root", "", com.bingbaihanji.fxdecomplie.model.FileTreeNode.NodeTypeEnum.PACKAGE)),
+                    false);
             assertSame(WorkspaceIndex.EMPTY, ws.getIndex());
 
             ClassScanResult result = service.scan(ClassScanRequest.of(ws));
@@ -64,12 +64,12 @@ class ClassGraphClassScanServiceTest {
         void scansInterfaceAndImplementation() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/FileService.java",
-                "package com.example; public interface FileService {}");
+                    "package com.example; public interface FileService {}");
             sources.put("com/example/FileServiceImpl.java",
-                "package com.example; public class FileServiceImpl implements FileService {}");
+                    "package com.example; public class FileServiceImpl implements FileService {}");
 
             Workspace workspace = ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(
-                tempDir.toFile(), sources);
+                    tempDir.toFile(), sources);
             ClassScanResult result = service.scan(ClassScanRequest.of(workspace));
 
             assertTrue(result.size() >= 2, "Should have at least 2 classes");
@@ -84,7 +84,7 @@ class ClassGraphClassScanServiceTest {
             assertNotNull(impl, "FileServiceImpl should be found");
             assertFalse(impl.isInterface());
             assertTrue(impl.interfaceNames().contains("com/example/FileService"),
-                "FileServiceImpl should implement FileService");
+                    "FileServiceImpl should implement FileService");
         }
     }
 
@@ -97,13 +97,13 @@ class ClassGraphClassScanServiceTest {
         void scansAnnotation() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Service.java",
-                "package com.example; import java.lang.annotation.*; " +
-                "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
+                    "package com.example; import java.lang.annotation.*; " +
+                            "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
             sources.put("com/example/UserService.java",
-                "package com.example; @Service public class UserService {}");
+                    "package com.example; @Service public class UserService {}");
 
             Workspace workspace = ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(
-                tempDir.toFile(), sources);
+                    tempDir.toFile(), sources);
             ClassScanResult result = service.scan(ClassScanRequest.of(workspace));
 
             ClassMetadata ann = result.getClass("com/example/Service").orElse(null);
@@ -125,17 +125,17 @@ class ClassGraphClassScanServiceTest {
         void superclassRelationship() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Parent.java",
-                "package com.example; public class Parent {}");
+                    "package com.example; public class Parent {}");
             sources.put("com/example/Child.java",
-                "package com.example; public class Child extends Parent {}");
+                    "package com.example; public class Child extends Parent {}");
 
             Workspace workspace = ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(
-                tempDir.toFile(), sources);
+                    tempDir.toFile(), sources);
             ClassScanResult result = service.scan(ClassScanRequest.of(workspace));
 
             ClassMetadata child = result.getClassOrThrow("com/example/Child");
             assertEquals("com/example/Parent", child.superclassName(),
-                "Child should have Parent as superclass");
+                    "Child should have Parent as superclass");
         }
 
         @Test
@@ -143,15 +143,15 @@ class ClassGraphClassScanServiceTest {
         void externalClassDetection() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/MyClass.java",
-                "package com.example; public class MyClass extends java.util.ArrayList {}");
+                    "package com.example; public class MyClass extends java.util.ArrayList {}");
 
             Workspace workspace = ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(
-                tempDir.toFile(), sources);
+                    tempDir.toFile(), sources);
             ClassScanResult result = service.scan(ClassScanRequest.of(workspace));
 
             ClassMetadata myClass = result.getClassOrThrow("com/example/MyClass");
             assertFalse(myClass.isExternalClass(),
-                "MyClass was scanned, should not be external");
+                    "MyClass was scanned, should not be external");
         }
 
         @Test
@@ -159,12 +159,12 @@ class ClassGraphClassScanServiceTest {
         void statisticsArePopulated() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/A.java",
-                "package com.example; public class A {}");
+                    "package com.example; public class A {}");
             sources.put("com/example/B.java",
-                "package com.example; public class B extends A {}");
+                    "package com.example; public class B extends A {}");
 
             Workspace workspace = ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(
-                tempDir.toFile(), sources);
+                    tempDir.toFile(), sources);
             ClassScanResult result = service.scan(ClassScanRequest.of(workspace));
 
             ScanStatistics stats = result.statistics();
@@ -179,10 +179,10 @@ class ClassGraphClassScanServiceTest {
         void fullPathIsSet() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Test.java",
-                "package com.example; public class Test {}");
+                    "package com.example; public class Test {}");
 
             Workspace workspace = ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(
-                tempDir.toFile(), sources);
+                    tempDir.toFile(), sources);
             ClassScanResult result = service.scan(ClassScanRequest.of(workspace));
 
             ClassMetadata testClass = result.getClassOrThrow("com/example/Test");
@@ -200,21 +200,21 @@ class ClassGraphClassScanServiceTest {
         void filtersByClassFilter() throws Exception {
             Map<String, String> sources = new LinkedHashMap<>();
             sources.put("com/example/Keep.java",
-                "package com.example; public class Keep {}");
+                    "package com.example; public class Keep {}");
             sources.put("com/example/Skip.java",
-                "package com.example; public class Skip {}");
+                    "package com.example; public class Skip {}");
 
             Workspace workspace = ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(
-                tempDir.toFile(), sources);
+                    tempDir.toFile(), sources);
 
             ClassScanResult result = service.scan(
-                ClassScanRequest.withFilter(workspace,
-                    name -> name.contains("Keep")));
+                    ClassScanRequest.withFilter(workspace,
+                            name -> name.contains("Keep")));
 
             assertTrue(result.containsClass("com/example/Keep"),
-                "Keep should be in results");
+                    "Keep should be in results");
             assertFalse(result.containsClass("com/example/Skip"),
-                "Skip should be filtered out");
+                    "Skip should be filtered out");
         }
     }
 }

@@ -1,8 +1,6 @@
 package com.bingbaihanji.classgraph.metadata.query;
 
 import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
-import com.bingbaihanji.classgraph.metadata.FieldInfo;
-import com.bingbaihanji.classgraph.metadata.MethodInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -12,12 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("MetadataQueryService")
 class MetadataQueryServiceTest {
 
     private MetadataQueryService service;
+
     private List<ClassMetadataReader> readers;
 
     @BeforeEach
@@ -26,37 +26,37 @@ class MetadataQueryServiceTest {
 
         // 接口
         readers.add(new MutableClassMetadata("com/example/Service")
-            .modifiers(0x0201).freeze());
+                .modifiers(0x0201).freeze());
         readers.add(new MutableClassMetadata("com/example/Repository")
-            .modifiers(0x0201).freeze());
+                .modifiers(0x0201).freeze());
 
         // 注解
         readers.add(new MutableClassMetadata("com/example/Component")
-            .modifiers(0x2001).freeze());
+                .modifiers(0x2001).freeze());
 
         // 枚举
         readers.add(new MutableClassMetadata("com/example/Color")
-            .modifiers(0x4001).freeze());
+                .modifiers(0x4001).freeze());
 
         // 标准类
         readers.add(new MutableClassMetadata("com/example/ServiceImpl")
-            .modifiers(0x0001)
-            .addInterface("com/example/Service")
-            .freeze());
+                .modifiers(0x0001)
+                .addInterface("com/example/Service")
+                .freeze());
         readers.add(new MutableClassMetadata("com/example/RepoImpl")
-            .modifiers(0x0001)
-            .addInterface("com/example/Repository")
-            .freeze());
+                .modifiers(0x0001)
+                .addInterface("com/example/Repository")
+                .freeze());
         readers.add(new MutableClassMetadata("com/example/AnnotatedClass")
-            .modifiers(0x0001)
-            .addAnnotation(new AnnotationInfo("com/example/Component"))
-            .freeze());
+                .modifiers(0x0001)
+                .addAnnotation(new AnnotationInfo("com/example/Component"))
+                .freeze());
 
         // 子类
         readers.add(new MutableClassMetadata("com/example/Child")
-            .modifiers(0x0001)
-            .superclassName("com/example/ServiceImpl")
-            .freeze());
+                .modifiers(0x0001)
+                .superclassName("com/example/ServiceImpl")
+                .freeze());
 
         service = MetadataGuards.queryServiceFrom(readers);
     }
@@ -102,7 +102,7 @@ class MetadataQueryServiceTest {
         @DisplayName("findImplementationsOf returns implementors")
         void findImplementationsOf() {
             List<ClassMetadataReader> impls = service.findImplementationsOf(
-                "com/example/Service");
+                    "com/example/Service");
             assertEquals(1, impls.size());
             assertEquals("com/example/ServiceImpl", impls.get(0).className());
         }
@@ -111,7 +111,7 @@ class MetadataQueryServiceTest {
         @DisplayName("findSubclassesOf returns subclasses")
         void findSubclassesOf() {
             List<ClassMetadataReader> subs = service.findSubclassesOf(
-                "com/example/ServiceImpl");
+                    "com/example/ServiceImpl");
             assertEquals(1, subs.size());
             assertEquals("com/example/Child", subs.get(0).className());
         }
@@ -120,7 +120,7 @@ class MetadataQueryServiceTest {
         @DisplayName("findAnnotatedWith returns annotated classes")
         void findAnnotatedWith() {
             List<ClassMetadataReader> annotated = service.findAnnotatedWith(
-                "com/example/Component");
+                    "com/example/Component");
             assertEquals(1, annotated.size());
             assertEquals("com/example/AnnotatedClass", annotated.get(0).className());
         }

@@ -54,6 +54,7 @@ public final class TestClassCompiler {
     }
 
     private static final class SourceJavaFileObject extends SimpleJavaFileObject {
+
         private final String source;
 
         SourceJavaFileObject(String name, String source) {
@@ -68,6 +69,7 @@ public final class TestClassCompiler {
     }
 
     private static final class InMemoryFileManager extends javax.tools.ForwardingJavaFileManager<StandardJavaFileManager> {
+
         private final Map<String, byte[]> outputs = new LinkedHashMap<>();
 
         InMemoryFileManager(StandardJavaFileManager delegate) {
@@ -76,7 +78,7 @@ public final class TestClassCompiler {
 
         @Override
         public JavaFileObject getJavaFileForOutput(Location location, String className,
-                                                    JavaFileObject.Kind kind, javax.tools.FileObject sibling) {
+                                                   JavaFileObject.Kind kind, javax.tools.FileObject sibling) {
             return new ClassJavaFileObject(className, outputs);
         }
 
@@ -86,7 +88,9 @@ public final class TestClassCompiler {
     }
 
     private static final class ClassJavaFileObject extends SimpleJavaFileObject {
+
         private final String className;
+
         private final Map<String, byte[]> outputs;
 
         ClassJavaFileObject(String className, Map<String, byte[]> outputs) {
@@ -98,6 +102,7 @@ public final class TestClassCompiler {
         @Override
         public OutputStream openOutputStream() {
             return new ByteArrayOutputStream() {
+
                 @Override
                 public void close() throws IOException {
                     super.close();

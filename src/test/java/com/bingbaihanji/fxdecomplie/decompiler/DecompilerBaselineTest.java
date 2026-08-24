@@ -8,17 +8,20 @@ import javax.tools.ToolProvider;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DecompilerBaselineTest {
 
     private static final String SIMPLE_CLASS = """
-            public class HelloWorld {
-                public static void main(String[] args) {
-                    System.out.println("Hello, World!");
-                }
-            }
-            """;
+                                               public class HelloWorld {
+                                                   public static void main(String[] args) {
+                                                       System.out.println("Hello, World!");
+                                                   }
+                                               }
+                                               """;
 
     @Test
     void allEnginesDecompileSimpleClass(@TempDir Path tmp) throws Exception {

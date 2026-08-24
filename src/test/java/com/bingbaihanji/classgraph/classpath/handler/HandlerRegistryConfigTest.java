@@ -4,7 +4,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("HandlerRegistryConfig")
 class HandlerRegistryConfigTest {
@@ -16,7 +19,7 @@ class HandlerRegistryConfigTest {
         assertFalse(config.effectiveHandlers().isEmpty());
         // 应该包含 URLClassLoaderHandler
         assertTrue(config.effectiveHandlers().stream()
-            .anyMatch(h -> h instanceof URLClassLoaderHandler));
+                .anyMatch(h -> h instanceof URLClassLoaderHandler));
     }
 
     @Test
@@ -30,21 +33,21 @@ class HandlerRegistryConfigTest {
     @DisplayName("withAdditional adds handler to end")
     void withAdditional() {
         HandlerRegistryConfig config = HandlerRegistryConfig.empty()
-            .withAdditional(new URLClassLoaderHandler());
+                .withAdditional(new URLClassLoaderHandler());
         assertEquals(1, config.effectiveHandlers().size());
         assertTrue(config.effectiveHandlers().get(0)
-            instanceof URLClassLoaderHandler);
+                instanceof URLClassLoaderHandler);
     }
 
     @Test
     @DisplayName("without excludes specified handler type")
     void withoutExcludesType() {
         HandlerRegistryConfig config = HandlerRegistryConfig.defaults()
-            .without(URLClassLoaderHandler.class);
+                .without(URLClassLoaderHandler.class);
 
         assertTrue(config.effectiveHandlers().stream()
-            .noneMatch(h -> h instanceof URLClassLoaderHandler),
-            "URLClassLoaderHandler should be excluded");
+                        .noneMatch(h -> h instanceof URLClassLoaderHandler),
+                "URLClassLoaderHandler should be excluded");
     }
 
     @Test
@@ -53,21 +56,21 @@ class HandlerRegistryConfigTest {
         HandlerRegistryConfig config = HandlerRegistryConfig.empty();
         var handlers = config.effectiveHandlers();
         assertThrows(UnsupportedOperationException.class, () ->
-            handlers.add(new URLClassLoaderHandler()));
+                handlers.add(new URLClassLoaderHandler()));
     }
 
     @Test
     @DisplayName("chained operations are composable")
     void chainedOperations() {
         HandlerRegistryConfig config = HandlerRegistryConfig.empty()
-            .withAdditional(new URLClassLoaderHandler())
-            .withAdditional(new FallbackClassLoaderHandler());
+                .withAdditional(new URLClassLoaderHandler())
+                .withAdditional(new FallbackClassLoaderHandler());
 
         assertEquals(2, config.effectiveHandlers().size());
         assertTrue(config.effectiveHandlers().get(0)
-            instanceof URLClassLoaderHandler);
+                instanceof URLClassLoaderHandler);
         assertTrue(config.effectiveHandlers().get(1)
-            instanceof FallbackClassLoaderHandler);
+                instanceof FallbackClassLoaderHandler);
     }
 
     @Nested
@@ -78,11 +81,11 @@ class HandlerRegistryConfigTest {
         @DisplayName("original is not affected by modifications")
         void originalUnaffected() {
             HandlerRegistryConfig original = HandlerRegistryConfig.empty()
-                .withAdditional(new URLClassLoaderHandler());
+                    .withAdditional(new URLClassLoaderHandler());
 
             // 修改不会影响 original
             HandlerRegistryConfig modified = original
-                .withAdditional(new FallbackClassLoaderHandler());
+                    .withAdditional(new FallbackClassLoaderHandler());
 
             assertEquals(1, original.effectiveHandlers().size());
             assertEquals(2, modified.effectiveHandlers().size());

@@ -1,34 +1,34 @@
 package com.bingbaihanji.classgraph.metadata.query;
 
 import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
-import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
 import com.bingbaihanji.classgraph.metadata.FieldInfo;
-import com.bingbaihanji.classgraph.metadata.FieldInfoList;
 import com.bingbaihanji.classgraph.metadata.MethodInfo;
-import com.bingbaihanji.classgraph.metadata.MethodInfoList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("ClassMetadataReader (CQRS Read Model)")
 class ClassMetadataReaderTest {
 
     private MutableClassMetadata builder;
+
     private ClassMetadataReader frozen;
 
     @BeforeEach
     void setUp() {
         builder = new MutableClassMetadata("com/example/MyClass")
-            .modifiers(0x0001) // public
-            .superclassName("com/example/Parent")
-            .addInterface("com/example/Serializable")
-            .addInterface("com/example/Cloneable");
+                .modifiers(0x0001) // public
+                .superclassName("com/example/Parent")
+                .addInterface("com/example/Serializable")
+                .addInterface("com/example/Cloneable");
         frozen = builder.freeze();
     }
 
@@ -72,7 +72,7 @@ class ClassMetadataReaderTest {
         void isInterface() {
             assertFalse(frozen.isInterface());
             ClassMetadataReader iface = new MutableClassMetadata("com/example/Foo")
-                .modifiers(0x0201).freeze();
+                    .modifiers(0x0201).freeze();
             assertTrue(iface.isInterface());
         }
 
@@ -80,7 +80,7 @@ class ClassMetadataReaderTest {
         @DisplayName("isAnnotation detects annotation flag")
         void isAnnotation() {
             ClassMetadataReader ann = new MutableClassMetadata("com/example/Ann")
-                .modifiers(0x2001).freeze();
+                    .modifiers(0x2001).freeze();
             assertTrue(ann.isAnnotation());
             assertFalse(frozen.isAnnotation());
         }
@@ -89,7 +89,7 @@ class ClassMetadataReaderTest {
         @DisplayName("hasSuperclass returns false for Object subclass")
         void hasSuperclassForObject() {
             ClassMetadataReader obj = new MutableClassMetadata("com/example/Foo")
-                .superclassName("java/lang/Object").freeze();
+                    .superclassName("java/lang/Object").freeze();
             assertFalse(obj.hasSuperclass());
             assertTrue(frozen.hasSuperclass());
         }
@@ -98,9 +98,9 @@ class ClassMetadataReaderTest {
         @DisplayName("findField locates by name")
         void findField() {
             FieldInfo field = new FieldInfo("com/example/MyClass", "myField",
-                0x0001, "I", null, null, null, null);
+                    0x0001, "I", null, null, null, null);
             MutableClassMetadata b = new MutableClassMetadata("com/example/MyClass")
-                .addField(field);
+                    .addField(field);
             ClassMetadataReader reader = b.freeze();
 
             assertTrue(reader.findField("myField").isPresent());
@@ -111,9 +111,9 @@ class ClassMetadataReaderTest {
         @DisplayName("findMethod locates by name and descriptor")
         void findMethod() {
             MethodInfo method = new MethodInfo("com/example/MyClass", "getValue",
-                null, 0x0001, "()I", null, null, null, null, false, 0, 0, null, null);
+                    null, 0x0001, "()I", null, null, null, null, false, 0, 0, null, null);
             MutableClassMetadata b = new MutableClassMetadata("com/example/MyClass")
-                .addMethod(method);
+                    .addMethod(method);
             ClassMetadataReader reader = b.freeze();
 
             assertTrue(reader.findMethod("getValue", "()I").isPresent());
@@ -124,7 +124,7 @@ class ClassMetadataReaderTest {
         @DisplayName("hasAnnotation checks by name")
         void hasAnnotation() {
             MutableClassMetadata b = new MutableClassMetadata("com/example/MyClass")
-                .addAnnotation(new AnnotationInfo("com/example/Deprecated"));
+                    .addAnnotation(new AnnotationInfo("com/example/Deprecated"));
             ClassMetadataReader reader = b.freeze();
 
             assertTrue(reader.hasAnnotation("com/example/Deprecated"));
@@ -143,25 +143,25 @@ class ClassMetadataReaderTest {
 
             List<String> interfaces = frozen.interfaceNames();
             assertThrows(UnsupportedOperationException.class, () ->
-                interfaces.add("should fail"));
+                    interfaces.add("should fail"));
         }
 
         @Test
         @DisplayName("cannot modify after freeze")
         void cannotModifyAfterFreeze() {
             assertThrows(IllegalStateException.class, () ->
-                builder.addInterface("should/fail"));
+                    builder.addInterface("should/fail"));
         }
 
         @Test
         @DisplayName("null arguments are safely handled")
         void nullSafe() {
             MutableClassMetadata b = new MutableClassMetadata("test")
-                .addInterface(null)
-                .addField(null)
-                .addMethod(null)
-                .addAnnotation(null)
-                .addReferencedClass(null);
+                    .addInterface(null)
+                    .addField(null)
+                    .addMethod(null)
+                    .addAnnotation(null)
+                    .addReferencedClass(null);
 
             ClassMetadataReader reader = b.freeze();
             assertTrue(reader.interfaceNames().isEmpty());

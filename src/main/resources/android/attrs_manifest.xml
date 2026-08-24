@@ -19,7 +19,7 @@
     <!-- **************************************************************** -->
     <!-- These are the attributes used in AndroidManifest.xml. -->
     <!-- **************************************************************** -->
-    <eat-comment />
+    <eat-comment/>
 
     <!-- The overall theme to use for an activity.  Use with either the
          application tag (to supply a default theme for all activities) or
@@ -31,7 +31,7 @@
          better match what the activity actually looks like).  It is a reference
          to a style resource defining the theme.  If not set, the default
          system theme will be used. -->
-    <attr name="theme" format="reference" />
+    <attr name="theme" format="reference"/>
 
     <!-- A user-legible name for the given item.  Use with the
          application tag (to supply a default label for all application
@@ -46,7 +46,7 @@
          generally set this to a reference to a string resource, so that
          it can be localized, however it is also allowed to supply a plain
          string for quick and dirty programming. -->
-    <attr name="label" format="reference|string" />
+    <attr name="label" format="reference|string"/>
 
     <!-- A Drawable resource providing a graphical representation of its
          associated item.  Use with the
@@ -60,7 +60,7 @@
          representation of its associated component; for example, as the icon
          for main activity that is displayed in the launcher.  This must be
          a reference to a Drawable resource containing the image definition. -->
-    <attr name="icon" format="reference" />
+    <attr name="icon" format="reference"/>
 
     <!-- A Drawable resource providing a graphical representation of its
          associated item.  Use with the
@@ -74,7 +74,7 @@
          representation of its associated component; for example, as the round icon
          for main activity that is displayed in the launcher.  This must be
          a reference to a Drawable resource containing the image definition. -->
-    <attr name="roundIcon" format="reference" />
+    <attr name="roundIcon" format="reference"/>
 
     <!-- A Drawable resource providing an extended graphical banner for its
          associated item. Use with the application tag (to supply a default
@@ -89,7 +89,7 @@
          {@link android.content.Intent#CATEGORY_LEANBACK_LAUNCHER
          Intent.CATEGORY_LEANBACK_LAUNCHER}.
          <p>This must be a reference to a Drawable resource containing the image definition. -->
-    <attr name="banner" format="reference" />
+    <attr name="banner" format="reference"/>
 
     <!-- A Drawable resource providing an extended graphical logo for its
          associated item. Use with the application tag (to supply a default
@@ -105,7 +105,7 @@
          and a logo are that logos are often wider and more detailed, and are
          used without an accompanying text caption. This must be a reference
          to a Drawable resource containing the image definition. -->
-    <attr name="logo" format="reference" />
+    <attr name="logo" format="reference"/>
 
     <!-- Name of the activity to be launched to manage application's space on
          device. The specified activity gets automatically launched when the
@@ -115,7 +115,7 @@
          conditions. This is an optional attribute and
          applications can choose not to specify a default activity to
          manage space. -->
-    <attr name="manageSpaceActivity" format="string" />
+    <attr name="manageSpaceActivity" format="string"/>
 
     <!-- Option to let applications specify that user data can/cannot be
          cleared. This flag is turned on by default.
@@ -124,38 +124,38 @@
          failed restore use allowClearUserDataOnFailedRestore flag.
          <p><em>This attribute is usable only by applications
          included in the system image. Third-party apps cannot use it.</em> -->
-    <attr name="allowClearUserData" format="boolean" />
+    <attr name="allowClearUserData" format="boolean"/>
 
     <!-- Option to indicate this application is only for testing purposes.
          For example, it may expose functionality or data outside of itself
          that would cause a security hole, but is useful for testing.  This
          kind of application can not be installed without the
          INSTALL_ALLOW_TEST flag, which means only through adb install.  -->
-    <attr name="testOnly" format="boolean" />
+    <attr name="testOnly" format="boolean"/>
 
     <!-- A unique name for the given item.  This must use a Java-style naming
          convention to ensure the name is unique, for example
          "com.mycompany.MyName". -->
-    <attr name="name" format="string" />
+    <attr name="name" format="string"/>
 
     <!-- Specify a permission that a client is required to have in order to
     	 use the associated object.  If the client does not hold the named
     	 permission, its request will fail.  See the
          <a href="{@docRoot}guide/topics/security/security.html">Security and Permissions</a>
          document for more information on permissions. -->
-    <attr name="permission" format="string" />
+    <attr name="permission" format="string"/>
 
     <!-- A specific {@link android.R.attr#permission} name for read-only
          access to a {@link android.content.ContentProvider}.  See the
          <a href="{@docRoot}guide/topics/security/security.html">Security and Permissions</a>
          document for more information on permissions. -->
-    <attr name="readPermission" format="string" />
+    <attr name="readPermission" format="string"/>
 
     <!-- A specific {@link android.R.attr#permission} name for write
          access to a {@link android.content.ContentProvider}.  See the
          <a href="{@docRoot}guide/topics/security/security.html">Security and Permissions</a>
          document for more information on permissions. -->
-    <attr name="writePermission" format="string" />
+    <attr name="writePermission" format="string"/>
 
     <!-- If true, the {@link android.content.Context#grantUriPermission
          Context.grantUriPermission} or corresponding Intent flags can
@@ -165,7 +165,7 @@
          sure to call {@link android.content.Context#revokeUriPermission
          Context.revokeUriPermission} when URIs are deleted from your
          provider.-->
-    <attr name="grantUriPermissions" format="boolean" />
+    <attr name="grantUriPermissions" format="boolean"/>
 
     <!-- If true, the system will always create URI permission grants
          in the cases where {@link android.content.Intent#FLAG_GRANT_READ_URI_PERMISSION}
@@ -174,7 +174,7 @@
          on calls in to the provider, instead of through the manifest: the system
          needs to know that it should always apply permission grants, even if it
          looks like the target of the grant would already have access to the URI. -->
-    <attr name="forceUriPermissions" format="boolean" />
+    <attr name="forceUriPermissions" format="boolean"/>
 
     <!-- Characterizes the potential risk implied in a permission and
          indicates the procedure the system should follow when determining
@@ -198,7 +198,7 @@
              automatically grants this type of permission to a requesting application at
              installation, without asking for the user's explicit approval (though the
              user always has the option to review these permissions before installing). -->
-        <flag name="normal" value="0" />
+        <flag name="normal" value="0"/>
         <!-- <strong>Base permission type</strong>: a higher-risk permission that
              would give a requesting application access to private user data or
              control over the device that can negatively impact the user.  Because
@@ -208,13 +208,13 @@
              to the user and require confirmation before proceeding, or some other
              approach may be taken to avoid the user automatically allowing
              the use of such facilities.  -->
-        <flag name="dangerous" value="1" />
+        <flag name="dangerous" value="1"/>
         <!-- <strong>Base permission type</strong>: a permission that the system is
              to grant only if the requesting application is signed with the same
              certificate as the application that declared the permission. If the
              certificates match, the system automatically grants the permission
              without notifying the user or asking for the user's explicit approval. -->
-        <flag name="signature" value="2" />
+        <flag name="signature" value="2"/>
         <!-- Old synonym for "signature|privileged". Deprecated in API level 23.
              Base permission type: a permission that the system is to grant only
              to packages in the Android system image <em>or</em> that are signed
@@ -225,10 +225,10 @@
              vendors have applications built in to a system image which need
              to share specific features explicitly because they are being built
              together. -->
-        <flag name="signatureOrSystem" value="3" />
+        <flag name="signatureOrSystem" value="3"/>
         <!-- <strong>Base permission type</strong>: a permission that is managed internally by the
              system and only granted according to the protection flags. -->
-        <flag name="internal" value="4" />
+        <flag name="internal" value="4"/>
         <!-- Additional flag from base permission type: this permission can also
              be granted to any applications installed as privileged apps on the system image.
              Please avoid using this option, as the
@@ -238,82 +238,82 @@
              vendors have applications built in to a system image which need
              to share specific features explicitly because they are being built
              together. -->
-        <flag name="privileged" value="0x10" />
+        <flag name="privileged" value="0x10"/>
         <!-- Old synonym for "privileged". Deprecated in API level 23. -->
-        <flag name="system" value="0x10" />
+        <flag name="system" value="0x10"/>
         <!-- Additional flag from base permission type: this permission can also
              (optionally) be granted to development applications. Although undocumented, the
               permission state used to be shared by all users (including future users), but it is
               managed per-user since API level 31. -->
-        <flag name="development" value="0x20" />
+        <flag name="development" value="0x20"/>
         <!-- Additional flag from base permission type: this permission is closely
              associated with an app op for controlling access. -->
-        <flag name="appop" value="0x40" />
+        <flag name="appop" value="0x40"/>
         <!-- Additional flag from base permission type: this permission can be automatically
              granted to apps that target API levels below
              {@link android.os.Build.VERSION_CODES#M} (before runtime permissions
              were introduced). -->
-        <flag name="pre23" value="0x80" />
+        <flag name="pre23" value="0x80"/>
         <!-- Additional flag from base permission type: this permission can be automatically
             granted to system apps that install packages. -->
-        <flag name="installer" value="0x100" />
+        <flag name="installer" value="0x100"/>
         <!-- Additional flag from base permission type: this permission can be automatically
             granted to system apps that verify packages. -->
-        <flag name="verifier" value="0x200" />
+        <flag name="verifier" value="0x200"/>
         <!-- Additional flag from base permission type: this permission can be automatically
             granted any application pre-installed on the system image (not just privileged
             apps). -->
-        <flag name="preinstalled" value="0x400" />
+        <flag name="preinstalled" value="0x400"/>
         <!-- Additional flag from base permission type: this permission can be automatically
             granted to the setup wizard app -->
-        <flag name="setup" value="0x800" />
+        <flag name="setup" value="0x800"/>
         <!-- Additional flag from base permission type: this permission can be granted to instant
              apps -->
-        <flag name="instant" value="0x1000" />
+        <flag name="instant" value="0x1000"/>
         <!-- Additional flag from base permission type: this permission can only be granted to apps
              that target runtime permissions ({@link android.os.Build.VERSION_CODES#M} and above)
              -->
-        <flag name="runtime" value="0x2000" />
+        <flag name="runtime" value="0x2000"/>
         <!-- Additional flag from base permission type: this permission can be granted only
              if its protection level is signature, the requesting app resides on the OEM partition,
              and the OEM has allowlisted the app to receive this permission by the OEM.
          -->
-        <flag name="oem" value="0x4000" />
+        <flag name="oem" value="0x4000"/>
         <!-- Additional flag from base permission type: this permission can be granted to
              privileged apps in vendor partition. -->
-        <flag name="vendorPrivileged" value="0x8000" />
+        <flag name="vendorPrivileged" value="0x8000"/>
         <!-- Additional flag from base permission type: this permission can be automatically
             granted to the system default text classifier -->
-        <flag name="textClassifier" value="0x10000" />
+        <flag name="textClassifier" value="0x10000"/>
         <!-- Additional flag from base permission type: this permission automatically
             granted to device configurator -->
-        <flag name="configurator" value="0x80000" />
+        <flag name="configurator" value="0x80000"/>
         <!-- Additional flag from base permission type: this permission designates the app
             that will approve the sharing of incident reports. -->
-        <flag name="incidentReportApprover" value="0x100000" />
+        <flag name="incidentReportApprover" value="0x100000"/>
         <!-- Additional flag from base permission type: this permission can be automatically
             granted to the system app predictor -->
-        <flag name="appPredictor" value="0x200000" />
+        <flag name="appPredictor" value="0x200000"/>
         <!-- Additional flag from base permission type: this permission can also be granted if the
              requesting application is included in the mainline module}. -->
-        <flag name="module" value="0x400000" />
+        <flag name="module" value="0x400000"/>
         <!-- Additional flag from base permission type: this permission can be automatically
             granted to the system companion device manager service -->
-        <flag name="companion" value="0x800000" />
+        <flag name="companion" value="0x800000"/>
         <!-- Additional flag from base permission type: this permission will be granted to the
              retail demo app, as defined by the OEM.
              This flag has been replaced by the retail demo role and is a no-op since Android V.
           -->
-        <flag name="retailDemo" value="0x1000000" />
+        <flag name="retailDemo" value="0x1000000"/>
         <!-- Additional flag from base permission type: this permission will be granted to the
              recents app. -->
-        <flag name="recents" value="0x2000000" />
+        <flag name="recents" value="0x2000000"/>
         <!-- Additional flag from base permission type: this permission is managed by role. -->
-        <flag name="role" value="0x4000000" />
+        <flag name="role" value="0x4000000"/>
         <!-- Additional flag from base permission type: this permission can also be granted if the
              requesting application is signed by, or has in its signing lineage, any of the
              certificate digests declared in {@link android.R.attr#knownCerts}. -->
-        <flag name="knownSigner" value="0x8000000" />
+        <flag name="knownSigner" value="0x8000000"/>
     </attr>
 
     <!-- Flags indicating more context for a permission group. -->
@@ -321,7 +321,7 @@
         <!-- Set to indicate that this permission group contains permissions
              protecting access to some information that is considered
              personal to the user (such as contacts, e-mails, etc). -->
-        <flag name="personalInfo" value="0x0001" />
+        <flag name="personalInfo" value="0x0001"/>
     </attr>
 
     <!-- Flags indicating more context for a permission. -->
@@ -329,18 +329,18 @@
         <!-- Set to indicate that this permission allows an operation that
              may cost the user money.  Such permissions may be highlighted
              when shown to the user with this additional information.  -->
-        <flag name="costsMoney" value="0x1" />
+        <flag name="costsMoney" value="0x1"/>
         <!-- Additional flag from base permission type: this permission has been
              removed and it is no longer enforced. It shouldn't be shown in the
              UI. Removed permissions are kept as normal permissions for backwards
              compatibility as apps may be checking them before calling an API.
         -->
-        <flag name="removed" value="0x2" />
+        <flag name="removed" value="0x2"/>
         <!-- This permission is restricted by the platform and it would be
              grantable only to apps that meet special criteria per platform
              policy.
         -->
-        <flag name="hardRestricted" value="0x4" />
+        <flag name="hardRestricted" value="0x4"/>
         <!-- This permission is restricted by the platform and it would be
              grantable in its full form to apps that meet special criteria
              per platform policy. Otherwise, a weaker form of the permission
@@ -348,24 +348,24 @@
              <p>What weak grant means is described in the documentation of
              the permissions.
         -->
-        <flag name="softRestricted" value="0x8" />
+        <flag name="softRestricted" value="0x8"/>
         <!-- This permission is restricted immutably which means that its
              restriction state may be specified only on the first install of
              the app and will stay in this initial allowlist state until
              the app is uninstalled.
         -->
-        <flag name="immutablyRestricted" value="0x10" />
+        <flag name="immutablyRestricted" value="0x10"/>
         <!--
              Modifier for permission restriction. This permission cannot
              be exempted by the installer.
         -->
-        <flag name="installerExemptIgnored" value="0x20" />
+        <flag name="installerExemptIgnored" value="0x20"/>
     </attr>
 
     <!-- Specified the name of a group that this permission is associated
          with.  The group must have been defined with the
          {@link android.R.styleable#AndroidManifestPermissionGroup permission-group} tag. -->
-    <attr name="permissionGroup" format="string" />
+    <attr name="permissionGroup" format="string"/>
 
     <!-- A reference to an array resource containing the signing certificate digests to be granted
          this permission when using the {@code knownSigner} protection flag. The digest should
@@ -374,7 +374,7 @@
          <p>
          If only a single signer is declared this can also be a string resource, or the digest
          can be declared inline as the value for this attribute. -->
-    <attr name="knownCerts" format="reference|string" />
+    <attr name="knownCerts" format="reference|string"/>
 
     <!-- Specify the name of a user ID that will be shared between multiple
          packages.  By default, each package gets its own unique user-id.
@@ -389,7 +389,7 @@
          to facilitate interoperability between shared components. Note that
          existing apps cannot remove this value, as migrating off a
          shared user ID is not supported. -->
-    <attr name="sharedUserId" format="string" />
+    <attr name="sharedUserId" format="string"/>
 
     <!-- Specify a label for the shared user UID of this package.  This is
          only used if you have also used android:sharedUserId.  This must
@@ -398,13 +398,13 @@
          @deprecated There is no replacement for this attribute.
          {@link android.R.attr#sharedUserId} has been deprecated making
          this attribute unnecessary. -->
-    <attr name="sharedUserLabel" format="reference" />
+    <attr name="sharedUserLabel" format="reference"/>
 
     <!-- The maximum device SDK version for which the application will remain in the user ID
          defined in sharedUserId. Used when the application wants to migrate out of using shared
          user ID, but has to maintain backwards compatibility with the API level specified
          and before. -->
-    <attr name="sharedUserMaxSdkVersion" format="integer" />
+    <attr name="sharedUserMaxSdkVersion" format="integer"/>
 
     <!-- Internal version code.  This is the number used to determine whether
          one version is more recent than another: it has no other meaning than
@@ -416,14 +416,14 @@
          number generally shown to the user, that is usually supplied
          with {@link android.R.attr#versionName}.  When an app is delivered
          as multiple split APKs, each APK must have the exact same versionCode. -->
-    <attr name="versionCode" format="integer" />
+    <attr name="versionCode" format="integer"/>
 
     <!-- Internal major version code.  This is essentially additional high bits
          for the base version code; it has no other meaning than
          that higher numbers are more recent.  This is not a version
          number generally shown to the user, that is usually supplied
          with {@link android.R.attr#versionName}. -->
-    <attr name="versionCodeMajor" format="integer" />
+    <attr name="versionCodeMajor" format="integer"/>
 
     <!-- Internal revision code.  This number is the number used to determine
          whether one APK is more recent than another: it has no other meaning
@@ -431,33 +431,33 @@
          when the two {@link android.R.attr#versionCode} values are already
          identical.  When an app is delivered as multiple split APKs, each
          APK may have a different revisionCode value. -->
-    <attr name="revisionCode" format="integer" />
+    <attr name="revisionCode" format="integer"/>
 
     <!-- The text shown to the user to indicate the version they have.  This
          is used for no other purpose than display to the user; the actual
          significant version number is given by {@link android.R.attr#versionCode}. -->
-    <attr name="versionName" format="string" />
+    <attr name="versionName" format="string"/>
 
     <!-- Flag to control special persistent mode of an application.  This should
          not normally be used by applications; it requires that the system keep
          your application running at all times. -->
-    <attr name="persistent" format="boolean" />
+    <attr name="persistent" format="boolean"/>
 
     <!-- If set, the "persistent" attribute will only be honored if the feature
          specified here is present on the device. -->
-    <attr name="persistentWhenFeatureAvailable" format="string" />
+    <attr name="persistentWhenFeatureAvailable" format="string"/>
 
     <!-- Flag to specify if this application needs to be present for all users. Only pre-installed
          applications can request this feature. Default value is false. -->
-    <attr name="requiredForAllUsers" format="boolean" />
+    <attr name="requiredForAllUsers" format="boolean"/>
 
     <!-- Flag indicating whether the application can be debugged, even when
          running on a device that is running in user mode. -->
-    <attr name="debuggable" format="boolean" />
+    <attr name="debuggable" format="boolean"/>
 
     <!-- Flag indicating whether the application requests the VM to operate in
          the safe mode.  -->
-    <attr name="vmSafeMode" format="boolean" />
+    <attr name="vmSafeMode" format="boolean"/>
 
     <!-- <p>Flag indicating whether the application's rendering should be hardware
          accelerated if possible. This flag is turned on by default for applications
@@ -474,7 +474,7 @@
          <p>Please refer to the documentation of
          {@link android.view.WindowManager.LayoutParams#FLAG_HARDWARE_ACCELERATED}
          for more information on how to control this flag programmatically.</p> -->
-    <attr name="hardwareAccelerated" format="boolean" />
+    <attr name="hardwareAccelerated" format="boolean"/>
 
     <!-- Flag indicating whether the given application component is available
          to other applications.  If false, it can only be accessed by
@@ -487,13 +487,13 @@
          have intent filters (implying they expect to be invoked by others
          who do not know their particular component name) and for all
          content providers. -->
-    <attr name="exported" format="boolean" />
+    <attr name="exported" format="boolean"/>
 
     <!-- A boolean flag used to indicate if an application is a Game or not.
          <p>This information can be used by the system to group together
          applications that are classified as games, and display them separately
          from the other applications. -->
-    <attr name="isGame" format="boolean" />
+    <attr name="isGame" format="boolean"/>
 
     <!-- If set to true, a single instance of this component will run for
          all users.  That instance will run as user 0, the default/primary
@@ -506,13 +506,13 @@
          permission INTERACT_ACROSS_USERS in order
          to use this feature.  This flag can only be used with services,
          receivers, and providers; it can not be used with activities. -->
-    <attr name="singleUser" format="boolean" />
+    <attr name="singleUser" format="boolean"/>
 
     <!-- If set to true, only a single instance of this component will
     run and be available for the SYSTEM user. Non SYSTEM users will not be
     allowed to access the component if this flag is enabled.
     This flag can be used with services, receivers, providers and activities. -->
-    <attr name="systemUserOnly" format="boolean" />
+    <attr name="systemUserOnly" format="boolean"/>
 
     <!-- Specify a specific process that the associated code is to run in.
          Use with the application tag (to supply a default process for all
@@ -528,7 +528,7 @@
          character, the component will be run in a global process of that name,
          provided that you have permission to do so, allowing multiple
          applications to share one process to reduce resource usage. -->
-    <attr name="process" format="string" />
+    <attr name="process" format="string"/>
 
     <!-- Specify a task name that activities have an "affinity" to.
          Use with the application tag (to supply a default affinity for all
@@ -542,7 +542,7 @@
          for another task, if the activities are intended to be part of that
          task from the user's perspective, or using an empty string for
          activities that have no affinity to a task. -->
-    <attr name="taskAffinity" format="string" />
+    <attr name="taskAffinity" format="string"/>
 
     <!-- Specify that an activity can be moved out of a task it is in to
          the task it has an affinity for when appropriate.  Use with the
@@ -558,7 +558,7 @@
          activities of an application to move back to the main task associated
          with that application.  The activity is re-parented to the task
          with the same {@link android.R.attr#taskAffinity} as it has. -->
-    <attr name="allowTaskReparenting" format="boolean" />
+    <attr name="allowTaskReparenting" format="boolean"/>
 
     <!-- Declare that this application may use cleartext traffic, such as HTTP rather than HTTPS;
          WebSockets rather than WebSockets Secure; XMPP, IMAP, SMTP without STARTTLS or TLS.
@@ -567,7 +567,7 @@
          stacks, {@code DownloadManager}, {@code MediaPlayer}) will refuse applications's requests
          to use cleartext traffic. Third-party libraries are encouraged to honor this flag as well.
          -->
-    <attr name="usesCleartextTraffic" format="boolean" />
+    <attr name="usesCleartextTraffic" format="boolean"/>
 
     <!-- Declare that code from this application will need to be loaded into other
          applications' processes. On devices that support multiple instruction sets,
@@ -578,12 +578,12 @@
          extracting the application's native libraries for all supported instruction
          sets or by compiling the application's dex code for all supported instruction
          sets. -->
-    <attr name="multiArch" format ="boolean" />
+    <attr name="multiArch" format="boolean"/>
 
     <!-- Specify whether the 32 bit version of the ABI should be used in a
          multiArch application. If both abioverride flag (i.e. using abi option of abd install)
          and use32bitAbi are used, then use32bit is ignored.-->
-    <attr name="use32bitAbi" />
+    <attr name="use32bitAbi"/>
 
     <!-- Specify whether a component is allowed to have multiple instances
          of itself running in different processes.  Use with the activity
@@ -596,7 +596,7 @@
          This is most often used with content providers, so that instances
          of a provider can be created in each client process, allowing them
          to be used without performing IPC.  -->
-    <attr name="multiprocess" format="boolean" />
+    <attr name="multiprocess" format="boolean"/>
 
     <!-- Specify whether an activity should be finished when its task is
          brought to the foreground by relaunching from the home screen.
@@ -604,13 +604,13 @@
          <p>If both this option and {@link android.R.attr#allowTaskReparenting} are
          specified, the finish trumps the affinity: the affinity will be
          ignored and the activity simply finished. -->
-    <attr name="finishOnTaskLaunch" format="boolean" />
+    <attr name="finishOnTaskLaunch" format="boolean"/>
 
     <!-- Specify whether an activity should be finished when a "close system
          windows" request has been made.  This happens, for example, when
          the home key is pressed, when the device is locked, when a system
          dialog showing recent applications is displayed, etc. -->
-    <attr name="finishOnCloseSystemDialogs" format="boolean" />
+    <attr name="finishOnCloseSystemDialogs" format="boolean"/>
 
     <!-- Specify whether an activity's task should be cleared when it
          is re-launched from the home screen.  As a result, every time the
@@ -634,13 +634,13 @@
          task will be removed: those that have an affinity will be moved
          to the task they are associated with, otherwise they will simply
          be dropped as described here. -->
-    <attr name="clearTaskOnLaunch" format="boolean" />
+    <attr name="clearTaskOnLaunch" format="boolean"/>
 
     <!-- Specify whether an activity should be kept in its history stack.
          If this attribute is set, then as soon as the user navigates away
          from the activity it will be finished and they will no longer be
          able to return to it. -->
-    <attr name="noHistory" format="boolean" />
+    <attr name="noHistory" format="boolean"/>
 
     <!-- Specify whether an activity's task state should always be maintained
          by the system, or if it is allowed to reset the task to its initial
@@ -657,7 +657,7 @@
          useful, for example, in an application like the web browser where there
          is a lot of state (such as multiple open tabs) that the application
          would not like to lose. -->
-    <attr name="alwaysRetainTaskState" format="boolean" />
+    <attr name="alwaysRetainTaskState" format="boolean"/>
 
     <!-- Indicates that an Activity does not need to have its freeze state
          (as returned by {@link android.app.Activity#onSaveInstanceState}
@@ -671,22 +671,22 @@
 
          <p>This is used by the Home activity to make sure it does not get
          removed if it crashes for some reason. -->
-    <attr name="stateNotNeeded" format="boolean" />
+    <attr name="stateNotNeeded" format="boolean"/>
 
     <!-- Indicates that an Activity should be excluded from the list of
          recently launched activities. -->
-    <attr name="excludeFromRecents" format="boolean" />
+    <attr name="excludeFromRecents" format="boolean"/>
 
     <!-- Specify that an Activity should be shown over the lock screen and,
          in a multiuser environment, across all users' windows.
          @deprecated use {@link android.R.attr#showForAllUsers} instead. -->
-    <attr name="showOnLockScreen" format="boolean" />
+    <attr name="showOnLockScreen" format="boolean"/>
 
     <!-- Specify that an Activity should be shown even if the current/foreground user
          is different from the user of the Activity. This will also force the
          <code>android.view.LayoutParams.FLAG_SHOW_WHEN_LOCKED</code> flag
          to be set for all windows of this activity -->
-    <attr name="showForAllUsers" format="boolean" />
+    <attr name="showForAllUsers" format="boolean"/>
 
     <!-- Specifies whether an {@link android.app.Activity} should be shown on top of the lock screen
          whenever the lockscreen is up and the activity is resumed. Normally an activity will be
@@ -698,7 +698,7 @@
          flag set for Windows. When using the Window flag during activity startup, there may not be
          time to add it before the system stops your activity for being behind the lock-screen.
          This leads to a double life-cycle as it is then restarted.</p> -->
-    <attr name="showWhenLocked" format="boolean" />
+    <attr name="showWhenLocked" format="boolean"/>
 
     <!-- Specifies whether the screen should be turned on when the {@link android.app.Activity} is resumed.
          Normally an activity will be transitioned to the stopped state if it is started while the
@@ -715,7 +715,7 @@
          flag set for Windows. When using the Window flag during activity startup, there may not be
          time to add it before the system stops your activity because the screen has not yet turned
          on. This leads to a double life-cycle as it is then restarted.</p> -->
-    <attr name="turnScreenOn" format="boolean" />
+    <attr name="turnScreenOn" format="boolean"/>
 
     <!-- Specify the authorities under which this content provider can be
          found.  Multiple authorities may be supplied by separating them
@@ -723,15 +723,15 @@
          convention (such as <code>com.google.provider.MyProvider</code>)
          in order to avoid conflicts.  Typically this name is the same
          as the class implementation describing the provider's data structure. -->
-    <attr name="authorities" format="string" />
+    <attr name="authorities" format="string"/>
 
     <!-- Flag indicating whether this content provider would like to
          participate in data synchronization. -->
-    <attr name="syncable" format="boolean" />
+    <attr name="syncable" format="boolean"/>
 
     <!-- Flag declaring this activity to be 'immersive'; immersive activities
          should not be interrupted with other activities or notifications. -->
-    <attr name="immersive" format="boolean" />
+    <attr name="immersive" format="boolean"/>
 
     <!-- Flag declaring that this activity will be run in VR mode, and specifying
          the component of the {@link android.service.vr.VrListenerService} that should be
@@ -740,7 +740,7 @@
          the given component name within the Activity that this attribute is set for.
          Declaring this will prevent the system from leaving VR mode during an Activity
          transition from one VR activity to another. -->
-    <attr name="enableVrMode" format="string" />
+    <attr name="enableVrMode" format="string"/>
 
     <!-- Flag that specifies the activity's preferred screen rotation animation.
          Valid values are "rotate", "crossfade", "jumpcut", and "seamless" as
@@ -752,10 +752,10 @@
          specify the animation in the manifest attribute.
     -->
     <attr name="rotationAnimation">
-      <flag name="rotate" value= "0" />
-      <flag name="crossfade" value = "1" />
-      <flag name="jumpcut" value = "2" />
-      <flag name="seamless" value = "3" />
+        <flag name="rotate" value="0"/>
+        <flag name="crossfade" value="1"/>
+        <flag name="jumpcut" value="2"/>
+        <flag name="seamless" value="3"/>
     </attr>
 
     <!-- Specify the order in which content providers hosted by a process
@@ -764,7 +764,7 @@
          sure that they are created in the order needed by those dependencies.
          The value is a simple integer, with higher numbers being
          initialized first. -->
-    <attr name="initOrder" format="integer" />
+    <attr name="initOrder" format="integer"/>
 
     <!-- Specify the relative importance or ability in handling a particular
          Intent.  For receivers, this controls the order in which they are
@@ -779,12 +779,12 @@
          order in which the broadcasts are received, or want to forcibly
          place an activity to always be preferred over others.  The value is a
          single integer, with higher numbers considered to be better. -->
-    <attr name="priority" format="integer" />
+    <attr name="priority" format="integer"/>
 
     <!-- Indicate if this component is aware of direct boot lifecycle, and can be
          safely run before the user has entered their credentials (such as a lock
          pattern or PIN). -->
-    <attr name="directBootAware" format="boolean" />
+    <attr name="directBootAware" format="boolean"/>
 
     <!-- Specify how an activity should be launched.  See the
          <a href="{@docRoot}guide/topics/fundamentals/tasks-and-back-stack.html">Tasks and Back
@@ -804,14 +804,14 @@
              with the introduction of other options such as
              {@link android.content.Intent#FLAG_ACTIVITY_NEW_TASK
              Intent.FLAG_ACTIVITY_NEW_TASK}. -->
-        <enum name="standard" value="0" />
+        <enum name="standard" value="0"/>
         <!-- If, when starting the activity, there is already an
             instance of the same activity class in the foreground that is
             interacting with the user, then
             re-use that instance.  This existing instance will receive a call to
             {@link android.app.Activity#onNewIntent Activity.onNewIntent()} with
             the new Intent that is being started. -->
-        <enum name="singleTop" value="1" />
+        <enum name="singleTop" value="1"/>
         <!-- If, when starting the activity, there is already a task running
             that starts with this activity, then instead of starting a new
             instance the current task is brought to the front.  The existing
@@ -826,7 +826,7 @@
             FLAG_ACTIVITY_BROUGHT_TO_FRONT flag set).  See the
             <a href="{@docRoot}guide/topics/fundamentals/tasks-and-back-stack.html">Tasks and Back
             Stack</a> document for more details about tasks.-->
-        <enum name="singleTask" value="2" />
+        <enum name="singleTask" value="2"/>
         <!-- Only allow one instance of this activity to ever be
             running.  This activity gets a unique task with only itself running
             in it; if it is ever launched again with the same Intent, then that
@@ -837,14 +837,14 @@
             launched in a separate task.  See the
             <a href="{@docRoot}guide/topics/fundamentals/tasks-and-back-stack.html">Tasks and Back
             Stack</a> document for more details about tasks.-->
-        <enum name="singleInstance" value="3" />
+        <enum name="singleInstance" value="3"/>
         <!-- The activity can only be running as the root activity of the task, the first activity
             that created the task, and therefore there will only be one instance of this activity
             in a task. In contrast to the {@code singleTask} launch mode, this activity can be
             started in multiple instances in different tasks if the
             {@code FLAG_ACTIVITY_MULTIPLE_TASK} or {@code FLAG_ACTIVITY_NEW_DOCUMENT} is set.
             This enum value is introduced in API level 31. -->
-        <enum name="singleInstancePerTask" value="4" />
+        <enum name="singleInstancePerTask" value="4"/>
     </attr>
     <!-- Specify the orientation an activity should run in. If the orientation is not specified, the
          system determines the best orientation for the activity.
@@ -891,57 +891,57 @@
              orientation will changed based on how the user rotates the device.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_UNSPECIFIED}. -->
-        <enum name="unspecified" value="-1" />
+        <enum name="unspecified" value="-1"/>
         <!-- Would like to have the screen in a landscape orientation: that
              is, with the display wider than it is tall, ignoring sensor data.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_LANDSCAPE}. -->
-        <enum name="landscape" value="0" />
+        <enum name="landscape" value="0"/>
         <!-- Would like to have the screen in a portrait orientation: that
              is, with the display taller than it is wide, ignoring sensor data.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_PORTRAIT}. -->
-        <enum name="portrait" value="1" />
+        <enum name="portrait" value="1"/>
         <!-- Use the user's current preferred orientation of the handset.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER}. -->
-        <enum name="user" value="2" />
+        <enum name="user" value="2"/>
         <!-- Keep the screen in the same orientation as whatever is behind
              this activity.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_BEHIND}. -->
-        <enum name="behind" value="3" />
+        <enum name="behind" value="3"/>
         <!-- Orientation is determined by a physical orientation sensor:
              the display will rotate based on how the user moves the device.
              Ignores user's setting to turn off sensor-based rotation.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_SENSOR}. -->
-        <enum name="sensor" value="4" />
+        <enum name="sensor" value="4"/>
         <!-- Always ignore orientation determined by orientation sensor:
              the display will not rotate when the user moves the device.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_NOSENSOR}. -->
-        <enum name="nosensor" value="5" />
+        <enum name="nosensor" value="5"/>
         <!-- Would like to have the screen in landscape orientation, but can
              use the sensor to change which direction the screen is facing.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_SENSOR_LANDSCAPE}. -->
-        <enum name="sensorLandscape" value="6" />
+        <enum name="sensorLandscape" value="6"/>
         <!-- Would like to have the screen in portrait orientation, but can
              use the sensor to change which direction the screen is facing.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_SENSOR_PORTRAIT}. -->
-        <enum name="sensorPortrait" value="7" />
+        <enum name="sensorPortrait" value="7"/>
         <!-- Would like to have the screen in landscape orientation, turned in
              the opposite direction from normal landscape.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_REVERSE_LANDSCAPE}. -->
-        <enum name="reverseLandscape" value="8" />
+        <enum name="reverseLandscape" value="8"/>
         <!-- Would like to have the screen in portrait orientation, turned in
              the opposite direction from normal portrait.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_REVERSE_PORTRAIT}. -->
-        <enum name="reversePortrait" value="9" />
+        <enum name="reversePortrait" value="9"/>
         <!-- Orientation is determined by a physical orientation sensor:
              the display will rotate based on how the user moves the device.
              This allows any of the 4 possible rotations, regardless of what
@@ -949,19 +949,19 @@
              normally use 180 degree rotation).
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_FULL_SENSOR}. -->
-        <enum name="fullSensor" value="10" />
+        <enum name="fullSensor" value="10"/>
         <!-- Would like to have the screen in landscape orientation, but if
              the user has enabled sensor-based rotation then we can use the
              sensor to change which direction the screen is facing.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_LANDSCAPE}. -->
-        <enum name="userLandscape" value="11" />
+        <enum name="userLandscape" value="11"/>
         <!-- Would like to have the screen in portrait orientation, but if
              the user has enabled sensor-based rotation then we can use the
              sensor to change which direction the screen is facing.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_PORTRAIT}. -->
-        <enum name="userPortrait" value="12" />
+        <enum name="userPortrait" value="12"/>
         <!-- Respect the user's sensor-based rotation preference, but if
              sensor-based rotation is enabled then allow the screen to rotate
              in all 4 possible directions regardless of what
@@ -969,11 +969,11 @@
              normally use 180 degree rotation).
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_FULL_USER}. -->
-        <enum name="fullUser" value="13" />
+        <enum name="fullUser" value="13"/>
         <!-- Screen is locked to its current rotation, whatever that is.
              Corresponds to
              {@link android.content.pm.ActivityInfo#SCREEN_ORIENTATION_LOCKED}. -->
-        <enum name="locked" value="14" />
+        <enum name="locked" value="14"/>
     </attr>
 
     <!-- Specify the configuration changes that trigger the system to recreate the
@@ -985,10 +985,10 @@
     <attr name="recreateOnConfigChanges">
         <!-- The IMSI MCC has changed, that is a SIM has been detected and
              updated the Mobile Country Code. -->
-        <flag name="mcc" value="0x0001" />
+        <flag name="mcc" value="0x0001"/>
         <!-- The IMSI MNC has changed, that is a SIM has been detected and
              updated the Mobile Network Code. -->
-        <flag name="mnc" value="0x0002" />
+        <flag name="mnc" value="0x0002"/>
     </attr>
 
     <!-- Specify one or more configuration changes that the activity will
@@ -1012,44 +1012,44 @@
              don't recreate the activity even the app doesn't specify mcc in
              configChanges. If the app wants to recreate the activity, specify
              mcc in recreateOnConfigChanges. -->
-        <flag name="mcc" value="0x0001" />
+        <flag name="mcc" value="0x0001"/>
         <!-- The IMSI MNC has changed, that is a SIM has been detected and
              updated the Mobile Network Code. By default from Android O, we
              don't recreate the activity even the app doesn't specify mnc in
              configChanges. If the app wants to recreate the acvitity, specify
              mnc in recreateOnConfigChanges. -->
-        <flag name="mnc" value="0x0002" />
+        <flag name="mnc" value="0x0002"/>
         <!-- The locale has changed, that is the user has selected a new
              language that text should be displayed in. -->
-        <flag name="locale" value="0x0004" />
+        <flag name="locale" value="0x0004"/>
         <!-- The touchscreen has changed.  Should never normally happen. -->
-        <flag name="touchscreen" value="0x0008" />
+        <flag name="touchscreen" value="0x0008"/>
         <!-- The keyboard type has changed, for example the user has plugged
              in an external keyboard. -->
-        <flag name="keyboard" value="0x0010" />
+        <flag name="keyboard" value="0x0010"/>
         <!-- The keyboard or navigation accessibility has changed, for example
              the user has slid the keyboard out to expose it.  Note that
              despite its name, this applied to any accessibility: keyboard
              or navigation. -->
-        <flag name="keyboardHidden" value="0x0020" />
+        <flag name="keyboardHidden" value="0x0020"/>
         <!-- The navigation type has changed.  Should never normally happen. -->
-        <flag name="navigation" value="0x0040" />
+        <flag name="navigation" value="0x0040"/>
         <!-- The screen orientation has changed, that is the user has
              rotated the device. -->
-        <flag name="orientation" value="0x0080" />
+        <flag name="orientation" value="0x0080"/>
         <!-- The screen layout has changed.  This might be caused by a
              different display being activated. -->
-        <flag name="screenLayout" value="0x0100" />
+        <flag name="screenLayout" value="0x0100"/>
         <!-- The global user interface mode has changed.  For example,
              going in or out of car mode, night mode changing, etc. -->
-        <flag name="uiMode" value="0x0200" />
+        <flag name="uiMode" value="0x0200"/>
         <!-- The current available screen size has changed.  If applications don't
              target at least {@link android.os.Build.VERSION_CODES#HONEYCOMB_MR2}
              then the activity will always handle this itself (the change
              will not result in a restart).  This represents a change in the
              currently available size, so will change when the user switches
              between landscape and portrait. -->
-        <flag name="screenSize" value="0x0400" />
+        <flag name="screenSize" value="0x0400"/>
         <!-- The physical screen size has changed.  If applications don't
              target at least {@link android.os.Build.VERSION_CODES#HONEYCOMB_MR2}
              then the activity will always handle this itself (the change
@@ -1057,27 +1057,27 @@
              regardless of orientation, so will only change when the actual
              physical screen size has changed such as switching to an external
              display. -->
-        <flag name="smallestScreenSize" value="0x0800" />
+        <flag name="smallestScreenSize" value="0x0800"/>
         <!-- The display density has changed. This might be caused by the user
              specifying a different display scale, or it might be caused by a
              different display being activated. -->
-        <flag name="density" value="0x1000" />
+        <flag name="density" value="0x1000"/>
         <!-- The layout direction has changed. For example going from LTR to RTL. -->
-        <flag name="layoutDirection" value="0x2000" />
+        <flag name="layoutDirection" value="0x2000"/>
         <!-- The color mode of the screen has changed (color gamut or dynamic range). -->
-        <flag name="colorMode" value="0x4000" />
+        <flag name="colorMode" value="0x4000"/>
         <!-- The grammatical gender has changed, for example the user set the grammatical gender
              from the UI. -->
-        <flag name="grammaticalGender" value="0x8000" />
+        <flag name="grammaticalGender" value="0x8000"/>
         <!-- The font scaling factor has changed, that is the user has
              selected a new global font size. -->
-        <flag name="fontScale" value="0x40000000" />
+        <flag name="fontScale" value="0x40000000"/>
         <!-- The font weight adjustment value has changed. Used to reflect the user increasing font
              weight. -->
-        <flag name="fontWeightAdjustment" value="0x10000000" />
+        <flag name="fontWeightAdjustment" value="0x10000000"/>
         <!-- The assets paths have changed. For example a runtime overlay is installed and enabled.
              Corresponds to {@link android.content.pm.ActivityInfo#CONFIG_ASSETS_PATHS}. -->
-        <flag name="assetsPaths" value="0x80000000" />
+        <flag name="assetsPaths" value="0x80000000"/>
         <!-- This is probably not the flag you want, the resources compiler supports a less
              dangerous version of it, 'allKnown', that only suppresses all currently existing
              configuration change restarts depending on your target SDK rather than whatever the
@@ -1087,7 +1087,7 @@
              configuration changes. This overrides all other flags, and this is recommended to be
              used individually. Corresponds to
              {@link android.content.pm.ActivityInfo#CONFIG_RESOURCES_UNUSED}. -->
-        <flag name="resourcesUnused" value="0x8000000" />
+        <flag name="resourcesUnused" value="0x8000000"/>
     </attr>
 
     <!-- Indicate that the activity can be launched as the embedded child of another
@@ -1095,7 +1095,7 @@
          such as a Display owned by another activity.
 
          <p>The default value of this attribute is <code>false</code>. -->
-    <attr name="allowEmbedded" format="boolean" />
+    <attr name="allowEmbedded" format="boolean"/>
 
     <!-- A reference to an array resource containing the signing certificate digests, one of which a
          client is required to be signed with in order to embed the activity. If the client is not
@@ -1108,12 +1108,12 @@
          can be declared inline as the value for this attribute.
          <p>If the attribute is declared both on the application and the activity level, the value
          on the activity level takes precedence. -->
-    <attr name="knownActivityEmbeddingCerts" format="reference|string" />
+    <attr name="knownActivityEmbeddingCerts" format="reference|string"/>
 
     <!-- Indicate that the activity can be embedded by untrusted hosts. In this case the
          interactions and visibility of the embedded activity may be limited.
          <p>The default value of this attribute is <code>false</code>. -->
-    <attr name="allowUntrustedActivityEmbedding" format="boolean" />
+    <attr name="allowUntrustedActivityEmbedding" format="boolean"/>
 
     <!-- Specifies whether this {@link android.app.Activity} should be shown on
          top of the lock screen whenever the lockscreen is up and this activity has another
@@ -1124,78 +1124,78 @@
          the lock screen if their requesting activity is also visible.
 
          <p>The default value of this attribute is <code>false</code>. -->
-    <attr name="inheritShowWhenLocked" format="boolean" />
+    <attr name="inheritShowWhenLocked" format="boolean"/>
 
     <!-- Descriptive text for the associated data. -->
-    <attr name="description" format="reference" />
+    <attr name="description" format="reference"/>
 
     <!-- The name of the application package that an Instrumentation object
          will run against. -->
-    <attr name="targetPackage" format="string" />
+    <attr name="targetPackage" format="string"/>
 
     <!-- The name of an application's processes that an Instrumentation object
          will run against.  If not specified, only runs in the main process of the targetPackage.
          Can either be a comma-separated list of process names or '*' for any process that
          launches to run targetPackage code. -->
-    <attr name="targetProcesses" format="string" />
+    <attr name="targetProcesses" format="string"/>
 
     <!-- Flag indicating that an Instrumentation class wants to take care
          of starting/stopping profiling itself, rather than relying on
          the default behavior of profiling the complete time it is running.
          This allows it to target profiling data at a specific set of
          operations. -->
-    <attr name="handleProfiling" format="boolean" />
+    <attr name="handleProfiling" format="boolean"/>
 
     <!-- Flag indicating that an Instrumentation class should be run as a
          functional test. -->
-    <attr name="functionalTest" format="boolean" />
+    <attr name="functionalTest" format="boolean"/>
 
     <!-- The touch screen type used by an application. -->
     <attr name="reqTouchScreen">
-        <enum name="undefined" value="0" />
-        <enum name="notouch" value="1" />
-        <enum name="stylus" value="2" />
-        <enum name="finger" value="3" />
+        <enum name="undefined" value="0"/>
+        <enum name="notouch" value="1"/>
+        <enum name="stylus" value="2"/>
+        <enum name="finger" value="3"/>
     </attr>
 
     <!-- The input method preferred by an application. -->
     <attr name="reqKeyboardType">
-        <enum name="undefined" value="0" />
-        <enum name="nokeys" value="1" />
-        <enum name="qwerty" value="2" />
-        <enum name="twelvekey" value="3" />
+        <enum name="undefined" value="0"/>
+        <enum name="nokeys" value="1"/>
+        <enum name="qwerty" value="2"/>
+        <enum name="twelvekey" value="3"/>
     </attr>
 
     <!-- Application's requirement for a hard keyboard -->
-    <attr name="reqHardKeyboard" format="boolean" />
+    <attr name="reqHardKeyboard" format="boolean"/>
 
     <!-- The navigation device preferred by an application. -->
     <attr name="reqNavigation">
-        <enum name="undefined" value="0" />
-        <enum name="nonav" value="1" />
-        <enum name="dpad" value="2" />
-        <enum name="trackball" value="3" />
-        <enum name="wheel" value="4" />
+        <enum name="undefined" value="0"/>
+        <enum name="nonav" value="1"/>
+        <enum name="dpad" value="2"/>
+        <enum name="trackball" value="3"/>
+        <enum name="wheel" value="4"/>
     </attr>
 
     <!-- Application's requirement for five way navigation -->
-    <attr name="reqFiveWayNav" format="boolean" />
+    <attr name="reqFiveWayNav" format="boolean"/>
 
     <!-- The name of the class subclassing <code>BackupAgent</code> to manage
          backup and restore of the application's data on external storage. -->
-    <attr name="backupAgent" format="string" />
+    <attr name="backupAgent" format="string"/>
 
     <!-- Whether to allow the application to participate in the backup
          and restore infrastructure.  If this attribute is set to <code>false</code>,
          no backup or restore of the application will ever be performed, even by a
          full-system backup that would otherwise cause all application data to be saved
          via adb.  The default value of this attribute is <code>true</code>. -->
-    <attr name="allowBackup" format="boolean" />
+    <attr name="allowBackup" format="boolean"/>
 
     <!-- Applications will set this in their manifest to opt-in to or out of full app data back-up
          and restore. Alternatively they can set it to an xml resource within their app that will
          be parsed by the BackupAgent to selectively backup files indicated within that xml. -->
-    <attr name="fullBackupContent" format="reference|boolean" />
+    <attr name="fullBackupContent" format="reference|boolean"/>
 
     <!-- Indicates that even though the application provides a <code>BackupAgent</code>,
          only full-data streaming backup operations are to be performed to save the app's
@@ -1203,7 +1203,7 @@
          the backup and restore process via the BackupAgent's full-data backup APIs.
          When this attribute is <code>true</code> the app's BackupAgent overrides of
          the onBackup() and onRestore() callbacks can be empty stubs. -->
-    <attr name="fullBackupOnly" format="boolean" />
+    <attr name="fullBackupOnly" format="boolean"/>
 
     <!-- Whether the application in question should be terminated after its
          settings have been restored during a full-system restore operation.
@@ -1215,10 +1215,10 @@
          <p>The default is <code>true</code>, which means that after the application
          has finished processing its data during a full-system restore, it will be
          terminated. -->
-    <attr name="killAfterRestore" format="boolean" />
+    <attr name="killAfterRestore" format="boolean"/>
 
     <!-- @deprecated This attribute is not used by the Android operating system. -->
-    <attr name="restoreNeedsApplication" format="boolean" />
+    <attr name="restoreNeedsApplication" format="boolean"/>
 
     <!-- Indicate that the application is prepared to attempt a restore of any
          backed-up dataset, even if the backup is apparently from a newer version
@@ -1228,7 +1228,7 @@
          incompatible.  <em>Use with caution!</em>
 
          <p>The default value of this attribute is <code>false</code>. -->
-    <attr name="restoreAnyVersion" format="boolean" />
+    <attr name="restoreAnyVersion" format="boolean"/>
 
     <!-- Indicates that full-data backup operations for this application may
          be performed even if the application is in a foreground-equivalent
@@ -1239,20 +1239,20 @@
          which means that the OS will avoid backing up the application while it is
          running in the foreground (such as a music app that is actively playing
          music via a service in the startForeground() state). -->
-    <attr name="backupInForeground" format="boolean" />
+    <attr name="backupInForeground" format="boolean"/>
 
     <!-- The default install location defined by an application. -->
     <attr name="installLocation">
         <!-- Let the system decide ideal install location -->
-        <enum name="auto" value="0" />
+        <enum name="auto" value="0"/>
         <!-- Explicitly request to be installed on internal phone storage
              only. -->
-        <enum name="internalOnly" value="1" />
+        <enum name="internalOnly" value="1"/>
         <!-- Prefer to be installed on SD card. There is no guarantee that
              the system will honor this request. The application might end
              up being installed on internal storage if external media
              is unavailable or too full. -->
-        <enum name="preferExternal" value="2" />
+        <enum name="preferExternal" value="2"/>
     </attr>
 
     <!-- If set to <code>true</code>, indicates to the platform that any split APKs
@@ -1260,7 +1260,7 @@
          objects and not appear in the base application's Context.
 
          <p>The default value of this attribute is <code>false</code>. -->
-    <attr name="isolatedSplits" format="boolean" />
+    <attr name="isolatedSplits" format="boolean"/>
 
     <!-- The classname of the classloader used to load the application's classes
          from its APK. The APK in question can either be the 'base' APK or any
@@ -1276,7 +1276,7 @@
          <code>PackageManager.INSTALL_PARSE_FAILED_MANIFEST_MALFORMED</code> will be
          thrown and the app will not be installed.
          -->
-    <attr name="classLoader" format="string" />
+    <attr name="classLoader" format="string"/>
 
     <!-- Name of the class that gets invoked for preloading application code, when starting an
          {@link android.R.attr#isolatedProcess} service that has
@@ -1294,12 +1294,12 @@
          <code>android:isolatedSplits="true"</code>.
 
          <p>The default value of this attribute is <code>false</code>. -->
-    <attr name="isFeatureSplit" format="boolean" />
+    <attr name="isFeatureSplit" format="boolean"/>
 
     <!-- Flag to specify if this APK requires at least one split [either feature or
          resource] to be present in order to function. Default value is false.
          @deprecated Use {@link android.R.attr#requiredSplitTypes} instead. -->
-    <attr name="isSplitRequired" format="boolean" />
+    <attr name="isSplitRequired" format="boolean"/>
 
     <!-- List of split types required by this APK to be present in order to function properly,
          separated by commas. The platform will reject installation of an app that is missing
@@ -1308,14 +1308,14 @@
          APK requires localized string resources, screen density resources, and native code
          this value could be "language,density,abi". Default value is null to indicate no split
          types are required. -->
-    <attr name="requiredSplitTypes" format="string" />
+    <attr name="requiredSplitTypes" format="string"/>
 
     <!-- List of split types offered by this APK, separated by commas. Each split type is a
          string, and is only used for matching <code>requiredSplitTypes</code> and
          <code>splitTypes</code>. As an example, if this split offers localized string resources,
          and screen density resources the value could be "language,density". Default value is
          null to indicate no split types are offered. -->
-    <attr name="splitTypes" format="string" />
+    <attr name="splitTypes" format="string"/>
 
     <!-- Flag to specify if this app (or process) wants to run the dex within its APK but not
          extracted or locally compiled variants. This keeps the dex code protected by the APK
@@ -1328,7 +1328,7 @@
          {@link android.R.styleable#AndroidManifestProcess process} or
          {@link android.R.styleable#AndroidManifestApplication application} tags. If enabled at the
          app level, any process level attribute is effectively ignored.  -->
-    <attr name="useEmbeddedDex" format="boolean" />
+    <attr name="useEmbeddedDex" format="boolean"/>
 
     <!-- Extra options for an activity's UI. Applies to either the {@code <activity>} or
          {@code <application>} tag. If specified on the {@code <application>}
@@ -1336,7 +1336,7 @@
          application. -->
     <attr name="uiOptions">
         <!-- No extra UI options. This is the default. -->
-        <flag name="none" value="0" />
+        <flag name="none" value="0"/>
         <!-- Split the options menu into a separate bar at the bottom of
              the screen when severely constrained for horizontal space.
              (e.g. portrait mode on a phone.) Instead of a small number
@@ -1344,11 +1344,11 @@
              of the screen, the action bar will split into the top navigation
              section and the bottom menu section. Menu items will not be
              split across the two bars; they will always appear together. -->
-        <flag name="splitActionBarWhenNarrow" value="1" />
+        <flag name="splitActionBarWhenNarrow" value="1"/>
     </attr>
 
     <!-- The name of the logical parent of the activity as it appears in the manifest. -->
-    <attr name="parentActivityName" format="string" />
+    <attr name="parentActivityName" format="string"/>
 
     <!-- Define how an activity persist across reboots. Activities defined as "never" will not
          be persisted. Those defined as "always" will be persisted. Those defined as "taskOnly"
@@ -1361,10 +1361,10 @@
              identity. All activities above this activity in the task will not be persisted.
              In addition this activity will not be passed a PersistableBundle into which it
              could have stored its state. -->
-        <enum name="persistRootOnly" value="0" />
+        <enum name="persistRootOnly" value="0"/>
         <!-- If this activity forms the root of a task then that task will not be persisted
              across reboots -->
-        <enum name="persistNever" value="1" />
+        <enum name="persistNever" value="1"/>
         <!-- If this activity forms the root of a task then the task and this activity will
              be persisted across reboots. If the activity above this activity is also
              tagged with the attribute <code>"persist"</code> then it will be persisted as well.
@@ -1376,7 +1376,7 @@
              provided with a PersistableBundle in onSavedInstanceState(), These activities may
              use this PeristableBundle to save their state. Then, following a reboot, that
              PersistableBundle will be provided back to the activity in its onCreate() method. -->
-        <enum name="persistAcrossReboots" value="2" />
+        <enum name="persistAcrossReboots" value="2"/>
     </attr>
 
     <!-- This attribute specifies that an activity shall become the root activity of a
@@ -1412,7 +1412,7 @@
         <!-- The default mode, which will create a new task only when
              {@link android.content.Intent#FLAG_ACTIVITY_NEW_TASK
              Intent.FLAG_ACTIVITY_NEW_TASK} is set. -->
-        <enum name="none" value="0" />
+        <enum name="none" value="0"/>
         <!-- All tasks will be searched for one whose base Intent's ComponentName and
              data URI match those of the launching Intent. If such a task is found
              that task will be cleared and restarted with the root activity receiving a call
@@ -1422,7 +1422,7 @@
              android.content.Intent#FLAG_ACTIVITY_NEW_DOCUMENT Intent.FLAG_ACTIVITY_NEW_DOCUMENT}
              set and without {@link android.content.Intent#FLAG_ACTIVITY_MULTIPLE_TASK
              Intent.FLAG_ACTIVITY_MULTIPLE_TASK} set. -->
-        <enum name="intoExisting" value="1" />
+        <enum name="intoExisting" value="1"/>
         <!-- A new task rooted at this activity will be created. This will happen whether or
              not there is an existing task whose ComponentName and data URI match
              that of the launcing intent This is the equivalent of launching an activity
@@ -1430,28 +1430,28 @@
              android.content.Intent#FLAG_ACTIVITY_NEW_DOCUMENT Intent.FLAG_ACTIVITY_NEW_DOCUMENT}
              and {@link android.content.Intent#FLAG_ACTIVITY_MULTIPLE_TASK
              Intent.FLAG_ACTIVITY_MULTIPLE_TASK} both set. -->
-        <enum name="always" value="2" />
+        <enum name="always" value="2"/>
         <!-- This activity will not be launched into a new document even if the Intent contains
              {@link android.content.Intent#FLAG_ACTIVITY_NEW_DOCUMENT
              Intent.FLAG_ACTIVITY_NEW_DOCUMENT}. This gives the activity writer ultimate
              control over how their activity is used. Note that applications prior to api
              21 will default to documentLaunchMode="none" so only activities that explicitly
              opt out with <code>"never"</code> may do so. -->
-        <enum name="never" value="3" />
+        <enum name="never" value="3"/>
     </attr>
 
     <!-- The maximum number of entries of tasks rooted at this activity in the recent task list.
          When this number of entries is reached the least recently used instance of this activity
          will be removed from recents. The value will be clamped between 1 and 100 inclusive.
          The default value for this if it is not specified is 15. -->
-    <attr name="maxRecents" format="integer" />
+    <attr name="maxRecents" format="integer"/>
 
     <!-- Tasks launched by activities with this attribute will remain in the recent tasks
          list until the last activity in the task is completed.  When that happens the task
          will be automatically removed from the recent tasks list.  This overrides the caller's
          use of {@link android.content.Intent#FLAG_ACTIVITY_RETAIN_IN_RECENTS
          Intent.FLAG_ACTIVITY_RETAIN_IN_RECENTS} -->
-    <attr name="autoRemoveFromRecents" format="boolean" />
+    <attr name="autoRemoveFromRecents" format="boolean"/>
 
     <!-- Tasks whose root has this attribute set to true will replace baseIntent with that of the
          next activity in the task. If the next activity also has this attribute set to true then
@@ -1463,7 +1463,7 @@
          <p>NOTE: Setting this flag to <code>true</code> will not change the affinity of the task,
          which is used for intent resolution during activity launch. The task's root activity will
          always define its affinity. -->
-    <attr name="relinquishTaskIdentity" format="boolean" />
+    <attr name="relinquishTaskIdentity" format="boolean"/>
 
     <!-- Indicate that it is okay for this activity be resumed while the previous
          activity is in the process of pausing, without waiting for the previous pause
@@ -1472,7 +1472,7 @@
          may conflict with the previous activity and fail.
 
          <p>The default value of this attribute is <code>false</code>. -->
-    <attr name="resumeWhilePausing" format="boolean" />
+    <attr name="resumeWhilePausing" format="boolean"/>
 
     <!-- Hint to platform that the activity works well in multi-window mode. Intended for a
          multi-window device where there can be multiple activities of various sizes on the screen
@@ -1513,7 +1513,7 @@
             <p>See <a href="{@docRoot}guide/practices/device-compatibility-mode"> Device
             compatibility mode</a>.</p>
          </aside> -->
-    <attr name="resizeableActivity" format="boolean" />
+    <attr name="resizeableActivity" format="boolean"/>
 
     <!-- Indicates that the activity specifically supports the picture-in-picture form of
          multi-window. If true, this activity will support entering picture-in-picture, but will
@@ -1524,7 +1524,7 @@
          {@link android.R.attr#resizeableActivity} is false.
 
          <p>The default value is <code>false</code>.  -->
-    <attr name="supportsPictureInPicture" format="boolean" />
+    <attr name="supportsPictureInPicture" format="boolean"/>
 
     <!-- This value indicates the maximum aspect ratio the activity supports. If the app runs on a
          device with a wider aspect ratio, the system automatically letterboxes the app, leaving
@@ -1550,7 +1550,7 @@
             <p>See <a href="{@docRoot}guide/practices/device-compatibility-mode"> Device
             compatibility mode</a>.</p>
          </aside> -->
-    <attr name="maxAspectRatio" format="float" />
+    <attr name="maxAspectRatio" format="float"/>
 
     <!-- This value indicates the minimum aspect ratio the activity supports. If the app runs on a
          device with a narrower aspect ratio, the system automatically letterboxes the app, leaving
@@ -1576,7 +1576,7 @@
             <p>See <a href="{@docRoot}guide/practices/device-compatibility-mode"> Device
             compatibility mode</a>.</p>
          </aside> -->
-   <attr name="minAspectRatio" format="float" />
+    <attr name="minAspectRatio" format="float"/>
 
     <!-- This value indicates how tasks rooted at this activity will behave in lockTask mode.
          While in lockTask mode the system will not launch non-permitted tasks until
@@ -1636,21 +1636,21 @@
          For each URI, an HTTPS network request will be done to <code>/.well-known/statements.json</code>
          host to verify that the web site is okay with the app intercepting the URI.
          -->
-    <attr name="autoVerify" format="boolean" />
+    <attr name="autoVerify" format="boolean"/>
 
     <!-- Specify whether a component should be visible to instant apps.
          -->
-    <attr name="visibleToInstantApps" format="boolean" />
+    <attr name="visibleToInstantApps" format="boolean"/>
 
     <!-- An XML resource with the application's Network Security Config. -->
-    <attr name="networkSecurityConfig" format="reference" />
+    <attr name="networkSecurityConfig" format="reference"/>
 
     <!-- An XML resource with the application's {@link android.app.LocaleConfig} -->
-    <attr name="localeConfig" format="reference" />
+    <attr name="localeConfig" format="reference"/>
 
     <!-- When an application is partitioned into splits, this is the name of the
          split that contains the defined component. -->
-    <attr name="splitName" format="string" />
+    <attr name="splitName" format="string"/>
 
     <!-- Specifies the target sandbox this app wants to use. Higher sandbox versions
          will have increasing levels of security.
@@ -1659,7 +1659,7 @@
          <p>
          @deprecated The security properties have been moved to
          {@link android.os.Build.VERSION Build.VERSION} 27 and 28. -->
-    <attr name="targetSandboxVersion" format="integer" />
+    <attr name="targetSandboxVersion" format="integer"/>
 
     <!-- The user-visible SDK version (ex. 26) of the framework against which the application was
          compiled. This attribute is automatically specified by the Android build tools and should
@@ -1667,7 +1667,7 @@
          <p>
          This attribute is the compile-time equivalent of
          {@link android.os.Build.VERSION#SDK_INT Build.VERSION.SDK_INT}. -->
-    <attr name="compileSdkVersion" format="integer" />
+    <attr name="compileSdkVersion" format="integer"/>
 
     <!-- The development codename (ex. "O") of the framework against which the application was
          compiled, or "REL" if the application was compiled against a release build. This attribute
@@ -1676,29 +1676,29 @@
          <p>
          This attribute is the compile-time equivalent of
          {@link android.os.Build.VERSION#CODENAME Build.VERSION.CODENAME}. -->
-    <attr name="compileSdkVersionCodename" format="string" />
+    <attr name="compileSdkVersionCodename" format="string"/>
 
     <!-- The (optional) fully-qualified name for a subclass of
          {@link android.app.AppComponentFactory} that the system uses to instantiate
          every other manifest defined class. Most applications
          don't need this attribute. If it's not specified, the system
          instantiates items without it.-->
-    <attr name="appComponentFactory" format="string" />
+    <attr name="appComponentFactory" format="string"/>
 
-    <attr name="usesNonSdkApi" format="boolean" />
+    <attr name="usesNonSdkApi" format="boolean"/>
 
     <!-- Whether attributions provided are meant to be user-visible. -->
-    <attr name="attributionsAreUserVisible" format="boolean" />
+    <attr name="attributionsAreUserVisible" format="boolean"/>
 
     <!-- If a preloaded APK is marked updatableSystem = false, any request for an update will be rejected.
          If an APK marked updatableSystem = false is being installed, regardless of the updatableSystem state
          of the version it's replacing, the install will be rejected.
          This is a private attribute, used without android: namespace. -->
-    <attr name="updatableSystem" format="boolean" />
+    <attr name="updatableSystem" format="boolean"/>
 
     <!-- Allows each installer in the system image to designate another app in the system image to
         update the installer. -->
-    <attr name="emergencyInstaller" format="string" />
+    <attr name="emergencyInstaller" format="string"/>
 
     <!-- Specify the type of foreground service. Multiple types can be specified by ORing the flags
          together. -->
@@ -1714,7 +1714,7 @@
             is still allowed, but calling it with this type on devices running future platform
             releases may get a {@link android.app.InvalidForegroundServiceTypeException}.
         -->
-        <flag name="dataSync" value="0x01" />
+        <flag name="dataSync" value="0x01"/>
         <!-- Music, video, news or other media play.
 
             <p>For apps with <code>targetSdkVersion</code>
@@ -1722,7 +1722,7 @@
             service with this type will require permission
             {@link android.Manifest.permission#FOREGROUND_SERVICE_MEDIA_PLAYBACK}.
         -->
-        <flag name="mediaPlayback" value="0x02" />
+        <flag name="mediaPlayback" value="0x02"/>
         <!-- Ongoing operations related to phone calls, video conferencing,
             or similar interactive communication.
 
@@ -1733,7 +1733,7 @@
             {@link android.Manifest.permission#MANAGE_OWN_CALLS} or holding the default
             {@link android.app.role.RoleManager#ROLE_DIALER dialer role}.
         -->
-        <flag name="phoneCall" value="0x04" />
+        <flag name="phoneCall" value="0x04"/>
         <!-- GPS, map, navigation location update.
 
             <p>For apps with <code>targetSdkVersion</code>
@@ -1744,7 +1744,7 @@
             {@link android.Manifest.permission#ACCESS_COARSE_LOCATION},
             {@link android.Manifest.permission#ACCESS_FINE_LOCATION}.
         -->
-        <flag name="location" value="0x08" />
+        <flag name="location" value="0x08"/>
         <!-- Auto, bluetooth, TV or other devices connection, monitoring and interaction.
 
             <p>For apps with <code>targetSdkVersion</code>
@@ -1760,7 +1760,7 @@
             {@link android.Manifest.permission#TRANSMIT_IR},
             or has been granted the access to one of the attached USB devices/accessories.
         -->
-        <flag name="connectedDevice" value="0x10" />
+        <flag name="connectedDevice" value="0x10"/>
         <!-- Managing a {@link android.media.projection.MediaProjection MediaProjection} session,
              e.g., for screen recording or takingscreenshots.
 
@@ -1781,7 +1781,7 @@
              {@link android.Manifest.permission#FOREGROUND_SERVICE_MEDIA_PROJECTION}, and the user
              must have allowed the screen capture request from this app.
         -->
-        <flag name="mediaProjection" value="0x20" />
+        <flag name="mediaProjection" value="0x20"/>
         <!-- Use the camera device or record video.
 
             <p>For apps with <code>targetSdkVersion</code> {@link android.os.Build.VERSION_CODES#R}
@@ -1795,7 +1795,7 @@
             {@link android.Manifest.permission#FOREGROUND_SERVICE_CAMERA} and
             {@link android.Manifest.permission#CAMERA}.
             -->
-        <flag name="camera" value="0x40" />
+        <flag name="camera" value="0x40"/>
         <!--Use the microphone device or record audio.
 
             <p>For apps with <code>targetSdkVersion</code> {@link android.os.Build.VERSION_CODES#R}
@@ -1811,7 +1811,7 @@
             {@link android.Manifest.permission#CAPTURE_AUDIO_OUTPUT},
             {@link android.Manifest.permission#RECORD_AUDIO}.
             -->
-        <flag name="microphone" value="0x80" />
+        <flag name="microphone" value="0x80"/>
         <!--Health, wellness and fitness.
             <p>Requires the app to hold the permission
             {@link android.Manifest.permission#FOREGROUND_SERVICE_HEALTH} and one of the following
@@ -1820,25 +1820,25 @@
             {@link android.Manifest.permission#BODY_SENSORS},
             {@link android.Manifest.permission#HIGH_SAMPLING_RATE_SENSORS}.
         -->
-        <flag name="health" value="0x100" />
+        <flag name="health" value="0x100"/>
         <!-- Messaging use cases which host local server to relay messages across devices.
             <p>Requires the app to hold the permission
             {@link android.Manifest.permission#FOREGROUND_SERVICE_REMOTE_MESSAGING} in order to use
             this type.
         -->
-        <flag name="remoteMessaging" value="0x200" />
+        <flag name="remoteMessaging" value="0x200"/>
         <!-- The system exempted foreground service use cases.
             <p>Requires the app to hold the permission
             {@link android.Manifest.permission#FOREGROUND_SERVICE_SYSTEM_EXEMPTED} in order to use
             this type. Apps are allowed to use this type only in the use cases listed in
             {@link android.content.pm.ServiceInfo#FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED}.
         -->
-        <flag name="systemExempted" value="0x400" />
+        <flag name="systemExempted" value="0x400"/>
         <!-- "Short service" foreground service type. See
            {@link android.content.pm.ServiceInfo#FOREGROUND_SERVICE_TYPE_SHORT_SERVICE}.
            for more details.
         -->
-        <flag name="shortService" value="0x800" />
+        <flag name="shortService" value="0x800"/>
         <!-- The file management use case which manages files/directories, often involving file I/O
             across the file system.
             <p>Requires the app to hold the permission
@@ -1853,7 +1853,7 @@
             {@link android.Manifest.permission#FOREGROUND_SERVICE_MEDIA_PROCESSING} in order to use
             this type.
         -->
-        <flag name="mediaProcessing" value="0x2000" />
+        <flag name="mediaProcessing" value="0x2000"/>
         <!-- Use cases that can't be categorized into any other foreground service types, but also
             can't use @link android.app.job.JobInfo.Builder} APIs.
             See {@link android.content.pm.ServiceInfo#FOREGROUND_SERVICE_TYPE_SPECIAL_USE} for the
@@ -1863,7 +1863,7 @@
             {@link android.Manifest.permission#FOREGROUND_SERVICE_SPECIAL_USE} in order to use
             this type.
         -->
-        <flag name="specialUse" value="0x40000000" />
+        <flag name="specialUse" value="0x40000000"/>
     </attr>
 
     <!-- Enable sampled memory bug detection in this process.
@@ -1881,11 +1881,11 @@
          a default setting for all application components). -->
     <attr name="gwpAsanMode">
         <!-- Default behavior: GwpAsan is disabled in user apps, randomly enabled in system apps. -->
-        <enum name="default" value="-1" />
+        <enum name="default" value="-1"/>
         <!-- Never enable GwpAsan. -->
-        <enum name="never" value="0" />
+        <enum name="never" value="0"/>
         <!-- Always enable GwpAsan. -->
-       <enum name="always" value="1" />
+        <enum name="always" value="1"/>
     </attr>
 
     <!-- Enable hardware memory tagging (ARM MTE) in this process.
@@ -1902,11 +1902,11 @@
          {@link android.R.styleable#AndroidManifestProcess process} tag, or to an
          {@link android.R.styleable#AndroidManifestApplication application} tag (to supply
          a default setting for all application components). -->
-     <attr name="memtagMode">
-       <enum name="default" value="-1" />
-       <enum name="off" value="0" />
-       <enum name="async" value="1" />
-       <enum name="sync" value="2" />
+    <attr name="memtagMode">
+        <enum name="default" value="-1"/>
+        <enum name="off" value="0"/>
+        <enum name="async" value="1"/>
+        <enum name="sync" value="2"/>
     </attr>
 
     <!-- This attribute overrides the user-set or platform-set 16 KB page size
@@ -1945,10 +1945,10 @@
     <attr name="pageSizeCompat">
         <!-- value for enabled must match with
         ApplicationInfo.PAGE_SIZE_APP_COMPAT_FLAG_MANIFEST_OVERRIDE_ENABLED -->
-        <enum name="enabled" value="32" />
+        <enum name="enabled" value="32"/>
         <!-- value for disabled must match with
         ApplicationInfo.PAGE_SIZE_APP_COMPAT_FLAG_MANIFEST_OVERRIDE_DISABLED -->
-        <enum name="disabled" value="64" />
+        <enum name="disabled" value="64"/>
     </attr>
 
 
@@ -1956,15 +1956,15 @@
       permission is checked in  {@link android.content.Context#sendBroadcast(Intent, String)}.
       Multiple tags can be specified separated by '|'.
     -->
-    <attr name="attributionTags" format="string" />
+    <attr name="attributionTags" format="string"/>
 
-    <attr name="allowUpdateOwnership" format="boolean" />
+    <attr name="allowUpdateOwnership" format="boolean"/>
 
     <!-- This attribute can be applied to any tag in the manifest. The system uses its value to
          determine whether the element (e.g., a permission) should be enabled or disabled
          depending on the state of feature flags.
          @hide @SystemApi @FlaggedApi("android.content.res.manifest_flagging") -->
-    <attr name="featureFlag" format="string" />
+    <attr name="featureFlag" format="string"/>
 
     <!-- This attribute provides a way to fine-tune how incoming intents are matched to application
     components. By default, no special matching rules are applied. This attribute can be specified
@@ -1974,7 +1974,7 @@
     <attr name="intentMatchingFlags">
         <!-- Disables all special matching rules for incoming intents. When specifying multiple
         flags, conflicting values are resolved by giving precedence to the "none" flag. -->
-        <flag name="none" value="0x0001" />
+        <flag name="none" value="0x0001"/>
 
         <!-- Enforces stricter matching for incoming intents:
         <ul>
@@ -1982,7 +1982,7 @@
              <li>Intents without an action should not match any intent filter
         </ul>
         -->
-        <flag name="enforceIntentFilter" value="0x0002" />
+        <flag name="enforceIntentFilter" value="0x0002"/>
 
         <!-- Relaxes the matching rules to allow intents without a action to match. This flag to be
         used in conjunction with enforceIntentFilter to achieve a specific behavior:
@@ -1991,7 +1991,7 @@
             <li>Intents without an action are allowed to match any intent filter
         </ul>
         -->
-        <flag name="allowNullAction" value="0x0004" />
+        <flag name="allowNullAction" value="0x0004"/>
     </attr>
 
     <!-- The <code>manifest</code> tag is the root of an
@@ -2015,22 +2015,22 @@
          {@link #AndroidManifestInstrumentation instrumentation},
          {@link #AndroidManifestUsesFeature uses-feature}.  -->
     <declare-styleable name="AndroidManifest">
-        <attr name="versionCode" />
-        <attr name="versionCodeMajor" />
-        <attr name="versionName" />
-        <attr name="revisionCode" />
-        <attr name="sharedUserId" />
-        <attr name="sharedUserLabel" />
-        <attr name="sharedUserMaxSdkVersion" />
-        <attr name="installLocation" />
-        <attr name="isolatedSplits" />
-        <attr name="isFeatureSplit" />
-        <attr name="targetSandboxVersion" />
-        <attr name="compileSdkVersion" />
-        <attr name="compileSdkVersionCodename" />
-        <attr name="isSplitRequired" />
-        <attr name="requiredSplitTypes" />
-        <attr name="splitTypes" />
+        <attr name="versionCode"/>
+        <attr name="versionCodeMajor"/>
+        <attr name="versionName"/>
+        <attr name="revisionCode"/>
+        <attr name="sharedUserId"/>
+        <attr name="sharedUserLabel"/>
+        <attr name="sharedUserMaxSdkVersion"/>
+        <attr name="installLocation"/>
+        <attr name="isolatedSplits"/>
+        <attr name="isFeatureSplit"/>
+        <attr name="targetSandboxVersion"/>
+        <attr name="compileSdkVersion"/>
+        <attr name="compileSdkVersionCodename"/>
+        <attr name="isSplitRequired"/>
+        <attr name="requiredSplitTypes"/>
+        <attr name="splitTypes"/>
     </declare-styleable>
 
     <!-- The <code>application</code> tag describes application-level components
@@ -2059,59 +2059,59 @@
              any other class when an app's process starts. Most applications
              don't need this attribute. If it's not specified, the system
              instantiates the base Application class instead.-->
-        <attr name="name" />
-        <attr name="theme" />
-        <attr name="label" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="description" />
-        <attr name="permission" />
-        <attr name="process" />
-        <attr name="taskAffinity" />
-        <attr name="allowTaskReparenting" />
+        <attr name="name"/>
+        <attr name="theme"/>
+        <attr name="label"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="description"/>
+        <attr name="permission"/>
+        <attr name="process"/>
+        <attr name="taskAffinity"/>
+        <attr name="allowTaskReparenting"/>
         <!-- Indicate whether this application contains code.  If set to false,
              there is no code associated with it and thus the system will not
              try to load its code when launching components.  The default is true
              for normal behavior. -->
-        <attr name="hasCode" format="boolean" />
+        <attr name="hasCode" format="boolean"/>
         <!-- Specifies if activities can be launched on top of this application by activities from
              other applications in the same task. If set to false, activity launches which would
              replace this application with another when in the user's view will be blocked.
              The default is true. -->
         <!-- @FlaggedApi("android.security.asm_restrictions_enabled") -->
-        <attr name="allowCrossUidActivitySwitchFromBelow" format="boolean" />
-        <attr name="persistent" />
-        <attr name="persistentWhenFeatureAvailable" />
-        <attr name="requiredForAllUsers" />
+        <attr name="allowCrossUidActivitySwitchFromBelow" format="boolean"/>
+        <attr name="persistent"/>
+        <attr name="persistentWhenFeatureAvailable"/>
+        <attr name="requiredForAllUsers"/>
         <!-- Specify whether the components in this application are enabled or not (that is, can be
              instantiated by the system).
              If "false", it overrides any component specific values (a value of "true" will not
              override the component specific values). -->
-        <attr name="enabled" />
-        <attr name="debuggable" />
-        <attr name="vmSafeMode" />
-        <attr name="hardwareAccelerated" />
+        <attr name="enabled"/>
+        <attr name="debuggable"/>
+        <attr name="vmSafeMode"/>
+        <attr name="hardwareAccelerated"/>
         <!-- Name of activity to be launched for managing the application's space on the device. -->
-        <attr name="manageSpaceActivity" />
-        <attr name="allowClearUserData" />
-        <attr name="testOnly" />
-        <attr name="backupAgent" />
-        <attr name="allowBackup" />
-        <attr name="fullBackupOnly" />
-        <attr name="fullBackupContent" />
-        <attr name="killAfterRestore" />
-        <attr name="restoreNeedsApplication" />
-        <attr name="restoreAnyVersion" />
-        <attr name="backupInForeground" />
+        <attr name="manageSpaceActivity"/>
+        <attr name="allowClearUserData"/>
+        <attr name="testOnly"/>
+        <attr name="backupAgent"/>
+        <attr name="allowBackup"/>
+        <attr name="fullBackupOnly"/>
+        <attr name="fullBackupContent"/>
+        <attr name="killAfterRestore"/>
+        <attr name="restoreNeedsApplication"/>
+        <attr name="restoreAnyVersion"/>
+        <attr name="backupInForeground"/>
         <!-- Request that your application's processes be created with
              a large Dalvik heap.  This applies to <em>all</em> processes
              created for the application.  It only applies to the first
              application loaded into a process; if using a sharedUserId
              to allow multiple applications to use a process, they all must
              use this option consistently or will get unpredictable results. -->
-        <attr name="largeHeap" format="boolean" />
+        <attr name="largeHeap" format="boolean"/>
         <!-- Declare that this application can't participate in the normal
              state save/restore mechanism.  Since it is not able to save and
              restore its state on demand,
@@ -2121,11 +2121,11 @@
              tries to launch a second such app, they will be prompted
              to quit the first before doing so.  While the
              application is running, the user will be informed of this. -->
-        <attr name="cantSaveState" format="boolean" />
-        <attr name="uiOptions" />
+        <attr name="cantSaveState" format="boolean"/>
+        <attr name="uiOptions"/>
         <!-- Declare that your application will be able to deal with RTL (right to left) layouts.
              The default value is false. -->
-        <attr name="supportsRtl" format="boolean" />
+        <attr name="supportsRtl" format="boolean"/>
         <!-- Declare that this application requires access to restricted accounts of a certain
              type. The default value is null and restricted accounts won\'t be visible to this
              application. The type should correspond to the account authenticator type, such as
@@ -2137,7 +2137,7 @@
              "com.google". -->
         <attr name="requiredAccountType" format="string"/>
         <!-- @deprecated replaced by setting appCategory attribute to "game" -->
-        <attr name="isGame" />
+        <attr name="isGame"/>
         <!-- Declare that this application may use cleartext traffic, such as HTTP rather than
              HTTPS; WebSockets rather than WebSockets Secure; XMPP, IMAP, SMTP without STARTTLS or
              TLS). Defaults to true. If set to false {@code false}, the application declares that it
@@ -2145,54 +2145,54 @@
              (e.g. HTTP stacks, {@code DownloadManager}, {@code MediaPlayer}) will refuse
              applications's requests to use cleartext traffic. Third-party libraries are encouraged
              to honor this flag as well. -->
-        <attr name="usesCleartextTraffic" />
-        <attr name="multiArch" />
-        <attr name="useEmbeddedDex" />
-        <attr name="extractNativeLibs" />
-        <attr name="defaultToDeviceProtectedStorage" format="boolean" />
-        <attr name="directBootAware" />
-        <attr name="resizeableActivity" />
-        <attr name="maxAspectRatio" />
-        <attr name="minAspectRatio" />
-        <attr name="networkSecurityConfig" />
-        <attr name="localeConfig" />
+        <attr name="usesCleartextTraffic"/>
+        <attr name="multiArch"/>
+        <attr name="useEmbeddedDex"/>
+        <attr name="extractNativeLibs"/>
+        <attr name="defaultToDeviceProtectedStorage" format="boolean"/>
+        <attr name="directBootAware"/>
+        <attr name="resizeableActivity"/>
+        <attr name="maxAspectRatio"/>
+        <attr name="minAspectRatio"/>
+        <attr name="networkSecurityConfig"/>
+        <attr name="localeConfig"/>
         <!-- Declare the category of this app. Categories are used to cluster multiple apps
              together into meaningful groups, such as when summarizing battery, network, or
              disk usage. Apps should only define this value when they fit well into one of
              the specific categories. -->
         <attr name="appCategory">
             <!-- Apps which are primarily games. -->
-            <enum name="game" value="0" />
+            <enum name="game" value="0"/>
             <!-- Apps which primarily work with audio or music, such as music players. -->
-            <enum name="audio" value="1" />
+            <enum name="audio" value="1"/>
             <!-- Apps which primarily work with video or movies, such as streaming video apps. -->
-            <enum name="video" value="2" />
+            <enum name="video" value="2"/>
             <!-- Apps which primarily work with images or photos, such as camera or gallery apps. -->
-            <enum name="image" value="3" />
+            <enum name="image" value="3"/>
             <!-- Apps which are primarily social apps, such as messaging, communication, email, or social network apps. -->
-            <enum name="social" value="4" />
+            <enum name="social" value="4"/>
             <!-- Apps which are primarily news apps, such as newspapers, magazines, or sports apps. -->
-            <enum name="news" value="5" />
+            <enum name="news" value="5"/>
             <!-- Apps which are primarily maps apps, such as navigation apps. -->
-            <enum name="maps" value="6" />
+            <enum name="maps" value="6"/>
             <!-- Apps which are primarily productivity apps, such as cloud storage or workplace apps. -->
-            <enum name="productivity" value="7" />
+            <enum name="productivity" value="7"/>
             <!-- Apps which are primarily accessibility apps, such as screen-readers. -->
-            <enum name="accessibility" value="8" />
+            <enum name="accessibility" value="8"/>
         </attr>
 
         <!-- Declares the kind of classloader this application's classes must be loaded with -->
-        <attr name="classLoader" />
+        <attr name="classLoader"/>
 
-        <attr name="appComponentFactory" />
+        <attr name="appComponentFactory"/>
 
         <!-- Declares that this application should be invoked without non-SDK API enforcement -->
-        <attr name="usesNonSdkApi" />
+        <attr name="usesNonSdkApi"/>
 
         <!-- If {@code true} the user is prompted to keep the app's data on uninstall -->
         <attr name="hasFragileUserData" format="boolean"/>
 
-        <attr name="zygotePreloadName" />
+        <attr name="zygotePreloadName"/>
 
         <!-- If {@code true} the system will clear app's data if a restore operation fails.
              This flag is turned on by default. <em>This attribute is usable only by system apps.
@@ -2220,7 +2220,7 @@
              <p>
              See {@link android.media.AudioPlaybackCaptureConfiguration} for more detail.
              -->
-        <attr name="allowAudioPlaybackCapture" format="boolean" />
+        <attr name="allowAudioPlaybackCapture" format="boolean"/>
         <!-- If {@code true} this app would like to run under the legacy storage
              model. Note that this may not always be respected due to policy or
              backwards compatibility reasons.
@@ -2232,7 +2232,7 @@
                  - {@code false} for apps with targetSdkVersion >= 29 (Q).
                  - {@code true} for apps with targetSdkVersion < 29.
              -->
-        <attr name="requestLegacyExternalStorage" format="boolean" />
+        <attr name="requestLegacyExternalStorage" format="boolean"/>
 
         <!-- If {@code true} this app would like to preserve the legacy storage
              model from a previously installed version. Note that this may not always be
@@ -2247,7 +2247,7 @@
 
              The default value is {@code false}.
              -->
-        <attr name="preserveLegacyExternalStorage" format="boolean" />
+        <attr name="preserveLegacyExternalStorage" format="boolean"/>
 
         <!-- If {@code true} this app would like raw external storage access.
 
@@ -2274,20 +2274,20 @@
         </ul>
         {@code false} otherwise.
         -->
-        <attr name="requestRawExternalStorageAccess" format="boolean" />
+        <attr name="requestRawExternalStorageAccess" format="boolean"/>
 
         <!-- If {@code true} this app declares that it should be visible to all other apps on
              device, regardless of what they declare via the {@code queries} tags in their
              manifest.
 
              The default value is {@code false}. -->
-        <attr name="forceQueryable" format="boolean" />
+        <attr name="forceQueryable" format="boolean"/>
 
         <!-- If {@code true} indicates that this application is capable of presenting a unified
              interface representing multiple profiles.
 
              The default value is {@code false}. -->
-        <attr name="crossProfile" format="boolean" />
+        <attr name="crossProfile" format="boolean"/>
 
         <!-- If {@code true} this app will receive tagged pointers to native heap allocations
              from functions like malloc() on compatible devices. Note that this may not always
@@ -2296,40 +2296,40 @@
              document for more information on this feature.
 
              The default value is {@code true}. -->
-        <attr name="allowNativeHeapPointerTagging" format="boolean" />
+        <attr name="allowNativeHeapPointerTagging" format="boolean"/>
 
-        <attr name="gwpAsanMode" />
+        <attr name="gwpAsanMode"/>
 
-        <attr name="memtagMode" />
+        <attr name="memtagMode"/>
 
         <!-- @FlaggedApi(android.content.pm.Flags.FLAG_APP_COMPAT_OPTION_16KB) -->
-        <attr name="pageSizeCompat" />
+        <attr name="pageSizeCompat"/>
 
         <!-- If {@code true} enables automatic zero initialization of all native heap
              allocations. -->
-        <attr name="nativeHeapZeroInitialized" format="boolean" />
+        <attr name="nativeHeapZeroInitialized" format="boolean"/>
 
         <!-- @hide no longer used, kept to preserve padding -->
-        <attr name="allowAutoRevokePermissionsExemption" format="boolean" />
+        <attr name="allowAutoRevokePermissionsExemption" format="boolean"/>
 
         <!-- No longer used. Declaring this does nothing -->
         <attr name="autoRevokePermissions">
             <!-- No longer used -->
-            <enum name="allowed" value="0" />
+            <enum name="allowed" value="0"/>
             <!-- No longer used -->
-            <enum name="discouraged" value="1" />
+            <enum name="discouraged" value="1"/>
             <!-- No longer used -->
-            <enum name="disallowed" value="2" />
+            <enum name="disallowed" value="2"/>
         </attr>
 
         <!-- Declare the policy to deal with user data when rollback is committed. -->
         <attr name="rollbackDataPolicy">
             <!-- User data will be restored during rollback. -->
-            <enum name="restore" value="0" />
+            <enum name="restore" value="0"/>
             <!-- User data will be wiped out during rollback. -->
-            <enum name="wipe" value="1" />
+            <enum name="wipe" value="1"/>
             <!-- User data will remain unchanged during rollback. -->
-            <enum name="retain" value="2" />
+            <enum name="retain" value="2"/>
         </attr>
 
         <!-- Applications can set this attribute to an xml resource within their app where they
@@ -2345,17 +2345,17 @@
         Note the framework <b>ignores</b> this attribute at this time. Once apps target S or above,
         there's no way to be exempted (without using a privileged permission).
         -->
-        <attr name="requestForegroundServiceExemption" format="boolean" />
+        <attr name="requestForegroundServiceExemption" format="boolean"/>
 
         <!-- Whether attributions provided are meant to be user-visible. -->
-        <attr name="attributionsAreUserVisible" format="boolean" />
+        <attr name="attributionsAreUserVisible" format="boolean"/>
 
         <!-- Specifies whether enabled settings of components in the application should be
              reset to {@link android.content.pm.PackageManager#COMPONENT_ENABLED_STATE_DEFAULT}
              when the application's user data is cleared. The default value is false.
         -->
-        <attr name="resetEnabledSettingsOnAppDataCleared" format="boolean" />
-        <attr name="knownActivityEmbeddingCerts" />
+        <attr name="resetEnabledSettingsOnAppDataCleared" format="boolean"/>
+        <attr name="knownActivityEmbeddingCerts"/>
 
         <!-- If false, {@link android.view.KeyEvent#KEYCODE_BACK KEYCODE_BACK} and
              {@link android.app.Activity#onBackPressed Activity.onBackPressed()}
@@ -2373,7 +2373,7 @@
              drawable resources and can contain at most 500 items.
              {@link android.content.pm.PackageManager#changeLauncherIconConfig}
              @FlaggedApi(android.content.pm.Flags.FLAG_CHANGE_LAUNCHER_BADGING) -->
-        <attr name="alternateLauncherIcons" format="reference" />
+        <attr name="alternateLauncherIcons" format="reference"/>
 
         <!-- Specifies the set of string resources that can be used in place
              of an existing declared label for activities that appear
@@ -2381,7 +2381,7 @@
              string resources and can contain at most 500 items.
              {@link android.content.pm.PackageManager#changeLauncherIconConfig}
              @FlaggedApi(android.content.pm.Flags.FLAG_CHANGE_LAUNCHER_BADGING) -->
-        <attr name="alternateLauncherLabels" format="reference" />
+        <attr name="alternateLauncherLabels" format="reference"/>
     </declare-styleable>
 
     <!-- An attribution is a logical part of an app and is identified by a tag.
@@ -2399,16 +2399,16 @@
         {@link android.content.Context#createAttributionContext} to create a context tagged with
         this attribution
         -->
-        <attr name="tag" format="string" />
+        <attr name="tag" format="string"/>
         <!-- Required user visible label for a attribution. -->
-        <attr name="label" format="string" />
+        <attr name="label" format="string"/>
     </declare-styleable>
 
     <!-- Declares previously declared attributions this attribution inherits from. -->
     <declare-styleable name="AndroidManifestAttributionInheritFrom"
                        parent="AndroidManifestAttribution">
         <!-- Identifier of the attribution this attribution inherits from -->
-        <attr name="tag" format="string" />
+        <attr name="tag" format="string"/>
     </declare-styleable>
 
     <!-- The <code>permission</code> tag declares a security permission that can be
@@ -2425,24 +2425,24 @@
         Java-style scoping to ensure it is unique.  The prefix will often
         be the same as our overall package name, for example
         "com.mycompany.android.myapp.SomePermission". -->
-        <attr name="name" />
-        <attr name="label" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="permissionGroup" />
+        <attr name="name"/>
+        <attr name="label"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="permissionGroup"/>
         <attr name="backgroundPermission" format="string"/>
-        <attr name="description" />
-        <attr name="request" />
-        <attr name="protectionLevel" />
-        <attr name="permissionFlags" />
-        <attr name="knownCerts" />
+        <attr name="description"/>
+        <attr name="request"/>
+        <attr name="protectionLevel"/>
+        <attr name="permissionFlags"/>
+        <attr name="knownCerts"/>
         <!-- Optional: specify the maximum version of the Android OS for which the
              application wishes to create the permission.  When running on a version
              of Android higher than the number given here, the permission will not
              be created.  -->
-        <attr name="maxSdkVersion" />
+        <attr name="maxSdkVersion"/>
     </declare-styleable>
 
     <!-- The <code>permission-group</code> tag declares a logical grouping of
@@ -2461,19 +2461,19 @@
         Java-style scoping to ensure it is unique.  The prefix will often
         be the same as our overall package name, for example
         "com.mycompany.android.myapp.SomePermission". -->
-        <attr name="name" />
-        <attr name="label" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="description" />
+        <attr name="name"/>
+        <attr name="label"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="description"/>
         <attr name="request" format="string"/>
         <attr name="requestDetail" format="string"/>
         <attr name="backgroundRequest" format="string"/>
         <attr name="backgroundRequestDetail" format="string"/>
-        <attr name="permissionGroupFlags" />
-        <attr name="priority" />
+        <attr name="permissionGroupFlags"/>
+        <attr name="priority"/>
     </declare-styleable>
 
     <!-- The <code>permission-tree</code> tag declares the base of a tree of
@@ -2499,12 +2499,12 @@
         "com.mycompany.android.myapp.SomePermission".  A permission tree name
         must have more than two segments in its path; that is,
         "com.me.foo" is okay, but not "com.me" or "com". -->
-        <attr name="name" />
-        <attr name="label" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
+        <attr name="name"/>
+        <attr name="label"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
     </declare-styleable>
 
     <!-- The <code>uses-permission</code> tag requests a
@@ -2528,25 +2528,25 @@
         {@link android.R.styleable#AndroidManifestPermission &lt;permission&gt;}
         tag; often this is one of the {@link android.Manifest.permission standard
         system permissions}. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Optional: specify the minimum version of the Android OS for which the
              application wishes to request the permission.  When running on a version
              of Android lower than the number given here, the permission will not
              be requested. -->
-        <attr name="minSdkVersion" format="integer|string" />
+        <attr name="minSdkVersion" format="integer|string"/>
         <!-- Optional: specify the maximum version of the Android OS for which the
              application wishes to request the permission.  When running on a version
              of Android higher than the number given here, the permission will not
              be requested.  -->
-        <attr name="maxSdkVersion" format="integer" />
+        <attr name="maxSdkVersion" format="integer"/>
         <!-- Optional: the system must support this feature for the permission to be
         requested.  If it doesn't support the feature, it will be as if the manifest didn't
         request it at all. -->
-        <attr name="requiredFeature" format="string" />
+        <attr name="requiredFeature" format="string"/>
         <!-- Optional: the system must NOT support this feature for the permission to be
         requested.  If it does support the feature, it will be as if the manifest didn't
         request it at all. -->
-        <attr name="requiredNotFeature" format="string" />
+        <attr name="requiredNotFeature" format="string"/>
         <!-- Optional: set of flags that should apply to this permission request. Note that
              these flags start at 0x4 to match PackageInfo.requestedPermissionsFlags. -->
         <attr name="usesPermissionFlags">
@@ -2554,7 +2554,7 @@
                  permission to derive the physical location of the device, even
                  when the app has been granted the ACCESS_FINE_LOCATION and/or
                  ACCESS_COARSE_LOCATION permissions. -->
-            <flag name="neverForLocation" value="0x00010000" />
+            <flag name="neverForLocation" value="0x00010000"/>
         </attr>
     </declare-styleable>
 
@@ -2567,11 +2567,11 @@
          -->
     <declare-styleable name="AndroidManifestRequiredFeature">
         <!-- The name of the feature. -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
     <declare-styleable name="AndroidManifestRequiredNotFeature">
         <!-- The name of the feature. -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- The <code>uses-configuration</code> tag specifies
@@ -2587,11 +2587,11 @@
          @deprecated Use <code>feature-group</code> instead.-->
     <declare-styleable name="AndroidManifestUsesConfiguration" parent="AndroidManifest">
         <!-- The type of touch screen used by an application. -->
-        <attr name="reqTouchScreen" />
-        <attr name="reqKeyboardType" />
-        <attr name="reqHardKeyboard" />
-        <attr name="reqNavigation" />
-        <attr name="reqFiveWayNav" />
+        <attr name="reqTouchScreen"/>
+        <attr name="reqKeyboardType"/>
+        <attr name="reqHardKeyboard"/>
+        <attr name="reqNavigation"/>
+        <attr name="reqFiveWayNav"/>
     </declare-styleable>
 
     <!-- The <code>uses-feature</code> tag specifies a specific device
@@ -2604,21 +2604,21 @@
          {@link #AndroidManifest manifest} tag. -->
     <declare-styleable name="AndroidManifestUsesFeature" parent="AndroidManifest">
         <!-- The name of the feature that is being used. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- The version of the feature that is being used. -->
-        <attr name="version" format="integer" />
+        <attr name="version" format="integer"/>
         <!-- The GLES driver version number needed by an application.
              The higher 16 bits represent the major number and the lower 16 bits
              represent the minor number. For example for GL 1.2 referring to
              0x00000102, the actual value should be set as 0x00010002. -->
-        <attr name="glEsVersion" format="integer" />
+        <attr name="glEsVersion" format="integer"/>
         <!--  Specify whether this feature is required for the application.
               The default is true, meaning the application requires the
               feature, and does not want to be installed on devices that
               don't support it.  If you set this to false, then this will
               not impose a restriction on where the application can be
               installed. -->
-        <attr name="required" format="boolean" />
+        <attr name="required" format="boolean"/>
     </declare-styleable>
 
     <!-- The <code>feature-group</code> tag specifies
@@ -2631,7 +2631,7 @@
          {@link #AndroidManifest manifest} tag. -->
     <declare-styleable name="AndroidManifestFeatureGroup">
         <!-- The human-readable name of the feature group. -->
-        <attr name="label" />
+        <attr name="label"/>
     </declare-styleable>
 
     <!-- The <code>uses-sdk</code> tag describes the SDK features that the
@@ -2647,7 +2647,7 @@
              may also be string (such as "Donut") if the application was built
              against a development branch, in which case it will only work against
              the development builds. -->
-        <attr name="minSdkVersion" format="integer|string" />
+        <attr name="minSdkVersion" format="integer|string"/>
         <!-- This is the SDK version number that the application is targeting.
              It is able to run on older versions (down to minSdkVersion), but
              was explicitly tested to work with the version specified here.
@@ -2657,21 +2657,21 @@
              (such as "Donut") if this is built against a development
              branch, in which case minSdkVersion is also forced to be that
              string. -->
-        <attr name="targetSdkVersion" format="integer|string" />
+        <attr name="targetSdkVersion" format="integer|string"/>
         <!-- This is the maximum SDK version number that an application works
              on.  You can use this to ensure your application is filtered out
              of later versions of the platform when you know you have
              incompatibility with them. -->
-        <attr name="maxSdkVersion" />
+        <attr name="maxSdkVersion"/>
     </declare-styleable>
 
     <!-- The <code>extension-sdk</code> tag is a child of the <uses-sdk> tag,
          and specifies required extension sdk features. -->
     <declare-styleable name="AndroidManifestExtensionSdk">
         <!-- The extension SDK version that this tag refers to. -->
-        <attr name="sdkVersion" format="integer" />
+        <attr name="sdkVersion" format="integer"/>
         <!-- The minimum version of the extension SDK this application requires.-->
-        <attr name="minExtensionVersion" format="integer" />
+        <attr name="minExtensionVersion" format="integer"/>
     </declare-styleable>
 
     <!-- The <code>library</code> tag declares that this apk is providing itself
@@ -2686,16 +2686,16 @@
         packages will use when referring to this library.  This is a string using
         Java-style scoping to ensure it is unique.  The name should typically
         be the same as the apk's package name. -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
-    <declare-styleable name="AndroidManifestQueries" parent="AndroidManifest" />
+    <declare-styleable name="AndroidManifestQueries" parent="AndroidManifest"/>
     <declare-styleable name="AndroidManifestQueriesPackage" parent="AndroidManifestQueries">
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
-    <declare-styleable name="AndroidManifestQueriesIntent" parent="AndroidManifestQueries" />
-    <declare-styleable name="AndroidManifestQueriesProvider" parent="AndroidManifestQueries" >
-        <attr name="authorities" />
+    <declare-styleable name="AndroidManifestQueriesIntent" parent="AndroidManifestQueries"/>
+    <declare-styleable name="AndroidManifestQueriesProvider" parent="AndroidManifestQueries">
+        <attr name="authorities"/>
     </declare-styleable>
 
     <!-- The <code>sdk-library</code> tag declares that this apk is providing itself
@@ -2710,9 +2710,9 @@
         when referring to this SDK library. This is a string using Java-style scoping to ensure
         it is unique.
         Both name and version should typically form the apk's package name: name_versionMajor. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Required major version of the SDK library. -->
-        <attr name="versionMajor" format="integer" />
+        <attr name="versionMajor" format="integer"/>
     </declare-styleable>
 
 
@@ -2722,15 +2722,15 @@
     <p>This appears as a child tag of the {@link #AndroidManifestApplication application} tag. -->
     <declare-styleable name="AndroidManifestUsesSdkLibrary" parent="AndroidManifestApplication">
         <!-- Required name of the SDK library you use. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Specify which major version of the SDK library you use. -->
-        <attr name="versionMajor" format="integer" />
+        <attr name="versionMajor" format="integer"/>
         <!-- The SHA-256 digest of the SDK library signing certificate. -->
-        <attr name="certDigest" format="string" />
+        <attr name="certDigest" format="string"/>
         <!-- Specify whether the SDK is optional. The default is false, false means app can be
         installed even if the SDK library doesn't exist, and the SDK library can be uninstalled
         when the app is still installed. -->
-        <attr name="optional" format="boolean" />
+        <attr name="optional" format="boolean"/>
     </declare-styleable>
 
     <!-- The <code>static-library</code> tag declares that this apk is providing itself
@@ -2748,13 +2748,13 @@
         packages will use when referring to this library.  This is a string using
         Java-style scoping to ensure it is unique.  The name should typically
         be the same as the apk's package name. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Required specific library version. -->
-        <attr name="version" />
+        <attr name="version"/>
         <!-- Required specific library major version code.  This matches
              android:versionCodeMajor of the library. -->
         <!-- Required specific library version. -->
-        <attr name="versionMajor" format="integer" />
+        <attr name="versionMajor" format="integer"/>
     </declare-styleable>
 
     <!-- The <code>uses-libraries</code> specifies a shared library that this
@@ -2765,7 +2765,7 @@
          {@link #AndroidManifestApplication application} tag. -->
     <declare-styleable name="AndroidManifestUsesLibrary" parent="AndroidManifestApplication">
         <!-- Required name of the library you use. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!--  Specify whether this library is required for the application.
               The default is true, meaning the application requires the
               library, and does not want to be installed on devices that
@@ -2773,7 +2773,7 @@
               allow the application to be installed even if the library
               doesn't exist, and you will need to check for its presence
               dynamically at runtime. -->
-        <attr name="required" />
+        <attr name="required"/>
     </declare-styleable>
 
     <!-- The <code>uses-native-library</code> specifies a native shared library that this
@@ -2788,7 +2788,7 @@
          {@link #AndroidManifestApplication application} tag. -->
     <declare-styleable name="AndroidManifestUsesNativeLibrary" parent="AndroidManifestApplication">
         <!-- Required name of the library you use. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!--  Specify whether this native library is required for the application.
               The default is true, meaning the application requires the
               library, and does not want to be installed on devices that
@@ -2796,7 +2796,7 @@
               allow the application to be installed even if the library
               doesn't exist, and you will need to check for its presence
               dynamically at runtime. -->
-        <attr name="required" />
+        <attr name="required"/>
     </declare-styleable>
 
     <!-- The <code>uses-static-library</code> specifies a shared <strong>static</strong>
@@ -2815,11 +2815,11 @@
          {@link #AndroidManifestApplication application} tag. -->
     <declare-styleable name="AndroidManifestUsesStaticLibrary" parent="AndroidManifestApplication">
         <!-- Required name of the library you use. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Specify which version of the shared library should be statically linked. -->
-        <attr name="version" />
+        <attr name="version"/>
         <!-- The SHA-256 digest of the library signing certificate. -->
-        <attr name="certDigest" format="string" />
+        <attr name="certDigest" format="string"/>
     </declare-styleable>
 
     <!-- The <code>additional-certificate</code> specifies the SHA-256 digest of a static
@@ -2831,7 +2831,7 @@
          {@link #AndroidManifestUsesPackage uses-package} tag. -->
     <declare-styleable name="AndroidManifestAdditionalCertificate" parent="AndroidManifestUsesStaticLibrary">
         <!-- The SHA-256 digest of the library signing certificate. -->
-        <attr name="certDigest" />
+        <attr name="certDigest"/>
     </declare-styleable>
 
     <!-- The <code>uses-package</code> specifies some kind of dependency on another
@@ -2847,15 +2847,15 @@
              if it provides an advertising service.  This should use the standard scoped naming
              convention as used for other things such as package names, based on the Java naming
              convention. -->
-        <attr name="packageType" format="string" />
+        <attr name="packageType" format="string"/>
         <!-- Required name of the package you use. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Optional minimum version of the package that satisfies the dependency. -->
-        <attr name="version" />
+        <attr name="version"/>
         <!-- Optional minimum major version of the package that satisfies the dependency. -->
-        <attr name="versionMajor" format="integer" />
+        <attr name="versionMajor" format="integer"/>
         <!-- Optional SHA-256 digest of the package signing certificate. -->
-        <attr name="certDigest" format="string" />
+        <attr name="certDigest" format="string"/>
     </declare-styleable>
 
     <!-- The <code>supports-screens</code> specifies the screen dimensions an
@@ -2879,7 +2879,7 @@
              then the application is considered incompatible with that device.
              If not supplied, then any old smallScreens, normalScreens, largeScreens,
              or xlargeScreens attributes will be used instead. -->
-        <attr name="requiresSmallestWidthDp" format="integer" />
+        <attr name="requiresSmallestWidthDp" format="integer"/>
         <!-- Starting with {@link android.os.Build.VERSION_CODES#HONEYCOMB_MR2},
              this is the new way to specify the largest screens an application is
              compatible with.  This attribute provides the maximum
@@ -2890,7 +2890,7 @@
              smaller screen and zooms it to fit the screen. Currently the compatibility mode only
              emulates phone screens with a 320dp width, so compatibility mode is not applied if the
              value for compatibleWidthLimitDp is larger than 320. -->
-        <attr name="compatibleWidthLimitDp" format="integer" />
+        <attr name="compatibleWidthLimitDp" format="integer"/>
         <!-- Starting with {@link android.os.Build.VERSION_CODES#HONEYCOMB_MR2},
              this is the new way to specify the screens an application is
              compatible with.  This attribute provides the maximum
@@ -2901,7 +2901,7 @@
              no way for the user to turn it off. Currently the compatibility mode only
              emulates phone screens with a 320dp width, so compatibility mode is not applied if the
              value for largestWidthLimitDp is larger than 320. -->
-        <attr name="largestWidthLimitDp" format="integer" />
+        <attr name="largestWidthLimitDp" format="integer"/>
         <!-- Indicates whether the application supports smaller screen form-factors.
              A small screen is defined as one with a smaller aspect ratio than
              the traditional HVGA screen; that is, for a portrait screen, less
@@ -2910,13 +2910,13 @@
              not support small screens <em>will not be available</em> for
              small screen devices, since there is little the platform can do
              to make such an application work on a smaller screen. -->
-        <attr name="smallScreens" format="boolean" />
+        <attr name="smallScreens" format="boolean"/>
         <!-- Indicates whether an application supports the normal screen
              form-factors.  Traditionally this is an HVGA normal density
              screen, but WQVGA low density and WVGA high density are also
              considered to be normal.  This attribute is true by default,
              and applications currently should leave it that way. -->
-        <attr name="normalScreens" format="boolean" />
+        <attr name="normalScreens" format="boolean"/>
         <!-- Indicates whether the application supports larger screen form-factors.
              A large screen is defined as a screen that is significantly larger
              than a normal phone screen, and thus may require some special care
@@ -2926,21 +2926,21 @@
              large screens will be placed as a postage stamp on such a
              screen, so that it retains the dimensions it was originally
              designed for. -->
-        <attr name="largeScreens" format="boolean" />
+        <attr name="largeScreens" format="boolean"/>
         <!-- Indicates whether the application supports extra large screen form-factors. -->
-        <attr name="xlargeScreens" format="boolean" />
+        <attr name="xlargeScreens" format="boolean"/>
         <!-- Indicates whether the application can resize itself to newer
              screen sizes.  This is mostly used to distinguish between old
              applications that may not be compatible with newly introduced
              screen sizes and newer applications that should be; it will be
              set for you automatically based on whether you are targeting
              a newer platform that supports more screens. -->
-        <attr name="resizeable" format="boolean" />
+        <attr name="resizeable" format="boolean"/>
         <!-- Indicates whether the application can accommodate any screen
              density. This is assumed true if targetSdkVersion is 4 or higher.
              @deprecated Should always be true by default and not overridden.
               -->
-        <attr name="anyDensity" format="boolean" />
+        <attr name="anyDensity" format="boolean"/>
     </declare-styleable>
 
     <!-- Private tag to declare system protected broadcast actions.
@@ -2948,7 +2948,7 @@
          <p>This appears as a child tag of the root
          {@link #AndroidManifest manifest} tag. -->
     <declare-styleable name="AndroidManifestProtectedBroadcast" parent="AndroidManifest">
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- Private tag to declare the original package name that this package is
@@ -2961,7 +2961,7 @@
          <p>This appears as a child tag of the root
          {@link #AndroidManifest manifest} tag. -->
     <declare-styleable name="AndroidManifestOriginalPackage" parent="AndroidManifest">
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- Private tag to declare the package name that the permissions of this package
@@ -2972,7 +2972,7 @@
          <p>This appears as a child tag of the root
          {@link #AndroidManifest manifest} tag. -->
     <declare-styleable name="AndroidManifestAdoptPermissions" parent="AndroidManifest">
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- The <code>processes</code> tag specifies the processes the application will run code in
@@ -2993,14 +2993,14 @@
          {@link #AndroidManifestProcesses processes} tag. -->
     <declare-styleable name="AndroidManifestProcess" parent="AndroidManifestProcesses">
         <!-- Required name of the process that is allowed -->
-        <attr name="process" />
+        <attr name="process"/>
         <!-- custom Application class name. We use call it "name", not "className", to be
              consistent with the Application tag. -->
-        <attr name="name" />
-        <attr name="gwpAsanMode" />
-        <attr name="memtagMode" />
-        <attr name="nativeHeapZeroInitialized" />
-        <attr name="useEmbeddedDex" />
+        <attr name="name"/>
+        <attr name="gwpAsanMode"/>
+        <attr name="memtagMode"/>
+        <attr name="nativeHeapZeroInitialized"/>
+        <attr name="useEmbeddedDex"/>
     </declare-styleable>
 
     <!-- The <code>deny-permission</code> tag specifies that a permission is to be denied
@@ -3013,9 +3013,9 @@
          {@link #AndroidManifestProcesses processes} and
          {@link #AndroidManifestProcess process} tags. -->
     <declare-styleable name="AndroidManifestDenyPermission"
-            parent="AndroidManifestProcesses">
+                       parent="AndroidManifestProcesses">
         <!-- Required name of the permission that is to be denied -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- The <code>allow-permission</code> tag specifies that a permission is to be allowed
@@ -3026,9 +3026,9 @@
          {@link #AndroidManifestProcesses processes} and
          {@link #AndroidManifestProcess process} tags. -->
     <declare-styleable name="AndroidManifestAllowPermission"
-            parent="AndroidManifestProcesses">
+                       parent="AndroidManifestProcesses">
         <!-- Required name of the permission that is to be allowed. -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- The <code>provider</code> tag declares a
@@ -3044,42 +3044,42 @@
             qualified class name (for example, com.mycompany.myapp.MyProvider); as a
             short-hand if the first character of the class
             is a period then it is appended to your package name. -->
-        <attr name="name" />
-        <attr name="label" />
-        <attr name="description" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="process" />
-        <attr name="authorities" />
-        <attr name="syncable" />
-        <attr name="readPermission" />
-        <attr name="writePermission" />
-        <attr name="grantUriPermissions" />
-        <attr name="forceUriPermissions" />
-        <attr name="permission" />
-        <attr name="multiprocess" />
-        <attr name="initOrder" />
+        <attr name="name"/>
+        <attr name="label"/>
+        <attr name="description"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="process"/>
+        <attr name="authorities"/>
+        <attr name="syncable"/>
+        <attr name="readPermission"/>
+        <attr name="writePermission"/>
+        <attr name="grantUriPermissions"/>
+        <attr name="forceUriPermissions"/>
+        <attr name="permission"/>
+        <attr name="multiprocess"/>
+        <attr name="initOrder"/>
         <!-- Specify whether this provider is enabled or not (that is, can be instantiated by the system).
              It can also be specified for an application as a whole, in which case a value of "false"
              will override any component specific values (a value of "true" will not override the
              component specific values). -->
-        <attr name="enabled" />
-        <attr name="exported" />
-        <attr name="singleUser" />
-        <attr name="directBootAware" />
-        <attr name="visibleToInstantApps" />
+        <attr name="enabled"/>
+        <attr name="exported"/>
+        <attr name="singleUser"/>
+        <attr name="directBootAware"/>
+        <attr name="visibleToInstantApps"/>
         <!-- The code for this component is located in the given split.
              <p>NOTE: This is only applicable to instant app. -->
-        <attr name="splitName" />
+        <attr name="splitName"/>
         <!-- Set of attribution tags that should be automatically applied to this component.
              <p>
              Each instance of this ContentProvider will be automatically configured with
              Context.createAttributionContext() using the first attribution tag
              contained here. -->
-        <attr name="attributionTags" />
-        <attr name="systemUserOnly" format="boolean" />
+        <attr name="attributionTags"/>
+        <attr name="systemUserOnly" format="boolean"/>
         <attr name="intentMatchingFlags"/>
     </declare-styleable>
 
@@ -3092,15 +3092,15 @@
          following order with the first attribute being the only one honored:
           <code>pathAdvancedPattern</code>, <code>pathPattern</code>,
           <code>pathPrefix</code>, <code>pathSuffix</code>, <code>path</code>. -->
-    <declare-styleable name="AndroidManifestGrantUriPermission"  parent="AndroidManifestProvider">
+    <declare-styleable name="AndroidManifestGrantUriPermission" parent="AndroidManifestProvider">
         <!-- Specify a URI path that must exactly match, as per
              {@link android.os.PatternMatcher} with
              {@link android.os.PatternMatcher#PATTERN_LITERAL}. -->
-        <attr name="path" format="string" />
+        <attr name="path" format="string"/>
         <!-- Specify a URI path that must be a prefix to match, as per
              {@link android.os.PatternMatcher} with
              {@link android.os.PatternMatcher#PATTERN_PREFIX}. -->
-        <attr name="pathPrefix" format="string" />
+        <attr name="pathPrefix" format="string"/>
         <!-- Specify a URI path that matches a simple pattern, as per
              {@link android.os.PatternMatcher} with
              {@link android.os.PatternMatcher#PATTERN_SIMPLE_GLOB}.
@@ -3110,7 +3110,7 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="pathPattern" format="string" />
+        <attr name="pathPattern" format="string"/>
         <!-- Specify a URI path that matches an advanced pattern, as per
              {@link android.os.PatternMatcher} with
              {@link android.os.PatternMatcher#PATTERN_ADVANCED_GLOB}.
@@ -3124,7 +3124,7 @@
         <!-- Specify a URI path that must be a suffix to match, as per
              {@link android.os.PatternMatcher} with
              {@link android.os.PatternMatcher#PATTERN_SUFFIX}. -->
-        <attr name="pathSuffix" format="string" />
+        <attr name="pathSuffix" format="string"/>
     </declare-styleable>
 
     <!-- Attributes that can be supplied in an AndroidManifest.xml
@@ -3136,15 +3136,15 @@
          following order with the first attribute being the only one honored:
           <code>pathAdvancedPattern</code>, <code>pathPattern</code>,
           <code>pathPrefix</code>, <code>pathSuffix</code>, <code>path</code>.-->
-    <declare-styleable name="AndroidManifestPathPermission"  parent="AndroidManifestProvider">
-        <attr name="path" />
-        <attr name="pathPrefix" />
-        <attr name="pathPattern" />
+    <declare-styleable name="AndroidManifestPathPermission" parent="AndroidManifestProvider">
+        <attr name="path"/>
+        <attr name="pathPrefix"/>
+        <attr name="pathPattern"/>
         <attr name="pathAdvancedPattern" format="string"/>
-        <attr name="pathSuffix" />
-        <attr name="permission" />
-        <attr name="readPermission" />
-        <attr name="writePermission" />
+        <attr name="pathSuffix"/>
+        <attr name="permission"/>
+        <attr name="readPermission"/>
+        <attr name="writePermission"/>
     </declare-styleable>
 
     <!-- The <code>service</code> tag declares a
@@ -3165,39 +3165,39 @@
             qualified class name (for example, com.mycompany.myapp.MyService); as a
             short-hand if the first character of the class
             is a period then it is appended to your package name. -->
-        <attr name="name" />
-        <attr name="label" />
-        <attr name="description" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="permission" />
-        <attr name="process" />
+        <attr name="name"/>
+        <attr name="label"/>
+        <attr name="description"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="permission"/>
+        <attr name="process"/>
         <!-- Specify whether the service is enabled or not (that is, can be instantiated by the system).
              It can also be specified for an application as a whole, in which case a value of "false"
              will override any component specific values (a value of "true" will not override the
              component specific values). -->
-        <attr name="enabled" />
-        <attr name="exported" />
+        <attr name="enabled"/>
+        <attr name="exported"/>
         <!-- If set to true, this service with be automatically stopped
              when the user remove a task rooted in an activity owned by
              the application.  The default is false. -->
-        <attr name="stopWithTask" format="boolean" />
+        <attr name="stopWithTask" format="boolean"/>
         <!-- If set to true, this service will run under a special process
              that is isolated from the rest of the system.  The only communication
              with it is through the Service API (binding and starting). -->
-        <attr name="isolatedProcess" format="boolean" />
-        <attr name="singleUser" />
-        <attr name="directBootAware" />
+        <attr name="isolatedProcess" format="boolean"/>
+        <attr name="singleUser"/>
+        <attr name="directBootAware"/>
         <!-- If the service is an {@link android.R.attr#isolatedProcess} service, this permits a
              client to bind to the service as if it were running it its own package.  The service
              must also be {@link android.R.attr#exported} if this flag is set. -->
-        <attr name="externalService" format="boolean" />
-        <attr name="visibleToInstantApps" />
+        <attr name="externalService" format="boolean"/>
+        <attr name="visibleToInstantApps"/>
         <!-- The code for this component is located in the given split.
              <p>NOTE: This is only applicable to instant app. -->
-        <attr name="splitName" />
+        <attr name="splitName"/>
         <!-- If true, and this is an {@link android.R.attr#isolatedProcess} service, the service
              will be spawned from an Application Zygote, instead of the regular Zygote.
              <p>
@@ -3218,15 +3218,15 @@
                 the Application Zygote; the absolute limit is 100, but due to potential
                 delays in service process cleanup, a much safer limit to use in practice is 50.
              -->
-        <attr name="useAppZygote" format="boolean" />
+        <attr name="useAppZygote" format="boolean"/>
         <!-- If this is a foreground service, specify its category. -->
-        <attr name="foregroundServiceType" />
+        <attr name="foregroundServiceType"/>
         <!-- Set of attribution tags that should be automatically applied to this component.
              <p>
              Each instance of this Service will be automatically configured with
              Context.createAttributionContext() using the first attribution tag
              contained here. -->
-        <attr name="attributionTags" />
+        <attr name="attributionTags"/>
         <!-- If true, and this is an {@link android.R.attr#isolatedProcess} service, the service
              is allowed to be bound in a shared isolated process with other isolated services.
              Note that these other isolated services can also belong to other apps from different
@@ -3238,8 +3238,8 @@
              Note that when this flag is used, the {@link android.R.attr#process} attribute is
              ignored when the process is bound into a shared isolated process by a client.
         -->
-        <attr name="allowSharedIsolatedProcess" format="boolean" />
-        <attr name="systemUserOnly" format="boolean" />
+        <attr name="allowSharedIsolatedProcess" format="boolean"/>
+        <attr name="systemUserOnly" format="boolean"/>
         <attr name="intentMatchingFlags"/>
     </declare-styleable>
 
@@ -3251,12 +3251,12 @@
     <declare-styleable name="AndroidManifestApexSystemService"
                        parent="AndroidManifestApplication">
         <!-- The fully qualified class name of the system service. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- The filepath to the .jar that contains the system service. If this is not provided, it
              is assumed that the system service exists in SYSTEMSERVERCLASSPATH. -->
-        <attr name="path" />
-        <attr name="minSdkVersion" />
-        <attr name="maxSdkVersion" />
+        <attr name="path"/>
+        <attr name="minSdkVersion"/>
+        <attr name="maxSdkVersion"/>
         <!-- The order in which the apex system services are initiated. When there are dependencies
         among apex system services, setting this attribute for each of them ensures that they are
         created in the order required by those dependencies. The apex-system-services that are
@@ -3264,7 +3264,7 @@
         automatic starting of the other services.
         The value is a simple integer, with higher number being initialized first. If not specified,
         the default order is 0. -->
-        <attr name="initOrder" format="integer" />
+        <attr name="initOrder" format="integer"/>
     </declare-styleable>
 
     <!-- The <code>receiver</code> tag declares an
@@ -3285,29 +3285,29 @@
             qualified class name (for example, com.mycompany.myapp.MyReceiver); as a
             short-hand if the first character of the class
             is a period then it is appended to your package name. -->
-        <attr name="name" />
-        <attr name="label" />
-        <attr name="description" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="permission" />
-        <attr name="process" />
+        <attr name="name"/>
+        <attr name="label"/>
+        <attr name="description"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="permission"/>
+        <attr name="process"/>
         <!-- Specify whether the receiver is enabled or not (that is, can be instantiated by the system).
              It can also be specified for an application as a whole, in which case a value of "false"
              will override any component specific values (a value of "true" will not override the
              component specific values). -->
-        <attr name="enabled" />
-        <attr name="exported" />
-        <attr name="singleUser" />
-        <attr name="directBootAware" />
+        <attr name="enabled"/>
+        <attr name="exported"/>
+        <attr name="singleUser"/>
+        <attr name="directBootAware"/>
         <!-- Set of attribution tags that should be automatically applied to this component.
              <p>
              Each instance of this BroadcastReceiver will be automatically configured with
              Context.createAttributionContext() using the first attribution tag
              contained here. -->
-        <attr name="attributionTags" />
+        <attr name="attributionTags"/>
         <attr name="intentMatchingFlags"/>
     </declare-styleable>
 
@@ -3328,90 +3328,90 @@
             qualified class name (for example, com.mycompany.myapp.MyActivity); as a
             short-hand if the first character of the class
             is a period then it is appended to your package name. -->
-        <attr name="name" />
-        <attr name="theme" />
-        <attr name="label" />
-        <attr name="description" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="launchMode" />
-        <attr name="screenOrientation" />
-        <attr name="configChanges" />
-        <attr name="recreateOnConfigChanges" />
-        <attr name="permission" />
-        <attr name="multiprocess" />
-        <attr name="process" />
-        <attr name="taskAffinity" />
-        <attr name="allowTaskReparenting" />
-        <attr name="finishOnTaskLaunch" />
-        <attr name="finishOnCloseSystemDialogs" />
-        <attr name="clearTaskOnLaunch" />
-        <attr name="noHistory" />
-        <attr name="alwaysRetainTaskState" />
-        <attr name="stateNotNeeded" />
-        <attr name="excludeFromRecents" />
+        <attr name="name"/>
+        <attr name="theme"/>
+        <attr name="label"/>
+        <attr name="description"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="launchMode"/>
+        <attr name="screenOrientation"/>
+        <attr name="configChanges"/>
+        <attr name="recreateOnConfigChanges"/>
+        <attr name="permission"/>
+        <attr name="multiprocess"/>
+        <attr name="process"/>
+        <attr name="taskAffinity"/>
+        <attr name="allowTaskReparenting"/>
+        <attr name="finishOnTaskLaunch"/>
+        <attr name="finishOnCloseSystemDialogs"/>
+        <attr name="clearTaskOnLaunch"/>
+        <attr name="noHistory"/>
+        <attr name="alwaysRetainTaskState"/>
+        <attr name="stateNotNeeded"/>
+        <attr name="excludeFromRecents"/>
         <!-- @deprecated use {@link android.R.attr#showForAllUsers} instead. -->
-        <attr name="showOnLockScreen" />
+        <attr name="showOnLockScreen"/>
         <!-- Specify whether the activity is enabled or not (that is, can be instantiated by the system).
              It can also be specified for an application as a whole, in which case a value of "false"
              will override any component specific values (a value of "true" will not override the
              component specific values). -->
-        <attr name="enabled" />
-        <attr name="exported" />
+        <attr name="enabled"/>
+        <attr name="exported"/>
         <!-- Specify the default soft-input mode for the main window of
              this activity.  A value besides "unspecified" here overrides
              any value in the theme. -->
-        <attr name="windowSoftInputMode" />
-        <attr name="immersive" />
-        <attr name="hardwareAccelerated" />
-        <attr name="uiOptions" />
-        <attr name="parentActivityName" />
-        <attr name="singleUser" />
+        <attr name="windowSoftInputMode"/>
+        <attr name="immersive"/>
+        <attr name="hardwareAccelerated"/>
+        <attr name="uiOptions"/>
+        <attr name="parentActivityName"/>
+        <attr name="singleUser"/>
         <!-- This broadcast receiver or activity will only receive broadcasts for the
              system user-->
-        <attr name="systemUserOnly" format="boolean" />
-        <attr name="persistableMode" />
-        <attr name="allowEmbedded" />
-        <attr name="documentLaunchMode" />
-        <attr name="maxRecents" />
-        <attr name="autoRemoveFromRecents" />
-        <attr name="relinquishTaskIdentity" />
-        <attr name="resumeWhilePausing" />
-        <attr name="resizeableActivity" />
-        <attr name="supportsPictureInPicture" />
-        <attr name="maxAspectRatio" />
-        <attr name="minAspectRatio" />
-        <attr name="lockTaskMode" />
-        <attr name="showForAllUsers" />
+        <attr name="systemUserOnly" format="boolean"/>
+        <attr name="persistableMode"/>
+        <attr name="allowEmbedded"/>
+        <attr name="documentLaunchMode"/>
+        <attr name="maxRecents"/>
+        <attr name="autoRemoveFromRecents"/>
+        <attr name="relinquishTaskIdentity"/>
+        <attr name="resumeWhilePausing"/>
+        <attr name="resizeableActivity"/>
+        <attr name="supportsPictureInPicture"/>
+        <attr name="maxAspectRatio"/>
+        <attr name="minAspectRatio"/>
+        <attr name="lockTaskMode"/>
+        <attr name="showForAllUsers"/>
 
-        <attr name="showWhenLocked" />
-        <attr name="inheritShowWhenLocked" />
-        <attr name="turnScreenOn" />
+        <attr name="showWhenLocked"/>
+        <attr name="inheritShowWhenLocked"/>
+        <attr name="turnScreenOn"/>
 
-        <attr name="directBootAware" />
+        <attr name="directBootAware"/>
         <!-- @hide This activity is always focusable regardless of if it is in a task/stack whose
              activities are normally not focusable.
              For example, {@link android.R.attr#supportsPictureInPicture} activities are placed
              in a task/stack that isn't focusable. This flag allows them to be focusable.-->
-        <attr name="alwaysFocusable" format="boolean" />
-        <attr name="enableVrMode" />
-        <attr name="rotationAnimation" />
-        <attr name="visibleToInstantApps" />
+        <attr name="alwaysFocusable" format="boolean"/>
+        <attr name="enableVrMode"/>
+        <attr name="rotationAnimation"/>
+        <attr name="visibleToInstantApps"/>
         <!-- The code for this component is located in the given split. -->
-        <attr name="splitName" />
+        <attr name="splitName"/>
         <!-- Specify the color mode the activity desires. The requested color mode may be ignored
              depending on the capabilities of the display the activity is displayed on. -->
         <attr name="colorMode">
             <!-- The default color mode (typically sRGB, low-dynamic range). -->
-            <enum name="default" value="0" />
+            <enum name="default" value="0"/>
             <!-- Wide color gamut color mode. -->
-            <enum name="wideColorGamut" value="1" />
+            <enum name="wideColorGamut" value="1"/>
             <!-- High dynamic range color mode. -->
-            <enum name="hdr" value="2" />
+            <enum name="hdr" value="2"/>
         </attr>
-        <attr name="forceQueryable" format="boolean" />
+        <attr name="forceQueryable" format="boolean"/>
         <!-- Indicates whether the activity wants the connected display to do minimal
              post processing on the produced image or video frames. This will only be
              requested if this activity's main window is visible on the screen.
@@ -3441,7 +3441,7 @@
              Each instance of this Activity will be automatically configured with
              Context.createAttributionContext() using the first attribution tag
              contained here. -->
-        <attr name="attributionTags" />
+        <attr name="attributionTags"/>
         <!-- Specifies whether a home sound effect should be played if the home app moves to
              front after an activity with this flag set to <code>true</code>.
              <p>The default value of this attribute is <code>true</code>.
@@ -3452,8 +3452,8 @@
         <!-- Indicates whether the activity can be displayed on a display that may belong to a
              remote device which may or may not be running Android. -->
         <attr name="canDisplayOnRemoteDevices" format="boolean"/>
-        <attr name="allowUntrustedActivityEmbedding" />
-        <attr name="knownActivityEmbeddingCerts" />
+        <attr name="allowUntrustedActivityEmbedding"/>
+        <attr name="knownActivityEmbeddingCerts"/>
         <!-- Specifies the required display category of the activity. Upon creation, a display can
              specify which display categories it supports and one of the categories must be present
              in the {@code <activity>} element to allow this activity to run. The default value is
@@ -3491,17 +3491,17 @@
              @FlaggedApi("android.security.content_uri_permission_apis") -->
         <attr name="requireContentUriPermissionFromCaller" format="string">
             <!-- Default, no specific permissions are required. -->
-            <enum name="none" value="0" />
+            <enum name="none" value="0"/>
             <!-- Enforces the invoker to have read access to the passed content URIs. -->
-            <enum name="read" value="1" />
+            <enum name="read" value="1"/>
             <!-- Enforces the invoker to have write access to the passed content URIs. -->
-            <enum name="write" value="2" />
+            <enum name="write" value="2"/>
             <!-- Enforces the invoker to have either read or write access to the passed content
                  URIs. -->
-            <enum name="readOrWrite" value="3" />
+            <enum name="readOrWrite" value="3"/>
             <!-- Enforces the invoker to have both read and write access to the passed content
                  URIs. -->
-            <enum name="readAndWrite" value="4" />
+            <enum name="readAndWrite" value="4"/>
         </attr>
         <attr name="intentMatchingFlags"/>
     </declare-styleable>
@@ -3522,30 +3522,30 @@
             qualified class name (for example, com.mycompany.myapp.MyActivity); as a
             short-hand if the first character of the class
             is a period then it is appended to your package name. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- The name of the activity this alias should launch.  The activity
              must be in the same manifest as the alias, and have been defined
              in that manifest before the alias here.  This must use a Java-style
              naming convention to ensure the name is unique, for example
              "com.mycompany.MyName". -->
-        <attr name="targetActivity" format="string" />
-        <attr name="label" />
-        <attr name="description" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="permission" />
+        <attr name="targetActivity" format="string"/>
+        <attr name="label"/>
+        <attr name="description"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="permission"/>
         <!-- Specify whether the activity-alias is enabled or not (that is, can be instantiated by the system).
              It can also be specified for an application as a whole, in which case a value of "false"
              will override any component specific values (a value of "true" will not override the
              component specific values). -->
-        <attr name="enabled" />
-        <attr name="exported" />
-        <attr name="parentActivityName" />
-        <attr name="attributionTags" />
-        <attr name="allowUntrustedActivityEmbedding" />
-        <attr name="knownActivityEmbeddingCerts" />
+        <attr name="enabled"/>
+        <attr name="exported"/>
+        <attr name="parentActivityName"/>
+        <attr name="attributionTags"/>
+        <attr name="allowUntrustedActivityEmbedding"/>
+        <attr name="knownActivityEmbeddingCerts"/>
         <attr name="intentMatchingFlags"/>
     </declare-styleable>
 
@@ -3564,7 +3564,7 @@
          attribute to assign an XML resource that the client can parse to
          retrieve the complete data. -->
     <declare-styleable name="AndroidManifestMetaData"
-         parent="AndroidManifestApplication
+                       parent="AndroidManifestApplication
                  AndroidManifestActivity
                  AndroidManifestReceiver
                  AndroidManifestProvider
@@ -3572,7 +3572,7 @@
                  AndroidManifestPermission
                  AndroidManifestPermissionGroup
                  AndroidManifestInstrumentation">
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Concrete value to assign to this piece of named meta-data.
              The data can later be retrieved from the meta data Bundle
              through {@link android.os.Bundle#getString Bundle.getString},
@@ -3580,11 +3580,11 @@
              {@link android.os.Bundle#getBoolean Bundle.getBoolean},
              or {@link android.os.Bundle#getFloat Bundle.getFloat} depending
              on the type used here. -->
-        <attr name="value" format="string|integer|color|float|boolean" />
+        <attr name="value" format="string|integer|color|float|boolean"/>
         <!-- Resource identifier to assign to this piece of named meta-data.
              The resource identifier can later be retrieved from the meta data
              Bundle through {@link android.os.Bundle#getInt Bundle.getInt}. -->
-        <attr name="resource" format="reference" />
+        <attr name="resource" format="reference"/>
     </declare-styleable>
 
     <!-- The <code>property</code> tag is used to attach additional data that can
@@ -3598,12 +3598,12 @@
          specified through the resource attribute.
          <p>It is invalid to specify both a value and resource attributes. -->
     <declare-styleable name="AndroidManifestProperty"
-         parent="AndroidManifestApplication
+                       parent="AndroidManifestApplication
                  AndroidManifestActivity
                  AndroidManifestReceiver
                  AndroidManifestProvider
                  AndroidManifestService">
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Concrete value to assign to this property.
              The data can later be retrieved from the property object
              through
@@ -3612,11 +3612,11 @@
              {@link android.content.pm.PackageManager.Property#getBoolean Property.getBoolean},
              or {@link android.content.pm.PackageManager.Property#getFloat Property.getFloat}
              depending on the type used here. -->
-        <attr name="value" />
+        <attr name="value"/>
         <!-- The resource identifier to assign to this property.
              The resource identifier can later be retrieved from the property object through
              {@link android.content.pm.PackageManager.Property#getResourceId Property.getResourceId}. -->
-        <attr name="resource" />
+        <attr name="resource"/>
     </declare-styleable>
 
     <!-- The <code>intent-filter</code> tag is used to construct an
@@ -3638,14 +3638,14 @@
          an activity to supply an alternative description of that activity
          when it is being started through an Intent matching this filter. -->
     <declare-styleable name="AndroidManifestIntentFilter"
-         parent="AndroidManifestActivity AndroidManifestReceiver AndroidManifestService">
-        <attr name="label" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="priority" />
-        <attr name="autoVerify" />
+                       parent="AndroidManifestActivity AndroidManifestReceiver AndroidManifestService">
+        <attr name="label"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="priority"/>
+        <attr name="autoVerify"/>
         <!-- Within an application, multiple intent filters may match a particular
              intent. This allows the app author to specify the order filters should
              be considered. We don't want to use priority because that is global
@@ -3655,7 +3655,7 @@
              directed intent instead.
              <p>The value is a single integer, with higher numbers considered to
              be better. If not specified, the default order is 0. -->
-        <attr name="order" />
+        <attr name="order"/>
     </declare-styleable>
 
     <!-- Attributes that can be supplied in an AndroidManifest.xml
@@ -3670,7 +3670,7 @@
              you would put <code>android.intent.action.VIEW</code> here.
              Custom actions should generally use a prefix matching the
              package name. -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- Attributes that can be supplied in an AndroidManifest.xml
@@ -3681,7 +3681,7 @@
          tag can be specified multiple times to create multiple groups that
          will be matched in the order they are defined. -->
     <declare-styleable name="AndroidManifestUriRelativeFilterGroup"
-        parent="AndroidManifestIntentFilter">
+                       parent="AndroidManifestIntentFilter">
         <!-- Specify if this group is allow rule or disallow rule.  If this
              attribute is not specified then it is assumed to be true -->
         <attr name="allow" format="boolean"/>
@@ -3698,34 +3698,34 @@
          is equivalent to <code>&lt;data android:scheme="myscheme" /&gt;
          &lt;data android:host="me.com" /&gt;</code>. -->
     <declare-styleable name="AndroidManifestData"
-        parent="AndroidManifestIntentFilter AndroidManifestUriRelativeFilterGroup">
+                       parent="AndroidManifestIntentFilter AndroidManifestUriRelativeFilterGroup">
         <!-- Specify a MIME type that is handled, as per
              {@link android.content.IntentFilter#addDataType
              IntentFilter.addDataType()}.
              <p><em>Note: MIME type matching in the Android framework is
              case-sensitive, unlike formal RFC MIME types.  As a result,
              MIME types here should always use lower case letters.</em></p> -->
-        <attr name="mimeType" format="string" />
+        <attr name="mimeType" format="string"/>
         <!-- Specify a group of MIME types that are handled. MIME types can be added and
              removed to a package's MIME group via the PackageManager. -->
-        <attr name="mimeGroup" format="string" />
+        <attr name="mimeGroup" format="string"/>
         <!-- Specify a URI scheme that is handled, as per
              {@link android.content.IntentFilter#addDataScheme
              IntentFilter.addDataScheme()}.
              <p><em>Note: scheme matching in the Android framework is
              case-sensitive, unlike the formal RFC.  As a result,
              schemes here should always use lower case letters.</em></p> -->
-        <attr name="scheme" format="string" />
+        <attr name="scheme" format="string"/>
         <!-- Specify a URI scheme specific part that must exactly match, as per
              {@link android.content.IntentFilter#addDataSchemeSpecificPart
              IntentFilter.addDataSchemeSpecificPart()} with
              {@link android.os.PatternMatcher#PATTERN_LITERAL}. -->
-        <attr name="ssp" format="string" />
+        <attr name="ssp" format="string"/>
         <!-- Specify a URI scheme specific part that must be a prefix to match, as per
              {@link android.content.IntentFilter#addDataSchemeSpecificPart
              IntentFilter.addDataSchemeSpecificPart()} with
              {@link android.os.PatternMatcher#PATTERN_PREFIX}. -->
-        <attr name="sspPrefix" format="string" />
+        <attr name="sspPrefix" format="string"/>
         <!-- Specify a URI scheme specific part that matches a simple pattern, as per
              {@link android.content.IntentFilter#addDataSchemeSpecificPart
              IntentFilter.addDataSchemeSpecificPart()} with
@@ -3736,7 +3736,7 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="sspPattern" format="string" />
+        <attr name="sspPattern" format="string"/>
         <!-- Specify a URI scheme specific part that matches an advanced pattern, as per
              {@link android.content.IntentFilter#addDataSchemeSpecificPart
              IntentFilter.addDataSchemeSpecificPart()} with
@@ -3747,34 +3747,34 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="sspAdvancedPattern" format="string" />
+        <attr name="sspAdvancedPattern" format="string"/>
         <!-- Specify a URI scheme specific part that must be a suffix to match, as per
              {@link android.content.IntentFilter#addDataSchemeSpecificPart
              IntentFilter.addDataSchemeSpecificPart()} with
              {@link android.os.PatternMatcher#PATTERN_SUFFIX}. -->
-        <attr name="sspSuffix" format="string" />
+        <attr name="sspSuffix" format="string"/>
         <!-- Specify a URI authority host that is handled, as per
              {@link android.content.IntentFilter#addDataAuthority
              IntentFilter.addDataAuthority()}.
              <p><em>Note: host name matching in the Android framework is
              case-sensitive, unlike the formal RFC.  As a result,
              host names here should always use lower case letters.</em></p> -->
-        <attr name="host" format="string" />
+        <attr name="host" format="string"/>
         <!-- Specify a URI authority port that is handled, as per
              {@link android.content.IntentFilter#addDataAuthority
              IntentFilter.addDataAuthority()}.  If a host is supplied
              but not a port, any port is matched. -->
-        <attr name="port" format="string" />
+        <attr name="port" format="string"/>
         <!-- Specify a URI path that must exactly match, as per
              {@link android.content.IntentFilter#addDataPath
              IntentFilter.addDataPath()} with
              {@link android.os.PatternMatcher#PATTERN_LITERAL}. -->
-        <attr name="path" />
+        <attr name="path"/>
         <!-- Specify a URI path that must be a prefix to match, as per
              {@link android.content.IntentFilter#addDataPath
              IntentFilter.addDataPath()} with
              {@link android.os.PatternMatcher#PATTERN_PREFIX}. -->
-        <attr name="pathPrefix" />
+        <attr name="pathPrefix"/>
         <!-- Specify a URI path that matches a simple pattern, as per
              {@link android.content.IntentFilter#addDataPath
              IntentFilter.addDataPath()} with
@@ -3785,7 +3785,7 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="pathPattern" />
+        <attr name="pathPattern"/>
         <!-- Specify a URI path that matches an advanced pattern, as per
              {@link android.content.IntentFilter#addDataPath
              IntentFilter.addDataPath()} with
@@ -3796,20 +3796,20 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="pathAdvancedPattern" />
+        <attr name="pathAdvancedPattern"/>
         <!-- Specify a URI path that must be a suffix to match, as per
              {@link android.content.IntentFilter#addDataPath
              IntentFilter.addDataPath()} with
              {@link android.os.PatternMatcher#PATTERN_SUFFIX}. -->
-        <attr name="pathSuffix" />
+        <attr name="pathSuffix"/>
         <!-- Specify a URI query that must exactly match, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_LITERAL}. -->
-        <attr name="query" format="string" />
+        <attr name="query" format="string"/>
         <!-- Specify a URI query that must be a prefix to match, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_PREFIX}. -->
-        <attr name="queryPrefix" format="string" />
+        <attr name="queryPrefix" format="string"/>
         <!-- Specify a URI query that matches a simple pattern, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_SIMPLE_GLOB}.
@@ -3819,7 +3819,7 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="queryPattern" format="string" />
+        <attr name="queryPattern" format="string"/>
         <!-- Specify a URI query that matches an advanced pattern, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_ADVANCED_GLOB}.
@@ -3829,19 +3829,19 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="queryAdvancedPattern" format="string" />
+        <attr name="queryAdvancedPattern" format="string"/>
         <!-- Specify a URI query that must be a suffix to match, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_SUFFIX}. -->
-        <attr name="querySuffix" format="string" />
+        <attr name="querySuffix" format="string"/>
         <!-- Specify a URI fragment that must exactly match, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_LITERAL}. -->
-        <attr name="fragment" format="string" />
+        <attr name="fragment" format="string"/>
         <!-- Specify a URI fragment that must be a prefix to match, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_PREFIX}. -->
-        <attr name="fragmentPrefix" format="string" />
+        <attr name="fragmentPrefix" format="string"/>
         <!-- Specify a URI fragment that matches a simple pattern, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_SIMPLE_GLOB}.
@@ -3851,7 +3851,7 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="fragmentPattern" format="string" />
+        <attr name="fragmentPattern" format="string"/>
         <!-- Specify a URI fragment that matches an advanced pattern, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_ADVANCED_GLOB}.
@@ -3861,11 +3861,11 @@
              be written as "\\*" and a literal "\" would be written as
              "\\\\".  This is basically the same as what you would need to
              write if constructing the string in Java code. -->
-        <attr name="fragmentAdvancedPattern" format="string" />
+        <attr name="fragmentAdvancedPattern" format="string"/>
         <!-- Specify a URI fragment that must be a suffix to match, as a
              {@link android.content.UriRelativeFilter UriRelativeFilter} with
              {@link android.os.PatternMatcher#PATTERN_SUFFIX}. -->
-        <attr name="fragmentSuffix" format="string" />
+        <attr name="fragmentSuffix" format="string"/>
     </declare-styleable>
 
     <!-- Attributes that can be supplied in an AndroidManifest.xml
@@ -3880,7 +3880,7 @@
              you would put <code>android.intent.category.LAUNCHER</code> here.
              Custom actions should generally use a prefix matching the
              package name. -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- Attributes that can be supplied in an AndroidManifest.xml
@@ -3892,16 +3892,16 @@
             qualified class name (for example, com.mycompany.myapp.MyActivity); as a
             short-hand if the first character of the class
             is a period then it is appended to your package name. -->
-        <attr name="name" />
-        <attr name="targetPackage" />
-        <attr name="targetProcesses" />
-        <attr name="label" />
-        <attr name="icon" />
-        <attr name="roundIcon" />
-        <attr name="banner" />
-        <attr name="logo" />
-        <attr name="handleProfiling" />
-        <attr name="functionalTest" />
+        <attr name="name"/>
+        <attr name="targetPackage"/>
+        <attr name="targetProcesses"/>
+        <attr name="label"/>
+        <attr name="icon"/>
+        <attr name="roundIcon"/>
+        <attr name="banner"/>
+        <attr name="logo"/>
+        <attr name="handleProfiling"/>
+        <attr name="functionalTest"/>
     </declare-styleable>
 
     <!-- Attributes that can be supplied in an AndroidManifest.xml
@@ -3914,29 +3914,29 @@
              configuration screen size bins. -->
         <attr name="screenSize">
             <!-- A small screen configuration, at least 240x320dp. -->
-            <enum name="small" value="200" />
+            <enum name="small" value="200"/>
             <!-- A normal screen configuration, at least 320x480dp. -->
-            <enum name="normal" value="300" />
+            <enum name="normal" value="300"/>
             <!-- A large screen configuration, at least 400x530dp. -->
-            <enum name="large" value="400" />
+            <enum name="large" value="400"/>
             <!-- An extra large screen configuration, at least 600x800dp. -->
-            <enum name="xlarge" value="500" />
+            <enum name="xlarge" value="500"/>
         </attr>
         <!-- Specifies a compatible screen density, as per the device
              configuration screen density bins. -->
         <attr name="screenDensity" format="integer">
             <!-- A low density screen, approximately 120dpi. -->
-            <enum name="ldpi" value="120" />
+            <enum name="ldpi" value="120"/>
             <!-- A medium density screen, approximately 160dpi. -->
-            <enum name="mdpi" value="160" />
+            <enum name="mdpi" value="160"/>
             <!-- A high density screen, approximately 240dpi. -->
-            <enum name="hdpi" value="240" />
+            <enum name="hdpi" value="240"/>
             <!-- An extra high density screen, approximately 320dpi. -->
-            <enum name="xhdpi" value="320" />
+            <enum name="xhdpi" value="320"/>
             <!-- An extra extra high density screen, approximately 480dpi. -->
-            <enum name="xxhdpi" value="480" />
+            <enum name="xxhdpi" value="480"/>
             <!-- An extra extra extra high density screen, approximately 640dpi. -->
-            <enum name="xxxhdpi" value="640" />
+            <enum name="xxxhdpi" value="640"/>
         </attr>
     </declare-styleable>
 
@@ -3950,51 +3950,51 @@
     <declare-styleable name="AndroidManifestSupportsInputInputType"
                        parent="AndroidManifest.AndroidManifestSupportsInput">
         <!-- Specifices the name of the input device type -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- The attribute that holds a Base64-encoded public key. -->
-    <attr name="publicKey" format="string" />
+    <attr name="publicKey" format="string"/>
 
     <!-- Attributes relating to a package verifier. -->
     <declare-styleable name="AndroidManifestPackageVerifier" parent="AndroidManifest">
         <!-- Specifies the Java-style package name that defines this
              package verifier. -->
-        <attr name="name" />
+        <attr name="name"/>
 
         <!-- The Base64 encoded public key of the package verifier's
              signature. -->
-        <attr name="publicKey" />
+        <attr name="publicKey"/>
     </declare-styleable>
 
     <!-- Attributes relating to resource overlay packages. -->
     <declare-styleable name="AndroidManifestResourceOverlay" parent="AndroidManifest">
         <!-- Package name of base package whose resources will be overlaid. -->
-        <attr name="targetPackage" />
+        <attr name="targetPackage"/>
 
         <!-- Category of the resource overlay. -->
         <attr name="category" format="string"/>
 
         <!-- Load order of overlay package. -->
-        <attr name="priority" />
+        <attr name="priority"/>
 
         <!-- Whether the given RRO is static or not. -->
-        <attr name="isStatic" format="boolean" />
+        <attr name="isStatic" format="boolean"/>
 
         <!-- Required property name/value pair used to enable this overlay.
              e.g. name=ro.oem.sku value=MKT210.
              Overlay will be ignored unless system property exists and is
              set to specified value -->
         <!-- @hide This shouldn't be public. -->
-        <attr name="requiredSystemPropertyName" format="string" />
+        <attr name="requiredSystemPropertyName" format="string"/>
         <!-- @hide This shouldn't be public. -->
-        <attr name="requiredSystemPropertyValue" format="string" />
+        <attr name="requiredSystemPropertyValue" format="string"/>
 
         <!-- The name of the overlayable whose resources will be overlaid. -->
-        <attr name="targetName" />
+        <attr name="targetName"/>
 
         <!-- The xml file that defines the target id to overlay value mappings. -->
-        <attr name="resourcesMap" format="reference" />
+        <attr name="resourcesMap" format="reference"/>
     </declare-styleable>
 
     <!-- Declaration of an {@link android.content.Intent} object in XML.  May
@@ -4003,61 +4003,61 @@
     <declare-styleable name="Intent">
         <!-- The action name to assign to the Intent, as per
             {@link android.content.Intent#setAction Intent.setAction()}. -->
-        <attr name="action" format="string" />
+        <attr name="action" format="string"/>
         <!-- The data URI to assign to the Intent, as per
             {@link android.content.Intent#setData Intent.setData()}.
             <p><em>Note: scheme and host name matching in the Android framework is
             case-sensitive, unlike the formal RFC.  As a result,
             URIs here should always be normalized to use lower case letters
             for these elements (as well as other proper Uri normalization).</em></p> -->
-        <attr name="data" format="string" />
+        <attr name="data" format="string"/>
         <!-- The MIME type name to assign to the Intent, as per
             {@link android.content.Intent#setType Intent.setType()}.
             <p><em>Note: MIME type matching in the Android framework is
             case-sensitive, unlike formal RFC MIME types.  As a result,
             MIME types here should always use lower case letters.</em></p> -->
-        <attr name="mimeType" />
+        <attr name="mimeType"/>
         <!-- The identifier to assign to the intent, as per
             {@link android.content.Intent#setIdentifier Intent.setIdentifier()}. -->
-        <attr name="identifier" format="string" />
+        <attr name="identifier" format="string"/>
         <!-- The package part of the ComponentName to assign to the Intent, as per
             {@link android.content.Intent#setComponent Intent.setComponent()}. -->
-        <attr name="targetPackage" />
+        <attr name="targetPackage"/>
         <!-- The class part of the ComponentName to assign to the Intent, as per
             {@link android.content.Intent#setComponent Intent.setComponent()}. -->
-        <attr name="targetClass" format="string" />
+        <attr name="targetClass" format="string"/>
     </declare-styleable>
 
     <!-- A category to add to an Intent, as per
             {@link android.content.Intent#addCategory Intent.addCategory()}. -->
     <declare-styleable name="IntentCategory" parent="Intent">
         <!-- Required name of the category. -->
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- An extra data value to place into a an extra/name value pair held
             in a Bundle, as per {@link android.os.Bundle}. -->
     <declare-styleable name="Extra" parent="Intent">
         <!-- Required name of the extra data. -->
-        <attr name="name" />
+        <attr name="name"/>
         <!-- Concrete value to put for this named extra data. -->
-        <attr name="value" />
+        <attr name="value"/>
     </declare-styleable>
 
     <!-- Groups signing keys into a {@code KeySet} for easier reference in
             other APIs. However, currently no APIs use this. -->
-    <attr name="keySet" />
+    <attr name="keySet"/>
     <declare-styleable name="AndroidManifestPublicKey">
-        <attr name="name" />
-        <attr name="value" />
+        <attr name="name"/>
+        <attr name="value"/>
     </declare-styleable>
     <declare-styleable name="AndroidManifestKeySet">
-        <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- Associate declared KeySets with upgrading capability. -->
     <declare-styleable name="AndroidManifestUpgradeKeySet" parent="AndroidManifest">
-      <attr name="name" />
+        <attr name="name"/>
     </declare-styleable>
 
     <!-- <code>layout</code> tag allows configuring the layout for the activity within multi-window
@@ -4065,27 +4065,27 @@
     <declare-styleable name="AndroidManifestLayout" parent="AndroidManifestActivity">
         <!-- Default width of the activity. Can be either a fixed value or fraction, in which case
              the width will be constructed as a fraction of the total available width. -->
-        <attr name="defaultWidth" format="dimension|fraction" />
+        <attr name="defaultWidth" format="dimension|fraction"/>
         <!-- Default height of the activity. Can be either a fixed value or fraction, in which case
              the height will be constructed as a fraction of the total available height. -->
-        <attr name="defaultHeight" format="dimension|fraction" />
+        <attr name="defaultHeight" format="dimension|fraction"/>
         <!-- Where to initially position the activity inside the available space. Uses constants
              defined in {@link android.view.Gravity}. -->
-        <attr name="gravity" />
+        <attr name="gravity"/>
         <!-- Minimal width of the activity.
 
          <p><strong>NOTE:</strong> A task's root activity value is applied to all additional
          activities launched in the task. That is if the root activity of a task set minimal width,
          then the system will set the same minimal width on all other activities in the task. It
          will also ignore any other minimal width attributes of non-root activities. -->
-        <attr name="minWidth" />
+        <attr name="minWidth"/>
         <!-- Minimal height of the activity.
 
          <p><strong>NOTE:</strong> A task's root activity value is applied to all additional
          activities launched in the task. That is if the root activity of a task set minimal height,
          then the system will set the same minimal height on all other activities in the task. It
          will also ignore any other minimal height attributes of non-root activities. -->
-        <attr name="minHeight" />
+        <attr name="minHeight"/>
 
         <!-- Window layout affinity of this activity. Activities with the same window layout
           affinity will share the same layout record. That is, if a user is opening an activity in
@@ -4107,7 +4107,7 @@
           the window mode and position is OEM defined.
 
           <p>By default activity doesn't share any affinity with other activities. -->
-        <attr name="windowLayoutAffinity" format="string" />
+        <attr name="windowLayoutAffinity" format="string"/>
     </declare-styleable>
 
     <!-- <code>restrict-update</code> tag restricts system apps from being updated unless the
@@ -4117,22 +4117,22 @@
         <!-- The SHA-512 hash of the only APK that can be used to update a package.
              <p>NOTE: This is only applicable to system packages.
              @hide -->
-        <attr name="hash" format="string" />
+        <attr name="hash" format="string"/>
     </declare-styleable>
 
     <declare-styleable name="AndroidManifestUsesSplit" parent="AndroidManifest">
-        <attr name="name" format="string" />
+        <attr name="name" format="string"/>
     </declare-styleable>
 
 
     <declare-styleable name="AndroidManifestProfileable" parent="AndroidManifestApplication">
         <!-- Flag indicating whether the application can be profiled by the shell user,
              even when running on a device that is running in user mode. -->
-        <attr name="shell" format="boolean" />
+        <attr name="shell" format="boolean"/>
         <!-- Flag indicating whether the application can be profiled by system services, but not
              necessarily via shell tools (for which also android:shell="true" must be set). If
              false, the application cannot be profiled at all. Defaults to true. -->
-        <attr name="enabled" format="boolean" />
+        <attr name="enabled" format="boolean"/>
     </declare-styleable>
 
     <!-- <code>install-constraints</code> tag rejects installs unless one the constraints defined by
@@ -4140,13 +4140,13 @@
          It is possible to have multiple <code>install-constraints</code> tags in a single manifest,
          where each tag is evaluated independently.
          @hide -->
-    <declare-styleable name="AndroidManifestInstallConstraints" parent="AndroidManifest" />
+    <declare-styleable name="AndroidManifestInstallConstraints" parent="AndroidManifest"/>
 
     <!-- A constraint for <code>install-constraints</code>. Checks that the device fingerprint
          starts with the given prefix.
          @hide -->
     <declare-styleable name="AndroidManifestInstallConstraintsFingerprintPrefix"
                        parent="AndroidManifestInstallConstraints">
-        <attr name="value" />
+        <attr name="value"/>
     </declare-styleable>
 </resources>
