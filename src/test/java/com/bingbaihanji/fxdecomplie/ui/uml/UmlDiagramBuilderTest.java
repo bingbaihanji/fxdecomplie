@@ -164,4 +164,30 @@ class UmlDiagramBuilderTest {
         assertEquals(21, diagram.classes().size());
         assertFalse(diagram.classes().stream().anyMatch(c -> c.internalName().equals("com/example/A21")));
     }
+
+    @Test
+    void build_doesNotTreatTypeVariablesAsClassReferences() {
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("com.example.T", "package com.example;\npublic class T {}\n");
+        sources.put("com.example.E", "package com.example;\npublic class E {}\n");
+        sources.put("com.example.Box",
+                "package com.example;\n"
+                        + "public class Box<T, E> {\n"
+                        + "    private T value;\n"
+                        + "    public E convert(T input) { return null; }\n"
+                        + "}\n");
+        Map<String, byte[]> bytes = TestCompile.compile(sources);
+        WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(bytes));
+
+        UmlDiagram diagram = UmlDiagramBuilder.build(
+                "com/example/Box", bytes.get("com/example/Box.class"), index);
+
+        assertNotNull(diagram);
+        var names = diagram.classes().stream().map(UmlClass::internalName).toList();
+        assertTrue(names.contains("com/example/Box"));
+        assertFalse(names.contains("com/example/T"));
+        assertFalse(names.contains("com/example/E"));
+        assertTrue(diagram.relations().stream().noneMatch(r ->
+                r.type() == RelationType.ASSOCIATION || r.type() == RelationType.DEPENDENCY));
+    }
 }

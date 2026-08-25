@@ -116,7 +116,16 @@ public final class UmlDiagramBuilder {
                 }
             }
         }
-        return new UmlDiagram(target, List.copyOf(byName.values()), List.copyOf(relations));
+        /*
+         * 节点上限、字节码读取失败或索引发生变化时，队列中可能仍有尚未落
+         * 入 byName 的关系目标。渲染器无法为这类关系定位端点，不能把它们
+         * 作为悬空连线输出。
+         */
+        Set<String> nodeNames = byName.keySet();
+        List<UmlRelation> validRelations = relations.stream()
+                .filter(r -> nodeNames.contains(r.from()) && nodeNames.contains(r.to()))
+                .toList();
+        return new UmlDiagram(target, List.copyOf(byName.values()), validRelations);
     }
 
     private static void addMemberRelations(UmlClass uml, int d, String target, WorkspaceIndex index,
@@ -206,13 +215,22 @@ public final class UmlDiagramBuilder {
         }
         String value = token.toString();
         token.setLength(0);
-        if (UmlTypeNameUtil.isUMLClassType(value)) {
+        /*
+         * 单字符大写标识符是 Java 泛型类型变量的常见形式(T/E/K/V/X)，
+         * 不应因为工作区恰好存在同名 class 而创建幽灵关系。其它裸名称仍
+         * 保留，兼容默认包中的真实类。
+         */
+        if (!isTypeVariableName(value) && UmlTypeNameUtil.isUMLClassType(value)) {
             result.add(value);
         }
     }
 
+    private static boolean isTypeVariableName(String value) {
+        return value.length() == 1 && Character.isUpperCase(value.charAt(0));
+    }
+
     private static String resolveType(String type, WorkspaceIndex index) {
-        if (type == null || type.isBlank()) {
+        if (index == null || type == null || type.isBlank()) {
             return null;
         }
         String internal = normalize(UmlTypeNameUtil.getElementType(type));
