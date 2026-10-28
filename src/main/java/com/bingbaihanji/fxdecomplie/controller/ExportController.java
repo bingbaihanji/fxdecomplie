@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.controller;
 
+import com.bingbaihanji.fxdecomplie.decompiler.ClassBytecodeProvider;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.model.ExportResult;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
@@ -7,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.ExportService;
+import com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceClassBytecodeProvider;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
@@ -52,36 +54,38 @@ public final class ExportController {
         if (view == null) {
             return;
         }
-        owner.searchController().withWorkspaceIndex(view.workspace(), index -> {
-            // 将树遍历移至后台线程,避免阻塞 FX 线程
-            BackgroundTasks.run("Export-CollectNodes", () -> {
-                List<FileTreeNode> nodes = new ArrayList<>();
-                owner.collectTreeNodes(view.workspace().getTreeRoot(), nodes);
-                Platform.runLater(() -> doExport(nodes, index, view.workspace()));
-            });
+        Workspace workspace = view.workspace();
+        // 不再等待完整索引:依赖类在导出过程中按需解析
+        BackgroundTasks.run("Export-CollectNodes", () -> {
+            List<FileTreeNode> nodes = new ArrayList<>();
+            owner.collectTreeNodes(workspace.getTreeRoot(), nodes);
+            Platform.runLater(() -> doExport(nodes,
+                    new WorkspaceClassBytecodeProvider(workspace), workspace));
         });
     }
 
-    /** 为单个树节点构建临时索引并弹出导出对话框(右键菜单入口,在后台线程索引构建) */
+    /** 为单个树节点构建导出任务（右键菜单入口，不等待完整索引） */
     public void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
         if (rootItem == null || rootItem.getValue() == null) {
             return;
         }
-        owner.statusBar().setTask(I18nUtil.getString("task.indexing"));
-        owner.statusBar().setFilePath(I18nUtil.getString("status.indexing", rootItem.getValue().getName()));
         WorkspaceView exportView = owner.tabManager().currentWorkspaceView();
         Workspace exportWorkspace = exportView == null ? null : exportView.workspace();
-        // 将树遍历移至后台线程,避免阻塞 FX 线程
-        BackgroundTasks.run("Index-ExportNode", () -> {
+        owner.statusBar().setTask(I18nUtil.getString("task.exporting"));
+        BackgroundTasks.run("Export-CollectNodes", () -> {
             try {
                 List<FileTreeNode> nodesSnapshot = new ArrayList<>();
                 collectTreeNodes(rootItem, nodesSnapshot);
-                WorkspaceIndex index = exportWorkspace == null
-                        ? WorkspaceIndex.build(nodesSnapshot)
-                        : exportWorkspace.getOrBuildIndex();
+                ClassBytecodeProvider provider;
+                if (exportWorkspace == null) {
+                    WorkspaceIndex snapshotIndex = WorkspaceIndex.build(nodesSnapshot);
+                    provider = snapshotIndex::getClassBytes;
+                } else {
+                    provider = new WorkspaceClassBytecodeProvider(exportWorkspace);
+                }
                 Platform.runLater(() -> {
                     owner.statusBar().clearTask();
-                    doExport(nodesSnapshot, index, exportWorkspace);
+                    doExport(nodesSnapshot, provider, exportWorkspace);
                 });
             } catch (Exception ex) {
                 Platform.runLater(() -> {
@@ -94,7 +98,7 @@ public final class ExportController {
 
     /** 弹出导出配置对话框,提交后台导出任务并显示进度条,支持取消操作 */
     private void doExport(List<FileTreeNode> nodes,
-                          WorkspaceIndex index, Workspace workspace) {
+                          ClassBytecodeProvider provider, Workspace workspace) {
         var configOpt = ExportDialog.show(owner.stage(), owner.config(), owner.currentEngine());
         if (configOpt.isEmpty()) {
             return;
@@ -117,7 +121,7 @@ public final class ExportController {
         exportTaskRef.set(BackgroundTasks.run(BackgroundTasks.PoolType.EXPORT, "Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(
-                        nodes, exportConfig, index, owner.commentScope(workspace, exportConfig),
+                        nodes, exportConfig, provider, owner.commentScope(workspace, exportConfig),
                         (path, pct) -> Platform.runLater(() -> {
                             owner.statusBar().setFilePath(I18nUtil.getString(
                                     "status.exporting.detail", pct, path));
