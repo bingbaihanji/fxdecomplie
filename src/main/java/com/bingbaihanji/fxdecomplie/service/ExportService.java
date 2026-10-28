@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.decompiler.ClassBytecodeProvider;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CommentScope;
@@ -99,11 +100,11 @@ public final class ExportService {
     }
 
     /**
-     * 执行完整的导出流水线:过滤 反编译 写入目标(目录或 ZIP)
+     * 执行完整导出流水线(使用懒加载字节码提供器,不依赖完整索引)
      *
      * @param nodes         可导出的文件节点列表(须在 FX 线程提取)
      * @param config        导出配置(格式 引擎 路径 冲突策略等)
-     * @param index         工作区索引,用于字节码解析上下文
+     * @param provider      依赖类字节码提供器
      * @param commentScope  注释导出范围,null 表示不导出注释
      * @param onProgress    进度回调,接收当前路径和百分比
      * @param canceled      用户取消标志 supplier,非 null 时每轮迭代检查
@@ -111,13 +112,12 @@ public final class ExportService {
      * @throws IOException 输出目录或 ZIP 创建失败时抛出
      */
     public static ExportResult exportAll(List<FileTreeNode> nodes, ExportConfig config,
-                                         WorkspaceIndex index, CommentScope commentScope,
+                                         ClassBytecodeProvider provider, CommentScope commentScope,
                                          BiConsumer<String, Integer> onProgress,
-                                         BooleanSupplier canceled)
-            throws IOException {
+                                         BooleanSupplier canceled) throws IOException {
         Objects.requireNonNull(nodes, "nodes");
         Objects.requireNonNull(config, "config");
-        Objects.requireNonNull(index, "index");
+        Objects.requireNonNull(provider, "provider");
 
         // ---- 步骤 1: 过滤可导出的类/资源条目 ----
         List<FileTreeNode> items = new ArrayList<>();
@@ -144,8 +144,9 @@ public final class ExportService {
                             return;
                         }
                         try {
-                            DecompilerContext ctx = DecompilerContext.fromWorkspaceIndex(
-                                    index, config.engineOptions(),
+                            DecompilerContext ctx = DecompilerContext.of(provider,
+                                    config.engineOptions(),
+                                    null,
                                     commentScope == null ? "" : commentScope.workspaceHash());
                             try {
                                 ExportContent content = buildExportContent(
@@ -185,6 +186,27 @@ public final class ExportService {
         log.info("导出完成: {}/{} 成功, {} 错误 ({}ms)",
                 state.successCount, state.totalFiles, state.errors.size(), elapsed);
         return new ExportResult(state.totalFiles, state.successCount, state.errors);
+    }
+
+    /**
+     * 执行完整的导出流水线(兼容旧调用:通过工作区索引解析依赖)
+     *
+     * @param nodes         可导出的文件节点列表(须在 FX 线程提取)
+     * @param config        导出配置(格式 引擎 路径 冲突策略等)
+     * @param index         工作区索引,用于字节码解析上下文
+     * @param commentScope  注释导出范围,null 表示不导出注释
+     * @param onProgress    进度回调,接收当前路径和百分比
+     * @param canceled      用户取消标志 supplier,非 null 时每轮迭代检查
+     * @return 导出结果摘要(总数 成功数 错误列表)
+     * @throws IOException 输出目录或 ZIP 创建失败时抛出
+     */
+    public static ExportResult exportAll(List<FileTreeNode> nodes, ExportConfig config,
+                                         WorkspaceIndex index, CommentScope commentScope,
+                                         BiConsumer<String, Integer> onProgress,
+                                         BooleanSupplier canceled)
+            throws IOException {
+        Objects.requireNonNull(index, "index");
+        return exportAll(nodes, config, index::getClassBytes, commentScope, onProgress, canceled);
     }
 
     /**

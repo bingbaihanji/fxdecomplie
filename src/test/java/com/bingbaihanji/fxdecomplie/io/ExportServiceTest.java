@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.io;
 
+import com.bingbaihanji.fxdecomplie.decompiler.ClassBytecodeProvider;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.model.ExportResult;
@@ -10,9 +11,12 @@ import com.bingbaihanji.fxdecomplie.service.ExportService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -161,5 +165,59 @@ class ExportServiceTest {
         assertEquals(0, result.successCount());
         assertFalse(result.hasErrors());
         assertEquals("original", Files.readString(outputDir.resolve("config/app.properties")));
+    }
+
+    @Test
+    void providerExportMatchesIndexExport() throws Exception {
+        byte[] classBytes = compileClass("com.example", "Exported");
+        FileTreeNode classNode = new FileTreeNode("Exported.class",
+                "com/example/Exported.class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        classNode.setCachedBytes(classBytes);
+        FileTreeModel root = root(new FileTreeModel(classNode));
+
+        Path indexOut = tempDir.resolve("index-out");
+        Path providerOut = tempDir.resolve("provider-out");
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+        ClassBytecodeProvider provider = index::getClassBytes;
+
+        ExportResult indexResult = ExportService.exportAll(root, config(indexOut,
+                ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.OVERWRITE, false),
+                index, null);
+        ExportResult providerResult = ExportService.exportAll(List.of(classNode),
+                config(providerOut, ExportConfig.Format.DIR,
+                        ExportConfig.ConflictPolicy.OVERWRITE, false),
+                provider, null, null, null);
+
+        assertEquals(1, indexResult.successCount());
+        assertEquals(1, providerResult.successCount());
+        try (var files = Files.walk(indexOut)) {
+            List<Path> javaFiles = files.filter(p -> p.toString().endsWith(".java")).toList();
+            assertEquals(1, javaFiles.size());
+            Path expectedFile = javaFiles.getFirst();
+            Path actualFile = providerOut.resolve(indexOut.relativize(expectedFile));
+            assertEquals(Files.readString(expectedFile), Files.readString(actualFile));
+        }
+    }
+
+    private byte[] compileClass(String packageName, String className) throws Exception {
+        Path sourceDir = Files.createDirectories(tempDir.resolve("src"));
+        Path outputDir = Files.createDirectories(tempDir.resolve("classes"));
+        Path sourceFile = sourceDir.resolve(className + ".java");
+        Files.writeString(sourceFile, """
+                package %s;
+                public class %s {
+                    private int value;
+                    public int getValue() { return value; }
+                }
+                """.formatted(packageName, className), StandardCharsets.UTF_8);
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertNotNull(compiler, "tests require a JDK compiler");
+        int exit = compiler.run(null, null, null,
+                "--release", "17",
+                "-d", outputDir.toString(),
+                sourceFile.toString());
+        assertEquals(0, exit, "test class should compile");
+        return Files.readAllBytes(outputDir.resolve(packageName.replace('.', '/'))
+                .resolve(className + ".class"));
     }
 }
