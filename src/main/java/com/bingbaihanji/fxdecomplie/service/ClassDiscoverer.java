@@ -325,9 +325,9 @@ public final class ClassDiscoverer {
         }
 
         private byte[] read(String entryName) throws IOException {
-            synchronized (jar) {
-                return readEntry(jar, entryName);
-            }
+            // java.util.zip.ZipFile/JarFile 本身支持多线程并发读取；
+            // 不再对整个归档加锁，避免同一 JAR 内的类索引被串行化。
+            return readEntry(jar, entryName);
         }
 
         private byte[] readNested(List<String> chain) throws IOException {
