@@ -170,26 +170,42 @@ class ExportServiceTest {
     @Test
     void providerExportMatchesIndexExport() throws Exception {
         byte[] classBytes = compileClass("com.example", "Exported");
-        FileTreeNode classNode = new FileTreeNode("Exported.class",
+
+        // 索引路径：节点自带字节
+        FileTreeNode indexNode = new FileTreeNode("Exported.class",
                 "com/example/Exported.class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
-        classNode.setCachedBytes(classBytes);
-        FileTreeModel root = root(new FileTreeModel(classNode));
+        indexNode.setCachedBytes(classBytes);
+        FileTreeModel indexRoot = root(new FileTreeModel(indexNode));
+        WorkspaceIndex index = WorkspaceIndex.build(indexRoot);
+
+        // provider 路径：节点没有任何字节来源，必须由 provider 提供
+        FileTreeNode providerNode = new FileTreeNode("Exported.class",
+                "com/example/Exported.class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        java.util.concurrent.atomic.AtomicInteger lookups =
+                new java.util.concurrent.atomic.AtomicInteger();
+        java.util.Map<String, byte[]> classBytesByName =
+                java.util.Map.of("com/example/Exported", classBytes);
+        ClassBytecodeProvider provider = name -> {
+            byte[] bytes = classBytesByName.get(name);
+            if (bytes != null) {
+                lookups.incrementAndGet();
+            }
+            return bytes;
+        };
 
         Path indexOut = tempDir.resolve("index-out");
         Path providerOut = tempDir.resolve("provider-out");
-        WorkspaceIndex index = WorkspaceIndex.build(root);
-        ClassBytecodeProvider provider = index::getClassBytes;
-
-        ExportResult indexResult = ExportService.exportAll(root, config(indexOut,
+        ExportResult indexResult = ExportService.exportAll(indexRoot, config(indexOut,
                 ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.OVERWRITE, false),
                 index, null);
-        ExportResult providerResult = ExportService.exportAll(List.of(classNode),
+        ExportResult providerResult = ExportService.exportAll(List.of(providerNode),
                 config(providerOut, ExportConfig.Format.DIR,
                         ExportConfig.ConflictPolicy.OVERWRITE, false),
                 provider, null, null, null);
 
         assertEquals(1, indexResult.successCount());
         assertEquals(1, providerResult.successCount());
+        assertTrue(lookups.get() > 0, "provider 应被调用以提供类字节");
         try (var files = Files.walk(indexOut)) {
             List<Path> javaFiles = files.filter(p -> p.toString().endsWith(".java")).toList();
             assertEquals(1, javaFiles.size());

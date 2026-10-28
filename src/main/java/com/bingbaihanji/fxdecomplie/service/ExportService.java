@@ -102,6 +102,9 @@ public final class ExportService {
     /**
      * 执行完整导出流水线(使用懒加载字节码提供器,不依赖完整索引)
      *
+     * <p>provider 会被最多 4 个并行反编译工作线程共享,实现必须线程安全;
+     * ExportService 不负责关闭 provider,其生命周期由调用方管理.</p>
+     *
      * @param nodes         可导出的文件节点列表(须在 FX 线程提取)
      * @param config        导出配置(格式 引擎 路径 冲突策略等)
      * @param provider      依赖类字节码提供器
