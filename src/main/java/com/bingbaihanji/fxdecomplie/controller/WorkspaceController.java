@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.service.ExportService;
 import com.bingbaihanji.fxdecomplie.service.ProjectFileManager;
+import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceLoader;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
@@ -304,6 +305,8 @@ public final class WorkspaceController {
                             owner.searchController()::openSearchForPackage,
                             (node, codeTabPane) -> owner.classTabOpener().openFileInHexView(
                                     node, workspace, codeTabPane));
+                    // 打开后后台预热索引：缓存命中时快速完成，避免首次搜索/继承时再等待
+                    WorkspaceIndexService.ensureIndexingStarted(workspace);
                     owner.refreshToolbarState();
                 },
                 errorMsg -> {
