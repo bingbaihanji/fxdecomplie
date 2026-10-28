@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service.workspace;
 
 import com.bingbaihanji.fxdecomplie.decompiler.ClassBytecodeProvider;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceByteReader;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
@@ -16,8 +17,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * 基于工作区文件树的懒加载字节码提供器.
  *
  * <p>导出等场景只需要"内部类名 → 字节码",不必等待完整工作区索引.
- * 解析顺序由 {@link WorkspaceByteReader} 保证:文件树节点 → 归档条目 → 磁盘文件.
- * 未命中结果会被记住,避免批量导出时重复查找不存在的依赖类.</p>
+ * 解析顺序:文件树节点优先;非归档工作区允许磁盘回退.
+ * 归档工作区在发现阶段已枚举全部条目,节点缺失即视为未命中,
+ * 避免每个未命中的类都打开一次 ZipFile.</p>
+ *
+ * <p>线程安全:可被多个导出工作线程共享;未命中结果在提供器生命周期内永久缓存.</p>
  *
  * @author bingbaihanji
  * @date 2026-10-28
@@ -42,15 +46,39 @@ public final class WorkspaceClassBytecodeProvider implements ClassBytecodeProvid
         if (normalized.isBlank() || missingClasses.contains(normalized)) {
             return null;
         }
-        try {
-            byte[] bytes = WorkspaceByteReader.readClassBytes(workspace, normalized, true);
-            if (bytes == null) {
-                missingClasses.add(normalized);
+        FileTreeNode node = workspace.findNodeByPath(normalized + ".class");
+        if (node != null) {
+            byte[] bytes = readNodeBytes(normalized, node);
+            if (bytes != null) {
+                return bytes;
             }
-            return bytes;
+            missingClasses.add(normalized);
+            return null;
+        }
+        if (!workspace.isArchive()) {
+            byte[] bytes = readClassBytes(normalized);
+            if (bytes != null) {
+                return bytes;
+            }
+        }
+        missingClasses.add(normalized);
+        return null;
+    }
+
+    private byte[] readNodeBytes(String normalized, FileTreeNode node) {
+        try {
+            return WorkspaceByteReader.readNodeBytes(workspace, node, true);
         } catch (IOException e) {
             log.debug("懒加载类字节失败: {}", normalized, e);
-            missingClasses.add(normalized);
+            return null;
+        }
+    }
+
+    private byte[] readClassBytes(String normalized) {
+        try {
+            return WorkspaceByteReader.readClassBytes(workspace, normalized, true);
+        } catch (IOException e) {
+            log.debug("懒加载类字节失败: {}", normalized, e);
             return null;
         }
     }

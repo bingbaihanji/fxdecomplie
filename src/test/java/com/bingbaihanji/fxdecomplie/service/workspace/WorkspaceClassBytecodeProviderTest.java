@@ -3,10 +3,16 @@ package com.bingbaihanji.fxdecomplie.service.workspace;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.service.ClassDiscoverer;
+import com.bingbaihanji.fxdecomplie.service.FileTreeBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -17,20 +23,16 @@ class WorkspaceClassBytecodeProviderTest {
     @TempDir
     Path tempDir;
 
-    private static Workspace workspaceWithClass(FileTreeNode classNode, byte[] bytes) {
-        classNode.setByteLoader(() -> bytes);
-        FileTreeModel root = new FileTreeModel(
-                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        root.getChildren().add(new FileTreeModel(classNode));
-        return new Workspace("demo", Path.of(".").toFile(), root, false);
-    }
-
     @Test
     void resolvesClassBytesFromWorkspaceTree() {
         byte[] bytes = {1, 2, 3, 4};
         FileTreeNode node = new FileTreeNode("Foo.class", "com/example/Foo.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
-        Workspace workspace = workspaceWithClass(node, bytes);
+        node.setByteLoader(() -> bytes);
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().add(new FileTreeModel(node));
+        Workspace workspace = new Workspace("demo", tempDir.toFile(), root, false);
         WorkspaceClassBytecodeProvider provider = new WorkspaceClassBytecodeProvider(workspace);
 
         assertArrayEquals(bytes, provider.getClassBytes("com/example/Foo"));
@@ -38,13 +40,45 @@ class WorkspaceClassBytecodeProviderTest {
     }
 
     @Test
-    void returnsNullForMissingClassAndRemembersMiss() {
-        FileTreeNode node = new FileTreeNode("Foo.class", "com/example/Foo.class",
-                FileTreeNode.NodeTypeEnum.CLASS_FILE);
-        Workspace workspace = workspaceWithClass(node, new byte[]{1});
+    void returnsNullForMissingClassAndRemembersMiss() throws Exception {
+        Path sourceDir = Files.createDirectories(tempDir.resolve("workspace"));
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        Workspace workspace = new Workspace("demo", sourceDir.toFile(), root, false);
         WorkspaceClassBytecodeProvider provider = new WorkspaceClassBytecodeProvider(workspace);
 
         assertNull(provider.getClassBytes("com/example/Missing"));
+
+        // 首次未命中后再把类文件放到磁盘上；提供器应记住未命中
+        Files.createDirectories(sourceDir.resolve("com/example"));
+        Files.write(sourceDir.resolve("com/example/Missing.class"), new byte[]{1, 2, 3});
         assertNull(provider.getClassBytes("com/example/Missing"));
+
+        // 新提供器应能解析到该文件，证明磁盘上确实可读
+        WorkspaceClassBytecodeProvider fresh = new WorkspaceClassBytecodeProvider(workspace);
+        assertArrayEquals(new byte[]{1, 2, 3}, fresh.getClassBytes("com/example/Missing"));
+    }
+
+    @Test
+    void resolvesClassBytesFromArchiveWorkspace() throws Exception {
+        byte[] bytes = {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE, 1, 2, 3};
+        Path jar = tempDir.resolve("lib.jar");
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar))) {
+            out.putNextEntry(new JarEntry("com/example/Foo.class"));
+            out.write(bytes);
+            out.closeEntry();
+        }
+        List<ClassDiscoverer.ClassEntry> entries = ClassDiscoverer.discover(jar.toFile());
+        FileTreeModel root = FileTreeBuilder.build("lib.jar", entries);
+        Workspace workspace = new Workspace("lib.jar", jar.toFile(), root, true);
+        WorkspaceClassBytecodeProvider provider = new WorkspaceClassBytecodeProvider(workspace);
+
+        try {
+            assertArrayEquals(bytes, provider.getClassBytes("com/example/Foo"));
+            assertNull(provider.getClassBytes("com/example/Missing"));
+        } finally {
+            // 释放发现阶段保留的 JarFile,否则 Windows 下 @TempDir 无法删除 lib.jar
+            workspace.close();
+        }
     }
 }
