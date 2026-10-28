@@ -46,10 +46,19 @@ public final class WorkspaceIndexCache {
     private static final int MAGIC = 0x46584944;
     private static final int FORMAT_VERSION = 1;
     private static final int MAX_ENTRY_COUNT = 5_000_000;
+    private static final int MAX_MEMBER_COUNT = 65_535;
     private static final int MAX_RESOURCE_BYTES = 16 * 1024 * 1024;
+    private static final int GZIP_BUFFER_SIZE = 64 * 1024;
+
+    /** 测试专用缓存目录覆盖；生产环境为 null */
+    private static volatile Path cacheDirectoryOverride;
 
     private WorkspaceIndexCache() {
         throw new AssertionError("utility class");
+    }
+
+    static void setCacheDirectoryForTesting(Path dir) {
+        cacheDirectoryOverride = dir;
     }
 
     /**
@@ -80,6 +89,7 @@ public final class WorkspaceIndexCache {
         }
         Path cacheFile = cacheFilePath(fingerprint);
         if (!Files.exists(cacheFile)) {
+            deleteLegacyCache(fingerprint);
             return null;
         }
         try {
@@ -97,6 +107,7 @@ public final class WorkspaceIndexCache {
                 Files.deleteIfExists(cacheFile);
             } catch (IOException ignored) {
             }
+            deleteLegacyCache(fingerprint);
             return null;
         }
     }
@@ -109,19 +120,32 @@ public final class WorkspaceIndexCache {
             return;
         }
         Path target = cacheFilePath(fingerprint);
-        Path tmp = target.resolveSibling(target.getFileName() + ".tmp");
+        Path tmp = null;
         try {
             Files.createDirectories(cacheDirectory());
+            tmp = Files.createTempFile(cacheDirectory(), fingerprint + "-",
+                    CACHE_FILE_SUFFIX + ".tmp");
             writeTo(tmp, CachedIndex.from(index));
             moveAtomically(tmp, target);
+            deleteLegacyCache(fingerprint);
             log.info("索引缓存已保存: {} ({} classes, {} resources)",
                     fingerprint, index.classes().size(), index.resources().size());
         } catch (Exception e) {
             log.debug("保存索引缓存失败: {}", fingerprint, e);
-            try {
-                Files.deleteIfExists(tmp);
-            } catch (IOException ignored) {
+            if (tmp != null) {
+                try {
+                    Files.deleteIfExists(tmp);
+                } catch (IOException ignored) {
+                }
             }
+        }
+    }
+
+    private static void deleteLegacyCache(String fingerprint) {
+        Path legacy = cacheDirectory().resolve(fingerprint + LEGACY_FILE_SUFFIX);
+        try {
+            Files.deleteIfExists(legacy);
+        } catch (IOException ignored) {
         }
     }
 
@@ -160,7 +184,8 @@ public final class WorkspaceIndexCache {
         List<CachedResourceEntry> resources =
                 cached.resources == null ? List.of() : cached.resources;
         try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(
-                new BufferedOutputStream(Files.newOutputStream(target))))) {
+                new BufferedOutputStream(Files.newOutputStream(target), GZIP_BUFFER_SIZE),
+                GZIP_BUFFER_SIZE))) {
             out.writeInt(MAGIC);
             out.writeInt(FORMAT_VERSION);
             out.writeInt(classes.size());
@@ -204,7 +229,7 @@ public final class WorkspaceIndexCache {
 
     private static CachedIndex readFrom(Path file) throws IOException {
         try (DataInputStream in = new DataInputStream(new GZIPInputStream(
-                new BufferedInputStream(Files.newInputStream(file))))) {
+                new BufferedInputStream(Files.newInputStream(file)), GZIP_BUFFER_SIZE))) {
             int magic = in.readInt();
             if (magic != MAGIC) {
                 throw new IOException("无效的索引缓存魔数: " + magic);
@@ -231,6 +256,9 @@ public final class WorkspaceIndexCache {
                 resource.bytes = bytes;
                 resources.add(resource);
             }
+            if (in.read() != -1) {
+                throw new IOException("索引缓存尾部存在多余数据");
+            }
             CachedIndex cached = new CachedIndex();
             cached.classes = classes;
             cached.resources = resources;
@@ -245,19 +273,19 @@ public final class WorkspaceIndexCache {
         entry.simpleName = in.readUTF();
         String superName = in.readUTF();
         entry.superName = superName.isEmpty() ? null : superName;
-        int interfaceCount = readCount(in, MAX_ENTRY_COUNT);
+        int interfaceCount = readCount(in, MAX_MEMBER_COUNT);
         List<String> interfaces = new ArrayList<>(interfaceCount);
         for (int i = 0; i < interfaceCount; i++) {
             interfaces.add(in.readUTF());
         }
         entry.interfaces = interfaces;
-        int methodCount = readCount(in, MAX_ENTRY_COUNT);
+        int methodCount = readCount(in, MAX_MEMBER_COUNT);
         List<CachedMemberEntry> methods = new ArrayList<>(methodCount);
         for (int i = 0; i < methodCount; i++) {
             methods.add(new CachedMemberEntry(in.readUTF(), in.readUTF()));
         }
         entry.methods = methods;
-        int fieldCount = readCount(in, MAX_ENTRY_COUNT);
+        int fieldCount = readCount(in, MAX_MEMBER_COUNT);
         List<CachedMemberEntry> fields = new ArrayList<>(fieldCount);
         for (int i = 0; i < fieldCount; i++) {
             fields.add(new CachedMemberEntry(in.readUTF(), in.readUTF()));
@@ -311,7 +339,8 @@ public final class WorkspaceIndexCache {
     }
 
     private static Path cacheDirectory() {
-        return AppPaths.cacheDir().resolve(CACHE_DIR_NAME);
+        Path override = cacheDirectoryOverride;
+        return override != null ? override : AppPaths.cacheDir().resolve(CACHE_DIR_NAME);
     }
 
     private static Path cacheFilePath(String fingerprint) {
@@ -414,7 +443,7 @@ public final class WorkspaceIndexCache {
             FileTreeNode node = workspace == null ? null
                     : workspace.findNodeByPath(fullPath);
             FileTreeNode.ByteLoader loader;
-            if (node != null) {
+            if (node != null && node.hasByteSource()) {
                 loader = node::resolveBytes;
             } else if (workspace != null) {
                 loader = () -> WorkspaceByteReader.readClassBytes(

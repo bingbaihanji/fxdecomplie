@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
@@ -8,6 +7,8 @@ import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.ResourceIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -22,6 +23,19 @@ import java.util.zip.GZIPOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorkspaceIndexCacheTest {
+
+    @TempDir
+    Path cacheDir;
+
+    @BeforeEach
+    void useTempCacheDir() {
+        WorkspaceIndexCache.setCacheDirectoryForTesting(cacheDir);
+    }
+
+    @AfterEach
+    void resetCacheDir() {
+        WorkspaceIndexCache.setCacheDirectoryForTesting(null);
+    }
 
     @Test
     void computeFingerprintReturnsNonNullForExistingFile(@TempDir Path tmp) throws IOException {
@@ -248,8 +262,7 @@ class WorkspaceIndexCacheTest {
                 null, List.of(), List.of(), null, List.of());
         WorkspaceIndex index = WorkspaceIndex.buildFromCache(List.of(entry));
         String fingerprint = "gzip-format-test";
-        Path cacheFile = AppPaths.cacheDir().resolve("index-cache")
-                .resolve(fingerprint + ".idx.gz");
+        Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
         try {
             WorkspaceIndexCache.save(fingerprint, index);
             assertTrue(Files.exists(cacheFile));
@@ -261,7 +274,6 @@ class WorkspaceIndexCacheTest {
     @Test
     void loadIgnoresLegacyJsonCache() throws IOException {
         String fingerprint = "legacy-json-test";
-        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
         Files.createDirectories(cacheDir);
         Path legacy = cacheDir.resolve(fingerprint + ".idx.json");
         Path current = cacheDir.resolve(fingerprint + ".idx.gz");
@@ -280,12 +292,12 @@ class WorkspaceIndexCacheTest {
     @Test
     void loadReturnsNullForCorruptCacheFile() throws IOException {
         String fingerprint = "corrupt-cache-test";
-        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
         Files.createDirectories(cacheDir);
         Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
         Files.writeString(cacheFile, "not a gzip file");
         try {
             assertNull(WorkspaceIndexCache.load(fingerprint));
+            assertFalse(Files.exists(cacheFile));
         } finally {
             Files.deleteIfExists(cacheFile);
         }
@@ -294,7 +306,6 @@ class WorkspaceIndexCacheTest {
     @Test
     void loadRejectsUnsupportedFormatVersion() throws IOException {
         String fingerprint = "version-test";
-        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
         Files.createDirectories(cacheDir);
         Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
         try (DataOutputStream out = new DataOutputStream(
@@ -304,6 +315,7 @@ class WorkspaceIndexCacheTest {
         }
         try {
             assertNull(WorkspaceIndexCache.load(fingerprint));
+            assertFalse(Files.exists(cacheFile));
         } finally {
             Files.deleteIfExists(cacheFile);
         }
@@ -311,7 +323,6 @@ class WorkspaceIndexCacheTest {
 
     @Test
     void clearAllRemovesLegacyAndCurrentCacheFiles() throws IOException {
-        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
         Files.createDirectories(cacheDir);
         Path legacy = cacheDir.resolve("clear-both-test.idx.json");
         Path current = cacheDir.resolve("clear-both-test.idx.gz");
@@ -346,5 +357,21 @@ class WorkspaceIndexCacheTest {
 
         assertSame(node, restored.classes().getFirst().node());
         assertArrayEquals(classBytes, restored.getClassBytes("com/example/Foo"));
+    }
+
+    @Test
+    void loadReturnsNullForTruncatedCacheFile() throws IOException {
+        ClassIndexEntry entry = new ClassIndexEntry(
+                "com/example/Truncated.class", "com/example/Truncated", "Truncated",
+                null, List.of(), List.of(), null, List.of());
+        WorkspaceIndex index = WorkspaceIndex.buildFromCache(List.of(entry));
+        String fingerprint = "truncated-cache-test";
+        WorkspaceIndexCache.save(fingerprint, index);
+        Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
+        byte[] bytes = Files.readAllBytes(cacheFile);
+        Files.write(cacheFile, java.util.Arrays.copyOf(bytes, bytes.length / 2));
+
+        assertNull(WorkspaceIndexCache.load(fingerprint));
+        assertFalse(Files.exists(cacheFile));
     }
 }
