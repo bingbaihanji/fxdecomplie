@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -204,7 +206,11 @@ class WorkspaceIndexTest {
             String path = "com/example/C" + i + ".class";
             FileTreeNode node = new FileTreeNode("C" + i + ".class", path,
                     FileTreeNode.NodeTypeEnum.CLASS_FILE);
-            node.setCachedBytes(bytes);
+            long delayMillis = count - i;
+            node.setByteLoader(() -> {
+                LockSupport.parkNanos(delayMillis * 1_000_000L);
+                return bytes;
+            });
             root.getChildren().add(new FileTreeModel(node));
             expected.add(path);
         }
@@ -214,6 +220,49 @@ class WorkspaceIndexTest {
         assertEquals(count, index.classes().size());
         assertEquals(expected, index.classes().stream()
                 .map(ClassIndexEntry::fullPath).toList());
+    }
+
+    @Test
+    void progressListenerFailureFailsBuild() throws Exception {
+        byte[] bytes = compileClass("com.example", "Shared", """
+                package com.example;
+                public class Shared {}
+                """);
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        for (int i = 0; i < 4; i++) {
+            FileTreeNode node = new FileTreeNode("C" + i + ".class",
+                    "com/example/C" + i + ".class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
+            node.setCachedBytes(bytes);
+            root.getChildren().add(new FileTreeModel(node));
+        }
+
+        assertThrows(IllegalStateException.class, () -> WorkspaceIndex.build(root, progress -> {
+            throw new IllegalStateException("listener failure");
+        }));
+    }
+
+    @Test
+    void interruptedBuildDoesNotPublishPartialIndex() throws Exception {
+        byte[] bytes = compileClass("com.example", "Shared", """
+                package com.example;
+                public class Shared {}
+                """);
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        for (int i = 0; i < 8; i++) {
+            FileTreeNode node = new FileTreeNode("C" + i + ".class",
+                    "com/example/C" + i + ".class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
+            node.setCachedBytes(bytes);
+            root.getChildren().add(new FileTreeModel(node));
+        }
+
+        Thread.currentThread().interrupt();
+        try {
+            assertThrows(CancellationException.class, () -> WorkspaceIndex.build(root));
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @Test

@@ -15,8 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -166,7 +169,10 @@ public final class WorkspaceIndex {
     }
 
     /**
-     * 从已提取的 FileTreeNode 列表构建索引(线程安全,可在后台线程调用)
+     * 从已提取的 FileTreeNode 列表并行构建索引.
+     *
+     * <p>进度回调可能在工作线程上执行；通知会串行化并保证单调递增，频率限制为约 100ms 一次，
+     * 完成时发送一次 phase="done" 的终态通知.构建被中断时不会发布半成品索引.</p>
      *
      * @param nodes class 和资源 FileTreeNode 列表
      * @param progressListener 构建进度回调,可为空
@@ -183,7 +189,7 @@ public final class WorkspaceIndex {
             if (node.isClassFile() && node.hasByteSource()) {
                 classNodes.add(node);
             } else if (node.isTextFile() && node.hasByteSource()
-                    && !node.isImageFile() && isIndexableResourceSize(node)) {
+                    && !node.isImageFile() && shouldIndexResource(node)) {
                 resourceNodes.add(node);
             }
         }
@@ -200,6 +206,7 @@ public final class WorkspaceIndex {
 
         int workers = Math.max(2, Math.min(16,
                 Runtime.getRuntime().availableProcessors() - 1));
+        boolean interrupted = false;
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             List<Callable<Void>> tasks = new ArrayList<>(workers * 2);
             tasks.addAll(strideTasks(classNodes.size(), workers, index -> {
@@ -220,11 +227,38 @@ public final class WorkspaceIndex {
                     reporter.advance("resource");
                 }
             }));
+            List<Future<Void>> futures;
             try {
-                executor.invokeAll(tasks);
+                futures = executor.invokeAll(tasks);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                interrupted = true;
+                futures = List.of();
             }
+            for (Future<Void> future : futures) {
+                try {
+                    future.get();
+                } catch (CancellationException e) {
+                    interrupted = true;
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof Error error) {
+                        throw error;
+                    }
+                    if (cause instanceof RuntimeException runtime) {
+                        throw runtime;
+                    }
+                    throw new IllegalStateException("索引任务失败", cause);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        }
+
+        // 构建线程被中断时不要发布半成品索引;
+        // 清除中断标志,避免复用 IO 线程池的线程因残留标志跳过后续任务
+        if (interrupted || reporter.processed() < total) {
+            Thread.interrupted();
+            throw new CancellationException("工作区索引构建被中断");
         }
 
         List<ClassIndexEntry> classes = new ArrayList<>(classNodes.size());
@@ -245,13 +279,17 @@ public final class WorkspaceIndex {
         return new WorkspaceIndex(classes, resources, classEntries);
     }
 
-    private static List<Callable<Void>> strideTasks(int size, int workers, IntConsumer body) {
-        List<Callable<Void>> tasks = new ArrayList<>(workers);
-        for (int worker = 0; worker < workers; worker++) {
+    private static List<Callable<Void>> strideTasks(int size, int maxWorkers, IntConsumer body) {
+        if (size <= 0) {
+            return List.of();
+        }
+        int workerCount = Math.min(maxWorkers, size);
+        List<Callable<Void>> tasks = new ArrayList<>(workerCount);
+        for (int worker = 0; worker < workerCount; worker++) {
             int start = worker;
             tasks.add(() -> {
                 int sinceCheck = 0;
-                for (int index = start; index < size; index += workers) {
+                for (int index = start; index < size; index += workerCount) {
                     if (++sinceCheck >= INTERRUPT_CHECK_INTERVAL) {
                         sinceCheck = 0;
                         if (Thread.currentThread().isInterrupted()) {
@@ -267,9 +305,6 @@ public final class WorkspaceIndex {
     }
 
     private static ResourceIndexEntry indexResource(FileTreeNode node) {
-        if (!shouldIndexResource(node)) {
-            return null;
-        }
         byte[] bytes = readNodeBytes(node);
         return bytes == null ? null
                 : new ResourceIndexEntry(node.getFullPath(), bytes, true);
@@ -324,11 +359,6 @@ public final class WorkspaceIndex {
             return false;
         }
         return true;
-    }
-
-    private static boolean isIndexableResourceSize(FileTreeNode node) {
-        long size = node.getSize();
-        return size > 0 && size <= MAX_INDEXED_RESOURCE_BYTES;
     }
 
     private static byte[] readNodeBytes(FileTreeNode node) {
@@ -386,28 +416,43 @@ public final class WorkspaceIndex {
         private final int total;
         private final AtomicInteger processed = new AtomicInteger();
         private final AtomicLong lastReportNanos = new AtomicLong(System.nanoTime());
+        private int lastEmitted = -1;
 
         private ProgressReporter(Consumer<BuildProgress> listener, int total) {
             this.listener = listener;
             this.total = total;
         }
 
+        private int processed() {
+            return processed.get();
+        }
+
         private void advance(String phase) {
             int done = processed.incrementAndGet();
             if (done >= total) {
-                notifyProgress(listener, done, total, phase);
                 return;
             }
             long now = System.nanoTime();
             long last = lastReportNanos.get();
             if (now - last >= PROGRESS_REPORT_INTERVAL_NANOS
                     && lastReportNanos.compareAndSet(last, now)) {
-                notifyProgress(listener, done, total, phase);
+                emit(done, phase);
             }
         }
 
+        private synchronized void emit(int done, String phase) {
+            if (done <= lastEmitted) {
+                return;
+            }
+            lastEmitted = done;
+            notifyProgress(listener, done, total, phase);
+        }
+
         private void finish() {
-            notifyProgress(listener, total, total, "done");
+            synchronized (this) {
+                lastEmitted = total;
+                notifyProgress(listener, total, total, "done");
+            }
         }
     }
 
