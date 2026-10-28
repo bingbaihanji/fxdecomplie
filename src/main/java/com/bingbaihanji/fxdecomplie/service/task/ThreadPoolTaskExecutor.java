@@ -36,7 +36,7 @@ public final class ThreadPoolTaskExecutor implements TaskExecutorService {
         int cores = Runtime.getRuntime().availableProcessors();
         int interactiveThreads = Math.clamp(cores, 4, 8);
         int ioThreads = 2;
-        int indexThreads = 1;
+        int indexThreads = 1; // 索引构建串行化，避免多个大包同时抢占 CPU
         int exportThreads = Math.clamp(cores, 2, 4);
         int decompileCores = Math.max(1, cores / 2);
 

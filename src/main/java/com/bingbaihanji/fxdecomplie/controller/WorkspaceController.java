@@ -308,7 +308,7 @@ public final class WorkspaceController {
                             (node, codeTabPane) -> owner.classTabOpener().openFileInHexView(
                                     node, workspace, codeTabPane));
                     // 打开后后台预热索引：延迟 500ms，仅当该工作区仍为当前活动工作区时启动，
-                    // 避免连续打开多个工作区时把索引构建排入共享 IO 池
+                    // 避免为已切走的工作区占用独立索引线程
                     PauseTransition preheatDelay = new PauseTransition(Duration.millis(500));
                     preheatDelay.setOnFinished(event -> {
                         WorkspaceView current = owner.tabManager().currentWorkspaceView();

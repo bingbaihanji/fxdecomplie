@@ -255,11 +255,14 @@ class WorkspaceIndexTest {
                 """);
         FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        // 首个节点较快完成以触发进度事件，另一个节点保持运行，确保中断发生在构建进行中
+        long[] delays = {150_000_000L, 2_000_000_000L};
         for (int i = 0; i < 2; i++) {
+            long delayNanos = delays[i];
             FileTreeNode node = new FileTreeNode("C" + i + ".class",
                     "com/example/C" + i + ".class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
             node.setByteLoader(() -> {
-                LockSupport.parkNanos(150_000_000L);
+                LockSupport.parkNanos(delayNanos);
                 return bytes;
             });
             root.getChildren().add(new FileTreeModel(node));
@@ -269,11 +272,13 @@ class WorkspaceIndexTest {
                 new java.util.concurrent.CountDownLatch(1);
         java.util.concurrent.atomic.AtomicReference<Throwable> unexpected =
                 new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicBoolean cancelled =
+                new java.util.concurrent.atomic.AtomicBoolean();
         Thread buildThread = new Thread(() -> {
             try {
                 WorkspaceIndex.build(root, p -> progress.countDown());
             } catch (CancellationException expected) {
-                // expected
+                cancelled.set(true);
             } catch (Throwable t) {
                 unexpected.set(t);
             }
@@ -286,6 +291,7 @@ class WorkspaceIndexTest {
             buildThread.join(5_000);
             assertFalse(buildThread.isAlive(), "build thread should stop");
             assertNull(unexpected.get(), "unexpected failure: " + unexpected.get());
+            assertTrue(cancelled.get(), "expected cancellation");
         } finally {
             buildThread.interrupt();
         }

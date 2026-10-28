@@ -17,9 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 基于工作区文件树的懒加载字节码提供器.
  *
  * <p>导出等场景只需要"内部类名 → 字节码",不必等待完整工作区索引.
- * 解析顺序:文件树节点优先;非归档工作区允许磁盘回退.
- * 归档工作区在发现阶段已枚举全部条目,节点缺失即视为未命中,
- * 避免每个未命中的类都打开一次 ZipFile.</p>
+ * 解析顺序:文件树节点优先;索引就绪时按解析后的内部名回退(兼容多版本 JAR 等路径≠内部名场景);
+ * 非归档工作区允许磁盘回退.归档工作区在发现阶段已枚举全部条目,
+ * 节点缺失且索引未就绪时返回 null 但不记录未命中,避免每个未命中的类都打开一次 ZipFile.</p>
  *
  * <p>线程安全:可被多个导出工作线程共享;未命中结果在提供器生命周期内永久缓存.</p>
  *
@@ -61,8 +61,6 @@ public final class WorkspaceClassBytecodeProvider implements ClassBytecodeProvid
             if (bytes != null) {
                 return bytes;
             }
-            missingClasses.add(normalized);
-            return null;
         }
         if (!workspace.isArchive()) {
             byte[] bytes = readClassBytes(normalized);
@@ -72,7 +70,10 @@ public final class WorkspaceClassBytecodeProvider implements ClassBytecodeProvid
             missingClasses.add(normalized);
             return null;
         }
-        // 归档且索引尚未就绪：不记录未命中，索引就绪后仍可解析
+        // 归档且索引未就绪：不记录未命中，索引就绪后仍可解析
+        if (workspace.isIndexReady()) {
+            missingClasses.add(normalized);
+        }
         return null;
     }
 
