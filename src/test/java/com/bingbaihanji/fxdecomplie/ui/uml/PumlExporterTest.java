@@ -67,7 +67,8 @@ class PumlExporterTest {
 
         String puml = PumlExporter.buildSource(diagram, UmlTheme.LIGHT);
         // 标记框:单一柔和色 + 空成员体
-        assertTrue(puml.contains("class \"**MissingBase**\" as ") && puml.contains(" #EDEDED {\n}"));
+        assertTrue(puml.contains("class \"**MissingBase**\" as ")
+                && puml.contains(" " + UmlTheme.LIGHT.markerBackground() + " {\n}"));
 
         // 空图
         assertEquals("@startuml\n@enduml", PumlExporter.buildSource(null, UmlTheme.LIGHT));
