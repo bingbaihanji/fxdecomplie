@@ -59,6 +59,23 @@ class WorkspaceIndexServiceTest {
         assertFalse(Files.exists(cacheFile));
     }
 
+    @Test
+    void closedWorkspaceDoesNotStartIndexing() throws Exception {
+        Path source = tempDir.resolve("already-closed.jar");
+        Files.writeString(source, "dummy");
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        Workspace workspace = new Workspace("already-closed", source.toFile(), root, false);
+        workspace.close();
+
+        WorkspaceIndexService.ensureIndexingStarted(workspace);
+
+        assertFalse(workspace.isIndexBuildStarted());
+        assertFalse(workspace.isIndexReady());
+        String fingerprint = WorkspaceIndexCache.computeFingerprint(source);
+        assertFalse(Files.exists(tempDir.resolve("cache").resolve(fingerprint + ".idx.gz")));
+    }
+
     private static void awaitTrue(java.util.function.BooleanSupplier condition, long timeoutMillis)
             throws InterruptedException {
         long deadline = System.currentTimeMillis() + timeoutMillis;

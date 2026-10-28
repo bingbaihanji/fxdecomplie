@@ -32,7 +32,8 @@ public final class WorkspaceIndexService {
 
     /**
      * 确保工作区索引已启动构建(幂等操作)
-     * 若索引已就绪或已在构建中则直接返回,否则以低优先级后台线程启动索引构建.
+     * 若工作区已关闭、索引已就绪或已在构建中则直接返回,
+     * 否则以低优先级后台线程启动索引构建.
      *
      * <p>先尝试从缓存加载,未命中时并行构建完整索引.</p>
      */
@@ -57,6 +58,11 @@ public final class WorkspaceIndexService {
                                 workspace.getSourceFile().toPath());
                         var cachedIndexData = WorkspaceIndexCache.load(fingerprint);
                         if (cachedIndexData != null && cachedIndexData.hasClasses()) {
+                            if (workspace.isClosed()) {
+                                log.info("工作区已关闭,丢弃索引缓存命中结果: {}", workspace.getName());
+                                workspace.failIndex(new CancellationException("工作区已关闭"));
+                                return;
+                            }
                             log.info("索引缓存命中,跳过构建: {} ({} classes, {}ms)",
                                     workspace.getName(), cachedIndexData.classCount(),
                                     System.currentTimeMillis() - start);

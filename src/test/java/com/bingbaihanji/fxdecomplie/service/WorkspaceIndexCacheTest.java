@@ -384,6 +384,7 @@ class WorkspaceIndexCacheTest {
                         null, List.of(), List.of(), null, List.of()))));
         Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
         byte[] bytes = Files.readAllBytes(cacheFile);
+        // GZIP 尾部 8 字节 = CRC32 + ISIZE，翻转 CRC32 首字节
         bytes[bytes.length - 8] ^= 0x01;
         Files.write(cacheFile, bytes);
 
