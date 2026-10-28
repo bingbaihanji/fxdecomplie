@@ -72,6 +72,12 @@ public final class WorkspaceIndexService {
                                         reportProgress(workspace, progress.processed(),
                                                 progress.total(), progress.phase()));
 
+                        if (workspace.isClosed()) {
+                            log.info("工作区已关闭,丢弃索引构建结果: {}", workspace.getName());
+                            workspace.failIndex(new CancellationException("工作区已关闭"));
+                            return;
+                        }
+
                         long elapsed = System.currentTimeMillis() - start;
                         log.info("工作区索引构建完成: {} ({} classes, {} resources, {}ms)",
                                 workspace.getName(), fullIndex.classes().size(),
@@ -84,7 +90,11 @@ public final class WorkspaceIndexService {
                             final WorkspaceIndex indexToSave = fullIndex;
                             BackgroundTasks.run(BackgroundTasks.PoolType.IO,
                                     "IndexCache-" + workspace.getName(),
-                                    () -> WorkspaceIndexCache.save(fingerprint, indexToSave));
+                                    () -> {
+                                        if (!workspace.isClosed()) {
+                                            WorkspaceIndexCache.save(fingerprint, indexToSave);
+                                        }
+                                    });
                         }
                     } catch (Throwable ex) {
                         long elapsed = System.currentTimeMillis() - start;

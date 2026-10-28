@@ -13,10 +13,12 @@ import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.control.Tab;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -305,8 +307,17 @@ public final class WorkspaceController {
                             owner.searchController()::openSearchForPackage,
                             (node, codeTabPane) -> owner.classTabOpener().openFileInHexView(
                                     node, workspace, codeTabPane));
-                    // 打开后后台预热索引：缓存命中时快速完成，避免首次搜索/继承时再等待
-                    WorkspaceIndexService.ensureIndexingStarted(workspace);
+                    // 打开后后台预热索引：延迟 500ms，仅当该工作区仍为当前活动工作区时启动，
+                    // 避免连续打开多个工作区时把索引构建排入共享 IO 池
+                    PauseTransition preheatDelay = new PauseTransition(Duration.millis(500));
+                    preheatDelay.setOnFinished(event -> {
+                        WorkspaceView current = owner.tabManager().currentWorkspaceView();
+                        if (current != null && workspace.equals(current.workspace())
+                                && !workspace.isClosed()) {
+                            WorkspaceIndexService.ensureIndexingStarted(workspace);
+                        }
+                    });
+                    preheatDelay.play();
                     owner.refreshToolbarState();
                 },
                 errorMsg -> {

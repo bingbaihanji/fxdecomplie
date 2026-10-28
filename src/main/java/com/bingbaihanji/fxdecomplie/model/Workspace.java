@@ -42,6 +42,9 @@ public class Workspace implements AutoCloseable {
     /** 完整索引是否已经被显式请求构建 */
     private final AtomicBoolean indexBuildStarted = new AtomicBoolean();
 
+    /** 工作区是否已关闭 */
+    private volatile boolean closed;
+
     /** 工作区级源码搜索缓存,按引擎和选项分组 */
     private final ConcurrentMap<String, Map<String, String>> sourceSearchCaches = new ConcurrentHashMap<>();
 
@@ -172,6 +175,11 @@ public class Workspace implements AutoCloseable {
         return index;
     }
 
+    /** @return 工作区是否已关闭 */
+    public boolean isClosed() {
+        return closed;
+    }
+
     /** 更新工作区索引(用于异步构建完成后替换) */
     public synchronized void setIndex(WorkspaceIndex index) {
         WorkspaceIndex next = index == null ? WorkspaceIndex.EMPTY : index;
@@ -292,6 +300,7 @@ public class Workspace implements AutoCloseable {
 
     @Override
     public void close() {
+        closed = true;
         indexFuture.cancel(true);
         clearSourceSearchCaches();
         if (treeRoot == null) {
