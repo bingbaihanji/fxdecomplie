@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
@@ -10,10 +11,13 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,12 +50,22 @@ class WorkspaceIndexCacheTest {
     }
 
     @Test
-    void computeFingerprintChangesWhenFileChanges(@TempDir Path tmp) throws IOException {
+    void computeFingerprintChangesWhenMtimeChanges(@TempDir Path tmp) throws IOException {
         Path file = tmp.resolve("test.jar");
-        Files.writeString(file, "content v1");
+        Files.writeString(file, "same content");
         String fp1 = WorkspaceIndexCache.computeFingerprint(file);
-        // Touch the file to change mtime
-        Files.writeString(file, "content v2");
+        Files.setLastModifiedTime(file, FileTime.fromMillis(
+                Files.getLastModifiedTime(file).toMillis() + 5_000L));
+        String fp2 = WorkspaceIndexCache.computeFingerprint(file);
+        assertNotEquals(fp1, fp2);
+    }
+
+    @Test
+    void computeFingerprintChangesWhenSizeChanges(@TempDir Path tmp) throws IOException {
+        Path file = tmp.resolve("test.jar");
+        Files.writeString(file, "a");
+        String fp1 = WorkspaceIndexCache.computeFingerprint(file);
+        Files.writeString(file, "a-longer-content");
         String fp2 = WorkspaceIndexCache.computeFingerprint(file);
         assertNotEquals(fp1, fp2);
     }
@@ -138,30 +152,29 @@ class WorkspaceIndexCacheTest {
     }
 
     @Test
-    void buildPhaseFiltersNodesByPhase(@TempDir Path tmp) throws IOException {
-        // Create nodes with different phases
-        com.bingbaihanji.fxdecomplie.model.FileTreeNode node1 =
-                new com.bingbaihanji.fxdecomplie.model.FileTreeNode(
-                        "Main.class", "com/app/Main.class",
-                        com.bingbaihanji.fxdecomplie.model.FileTreeNode.NodeTypeEnum.CLASS_FILE);
+    void buildPhaseFiltersNodesByPhase() {
+        FileTreeNode node1 = new FileTreeNode("Main.class", "com/app/Main.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
         node1.setPhase(1);
         node1.setCachedBytes(new byte[]{(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE,
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
-
-        com.bingbaihanji.fxdecomplie.model.FileTreeNode node2 =
-                new com.bingbaihanji.fxdecomplie.model.FileTreeNode(
-                        "Lib.class", "com/lib/Lib.class",
-                        com.bingbaihanji.fxdecomplie.model.FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        FileTreeNode node2 = new FileTreeNode("Lib.class", "com/lib/Lib.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
         node2.setPhase(2);
         node2.setCachedBytes(new byte[]{(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE,
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().add(new FileTreeModel(node1));
+        root.getChildren().add(new FileTreeModel(node2));
 
-        // Build all nodes
-        List<com.bingbaihanji.fxdecomplie.model.FileTreeNode> allNodes = List.of(node1, node2);
-        WorkspaceIndex fullIndex = WorkspaceIndex.build(allNodes);
-        // Both nodes should be indexed (though parsing may fail for dummy bytes)
-        // The key test is that buildPhase filters correctly
-        assertNotNull(fullIndex);
+        WorkspaceIndex phase1 = WorkspaceIndex.buildPhase(root, 1, null);
+        WorkspaceIndex phase2 = WorkspaceIndex.buildPhase(root, 2, null);
+
+        assertEquals(1, phase1.classes().size());
+        assertEquals("com/app/Main.class", phase1.classes().getFirst().fullPath());
+        assertEquals(1, phase2.classes().size());
+        assertEquals("com/lib/Lib.class", phase2.classes().getFirst().fullPath());
     }
 
     @Test
@@ -226,5 +239,112 @@ class WorkspaceIndexCacheTest {
         assertEquals(1, restored.resources().size());
         assertArrayEquals("server.port=8080".getBytes(),
                 restored.resourceBytesByPath().get("application.properties"));
+    }
+
+    @Test
+    void saveWritesGzipCacheFile() throws IOException {
+        ClassIndexEntry entry = new ClassIndexEntry(
+                "com/example/Gz.class", "com/example/Gz", "Gz",
+                null, List.of(), List.of(), null, List.of());
+        WorkspaceIndex index = WorkspaceIndex.buildFromCache(List.of(entry));
+        String fingerprint = "gzip-format-test";
+        Path cacheFile = AppPaths.cacheDir().resolve("index-cache")
+                .resolve(fingerprint + ".idx.gz");
+        try {
+            WorkspaceIndexCache.save(fingerprint, index);
+            assertTrue(Files.exists(cacheFile));
+        } finally {
+            Files.deleteIfExists(cacheFile);
+        }
+    }
+
+    @Test
+    void loadIgnoresLegacyJsonCache() throws IOException {
+        String fingerprint = "legacy-json-test";
+        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
+        Files.createDirectories(cacheDir);
+        Path legacy = cacheDir.resolve(fingerprint + ".idx.json");
+        Path current = cacheDir.resolve(fingerprint + ".idx.gz");
+        Files.writeString(legacy, """
+                {"classes":[{"fullPath":"com/example/L.class","internalName":"com/example/L",
+                "simpleName":"L","interfaces":[],"methods":[],"fields":[]}]}
+                """);
+        try {
+            assertNull(WorkspaceIndexCache.load(fingerprint));
+        } finally {
+            Files.deleteIfExists(legacy);
+            Files.deleteIfExists(current);
+        }
+    }
+
+    @Test
+    void loadReturnsNullForCorruptCacheFile() throws IOException {
+        String fingerprint = "corrupt-cache-test";
+        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
+        Files.createDirectories(cacheDir);
+        Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
+        Files.writeString(cacheFile, "not a gzip file");
+        try {
+            assertNull(WorkspaceIndexCache.load(fingerprint));
+        } finally {
+            Files.deleteIfExists(cacheFile);
+        }
+    }
+
+    @Test
+    void loadRejectsUnsupportedFormatVersion() throws IOException {
+        String fingerprint = "version-test";
+        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
+        Files.createDirectories(cacheDir);
+        Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
+        try (DataOutputStream out = new DataOutputStream(
+                new GZIPOutputStream(Files.newOutputStream(cacheFile)))) {
+            out.writeInt(0x46584944);
+            out.writeInt(999);
+        }
+        try {
+            assertNull(WorkspaceIndexCache.load(fingerprint));
+        } finally {
+            Files.deleteIfExists(cacheFile);
+        }
+    }
+
+    @Test
+    void clearAllRemovesLegacyAndCurrentCacheFiles() throws IOException {
+        Path cacheDir = AppPaths.cacheDir().resolve("index-cache");
+        Files.createDirectories(cacheDir);
+        Path legacy = cacheDir.resolve("clear-both-test.idx.json");
+        Path current = cacheDir.resolve("clear-both-test.idx.gz");
+        Files.writeString(legacy, "{}");
+        Files.writeString(current, "{}");
+
+        WorkspaceIndexCache.clearAll();
+
+        assertFalse(Files.exists(legacy));
+        assertFalse(Files.exists(current));
+    }
+
+    @Test
+    void cacheRestoreBackfillsFileTreeNode() {
+        byte[] classBytes = {1, 2, 3, 4};
+        FileTreeNode node = new FileTreeNode("Foo.class", "com/example/Foo.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        node.setByteLoader(() -> classBytes);
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().add(new FileTreeModel(node));
+        Workspace workspace = new Workspace("demo", Path.of(".").toFile(), root, false);
+
+        ClassIndexEntry entry = new ClassIndexEntry(
+                "com/example/Foo.class", "com/example/Foo", "Foo",
+                null, List.of(), List.of(), "java/lang/Object", List.of());
+        WorkspaceIndexCache.CachedIndex cachedData = new WorkspaceIndexCache.CachedIndex();
+        cachedData.classes = List.of(WorkspaceIndexCache.CachedClassEntry.from(entry));
+        cachedData.resources = List.of();
+
+        WorkspaceIndex restored = cachedData.toWorkspaceIndex(workspace);
+
+        assertSame(node, restored.classes().getFirst().node());
+        assertArrayEquals(classBytes, restored.getClassBytes("com/example/Foo"));
     }
 }
