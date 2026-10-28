@@ -190,6 +190,51 @@ class WorkspaceIndexTest {
         assertNotNull(clsNode.getCachedBytes());
     }
 
+    @Test
+    void parallelBuildPreservesNodeOrder() throws Exception {
+        byte[] bytes = compileClass("com.example", "Shared", """
+                package com.example;
+                public class Shared {}
+                """);
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        int count = 32;
+        List<String> expected = new java.util.ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            String path = "com/example/C" + i + ".class";
+            FileTreeNode node = new FileTreeNode("C" + i + ".class", path,
+                    FileTreeNode.NodeTypeEnum.CLASS_FILE);
+            node.setCachedBytes(bytes);
+            root.getChildren().add(new FileTreeModel(node));
+            expected.add(path);
+        }
+
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+
+        assertEquals(count, index.classes().size());
+        assertEquals(expected, index.classes().stream()
+                .map(ClassIndexEntry::fullPath).toList());
+    }
+
+    @Test
+    void excludesImageResourcesFromIndex() {
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        FileTreeNode image = new FileTreeNode("logo.png", "static/logo.png",
+                FileTreeNode.NodeTypeEnum.RESOURCE);
+        image.setCachedBytes(new byte[]{1, 2, 3});
+        FileTreeNode text = new FileTreeNode("app.properties", "app.properties",
+                FileTreeNode.NodeTypeEnum.RESOURCE);
+        text.setCachedBytes("server.port=8080".getBytes(StandardCharsets.UTF_8));
+        root.getChildren().add(new FileTreeModel(image));
+        root.getChildren().add(new FileTreeModel(text));
+
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+
+        assertEquals(List.of("app.properties"), index.resources().stream()
+                .map(ResourceIndexEntry::fullPath).toList());
+    }
+
     private byte[] compileClass(String packageName, String className, String source) throws Exception {
         Path sourceDir = Files.createDirectories(tempDir.resolve("src"));
         Path outputDir = Files.createDirectories(tempDir.resolve("classes"));

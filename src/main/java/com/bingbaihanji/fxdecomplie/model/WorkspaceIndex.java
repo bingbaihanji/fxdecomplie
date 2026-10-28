@@ -14,7 +14,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 /**
  * 基于文件树构建的工作区全局索引
@@ -31,6 +37,12 @@ public final class WorkspaceIndex {
     private static final Logger log = LoggerFactory.getLogger(WorkspaceIndex.class);
 
     private static final long MAX_INDEXED_RESOURCE_BYTES = 5L * 1024 * 1024;
+
+    /** 进度上报间隔（纳秒），避免并行构建时高频刷新 UI */
+    private static final long PROGRESS_REPORT_INTERVAL_NANOS = 100_000_000L;
+
+    /** 中断检查间隔（每处理多少个节点检查一次） */
+    private static final int INTERRUPT_CHECK_INTERVAL = 64;
 
     private final List<ClassIndexEntry> classes;
 
@@ -162,56 +174,105 @@ public final class WorkspaceIndex {
      */
     public static WorkspaceIndex build(List<FileTreeNode> nodes,
                                        Consumer<BuildProgress> progressListener) {
-        List<ClassIndexEntry> classes = new ArrayList<>();
-        List<ResourceIndexEntry> resources = new ArrayList<>();
-        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
-
-        // 分离 class 和 resource 节点
         List<FileTreeNode> classNodes = new ArrayList<>();
-        int total = 0;
+        List<FileTreeNode> resourceNodes = new ArrayList<>();
         for (FileTreeNode node : nodes) {
             if (node == null) {
                 continue;
             }
             if (node.isClassFile() && node.hasByteSource()) {
                 classNodes.add(node);
-                total++;
             } else if (node.isTextFile() && node.hasByteSource()
-                    && isIndexableResourceSize(node)) {
-                total++;
+                    && !node.isImageFile() && isIndexableResourceSize(node)) {
+                resourceNodes.add(node);
             }
         }
 
+        int total = classNodes.size() + resourceNodes.size();
         if (total == 0) {
             notifyProgress(progressListener, 1, 1, "done");
-            return new WorkspaceIndex(classes, resources, classEntries);
+            return new WorkspaceIndex(List.of(), List.of(), Map.of());
         }
 
-        // 串行解析 class 元数据,避免为超大 fatjar 创建海量待执行任务
-        int processed = 0;
-        for (FileTreeNode node : classNodes) {
-            ClassIndexEntry entry = indexClass(node);
+        ClassIndexEntry[] classResults = new ClassIndexEntry[classNodes.size()];
+        ResourceIndexEntry[] resourceResults = new ResourceIndexEntry[resourceNodes.size()];
+        ProgressReporter reporter = new ProgressReporter(progressListener, total);
+
+        int workers = Math.max(2, Math.min(16,
+                Runtime.getRuntime().availableProcessors() - 1));
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Callable<Void>> tasks = new ArrayList<>(workers * 2);
+            tasks.addAll(strideTasks(classNodes.size(), workers, index -> {
+                try {
+                    classResults[index] = indexClass(classNodes.get(index));
+                } catch (RuntimeException e) {
+                    log.warn("索引 class 失败: {}", classNodes.get(index).getFullPath(), e);
+                } finally {
+                    reporter.advance("class");
+                }
+            }));
+            tasks.addAll(strideTasks(resourceNodes.size(), workers, index -> {
+                try {
+                    resourceResults[index] = indexResource(resourceNodes.get(index));
+                } catch (RuntimeException e) {
+                    log.warn("索引资源失败: {}", resourceNodes.get(index).getFullPath(), e);
+                } finally {
+                    reporter.advance("resource");
+                }
+            }));
+            try {
+                executor.invokeAll(tasks);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        List<ClassIndexEntry> classes = new ArrayList<>(classNodes.size());
+        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
+        for (ClassIndexEntry entry : classResults) {
             if (entry != null) {
                 classes.add(entry);
                 putClassEntry(classEntries, entry);
             }
-            processed++;
-            notifyProgress(progressListener, processed, total, "class");
         }
-
-        // 串行处理 resource(通常较小,不值得并行)
-        for (FileTreeNode node : nodes) {
-            if (node != null && node.isTextFile() && node.hasByteSource()
-                    && shouldIndexResource(node)) {
-                byte[] bytes = readNodeBytes(node);
-                if (bytes != null) {
-                    resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
-                }
-                processed++;
-                notifyProgress(progressListener, processed, total, "resource");
+        List<ResourceIndexEntry> resources = new ArrayList<>(resourceNodes.size());
+        for (ResourceIndexEntry entry : resourceResults) {
+            if (entry != null) {
+                resources.add(entry);
             }
         }
+        reporter.finish();
         return new WorkspaceIndex(classes, resources, classEntries);
+    }
+
+    private static List<Callable<Void>> strideTasks(int size, int workers, IntConsumer body) {
+        List<Callable<Void>> tasks = new ArrayList<>(workers);
+        for (int worker = 0; worker < workers; worker++) {
+            int start = worker;
+            tasks.add(() -> {
+                int sinceCheck = 0;
+                for (int index = start; index < size; index += workers) {
+                    if (++sinceCheck >= INTERRUPT_CHECK_INTERVAL) {
+                        sinceCheck = 0;
+                        if (Thread.currentThread().isInterrupted()) {
+                            return null;
+                        }
+                    }
+                    body.accept(index);
+                }
+                return null;
+            });
+        }
+        return tasks;
+    }
+
+    private static ResourceIndexEntry indexResource(FileTreeNode node) {
+        if (!shouldIndexResource(node)) {
+            return null;
+        }
+        byte[] bytes = readNodeBytes(node);
+        return bytes == null ? null
+                : new ResourceIndexEntry(node.getFullPath(), bytes, true);
     }
 
     private static ClassIndexEntry indexClass(FileTreeNode node) {
@@ -316,6 +377,37 @@ public final class WorkspaceIndex {
                                        int total, String phase) {
         if (listener != null && total > 0) {
             listener.accept(new BuildProgress(processed, total, phase));
+        }
+    }
+
+    private static final class ProgressReporter {
+
+        private final Consumer<BuildProgress> listener;
+        private final int total;
+        private final AtomicInteger processed = new AtomicInteger();
+        private final AtomicLong lastReportNanos = new AtomicLong(System.nanoTime());
+
+        private ProgressReporter(Consumer<BuildProgress> listener, int total) {
+            this.listener = listener;
+            this.total = total;
+        }
+
+        private void advance(String phase) {
+            int done = processed.incrementAndGet();
+            if (done >= total) {
+                notifyProgress(listener, done, total, phase);
+                return;
+            }
+            long now = System.nanoTime();
+            long last = lastReportNanos.get();
+            if (now - last >= PROGRESS_REPORT_INTERVAL_NANOS
+                    && lastReportNanos.compareAndSet(last, now)) {
+                notifyProgress(listener, done, total, phase);
+            }
+        }
+
+        private void finish() {
+            notifyProgress(listener, total, total, "done");
         }
     }
 
