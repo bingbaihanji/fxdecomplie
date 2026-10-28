@@ -55,13 +55,24 @@ public final class WorkspaceClassBytecodeProvider implements ClassBytecodeProvid
             missingClasses.add(normalized);
             return null;
         }
+        // 索引就绪时按解析后的内部名回退，覆盖多版本 JAR 等路径与内部名不一致的场景
+        if (workspace.isIndexReady()) {
+            byte[] bytes = workspace.getIndex().getClassBytes(normalized);
+            if (bytes != null) {
+                return bytes;
+            }
+            missingClasses.add(normalized);
+            return null;
+        }
         if (!workspace.isArchive()) {
             byte[] bytes = readClassBytes(normalized);
             if (bytes != null) {
                 return bytes;
             }
+            missingClasses.add(normalized);
+            return null;
         }
-        missingClasses.add(normalized);
+        // 归档且索引尚未就绪：不记录未命中，索引就绪后仍可解析
         return null;
     }
 

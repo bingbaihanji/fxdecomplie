@@ -128,24 +128,6 @@ public class Workspace implements AutoCloseable {
         return Collections.unmodifiableMap(result);
     }
 
-    /**
-     * 获取完整索引 如果异步索引还未完成,则在当前线程上构建一次
-     *
-     * @return 可用于搜索 导出和导航分析的完整工作区索引
-     */
-    public WorkspaceIndex getOrBuildIndex() {
-        WorkspaceIndex current = index;
-        if (current != WorkspaceIndex.EMPTY) {
-            return current;
-        }
-        synchronized (this) {
-            if (index == WorkspaceIndex.EMPTY) {
-                setIndex(WorkspaceIndex.build(treeRoot));
-            }
-            return index;
-        }
-    }
-
     /** @return 显示名称 */
     public String getName() {
         return name;

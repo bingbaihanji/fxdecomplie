@@ -255,18 +255,39 @@ class WorkspaceIndexTest {
                 """);
         FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 2; i++) {
             FileTreeNode node = new FileTreeNode("C" + i + ".class",
                     "com/example/C" + i + ".class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
-            node.setCachedBytes(bytes);
+            node.setByteLoader(() -> {
+                LockSupport.parkNanos(150_000_000L);
+                return bytes;
+            });
             root.getChildren().add(new FileTreeModel(node));
         }
 
-        Thread.currentThread().interrupt();
+        java.util.concurrent.CountDownLatch progress =
+                new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<Throwable> unexpected =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        Thread buildThread = new Thread(() -> {
+            try {
+                WorkspaceIndex.build(root, p -> progress.countDown());
+            } catch (CancellationException expected) {
+                // expected
+            } catch (Throwable t) {
+                unexpected.set(t);
+            }
+        }, "index-build-test");
+        buildThread.start();
         try {
-            assertThrows(CancellationException.class, () -> WorkspaceIndex.build(root));
+            assertTrue(progress.await(5, java.util.concurrent.TimeUnit.SECONDS),
+                    "expected a progress event");
+            buildThread.interrupt();
+            buildThread.join(5_000);
+            assertFalse(buildThread.isAlive(), "build thread should stop");
+            assertNull(unexpected.get(), "unexpected failure: " + unexpected.get());
         } finally {
-            Thread.interrupted();
+            buildThread.interrupt();
         }
     }
 

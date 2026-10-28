@@ -34,7 +34,7 @@ class PumlExporterTest {
         assertTrue(puml.contains("skinparam"));
         assertTrue(puml.contains("class \"**ServiceImpl**"));
         assertTrue(puml.contains("abstract class \"<<abstract>>\\n**AbstractService**"));
-        assertTrue(puml.contains("-[" + UmlTheme.LIGHT.generalizationColor() + ",plain]-^"));
+        assertTrue(puml.contains("-[#000082,plain]-^"));
         assertTrue(puml.endsWith("@enduml"));
     }
 
@@ -71,8 +71,8 @@ class PumlExporterTest {
                 .filter(line -> line.contains("**MissingBase**"))
                 .findFirst()
                 .orElseThrow();
-        assertTrue(markerLine.endsWith(" " + UmlTheme.LIGHT.markerBackground() + " {"));
-        assertTrue(puml.contains(" " + UmlTheme.LIGHT.markerBackground() + " {\n}\n"));
+        assertTrue(markerLine.endsWith(" #D0D0D0 {"));
+        assertTrue(puml.contains(" #D0D0D0 {\n}\n"));
         String childLine = puml.lines()
                 .filter(line -> line.contains("**Child**"))
                 .findFirst()

@@ -13,11 +13,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * {@link TaskExecutorService} 的默认实现 — 管理 4 个独立线程池.
+ * {@link TaskExecutorService} 的默认实现 — 管理 5 个独立线程池.
  *
  * <ul>
  *   <li>INTERACTIVE: 4-8 核,队列 200 — 搜索/打开类/UI 交互</li>
- *   <li>IO: 2 核,无界队列 — 磁盘缓存写入/索引构建</li>
+ *   <li>IO: 2 核,无界队列 — 磁盘缓存写入</li>
+ *   <li>INDEX: 1 核,无界队列 — 工作区索引构建(隔离,避免阻塞 IO 池)</li>
  *   <li>EXPORT: 2-4 核,队列 50 — 导出任务</li>
  *   <li>DECOMPILE: C/2 核,队列 4 — 反编译(隔离,避免阻塞短任务)</li>
  * </ul>
@@ -35,17 +36,19 @@ public final class ThreadPoolTaskExecutor implements TaskExecutorService {
         int cores = Runtime.getRuntime().availableProcessors();
         int interactiveThreads = Math.clamp(cores, 4, 8);
         int ioThreads = 2;
+        int indexThreads = 1;
         int exportThreads = Math.clamp(cores, 2, 4);
         int decompileCores = Math.max(1, cores / 2);
 
         pools = Map.of(
                 TaskKind.INTERACTIVE, createPool(interactiveThreads, 200, "bg-int"),
                 TaskKind.IO, createPool(ioThreads, Integer.MAX_VALUE, "bg-io"),
+                TaskKind.INDEX, createPool(indexThreads, Integer.MAX_VALUE, "bg-index"),
                 TaskKind.EXPORT, createPool(exportThreads, 50, "bg-exp"),
                 TaskKind.DECOMPILE, createPool(decompileCores, 4, "bg-decomp")
         );
-        log.info("任务执行器已创建: interactive={}, io={}, export={}, decompile={}",
-                interactiveThreads, ioThreads, exportThreads, decompileCores);
+        log.info("任务执行器已创建: interactive={}, io={}, index={}, export={}, decompile={}",
+                interactiveThreads, ioThreads, indexThreads, exportThreads, decompileCores);
     }
 
     private static ThreadPoolExecutor createPool(int threads, int queueSize,

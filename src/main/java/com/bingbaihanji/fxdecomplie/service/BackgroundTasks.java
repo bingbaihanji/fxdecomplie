@@ -11,7 +11,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 
 /**
- * 后台任务工具类,提供三个独立线程池以避免长任务阻塞交互操作.
+ * 后台任务工具类,提供多个独立线程池以避免长任务阻塞交互操作.
  *
  * <p>内部委托给 {@link TaskExecutorService} 实例;可通过 {@link #setExecutor(TaskExecutorService)}
  * 注入自定义实现(例如测试中替换).</p>
@@ -52,6 +52,7 @@ public final class BackgroundTasks {
         return switch (type) {
             case INTERACTIVE -> TaskKind.INTERACTIVE;
             case IO -> TaskKind.IO;
+            case INDEX -> TaskKind.INDEX;
             case EXPORT -> TaskKind.EXPORT;
         };
     }
@@ -105,8 +106,10 @@ public final class BackgroundTasks {
     public enum PoolType {
         /** 搜索 打开类 Ctrl+Click UI 触发的交互操作 */
         INTERACTIVE,
-        /** 磁盘缓存写入 索引构建 — 磁盘/CPU 密集型批处理 */
+        /** 磁盘缓存写入 — 磁盘/CPU 密集型批处理 */
         IO,
+        /** 工作区索引构建 — 独立单线程池,避免阻塞 IO 池 */
+        INDEX,
         /** 导出任务专用 */
         EXPORT
     }

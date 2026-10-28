@@ -11,6 +11,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -36,9 +38,11 @@ class WorkspaceIndexServiceTest {
     void closedWorkspaceDoesNotPublishOrCacheIndex() throws Exception {
         Path source = tempDir.resolve("closed-test.jar");
         Files.writeString(source, "dummy");
+        CountDownLatch reading = new CountDownLatch(1);
         FileTreeNode node = new FileTreeNode("Foo.class", "com/example/Foo.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
         node.setByteLoader(() -> {
+            reading.countDown();
             LockSupport.parkNanos(300_000_000L);
             return new byte[]{1, 2, 3};
         });
@@ -50,7 +54,7 @@ class WorkspaceIndexServiceTest {
         Path cacheFile = tempDir.resolve("cache").resolve(fingerprint + ".idx.gz");
 
         WorkspaceIndexService.ensureIndexingStarted(workspace);
-        awaitTrue(workspace::isIndexBuildStarted, 5_000);
+        assertTrue(reading.await(5, TimeUnit.SECONDS), "expected build to start reading");
 
         workspace.close();
 

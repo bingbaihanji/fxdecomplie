@@ -3,11 +3,15 @@ package com.bingbaihanji.fxdecomplie.service.workspace;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.ClassDiscoverer;
 import com.bingbaihanji.fxdecomplie.service.FileTreeBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -15,6 +19,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -80,5 +85,40 @@ class WorkspaceClassBytecodeProviderTest {
             // 释放发现阶段保留的 JarFile,否则 Windows 下 @TempDir 无法删除 lib.jar
             workspace.close();
         }
+    }
+
+    @Test
+    void resolvesClassByParsedInternalNameWhenPathDiffers() throws Exception {
+        byte[] bytes = compileClass("com.example", "Versioned");
+        FileTreeNode node = new FileTreeNode("Versioned.class",
+                "META-INF/versions/9/com/example/Versioned.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        node.setByteLoader(() -> bytes);
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().add(new FileTreeModel(node));
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+        Workspace workspace = new Workspace("lib.jar",
+                tempDir.resolve("lib.jar").toFile(), root, true, index);
+        WorkspaceClassBytecodeProvider provider = new WorkspaceClassBytecodeProvider(workspace);
+
+        assertArrayEquals(bytes, provider.getClassBytes("com/example/Versioned"));
+    }
+
+    private byte[] compileClass(String packageName, String className) throws Exception {
+        Path sourceDir = Files.createDirectories(tempDir.resolve("src"));
+        Path outputDir = Files.createDirectories(tempDir.resolve("classes"));
+        Path sourceFile = sourceDir.resolve(className + ".java");
+        Files.writeString(sourceFile, """
+                package %s;
+                public class %s {}
+                """.formatted(packageName, className), StandardCharsets.UTF_8);
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertNotNull(compiler, "tests require a JDK compiler");
+        int exit = compiler.run(null, null, null, "--release", "17",
+                "-d", outputDir.toString(), sourceFile.toString());
+        assertEquals(0, exit, "test class should compile");
+        return Files.readAllBytes(outputDir.resolve(packageName.replace('.', '/'))
+                .resolve(className + ".class"));
     }
 }

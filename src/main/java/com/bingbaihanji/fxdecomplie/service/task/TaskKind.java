@@ -9,8 +9,10 @@ package com.bingbaihanji.fxdecomplie.service.task;
 public enum TaskKind {
     /** 搜索,打开类,Ctrl+Click 等 UI 触发的交互操作 */
     INTERACTIVE,
-    /** 磁盘缓存写入,索引构建等磁盘/CPU 密集型批处理 */
+    /** 磁盘缓存写入等磁盘/CPU 密集型批处理 */
     IO,
+    /** 工作区索引构建(独立单线程池,避免阻塞 IO 池) */
+    INDEX,
     /** 导出任务专用 */
     EXPORT,
     /** 反编译任务(独立池,避免阻塞短任务) */

@@ -102,7 +102,7 @@ public final class WorkspaceIndexCache {
                     cached.resources == null ? 0 : cached.resources.size());
             return cached;
         } catch (Exception e) {
-            log.debug("加载索引缓存失败: {}", fingerprint, e);
+            log.warn("加载索引缓存失败: {}", fingerprint, e);
             try {
                 Files.deleteIfExists(cacheFile);
             } catch (IOException ignored) {
@@ -131,7 +131,7 @@ public final class WorkspaceIndexCache {
             log.info("索引缓存已保存: {} ({} classes, {} resources)",
                     fingerprint, index.classes().size(), index.resources().size());
         } catch (Exception e) {
-            log.debug("保存索引缓存失败: {}", fingerprint, e);
+            log.warn("保存索引缓存失败: {}", fingerprint, e);
             if (tmp != null) {
                 try {
                     Files.deleteIfExists(tmp);

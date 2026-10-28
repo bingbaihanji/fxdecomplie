@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * 搜索/用法/继承等需要索引的功能也会确保构建已启动.
  *
  * <p>所有归档类型统一并行构建全部节点(class 与文本资源混合调度),
- * 最终只在完整索引完成后发布给工作区.支持基于内容指纹的索引缓存,
+ * 最终只在完整索引完成后发布给工作区.支持基于文件大小/mtime 指纹的索引缓存,
  * 避免同一大包重复打开时重建整套索引.</p>
  *
  * @author bingbaihanji
@@ -33,7 +33,7 @@ public final class WorkspaceIndexService {
     /**
      * 确保工作区索引已启动构建(幂等操作)
      * 若工作区已关闭、索引已就绪或已在构建中则直接返回,
-     * 否则以低优先级后台线程启动索引构建.
+     * 否则在独立索引线程池启动索引构建.
      *
      * <p>先尝试从缓存加载,未命中时并行构建完整索引.</p>
      */
@@ -47,7 +47,7 @@ public final class WorkspaceIndexService {
         log.info("开始构建工作区索引: {}", workspace.getName());
         long start = System.currentTimeMillis();
         reportProgress(workspace, 0, 1, "start");
-        Future<?> task = BackgroundTasks.run(BackgroundTasks.PoolType.IO,
+        Future<?> task = BackgroundTasks.run(BackgroundTasks.PoolType.INDEX,
                 "Index-" + workspace.getName(), () -> {
                     int previousPriority = Thread.currentThread().getPriority();
                     try {
@@ -78,6 +78,8 @@ public final class WorkspaceIndexService {
                                         reportProgress(workspace, progress.processed(),
                                                 progress.total(), progress.phase()));
 
+                        // 与后续 setIndex/save 之间仍可能发生关闭；
+                        // 向已关闭工作区发布无副作用，缓存写入前会再次检查
                         if (workspace.isClosed()) {
                             log.info("工作区已关闭,丢弃索引构建结果: {}", workspace.getName());
                             workspace.failIndex(new CancellationException("工作区已关闭"));

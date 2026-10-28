@@ -242,6 +242,11 @@ public final class SearchController {
         workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
             owner.statusBar().clearTask();
             if (error != null) {
+                if (error instanceof java.util.concurrent.CancellationException
+                        || (error.getCause() instanceof java.util.concurrent.CancellationException)
+                        || workspace.isClosed()) {
+                    return;
+                }
                 owner.showError(I18nUtil.getString("dialog.index.failed", error.getMessage()));
                 return;
             }
