@@ -74,7 +74,7 @@ public final class WorkspaceLoader {
                         WorkspaceIndex.EMPTY, contentStamp);
                 long totalElapsed = System.currentTimeMillis() - loadStart;
                 log.info("工作区创建完成: {} (archive={}, {}ms)", name, isArchive, totalElapsed);
-                // ---- 步骤 4: 在 UI 线程上通知 UI完整索引按需构建 ----
+                // ---- 步骤 4: 在 UI 线程上通知 UI(完整索引由控制器在打开后预热) ----
                 uiExecutor.execute(() -> {
                     try {
                         if (onSuccess != null) {

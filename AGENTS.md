@@ -169,6 +169,8 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 
 缓存键包含工作区路径、文件 mtime/size、CRC32 类文件指纹、选项 hash、依赖图 hash、重命名快照 hash 等，防止同路径替换或配置变化命中旧缓存。失败结果（超时/错误/取消/目标未找到）不进入任何一级缓存。
 
+工作区索引由虚拟线程并行构建，图片等二进制资源不进入索引与缓存；打开工作区后延迟 500ms 预热（仅当仍为当前活动工作区），关闭中的工作区会丢弃构建结果且不写缓存。索引持久化到 `<appDir>/cache/index-cache/<指纹>.idx.gz`（GZIP 二进制，带格式版本号，唯一临时文件 + 原子替换，指纹为「路径 + 大小 + mtime」）。按节点导出通过 `WorkspaceClassBytecodeProvider` 懒加载依赖，不等待完整索引。
+
 ### 5.4 配置与数据目录
 
 应用数据默认写入 JAR 所在目录；开发期 classpath 在 `target/classes/` 时回退到项目根目录，避免 `mvn clean` 删除配置。

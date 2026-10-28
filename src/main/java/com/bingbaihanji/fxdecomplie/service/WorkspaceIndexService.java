@@ -10,8 +10,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 按需构建工作区完整索引打开 JAR 时不自动读取/解析全部 class,
- * 只有搜索 用法 导出等功能真正需要时才启动.
+ * 工作区索引构建入口.工作区打开后由控制器延迟预热索引,
+ * 搜索/用法/继承等需要索引的功能也会确保构建已启动.
  *
  * <p>所有归档类型统一并行构建全部节点(class 与文本资源混合调度),
  * 最终只在完整索引完成后发布给工作区.支持基于内容指纹的索引缓存,
@@ -37,7 +37,7 @@ public final class WorkspaceIndexService {
      * <p>先尝试从缓存加载,未命中时并行构建完整索引.</p>
      */
     public static void ensureIndexingStarted(Workspace workspace) {
-        if (workspace == null || workspace.isIndexReady()) {
+        if (workspace == null || workspace.isIndexReady() || workspace.isClosed()) {
             return;
         }
         if (!workspace.markIndexBuildStarted()) {

@@ -283,6 +283,7 @@ class WorkspaceIndexCacheTest {
                 """);
         try {
             assertNull(WorkspaceIndexCache.load(fingerprint));
+            assertFalse(Files.exists(legacy));
         } finally {
             Files.deleteIfExists(legacy);
             Files.deleteIfExists(current);
@@ -370,6 +371,21 @@ class WorkspaceIndexCacheTest {
         Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
         byte[] bytes = Files.readAllBytes(cacheFile);
         Files.write(cacheFile, java.util.Arrays.copyOf(bytes, bytes.length / 2));
+
+        assertNull(WorkspaceIndexCache.load(fingerprint));
+        assertFalse(Files.exists(cacheFile));
+    }
+
+    @Test
+    void loadReturnsNullForTrailerCorruption() throws IOException {
+        String fingerprint = "trailer-corrupt-test";
+        WorkspaceIndexCache.save(fingerprint, WorkspaceIndex.buildFromCache(List.of(
+                new ClassIndexEntry("com/example/T.class", "com/example/T", "T",
+                        null, List.of(), List.of(), null, List.of()))));
+        Path cacheFile = cacheDir.resolve(fingerprint + ".idx.gz");
+        byte[] bytes = Files.readAllBytes(cacheFile);
+        bytes[bytes.length - 8] ^= 0x01;
+        Files.write(cacheFile, bytes);
 
         assertNull(WorkspaceIndexCache.load(fingerprint));
         assertFalse(Files.exists(cacheFile));
