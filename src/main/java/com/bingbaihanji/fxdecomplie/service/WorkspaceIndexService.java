@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -93,10 +94,17 @@ public final class WorkspaceIndexService {
                                     "IndexCache-" + workspace.getName(),
                                     () -> WorkspaceIndexCache.save(fingerprint, indexToSave));
                         }
-                    } catch (Exception ex) {
+                    } catch (Throwable ex) {
                         long elapsed = System.currentTimeMillis() - start;
-                        log.error("工作区索引构建失败: {} ({}ms)", workspace.getName(), elapsed, ex);
+                        if (ex instanceof CancellationException) {
+                            log.warn("工作区索引构建已取消: {} ({}ms)", workspace.getName(), elapsed);
+                        } else {
+                            log.error("工作区索引构建失败: {} ({}ms)", workspace.getName(), elapsed, ex);
+                        }
                         workspace.failIndex(ex);
+                        if (ex instanceof Error error) {
+                            throw error;
+                        }
                     } finally {
                         Thread.currentThread().setPriority(previousPriority);
                         PROGRESS.set(null);

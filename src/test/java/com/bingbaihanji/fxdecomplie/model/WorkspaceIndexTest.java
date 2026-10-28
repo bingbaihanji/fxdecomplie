@@ -230,15 +230,20 @@ class WorkspaceIndexTest {
                 """);
         FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
             FileTreeNode node = new FileTreeNode("C" + i + ".class",
                     "com/example/C" + i + ".class", FileTreeNode.NodeTypeEnum.CLASS_FILE);
-            node.setCachedBytes(bytes);
+            node.setByteLoader(() -> {
+                LockSupport.parkNanos(150_000_000L);
+                return bytes;
+            });
             root.getChildren().add(new FileTreeModel(node));
         }
 
-        assertThrows(IllegalStateException.class, () -> WorkspaceIndex.build(root, progress -> {
-            throw new IllegalStateException("listener failure");
+        assertThrows(AssertionError.class, () -> WorkspaceIndex.build(root, progress -> {
+            if (!"done".equals(progress.phase())) {
+                throw new AssertionError("listener failure on worker thread");
+            }
         }));
     }
 

@@ -255,7 +255,8 @@ public final class WorkspaceIndex {
         }
 
         // 构建线程被中断时不要发布半成品索引;
-        // 清除中断标志,避免复用 IO 线程池的线程因残留标志跳过后续任务
+        // 中断通过 CancellationException 上报;这里只清除可能残留的标志,
+        // 避免复用 IO 线程池的线程因残留中断标志跳过后续任务
         if (interrupted || reporter.processed() < total) {
             Thread.interrupted();
             throw new CancellationException("工作区索引构建被中断");
