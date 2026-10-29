@@ -197,7 +197,7 @@ public final class CacheLayout {
     /**
      * 删除目录树：不跟随符号链接/联接点，单条失败只记录不中断，异常不外抛.
      */
-    private static void deleteTree(Path dir) {
+    public static void deleteTree(Path dir) {
         if (!Files.exists(dir, LinkOption.NOFOLLOW_LINKS)) {
             return;
         }
@@ -239,14 +239,14 @@ public final class CacheLayout {
             });
         } catch (IOException | RuntimeException e) {
             counter.failed++;
-            log.warn("清理旧缓存布局失败: {}", dir, e);
+            log.warn("清理缓存目录失败: {}", dir, e);
             return;
         }
         if (counter.failed > 0) {
-            log.warn("清理旧缓存布局完成: {}, 已删除 {} 项, 失败 {} 项",
+            log.warn("清理缓存目录完成: {}, 已删除 {} 项, 失败 {} 项",
                     dir, counter.deleted, counter.failed);
         } else {
-            log.info("已清理旧缓存布局: {}, 已删除 {} 项", dir, counter.deleted);
+            log.info("已清理缓存目录: {}, 已删除 {} 项", dir, counter.deleted);
         }
     }
 

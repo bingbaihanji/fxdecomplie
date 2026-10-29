@@ -10,9 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -72,7 +73,7 @@ public final class DiskCodeCache implements CodeCacheStore {
     public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
         switch (scope) {
             case CLASS -> invalidateClass(key);
-            case WORKSPACE -> deleteTree(
+            case WORKSPACE -> CacheLayout.deleteTree(
                     decompileRoot.resolve(CacheLayout.safeSegment(key.workspaceId())));
             case ALL -> clearAll();
         }
@@ -87,7 +88,7 @@ public final class DiskCodeCache implements CodeCacheStore {
 
     /** 清空反编译缓存子树(不影响缓存根目录下的姊妹缓存),并重置配额守卫节流状态 */
     public void clearAll() {
-        deleteTree(decompileRoot);
+        CacheLayout.deleteTree(decompileRoot);
         quotaGuard.reset();
     }
 
@@ -148,7 +149,17 @@ public final class DiskCodeCache implements CodeCacheStore {
     /** 按类失效:删除该工作区下所有引擎目录中该类的全部指纹/选项/键版本变体 */
     private void invalidateClass(CodeCacheKey key) {
         Path workspaceDir = decompileRoot.resolve(CacheLayout.safeSegment(key.workspaceId()));
-        if (!Files.exists(workspaceDir)) {
+        if (!Files.exists(workspaceDir, LinkOption.NOFOLLOW_LINKS)) {
+            return;
+        }
+        try {
+            BasicFileAttributes attrs = Files.readAttributes(
+                    workspaceDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            if (attrs.isSymbolicLink() || attrs.isOther()) {
+                log.debug("跳过链接型工作区缓存目录: {}", workspaceDir);
+                return;
+            }
+        } catch (IOException e) {
             return;
         }
         Path packageDir = CacheLayout.packagePath(CacheLayout.packageOf(key.internalName()));
@@ -170,23 +181,6 @@ public final class DiskCodeCache implements CodeCacheStore {
                 } catch (IOException ignored) {
                 }
             });
-        } catch (IOException ignored) {
-        }
-    }
-
-    /** 删除目录树(不跟随链接),单条失败忽略 */
-    private void deleteTree(Path dir) {
-        try {
-            if (Files.exists(dir)) {
-                try (var files = Files.walk(dir).sorted(Comparator.reverseOrder())) {
-                    files.forEach(p -> {
-                        try {
-                            Files.deleteIfExists(p);
-                        } catch (IOException ignored) {
-                        }
-                    });
-                }
-            }
         } catch (IOException ignored) {
         }
     }
