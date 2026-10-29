@@ -59,11 +59,18 @@ public class DecompileCacheService implements CodeCacheStore {
         if (result.isPresent()) {
             return result;
         }
-        // 2. L3
-        result = l3.load(key);
-        // 3. 回填 L2
-        result.ifPresent(source -> l2.save(key, source));
-        return result;
+        // 2. L3：回填 L2 与失效互斥，避免陈旧值在失效后重新进入 L2
+        l3Lock.readLock().lock();
+        try {
+            long epoch = invalidationEpoch.get();
+            result = l3.load(key);
+            if (result.isPresent() && invalidationEpoch.get() == epoch) {
+                l2.save(key, result.get());
+            }
+            return result;
+        } finally {
+            l3Lock.readLock().unlock();
+        }
     }
 
     @Override
@@ -101,6 +108,40 @@ public class DecompileCacheService implements CodeCacheStore {
             invalidationEpoch.incrementAndGet();
             l2.invalidate(key, scope);
             l3.invalidate(key, scope);
+        } finally {
+            l3Lock.writeLock().unlock();
+        }
+    }
+
+    /** 清空 L2；与在途 L3 写入/失效互斥 */
+    public void clearL2() {
+        l3Lock.writeLock().lock();
+        try {
+            invalidationEpoch.incrementAndGet();
+            l2.clearAll();
+        } finally {
+            l3Lock.writeLock().unlock();
+        }
+    }
+
+    /** 清空 L3；与在途 L3 写入互斥 */
+    public void clearL3() {
+        l3Lock.writeLock().lock();
+        try {
+            invalidationEpoch.incrementAndGet();
+            l3.clearAll();
+        } finally {
+            l3Lock.writeLock().unlock();
+        }
+    }
+
+    /** 同时清空 L2/L3 */
+    public void clearAllLevels() {
+        l3Lock.writeLock().lock();
+        try {
+            invalidationEpoch.incrementAndGet();
+            l2.clearAll();
+            l3.clearAll();
         } finally {
             l3Lock.writeLock().unlock();
         }

@@ -23,4 +23,8 @@ public interface CodeCacheStore {
 
     /** 按范围失效缓存 */
     void invalidate(CodeCacheKey key, CodeCacheScope scope);
+
+    /** 清空该层全部条目；默认无操作，供缓存管理入口调用 */
+    default void clearAll() {
+    }
 }

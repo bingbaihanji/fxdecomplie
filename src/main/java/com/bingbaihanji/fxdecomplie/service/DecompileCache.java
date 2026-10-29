@@ -96,4 +96,9 @@ public class DecompileCache implements CodeCacheStore {
     public void clear() {
         cache.evictAll();
     }
+
+    @Override
+    public void clearAll() {
+        clear();
+    }
 }

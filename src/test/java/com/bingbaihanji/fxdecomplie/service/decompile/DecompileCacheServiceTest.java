@@ -47,6 +47,11 @@ class DecompileCacheServiceTest {
             invalidations.add(Map.entry(key, scope));
             data.remove(key);
         }
+
+        @Override
+        public void clearAll() {
+            data.clear();
+        }
     }
 
     /** 延迟执行器: 暂存任务,便于验证异步写入与失效的时序 */
@@ -235,5 +240,81 @@ class DecompileCacheServiceTest {
         service.save(key("w"), "source");
 
         assertEquals("source", l3.data.get(key("w")));
+    }
+
+    static final class BlockingLoadStore implements CodeCacheStore {
+        final Map<CodeCacheKey, String> data = new HashMap<>();
+        final CountDownLatch loadStarted = new CountDownLatch(1);
+        final CountDownLatch releaseLoad = new CountDownLatch(1);
+
+        @Override
+        public Optional<String> load(CodeCacheKey key) {
+            loadStarted.countDown();
+            try {
+                releaseLoad.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return Optional.ofNullable(data.get(key));
+        }
+
+        @Override
+        public void save(CodeCacheKey key, String source) {
+            data.put(key, source);
+        }
+
+        @Override
+        public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
+            data.remove(key);
+        }
+    }
+
+    @Test
+    void invalidateWaitsForInFlightRefillAndClearsIt() throws Exception {
+        DecompileCache l2 = new DecompileCache();
+        BlockingLoadStore l3 = new BlockingLoadStore();
+        l3.data.put(key("w"), "stale");
+        DecompileCacheService service = new DecompileCacheService(l2, l3, Runnable::run);
+
+        Thread loader = new Thread(() -> service.load(key("w")));
+        loader.start();
+        assertTrue(l3.loadStarted.await(5, TimeUnit.SECONDS));
+
+        CountDownLatch invalidated = new CountDownLatch(1);
+        Thread invalidator = new Thread(() -> {
+            try {
+                service.invalidate(key("w"), CodeCacheScope.CLASS);
+            } finally {
+                invalidated.countDown();
+            }
+        });
+        invalidator.start();
+        assertFalse(invalidated.await(200, TimeUnit.MILLISECONDS),
+                "失效必须等待在途回填完成");
+
+        l3.releaseLoad.countDown();
+        assertTrue(invalidated.await(5, TimeUnit.SECONDS));
+        loader.join(5_000);
+        assertNull(l2.load(key("w")).orElse(null));
+    }
+
+    @Test
+    void clearKindsClearExpectedLevels() {
+        DecompileCache l2 = new DecompileCache();
+        MapStore l3 = new MapStore();
+        DecompileCacheService service = new DecompileCacheService(l2, l3, Runnable::run);
+        service.save(key("w"), "source");
+
+        service.clearL2();
+        assertNull(l2.load(key("w")).orElse(null));
+        assertEquals("source", l3.data.get(key("w")));
+
+        service.clearL3();
+        assertNull(l3.data.get(key("w")));
+
+        service.save(key("w"), "source");
+        service.clearAllLevels();
+        assertNull(l2.load(key("w")).orElse(null));
+        assertNull(l3.data.get(key("w")));
     }
 }

@@ -87,6 +87,7 @@ public final class DiskCodeCache implements CodeCacheStore {
     }
 
     /** 清空反编译缓存子树(不影响缓存根目录下的姊妹缓存),并重置配额守卫节流状态 */
+    @Override
     public void clearAll() {
         CacheLayout.deleteTree(decompileRoot);
         quotaGuard.reset();
