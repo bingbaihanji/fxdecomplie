@@ -42,7 +42,8 @@ final class ExportPipeline {
 
     static void run(List<FileTreeNode> items, ExportConfig config,
                     ClassBytecodeProvider provider, CommentScope commentScope,
-                    ExportService.ExportState state, BooleanSupplier canceled) throws IOException {
+                    ExportService.ExportState state, BooleanSupplier canceled,
+                    ExportSourceCache sourceCache) throws IOException {
         // JADX 内核共享进程级临时目录，适配层用单许可信号量串行化；
         // 导出窗口必须为 1，否则等待信号量的时间会计入 30s 超时预算。
         // 其他引擎为共享反编译池保留至少一个线程，避免导出占满池导致交互式反编译排队。
@@ -64,7 +65,8 @@ final class ExportPipeline {
                 while (inFlight.size() < parallelism && nextSubmit < items.size()) {
                     FileTreeNode item = items.get(nextSubmit++);
                     inFlight.addLast(decompileExecutor.submit(
-                            () -> decompileItem(item, config, provider, commentScope, canceled)));
+                            () -> decompileItem(item, config, provider, commentScope,
+                                    canceled, sourceCache)));
                 }
                 Future<ItemResult> future = inFlight.removeFirst();
                 FileTreeNode item = items.get(nextWrite++);
@@ -137,7 +139,8 @@ final class ExportPipeline {
     private static ItemResult decompileItem(FileTreeNode item, ExportConfig config,
                                             ClassBytecodeProvider provider,
                                             CommentScope commentScope,
-                                            BooleanSupplier canceled) {
+                                            BooleanSupplier canceled,
+                                            ExportSourceCache sourceCache) {
         if (canceled != null && canceled.getAsBoolean()) {
             return ItemResult.error(null);
         }
@@ -147,7 +150,7 @@ final class ExportPipeline {
                     commentScope == null ? "" : commentScope.workspaceHash());
             try {
                 return ItemResult.success(buildExportContent(item, context, config,
-                        commentScope, canceled));
+                        commentScope, canceled, sourceCache));
             } finally {
                 try {
                     context.close();
@@ -162,19 +165,24 @@ final class ExportPipeline {
 
     private static ExportService.ExportContent buildExportContent(
             FileTreeNode data, DecompilerContext context, ExportConfig config,
-            CommentScope commentScope, BooleanSupplier canceled) throws IOException {
+            CommentScope commentScope, BooleanSupplier canceled,
+            ExportSourceCache sourceCache) throws IOException {
         if (data.isClassFile()) {
             byte[] bytes = resolveClassBytes(data, context);
             if (bytes == null) {
                 throw new IllegalStateException("未找到类字节码: " + data.getFullPath());
             }
-            BooleanSupplier active = canceled == null
-                    ? () -> !Thread.currentThread().isInterrupted()
-                    : () -> !canceled.getAsBoolean();
-            String source = DecompilerRunner.decompileWithTimeoutNoClose(
-                    data.getFullPath(), bytes, config.engine(), context, active);
-            if (DecompilerRunner.isFailureOutput(source)) {
-                throw new IllegalStateException(firstLine(source));
+            String source = sourceCache.load(data, bytes, config.engine(),
+                    config.engineOptions());
+            if (source == null) {
+                BooleanSupplier active = canceled == null
+                        ? () -> !Thread.currentThread().isInterrupted()
+                        : () -> !canceled.getAsBoolean();
+                source = DecompilerRunner.decompileWithTimeoutNoClose(
+                        data.getFullPath(), bytes, config.engine(), context, active);
+                if (DecompilerRunner.isFailureOutput(source)) {
+                    throw new IllegalStateException(firstLine(source));
+                }
             }
             String fullPath = data.getFullPath();
             String internalName = ClassNameUtil.normalizeInternalName(fullPath);

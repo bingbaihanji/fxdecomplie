@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.ExportService;
+import com.bingbaihanji.fxdecomplie.service.ExportSourceCache;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -349,6 +350,28 @@ class ExportServiceTest {
             assertEquals("ok", new String(zipFile.getInputStream(entry).readAllBytes(),
                     StandardCharsets.UTF_8));
             assertFalse(entries.hasMoreElements());
+        }
+    }
+
+    @Test
+    void sourceCacheHitSkipsDecompiler() throws Exception {
+        FileTreeNode node = classNode("Cached");
+        Path zip = tempDir.resolve("cached.zip");
+        ClassBytecodeProvider provider = name -> new byte[]{1, 2, 3};
+        ExportSourceCache sourceCache = (n, bytes, engine, options) -> "class Cached {}";
+
+        ExportResult result = ExportService.exportAll(List.of(node),
+                config(zip, ExportConfig.Format.ZIP,
+                        ExportConfig.ConflictPolicy.OVERWRITE, true),
+                provider, null, null, null, sourceCache);
+
+        assertEquals(1, result.successCount());
+        assertTrue(result.errors().isEmpty());
+        try (ZipFile zipFile = new ZipFile(zip.toFile())) {
+            var entry = zipFile.entries().nextElement();
+            assertEquals("com/example/Cached.java", entry.getName());
+            assertEquals("class Cached {}", new String(
+                    zipFile.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8));
         }
     }
 

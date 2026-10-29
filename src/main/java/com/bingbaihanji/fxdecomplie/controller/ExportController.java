@@ -118,6 +118,10 @@ public final class ExportController {
             }
         });
         owner.statusBar().setTask(I18nUtil.getString("task.exporting"));
+        com.bingbaihanji.fxdecomplie.service.ExportSourceCache sourceCache = workspace == null
+                ? com.bingbaihanji.fxdecomplie.service.ExportSourceCache.none()
+                : new com.bingbaihanji.fxdecomplie.service.WorkspaceExportCache(
+                        workspace, owner.cacheManager().decompileCache());
         exportTaskRef.set(BackgroundTasks.run(BackgroundTasks.PoolType.EXPORT, "Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(
@@ -127,7 +131,8 @@ public final class ExportController {
                                     "status.exporting.detail", pct, path));
                             progressHandle.update(path, pct);
                         }),
-                        (java.util.function.BooleanSupplier) () -> exportCanceled.get());
+                        (java.util.function.BooleanSupplier) () -> exportCanceled.get(),
+                        sourceCache);
                 // 立即快照,避免 Platform.runLater 延迟执行期间被用户点取消覆盖
                 final boolean cancelled = exportCanceled.get();
                 Platform.runLater(() -> {

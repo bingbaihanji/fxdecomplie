@@ -106,9 +106,20 @@ public final class ExportService {
                                          ClassBytecodeProvider provider, CommentScope commentScope,
                                          BiConsumer<String, Integer> onProgress,
                                          BooleanSupplier canceled) throws IOException {
+        return exportAll(nodes, config, provider, commentScope, onProgress, canceled,
+                ExportSourceCache.none());
+    }
+
+    /** 带只读源码缓存的导出入口；缓存命中时跳过反编译，导出流程不回写. */
+    public static ExportResult exportAll(List<FileTreeNode> nodes, ExportConfig config,
+                                         ClassBytecodeProvider provider, CommentScope commentScope,
+                                         BiConsumer<String, Integer> onProgress,
+                                         BooleanSupplier canceled,
+                                         ExportSourceCache sourceCache) throws IOException {
         Objects.requireNonNull(nodes, "nodes");
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(provider, "provider");
+        Objects.requireNonNull(sourceCache, "sourceCache");
 
         List<FileTreeNode> items = new ArrayList<>();
         for (FileTreeNode node : nodes) {
@@ -120,7 +131,7 @@ public final class ExportService {
                 items.size(), config.format(), config.engine(), config.outputPath());
         long exportStart = System.currentTimeMillis();
         ExportState state = new ExportState(items.size(), onProgress);
-        ExportPipeline.run(items, config, provider, commentScope, state, canceled);
+        ExportPipeline.run(items, config, provider, commentScope, state, canceled, sourceCache);
         long elapsed = System.currentTimeMillis() - exportStart;
         log.info("导出完成: {}/{} 成功, {} 错误 ({}ms)",
                 state.successCount, state.totalFiles, state.errors.size(), elapsed);
