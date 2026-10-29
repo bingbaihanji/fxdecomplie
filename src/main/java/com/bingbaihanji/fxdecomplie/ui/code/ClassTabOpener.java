@@ -1183,6 +1183,9 @@ public final class ClassTabOpener {
 
         String sourceCode = codeCache.load(cacheKey).orElse(null);
         if (sourceCode != null) {
+            if (!active.getAsBoolean()) {
+                throw new CancellationException("反编译请求已被替换");
+            }
             log.debug("缓存命中: {} engine={}", internalName, effectiveEngine);
         }
 
@@ -1216,11 +1219,11 @@ public final class ClassTabOpener {
         CodeCacheKey cacheKey = CacheKeys.forClass(workspace, bytes, internalName,
                 effectiveEngine, engineOptions);
 
-        codeCache.invalidate(cacheKey, CodeCacheScope.CLASS);
-
         if (!active.getAsBoolean()) {
             throw new CancellationException("反编译请求已被替换");
         }
+        codeCache.invalidate(cacheKey, CodeCacheScope.CLASS);
+
         Thread.interrupted();
         DecompilerContext context = DecompilerRunner.contextForWorkspace(workspace, engineOptions);
         String sourceCode = DecompilerRunner.decompileWithTimeout(node.getFullPath(), bytes,

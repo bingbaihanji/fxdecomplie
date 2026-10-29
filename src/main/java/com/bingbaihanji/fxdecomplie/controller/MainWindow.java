@@ -117,7 +117,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 工作区标签页管理器 */
     private WorkspaceTabManager tabManager;
 
-    /** 类文件反编译及标签页打开器(含 L2 缓存) */
+    /** 类文件反编译及标签页打开器(使用共享 L2/L3 反编译缓存) */
     private ClassTabOpener classTabOpener;
 
     /** 应用缓存统一入口 */

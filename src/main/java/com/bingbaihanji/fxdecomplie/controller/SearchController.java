@@ -146,7 +146,7 @@ public final class SearchController {
     }
 
     /**
-     * 构建完整源码缓存供全文搜索使用,优先复用工作区级缓存和 L2 标签页缓存
+     * 构建完整源码缓存供全文搜索使用,优先复用工作区级缓存和 L2→L3 两级缓存
      * 对未缓存的类逐类解编译(含 30 秒超时和 JD-Core 回退),完成后存入工作区缓存
      * 单次调用最多运行 120 秒,中间可被中断取消
      */
@@ -192,7 +192,7 @@ public final class SearchController {
                     completed = false;
                     break;
                 }
-                // 优先查询 L2 内存缓存(复用已打开标签页的解编译结果,避免重复解编)
+                // 优先查询 L2→L3 两级缓存(复用已打开标签页的解编译结果,避免重复解编)
                 byte[] classBytes = cls.bytes();
                 if (classBytes == null || classBytes.length == 0) {
                     log.debug("全文搜索跳过不可读类: {}", cls.fullPath());
@@ -203,7 +203,7 @@ public final class SearchController {
                 String source = owner.cacheManager().decompileCache()
                         .load(classCacheKey).orElse(null);
                 if (source == null) {
-                    // L2 miss: 带超时和 JD 回退的全量解编译
+                    // 两级缓存未命中: 带超时和 JD 回退的全量解编译
                     source = DecompilerRunner.decompileWithTimeout(
                             cls.fullPath(), classBytes, owner.currentEngine(), context,
                             () -> !Thread.currentThread().isInterrupted());

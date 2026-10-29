@@ -12,8 +12,9 @@ import java.util.Objects;
  *
  * <p>{@link #invalidationPrefix()} 与 {@link #workspacePrefix()} 只用于缓存失效扫描:
  * 前缀匹配范围过大最多造成误删(表现为缓存未命中后重新反编译),不会返回错误数据.
- * 注意 CLASS 级失效前缀包含当前 classFingerprint,因此旧指纹下的条目不会再被命中,
- * 但会一直保留到容量淘汰(eviction)时才被清理.</p>
+ * L2 的 CLASS 级失效按 {@link #invalidationPrefix()} 前缀删除,只清理当前 classFingerprint
+ * 下的条目,旧指纹的条目会一直保留到容量淘汰(eviction)时才被清理;
+ * L3 的 CLASS 级失效则按工作区 + 内部名删除该类的全部指纹/选项/键版本变体.</p>
  *
  * @author bingbaihanji
  * @date 2026-07-26
