@@ -31,20 +31,22 @@ public final class ApplicationServices implements AutoCloseable {
 
     private final Path appDir;
 
-    private final DecompileCache l2Cache;
-
-    private final DiskCodeCache l3Cache;
-
     private final DecompileCacheService decompileCache;
 
     private final CacheManager cacheManager;
 
     private ApplicationServices(Path appDir) {
         this.appDir = appDir;
-        this.l2Cache = new DecompileCache();
-        this.l3Cache = new DiskCodeCache(CacheLayout.decompileDir(), CacheLimits.L3_BYTES);
-        this.decompileCache = new DecompileCacheService(l2Cache, l3Cache);
-        this.cacheManager = new CacheManager(decompileCache);
+        try {
+            BackgroundTasks.run(BackgroundTasks.PoolType.IO,
+                    "CacheCleanupLegacy", CacheLayout::cleanupLegacy);
+        } catch (RuntimeException e) {
+            log.debug("旧缓存布局清理任务提交失败", e);
+        }
+        DecompileCache l2 = new DecompileCache();
+        DiskCodeCache l3 = new DiskCodeCache(CacheLayout.decompileDir(), CacheLimits.L3_BYTES);
+        this.decompileCache = new DecompileCacheService(l2, l3);
+        this.cacheManager = new CacheManager(decompileCache, l2, l3);
         log.info("应用服务已初始化: {}", appDir);
     }
 
@@ -72,6 +74,14 @@ public final class ApplicationServices implements AutoCloseable {
                     "ApplicationServices 尚未初始化,请先调用 create()");
         }
         return instance;
+    }
+
+    /** 若已初始化则关闭；供应用退出调用 */
+    public static void closeIfCreated() {
+        ApplicationServices current = instance;
+        if (current != null) {
+            current.close();
+        }
     }
 
     // ─── 服务访问器 ───

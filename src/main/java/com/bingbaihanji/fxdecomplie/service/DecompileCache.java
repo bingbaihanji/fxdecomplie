@@ -12,8 +12,8 @@ import java.util.Optional;
  * L2 反编译源码内存缓存,按字节大小限制,加权 LRU 淘汰.
  *
  * <p>{@link #sizeBytes()} 返回的是估算值:按 {@code value.length() * 2} 计算,
- * 不包含键、字符串对象头与缓存结构本身的开销.默认内存预算为 50 MB
- * (常量 {@code DEFAULT_MAX_BYTES}),可通过 {@link #DecompileCache(int)} 覆盖.</p>
+ * 不包含键、字符串对象头与缓存结构本身的开销.默认内存预算为
+ * {@link CacheLimits#L2_BYTES},可通过 {@link #DecompileCache(int)} 覆盖.</p>
  *
  * <p>线程安全性继承自 {@link LruCache}:单个 get/put/remove 操作是同步的;
  * 前缀失效先获取快照再逐个删除,不会因并发写入抛出 ConcurrentModificationException.</p>
@@ -23,14 +23,11 @@ import java.util.Optional;
  */
 public class DecompileCache implements CodeCacheStore {
 
-    /** 默认内存预算:50 MB */
-    private static final int DEFAULT_MAX_BYTES = 50_000_000;
-
     private final LruCache<String, String> cache;
 
-    /** 使用默认 50 MB 内存预算创建缓存 */
+    /** 使用 {@link CacheLimits#L2_BYTES} 内存预算创建缓存 */
     public DecompileCache() {
-        this(DEFAULT_MAX_BYTES);
+        this((int) CacheLimits.L2_BYTES);
     }
 
     /**
@@ -90,6 +87,11 @@ public class DecompileCache implements CodeCacheStore {
     /** @return 未命中次数 */
     public int missCount() {
         return cache.missCount();
+    }
+
+    /** @return 当前条目数（设置页统计，非热路径） */
+    public int entryCount() {
+        return cache.snapshot().size();
     }
 
     /** 清空所有内存条目 */

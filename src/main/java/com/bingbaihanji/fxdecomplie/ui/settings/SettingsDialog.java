@@ -6,14 +6,17 @@ import com.bingbaihanji.fxdecomplie.decompiler.EngineParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxAdapterOptions;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CacheLayout;
-import com.bingbaihanji.fxdecomplie.service.CacheLimits;
-import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+import com.bingbaihanji.fxdecomplie.service.CacheStats;
+import com.bingbaihanji.fxdecomplie.service.cache.CacheKind;
+import com.bingbaihanji.fxdecomplie.service.cache.CacheManager;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.theme.ThemeManager;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.utils.json.JSONUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
+import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.FlowPane;
@@ -86,7 +89,8 @@ public final class SettingsDialog {
         throw new AssertionError("utility class");
     }
 
-    public static void show(Stage owner, AppConfig config, Consumer<AppConfig> onApply) {
+    public static void show(Stage owner, AppConfig config, CacheManager cacheManager,
+                            Consumer<AppConfig> onApply) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("menu.edit.settings"));
@@ -381,18 +385,48 @@ public final class SettingsDialog {
         cacheTab.setClosable(false);
         Label cachePath = new Label(CacheLayout.cacheRoot().toString());
         cachePath.setWrapText(true);
-        Button cleanCacheButton = new Button(I18nUtil.getString("settings.cache.clean"));
-        cleanCacheButton.setOnAction(event -> {
-            new DiskCodeCache(CacheLayout.decompileDir(), CacheLimits.L3_BYTES).clearAll();
-            com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(
-                    owner,
-                    I18nUtil.getString("settings.cache"),
-                    I18nUtil.getString("settings.cache.cleaned"));
-        });
+        Label l2StatsLabel = new Label(I18nUtil.getString("settings.cache.loading"));
+        Label l3StatsLabel = new Label(I18nUtil.getString("settings.cache.loading"));
+        Label indexStatsLabel = new Label(I18nUtil.getString("settings.cache.loading"));
+
+        Runnable refresh = () -> {
+            try {
+                BackgroundTasks.run(BackgroundTasks.PoolType.IO, "CacheStats", () -> {
+                    CacheStats l2Stats = cacheManager.l2Stats();
+                    CacheStats l3Stats = cacheManager.l3Stats();
+                    CacheStats indexStats = cacheManager.indexStats();
+                    Platform.runLater(() -> {
+                        l2StatsLabel.setText(memoryStats(l2Stats));
+                        l3StatsLabel.setText(diskStats(l3Stats));
+                        indexStatsLabel.setText(diskStats(indexStats));
+                    });
+                });
+            } catch (RuntimeException e) {
+                log.debug("缓存统计任务提交失败", e);
+            }
+        };
+        refresh.run();
+
+        Button cleanL2 = new Button(I18nUtil.getString("settings.cache.clean.l2"));
+        cleanL2.setOnAction(event ->
+                cleanCache(cacheManager, CacheKind.DECOMPILE_L2, owner, refresh));
+        Button cleanL3 = new Button(I18nUtil.getString("settings.cache.clean.l3"));
+        cleanL3.setOnAction(event ->
+                cleanCache(cacheManager, CacheKind.DECOMPILE_L3, owner, refresh));
+        Button cleanIndex = new Button(I18nUtil.getString("settings.cache.clean.index"));
+        cleanIndex.setOnAction(event ->
+                cleanCache(cacheManager, CacheKind.INDEX, owner, refresh));
+        Button cleanAll = new Button(I18nUtil.getString("settings.cache.clean.all"));
+        cleanAll.setOnAction(event ->
+                cleanCache(cacheManager, CacheKind.ALL_MANAGED, owner, refresh));
+
         cacheTab.setContent(new VBox(10,
                 new Label(I18nUtil.getString("settings.cache.path")),
                 cachePath,
-                new HBox(cleanCacheButton)));
+                new Label(I18nUtil.getString("settings.cache.l2")), l2StatsLabel,
+                new Label(I18nUtil.getString("settings.cache.l3")), l3StatsLabel,
+                new Label(I18nUtil.getString("settings.cache.index")), indexStatsLabel,
+                new FlowPane(10, 10, cleanL2, cleanL3, cleanIndex, cleanAll)));
 
         // 语言标签页
         Tab langTab = new Tab(I18nUtil.getString("settings.language"));
@@ -951,6 +985,45 @@ public final class SettingsDialog {
             combo.setValue(currentValue);
         } else {
             combo.setValue("Dark+");
+        }
+    }
+
+    private static String memoryStats(CacheStats stats) {
+        long accesses = stats.hitCount() + stats.missCount();
+        long hitRate = accesses == 0 ? 0 : stats.hitCount() * 100 / accesses;
+        return I18nUtil.getString("settings.cache.memory.stats",
+                stats.entries(), formatBytes(stats.bytes()), hitRate);
+    }
+
+    private static String diskStats(CacheStats stats) {
+        return I18nUtil.getString("settings.cache.disk.stats",
+                stats.entries(), formatBytes(stats.bytes()));
+    }
+
+    private static String formatBytes(long bytes) {
+        if (bytes >= 1024L * 1024 * 1024) {
+            return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
+        }
+        if (bytes >= 1024L * 1024) {
+            return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        }
+        return String.format("%.1f KB", bytes / 1024.0);
+    }
+
+    private static void cleanCache(CacheManager cacheManager, CacheKind kind,
+                                   Stage owner, Runnable refresh) {
+        try {
+            BackgroundTasks.run(BackgroundTasks.PoolType.IO, "CacheClean-" + kind, () -> {
+                cacheManager.clear(kind);
+                Platform.runLater(() -> {
+                    refresh.run();
+                    DialogHelper.showInfo(owner,
+                            I18nUtil.getString("settings.cache"),
+                            I18nUtil.getString("settings.cache.cleaned"));
+                });
+            });
+        } catch (RuntimeException e) {
+            log.debug("缓存清理任务提交失败: {}", kind, e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.context;
 
+import com.bingbaihanji.fxdecomplie.app.ApplicationServices;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
@@ -78,6 +79,7 @@ public final class AppContext {
             shutdown = true;
         }
         log.info("关闭应用上下文");
+        shutdownQuietly("application services", ApplicationServices::closeIfCreated);
         shutdownQuietly("background tasks", BackgroundTasks::shutdown);
         shutdownQuietly("class tab opener", ClassTabOpener::shutdown);
         shutdownQuietly("window toolkit", WindowToolkit::shutdown);
