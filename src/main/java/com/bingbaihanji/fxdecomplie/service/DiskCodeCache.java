@@ -166,9 +166,9 @@ public final class DiskCodeCache implements CodeCacheStore {
         Path packageDir = CacheLayout.packagePath(CacheLayout.packageOf(key.internalName()));
         String prefix = CacheLayout.filePrefix(key);
         try (var engineDirs = Files.list(workspaceDir)) {
-            engineDirs.filter(Files::isDirectory).forEach(engineDir -> {
+            engineDirs.filter(this::isRealDirectory).forEach(engineDir -> {
                 Path classDir = engineDir.resolve(packageDir);
-                if (!Files.exists(classDir)) {
+                if (!isRealDirectory(classDir)) {
                     return;
                 }
                 try (var files = Files.list(classDir)) {
@@ -179,10 +179,21 @@ public final class DiskCodeCache implements CodeCacheStore {
                                 } catch (IOException ignored) {
                                 }
                             });
-                } catch (IOException ignored) {
+                } catch (IOException | RuntimeException ignored) {
                 }
             });
-        } catch (IOException ignored) {
+        } catch (IOException | RuntimeException ignored) {
+        }
+    }
+
+    /** 目录必须是真实目录，不跟随符号链接/Windows 联接点 */
+    private boolean isRealDirectory(Path path) {
+        try {
+            BasicFileAttributes attrs = Files.readAttributes(
+                    path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            return attrs.isDirectory() && !attrs.isSymbolicLink() && !attrs.isOther();
+        } catch (IOException e) {
+            return false;
         }
     }
 }
