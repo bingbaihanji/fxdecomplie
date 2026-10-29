@@ -13,7 +13,12 @@ public interface CodeCacheStore {
     /** 从缓存加载反编译源码 */
     Optional<String> load(CodeCacheKey key);
 
-    /** 将反编译源码存入缓存 */
+    /**
+     * 将反编译源码存入缓存.
+     *
+     * <p>{@code source} 为 {@code null} 或空白字符串时忽略该次写入 — 空白源码不是有效缓存值,
+     * L2 与 L3 实现必须保持一致.</p>
+     */
     void save(CodeCacheKey key, String source);
 
     /** 按范围失效缓存 */

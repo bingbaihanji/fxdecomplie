@@ -6,25 +6,40 @@ import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheStore;
 import com.bingbaihanji.fxdecomplie.util.cache.LruCache;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * L2 反编译源码内存缓存,按字节大小限制,加权 LRU 淘汰.
+ *
+ * <p>{@link #sizeBytes()} 返回的是估算值:按 {@code value.length() * 2} 计算,
+ * 不包含键、字符串对象头与缓存结构本身的开销.默认内存预算为 50 MB
+ * (常量 {@code DEFAULT_MAX_BYTES}),可通过 {@link #DecompileCache(int)} 覆盖.</p>
+ *
+ * <p>线程安全性继承自 {@link LruCache}:单个 get/put/remove 操作是同步的;
+ * 前缀失效先获取快照再逐个删除,不会因并发写入抛出 ConcurrentModificationException.</p>
  *
  * @author bingbaihanji
  * @date 2026-06-18
  */
 public class DecompileCache implements CodeCacheStore {
 
+    /** 默认内存预算:50 MB */
+    private static final int DEFAULT_MAX_BYTES = 50_000_000;
+
     /** 旧版缓存键分隔符(null 字符不可能出现在 JVM 内部名称中),用于各组件之间的精确匹配,避免前缀碰撞 */
     private static final String KEY_SEP = "\0";
 
     private final LruCache<String, String> cache;
 
+    /** 使用默认 50 MB 内存预算创建缓存 */
     public DecompileCache() {
-        this(50_000_000);
+        this(DEFAULT_MAX_BYTES);
     }
 
+    /**
+     * @param maxBytes 内存预算,以加权字节数计(每个条目按 value.length() * 2),必须大于 0
+     */
     public DecompileCache(int maxBytes) {
         this.cache = new LruCache<String, String>(maxBytes) {
             @Override
@@ -36,18 +51,23 @@ public class DecompileCache implements CodeCacheStore {
 
     @Override
     public Optional<String> load(CodeCacheKey key) {
+        Objects.requireNonNull(key, "key");
         return Optional.ofNullable(cache.get(key.compositeKey()));
     }
 
+    /** 忽略 null 或空白源码,与 L3 的写入契约保持一致 */
     @Override
     public void save(CodeCacheKey key, String source) {
-        if (source != null) {
+        Objects.requireNonNull(key, "key");
+        if (source != null && !source.isBlank()) {
             cache.put(key.compositeKey(), source);
         }
     }
 
     @Override
     public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(scope, "scope");
         switch (scope) {
             case CLASS -> removeByPrefix(key.invalidationPrefix());
             case WORKSPACE -> removeByPrefix(key.workspacePrefix());
@@ -61,7 +81,7 @@ public class DecompileCache implements CodeCacheStore {
                 .forEach(cache::remove);
     }
 
-    /** @return 当前缓存占用的加权字节数 */
+    /** @return 当前缓存占用的加权字节数估算值(value.length() * 2,不含键和对象头开销) */
     public int sizeBytes() {
         return cache.size();
     }
@@ -81,7 +101,8 @@ public class DecompileCache implements CodeCacheStore {
         cache.evictAll();
     }
 
-    // ─── 向后兼容方法(旧字符串键,待调用方迁移到 CodeCacheStore API 后删除) ───
+    // TODO(Task 4): 接线完成后删除旧字符串键 API
+    // ─── 向后兼容方法(旧字符串键) ───
 
     /** 构建旧版缓存键,组合工作区标识 类内部名 引擎类型和选项哈希 */
     private static String cacheKey(String workspaceKey, String internalName,
@@ -119,18 +140,6 @@ public class DecompileCache implements CodeCacheStore {
      */
     @Deprecated(forRemoval = true)
     public void invalidate(String workspaceKey, String internalName) {
-        String prefix = workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP;
-        cache.snapshot().keySet().stream()
-                .filter(k -> k.startsWith(prefix))
-                .forEach(cache::remove);
-    }
-
-    /**
-     * @return 当前缓存占用的加权字节数(历史命名)
-     * @deprecated 使用 {@link #sizeBytes()} 代替
-     */
-    @Deprecated(forRemoval = true)
-    public int size() {
-        return cache.size();
+        removeByPrefix(workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP);
     }
 }

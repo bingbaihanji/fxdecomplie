@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,6 +16,11 @@ class DecompileCacheTest {
     private static CodeCacheKey key(String workspace, String internalName) {
         return new CodeCacheKey(workspace, "fp", internalName,
                 DecompilerTypeEnum.CFR, "default", 1);
+    }
+
+    private static CodeCacheKey key(String workspace, String internalName,
+                                    DecompilerTypeEnum engine, String optionsHash, int keyVersion) {
+        return new CodeCacheKey(workspace, "fp", internalName, engine, optionsHash, keyVersion);
     }
 
     @Test
@@ -55,18 +60,74 @@ class DecompileCacheTest {
     }
 
     @Test
+    void invalidatesClassAcrossEngineOptionsAndVersion() {
+        DecompileCache cache = new DecompileCache();
+        CodeCacheKey cfrDefaultV1 = key("w", "com/example/App");
+        CodeCacheKey vineflowerDefaultV1 = key("w", "com/example/App",
+                DecompilerTypeEnum.VINEFLOWER, "default", 1);
+        CodeCacheKey cfrOtherV1 = key("w", "com/example/App",
+                DecompilerTypeEnum.CFR, "other", 1);
+        CodeCacheKey cfrDefaultV2 = key("w", "com/example/App",
+                DecompilerTypeEnum.CFR, "default", 2);
+        CodeCacheKey unrelated = key("w", "com/example/Other");
+
+        cache.save(cfrDefaultV1, "cfr-default-v1");
+        cache.save(vineflowerDefaultV1, "vineflower-default-v1");
+        cache.save(cfrOtherV1, "cfr-other-v1");
+        cache.save(cfrDefaultV2, "cfr-default-v2");
+        cache.save(unrelated, "other-class");
+
+        cache.invalidate(cfrDefaultV1, CodeCacheScope.CLASS);
+
+        assertNull(cache.load(cfrDefaultV1).orElse(null));
+        assertNull(cache.load(vineflowerDefaultV1).orElse(null));
+        assertNull(cache.load(cfrOtherV1).orElse(null));
+        assertNull(cache.load(cfrDefaultV2).orElse(null));
+        assertEquals("other-class", cache.load(unrelated).orElse(null));
+    }
+
+    @Test
+    void invalidateAllClearsEverything() {
+        DecompileCache cache = new DecompileCache();
+        CodeCacheKey app = key("w", "com/example/App");
+        CodeCacheKey other = key("w", "com/example/Other");
+        cache.save(app, "source-a");
+        cache.save(other, "source-b");
+
+        cache.invalidate(app, CodeCacheScope.ALL);
+
+        assertEquals(0, cache.sizeBytes());
+        assertNull(cache.load(app).orElse(null));
+        assertNull(cache.load(other).orElse(null));
+    }
+
+    @Test
     void evictsByByteSize() {
         DecompileCache cache = new DecompileCache(20);
         cache.save(key("w", "A"), "12345678");   // 16 bytes
         cache.save(key("w", "B"), "abcdefgh");   // 16 bytes -> evicts A
+        assertEquals(16, cache.sizeBytes());
         assertNull(cache.load(key("w", "A")).orElse(null));
         assertEquals("abcdefgh", cache.load(key("w", "B")).orElse(null));
     }
 
     @Test
+    void ignoresNullOrBlankSource() {
+        DecompileCache cache = new DecompileCache();
+        CodeCacheKey key = key("w", "com/example/App");
+
+        cache.save(key, null);
+        cache.save(key, "");
+        cache.save(key, "   ");
+
+        assertNull(cache.load(key).orElse(null));
+        assertEquals(0, cache.sizeBytes());
+    }
+
+    @Test
     void concurrentSaveAndInvalidateNoCME() throws InterruptedException {
         DecompileCache cache = new DecompileCache();
-        AtomicBoolean failed = new AtomicBoolean(false);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch stopLatch = new CountDownLatch(2);
 
@@ -76,8 +137,11 @@ class DecompileCacheTest {
                 for (int i = 0; i < 5_000; i++) {
                     cache.save(key("w" + (i % 10), "com/example/C" + i), "source-" + i);
                 }
-            } catch (Exception e) {
-                failed.set(true);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                failure.compareAndSet(null, e);
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
             } finally {
                 stopLatch.countDown();
             }
@@ -89,8 +153,11 @@ class DecompileCacheTest {
                     cache.invalidate(key("w" + (i % 10), "com/example/C" + i),
                             CodeCacheScope.CLASS);
                 }
-            } catch (Exception e) {
-                failed.set(true);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                failure.compareAndSet(null, e);
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
             } finally {
                 stopLatch.countDown();
             }
@@ -99,6 +166,9 @@ class DecompileCacheTest {
         invalidator.start();
         startLatch.countDown();
         assertTrue(stopLatch.await(30, TimeUnit.SECONDS));
-        assertFalse(failed.get());
+        assertNull(failure.get(), () -> "并发 save + invalidate 失败: " + failure.get());
+
+        cache.invalidate(key("w0", "com/example/C0"), CodeCacheScope.ALL);
+        assertEquals(0, cache.sizeBytes());
     }
 }
