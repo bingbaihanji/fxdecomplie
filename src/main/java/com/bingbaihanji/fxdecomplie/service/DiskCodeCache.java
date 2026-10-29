@@ -118,23 +118,23 @@ public final class DiskCodeCache implements CodeCacheStore {
 
     @Override
     public Optional<String> load(CodeCacheKey key) {
-        return Optional.ofNullable(load(key.workspaceKey(), key.internalName(),
+        return Optional.ofNullable(load(key.workspaceId(), key.internalName(),
                 key.engine(), key.optionsHash()));
     }
 
     @Override
     public void save(CodeCacheKey key, String source) {
-        save(key.workspaceKey(), key.internalName(),
+        save(key.workspaceId(), key.internalName(),
                 key.engine(), key.optionsHash(), source);
     }
 
     @Override
     public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
         switch (scope) {
-            case CLASS -> invalidate(key.workspaceKey(), key.internalName());
+            case CLASS -> invalidate(key.workspaceId(), key.internalName());
             case WORKSPACE -> {
                 // 清理该工作区下的所有缓存文件
-                String safeWs = sanitizePathPart(key.workspaceKey());
+                String safeWs = sanitizePathPart(key.workspaceId());
                 Path wsDir = cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWs);
                 try {
                     if (Files.exists(wsDir)) {

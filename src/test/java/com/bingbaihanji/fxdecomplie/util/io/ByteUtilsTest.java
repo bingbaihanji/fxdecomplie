@@ -15,6 +15,12 @@ class ByteUtilsTest {
     }
 
     @Test
+    void sha256HexAcceptsBytes() {
+        assertEquals("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                ByteUtils.sha256Hex(new byte[]{'a', 'b', 'c'}));
+    }
+
+    @Test
     void sha256HexIsLowercaseAnd64Chars() {
         String hex = ByteUtils.sha256Hex("workspace-key");
         assertEquals(64, hex.length());
