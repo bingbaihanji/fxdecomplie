@@ -35,6 +35,14 @@ final class ExportWriter {
         Files.writeString(outputPath, code);
     }
 
+    /** 按导出格式创建增量写入器. */
+    static ExportSink openSink(ExportConfig config) throws IOException {
+        if (config.format() == ExportConfig.Format.ZIP) {
+            return new ZipExportSink(config.outputPath(), config.conflictPolicy());
+        }
+        return new DirExportSink(config.outputPath(), config.conflictPolicy());
+    }
+
     /** 将已反编译的内容写入目录(顺序写入,无并发) */
     static void writeDecompiledToDir(List<FileTreeNode> items,
                                      Map<FileTreeNode, ExportService.ExportContent> decompiled,
