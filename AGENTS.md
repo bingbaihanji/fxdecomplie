@@ -182,7 +182,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 ```text
 <appDir>/
 ├── config/config.json        # 窗口/主题/引擎/导出/搜索/平台偏好
-├── cache/                    # L3 反编译缓存、jadx runtime 临时目录
+├── cache/                    # decompile/v1 反编译缓存、index/v1 索引缓存、jadx/runtime 临时目录
 ├── logs/                     # application.log / error.log / startup-error.log
 └── fxdecomplie/              # 工作区级数据
     ├── comments/             # 注释持久化
