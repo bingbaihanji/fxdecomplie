@@ -167,7 +167,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 2. **L3 磁盘缓存**（`DiskCodeCache`）—— 异步写入，不阻塞 UI。
 3. **实际反编译** —— 多引擎统一入口。
 
-缓存键包含工作区路径、文件 mtime/size、CRC32 类文件指纹、选项 hash、依赖图 hash、重命名快照 hash 等，防止同路径替换或配置变化命中旧缓存。失败结果（超时/错误/取消/目标未找到）不进入任何一级缓存。
+缓存键由 `service/cache/CacheKeys` 统一生成：workspaceId（绝对路径 + 内容戳）、SHA-256 类文件指纹（前 16 位十六进制）、内部名、引擎、选项 hash（JADX 反混淆时追加项目重命名状态版本）和键版本。L3 路径位于 `cache/v2/<workspaceId>/<engine>/`，文件名包含类指纹与键版本；实例级清理只作用于反编译子树，不触碰 `index-cache/` 与 `jadx/`。失败结果（超时/错误/取消/目标未找到）不进入任何一级缓存。
 
 工作区索引由虚拟线程并行构建，图片等二进制资源不进入索引与缓存；打开工作区后延迟 500ms 预热（仅当仍为当前活动工作区），关闭中的工作区会丢弃构建/缓存命中结果，且不写缓存。索引持久化到 `<appDir>/cache/index-cache/<指纹>.idx.gz`（GZIP 二进制，带格式版本号，唯一临时文件 + 原子替换，指纹为「路径 + 大小 + mtime」（目录为汇总信息））。按节点导出通过 `WorkspaceClassBytecodeProvider` 懒加载依赖，不等待完整索引。索引构建使用独立单线程池，不占用共享 IO 池。
 
@@ -215,7 +215,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 ## 7. 测试
 
 - 测试框架：**JUnit 5**。
-- 当前全量测试约 **404** 个，全部通过。
+- 当前全量测试 **433** 个，全部通过。
 - 新增功能优先补充单元测试；涉及索引、搜索、导出、项目文件解析、ClassGraph 适配、JADX 适配的变更必须覆盖异常路径。
 - ClassGraph 相关测试位于 `src/test/java/com/bingbaihanji/classgraph/` 与 `src/test/java/com/bingbaihanji/fxdecomplie/service/classscan/`、`service/reference/`。
 - JADX 相关测试位于 `src/test/java/com/bingbaihanji/fxdecomplie/decompiler/jadx/`。
