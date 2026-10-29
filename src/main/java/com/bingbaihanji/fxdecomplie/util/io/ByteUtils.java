@@ -181,12 +181,7 @@ public final class ByteUtils {
      */
     public static String sha256Hex(String input) {
         Objects.requireNonNull(input, "input 不能为 null");
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return bytesToHex(md.digest(input.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm not available", e);
-        }
+        return sha256Hex(input.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

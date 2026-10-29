@@ -31,7 +31,12 @@ public final class CacheKeys {
         return source.getAbsolutePath() + "|" + workspace.getContentStamp();
     }
 
-    /** 类内容指纹 = SHA-256 前 16 位十六进制 */
+    /**
+     * 类内容指纹 = SHA-256 前 16 位十六进制.
+     *
+     * <p>null 或空字节返回哨兵值 "0"(不是合法的 16 位十六进制指纹),用于表示类字节缺失;
+     * {@link ByteUtils#sha256Hex(byte[])} 本身则拒绝 null.</p>
+     */
     public static String classFingerprint(byte[] bytes) {
         if (bytes == null || bytes.length == 0) {
             return "0";

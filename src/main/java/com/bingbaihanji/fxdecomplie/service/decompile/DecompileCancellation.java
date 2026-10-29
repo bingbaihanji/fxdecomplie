@@ -10,8 +10,7 @@ import java.util.concurrent.Future;
 /**
  * 管理反编译任务的取消与过期结果丢弃.
  *
- * <p>每个活跃的反编译请求通过 requestId 注册;取消时移除并中断对应的 Future.
- * 与 {@link OpenClassUseCase} 配合使用.</p>
+ * <p>每个活跃的反编译请求通过 requestId 注册;取消时移除并中断对应的 Future.</p>
  *
  * @author bingbaihanji
  * @date 2026-07-26

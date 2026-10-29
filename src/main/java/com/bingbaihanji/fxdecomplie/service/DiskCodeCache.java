@@ -118,20 +118,18 @@ public final class DiskCodeCache implements CodeCacheStore {
 
     @Override
     public Optional<String> load(CodeCacheKey key) {
-        return Optional.ofNullable(load(key.workspaceId(), key.internalName(),
-                key.engine(), key.optionsHash()));
+        return Optional.ofNullable(loadFile(cachePath(key)));
     }
 
     @Override
     public void save(CodeCacheKey key, String source) {
-        save(key.workspaceId(), key.internalName(),
-                key.engine(), key.optionsHash(), source);
+        saveFile(cachePath(key), source);
     }
 
     @Override
     public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
         switch (scope) {
-            case CLASS -> invalidate(key.workspaceId(), key.internalName());
+            case CLASS -> invalidateInternal(key.workspaceId(), key.internalName());
             case WORKSPACE -> {
                 // 清理该工作区下的所有缓存文件
                 String safeWs = sanitizePathPart(key.workspaceId());
@@ -150,13 +148,21 @@ public final class DiskCodeCache implements CodeCacheStore {
                 } catch (IOException ignored) {
                 }
             }
-            case ALL -> cleanAll();
+            case ALL -> cleanAllInternal();
         }
     }
 
     private String loadInternal(String workspaceHash, String internalName,
                                 DecompilerTypeEnum engine, String optionsHash) {
-        Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
+        return loadFile(cachePath(workspaceHash, internalName, engine, optionsHash));
+    }
+
+    private void saveInternal(String workspaceHash, String internalName,
+                              DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
+        saveFile(cachePath(workspaceHash, internalName, engine, optionsHash), sourceCode);
+    }
+
+    private String loadFile(Path file) {
         try {
             if (!Files.exists(file)) {
                 return null;
@@ -169,13 +175,11 @@ public final class DiskCodeCache implements CodeCacheStore {
         }
     }
 
-    private void saveInternal(String workspaceHash, String internalName,
-                              DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
+    private void saveFile(Path file, String sourceCode) {
         if (sourceCode == null || sourceCode.isBlank()) {
             return;
         }
         try {
-            Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
             Files.createDirectories(file.getParent());
             checkAndCleanLazy();
             AtomicFile af = new AtomicFile(file.toFile());
@@ -187,7 +191,7 @@ public final class DiskCodeCache implements CodeCacheStore {
                 }
             });
         } catch (IOException | RuntimeException e) {
-            log.debug("保存磁盘代码缓存失败: {}/{}", workspaceHash, internalName, e);
+            log.debug("保存磁盘代码缓存失败: {}", file, e);
         }
     }
 
@@ -341,5 +345,19 @@ public final class DiskCodeCache implements CodeCacheStore {
         return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION)
                 .resolve(safeWorkspace).resolve(safeEngine)
                 .resolve(safeInternalName + "." + optionsId(optionsHash) + ".java");
+    }
+
+    /**
+     * 按缓存键构造文件路径 — 文件名包含类指纹与键版本,
+     * 保证指纹或键版本不同的键不会互相覆盖.
+     */
+    private Path cachePath(CodeCacheKey key) {
+        String safeWorkspace = sanitizePathPart(key.workspaceId());
+        String safeInternalName = sanitizePathPart(key.internalName());
+        String safeEngine = key.engine().name().toLowerCase();
+        String fileName = safeInternalName + "." + sanitizePathPart(key.classFingerprint())
+                + "." + optionsId(key.optionsHash()) + "." + key.keyVersion() + ".java";
+        return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION)
+                .resolve(safeWorkspace).resolve(safeEngine).resolve(fileName);
     }
 }

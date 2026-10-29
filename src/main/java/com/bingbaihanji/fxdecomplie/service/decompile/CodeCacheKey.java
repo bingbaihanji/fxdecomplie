@@ -7,7 +7,13 @@ import java.util.Objects;
 /**
  * 反编译缓存键 — 工作区、类指纹、内部名、引擎、选项与键版本.
  *
- * <p>使用 \0 分隔符避免前缀碰撞(\0 不出现在 JVM 内部名称中).</p>
+ * <p>各字段以 \0 分隔符拼接为复合键. JVM 内部名称不会包含 NUL,工作区 ID 与选项哈希
+ * 也由本项目生成,实践上同样不含 NUL;该分隔符用于降低前缀碰撞概率,并非严格的编码保证.</p>
+ *
+ * <p>{@link #invalidationPrefix()} 与 {@link #workspacePrefix()} 只用于缓存失效扫描:
+ * 前缀匹配范围过大最多造成误删(表现为缓存未命中后重新反编译),不会返回错误数据.
+ * 注意 CLASS 级失效前缀包含当前 classFingerprint,因此旧指纹下的条目不会再被命中,
+ * 但会一直保留到容量淘汰(eviction)时才被清理.</p>
  *
  * @author bingbaihanji
  * @date 2026-07-26
