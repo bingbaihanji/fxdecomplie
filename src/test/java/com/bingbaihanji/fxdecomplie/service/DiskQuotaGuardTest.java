@@ -68,6 +68,26 @@ class DiskQuotaGuardTest {
     }
 
     @Test
+    void onWriteTriggersByTimeInterval() {
+        long[] now = {0};
+        LongSupplier clock = () -> now[0];
+        AtomicInteger runs = new AtomicInteger();
+        DiskQuotaGuard guard = new DiskQuotaGuard(root, 100, task -> {
+            runs.incrementAndGet();
+            task.run();
+        }, CacheLimits.QUOTA_CHECK_INTERVAL_NANOS, 100, clock);
+
+        guard.onWrite();
+        assertEquals(0, runs.get());
+        now[0] = CacheLimits.QUOTA_CHECK_INTERVAL_NANOS - 1;
+        guard.onWrite();
+        assertEquals(0, runs.get(), "未达到检查间隔时不应触发");
+        now[0] = CacheLimits.QUOTA_CHECK_INTERVAL_NANOS;
+        guard.onWrite();
+        assertEquals(1, runs.get(), "达到检查间隔后应由时间条件触发");
+    }
+
+    @Test
     void resetRestartsThrottleWindow() {
         long[] now = {0};
         LongSupplier clock = () -> now[0];
