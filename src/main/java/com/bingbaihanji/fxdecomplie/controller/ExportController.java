@@ -170,6 +170,14 @@ public final class ExportController {
                         owner.showError(I18nUtil.getString("dialog.export.failed", ex.getMessage()));
                     }
                 });
+            } catch (Error error) {
+                Platform.runLater(() -> {
+                    progressHandle.close();
+                    owner.statusBar().clearTask();
+                    owner.showError(I18nUtil.getString("dialog.export.failed",
+                            error.getMessage()));
+                });
+                throw error;
             }
         }, rejected -> Platform.runLater(() -> {
             exportCanceled.set(true);
