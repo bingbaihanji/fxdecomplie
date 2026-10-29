@@ -116,6 +116,11 @@ public final class DiskCodeCache implements CodeCacheStore {
         return cacheRoot;
     }
 
+    /** 清空磁盘缓存根目录（实例级，供测试与管理入口使用） */
+    public void clearAll() {
+        cleanAllInternal();
+    }
+
     @Override
     public Optional<String> load(CodeCacheKey key) {
         return Optional.ofNullable(loadFile(cachePath(key)));
@@ -168,7 +173,13 @@ public final class DiskCodeCache implements CodeCacheStore {
                 return null;
             }
             String content = Files.readString(file, StandardCharsets.UTF_8);
-            return content.isEmpty() ? null : content;
+            if (content.isEmpty()) {
+                return null;
+            }
+            // 读取即视为使用,刷新 mtime 以便容量清理按 LRU 近似淘汰
+            Files.setLastModifiedTime(file, java.nio.file.attribute.FileTime.fromMillis(
+                    System.currentTimeMillis()));
+            return content;
         } catch (IOException e) {
             log.debug("加载磁盘代码缓存失败: {}", file, e);
             return null;
@@ -219,7 +230,7 @@ public final class DiskCodeCache implements CodeCacheStore {
                 var cleanupTask = BackgroundTasks.run(BackgroundTasks.PoolType.IO,
                         "DiskCache-Cleanup", () -> {
                             try {
-                                cleanIfNeeded();
+                                cleanIfNeededInternal();
                             } finally {
                                 cleanupInProgress = false;
                             }

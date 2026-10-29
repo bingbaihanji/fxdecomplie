@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiskCodeCacheTest {
@@ -24,6 +25,11 @@ class DiskCodeCacheTest {
     private static CodeCacheKey key(String internalName, String classFingerprint, int keyVersion) {
         return new CodeCacheKey("ws|stamp", classFingerprint, internalName,
                 DecompilerTypeEnum.CFR, "default", keyVersion);
+    }
+
+    private static CodeCacheKey key(String workspace, String classFingerprint, String internalName) {
+        return new CodeCacheKey(workspace, classFingerprint, internalName,
+                DecompilerTypeEnum.CFR, "default", 1);
     }
 
     @Test
@@ -93,5 +99,35 @@ class DiskCodeCacheTest {
         cache.save(key, null);
 
         assertTrue(cache.load(key).isEmpty());
+    }
+
+    @Test
+    void invalidatesWorkspaceScopeOnly() {
+        DiskCodeCache cache = new DiskCodeCache(tempDir);
+        cache.save(key("w1", "fp", "com/example/A"), "a1");
+        cache.save(key("w1", "fp", "com/example/B"), "b1");
+        cache.save(key("w2", "fp", "com/example/A"), "a2");
+
+        cache.invalidate(key("w1", "fp", "com/example/A"), CodeCacheScope.WORKSPACE);
+
+        assertNull(cache.load(key("w1", "fp", "com/example/A")).orElse(null));
+        assertNull(cache.load(key("w1", "fp", "com/example/B")).orElse(null));
+        assertEquals("a2", cache.load(key("w2", "fp", "com/example/A")).orElse(null));
+    }
+
+    @Test
+    void invalidatesAllScopeOnInjectedRoot() {
+        DiskCodeCache cache = new DiskCodeCache(tempDir.resolve("cache"));
+        cache.save(key("w", "fp", "com/example/A"), "source");
+        cache.invalidate(key("w", "fp", "com/example/A"), CodeCacheScope.ALL);
+        assertNull(cache.load(key("w", "fp", "com/example/A")).orElse(null));
+    }
+
+    @Test
+    void clearAllRemovesEverything() {
+        DiskCodeCache cache = new DiskCodeCache(tempDir.resolve("cache"));
+        cache.save(key("w", "fp", "com/example/A"), "source");
+        cache.clearAll();
+        assertNull(cache.load(key("w", "fp", "com/example/A")).orElse(null));
     }
 }
