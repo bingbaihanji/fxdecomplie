@@ -117,7 +117,7 @@ public final class DiskCodeCache implements CodeCacheStore {
         return cacheRoot;
     }
 
-    /** 清空磁盘缓存根目录（实例级，供测试与管理入口使用） */
+    /** 清空反编译缓存子树(不影响缓存根目录下的姊妹缓存；实例级，供测试与管理入口使用) */
     public void clearAll() {
         cleanAllInternal();
     }
@@ -217,11 +217,13 @@ public final class DiskCodeCache implements CodeCacheStore {
             return;
         }
         try {
-            if (!Files.exists(cacheRoot)) {
+            // 仅统计反编译缓存子树,缓存根目录下还有 index-cache/ 与 jadx/runtime/ 等姊妹目录
+            Path decompileDir = decompileRoot();
+            if (!Files.exists(decompileDir)) {
                 return;
             }
             long totalSize;
-            try (var stream = Files.walk(cacheRoot)) {
+            try (var stream = Files.walk(decompileDir)) {
                 totalSize = stream.filter(Files::isRegularFile)
                         .mapToLong(p -> {
                             try {
@@ -283,10 +285,19 @@ public final class DiskCodeCache implements CodeCacheStore {
         }
     }
 
+    /** 反编译缓存子树 — 清理与容量统计都限定在此目录,避免影响缓存根下的其他数据 */
+    private Path decompileRoot() {
+        return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION);
+    }
+
     private void cleanAllInternal() {
+        deleteTree(decompileRoot());
+    }
+
+    private void deleteTree(Path dir) {
         try {
-            if (Files.exists(cacheRoot)) {
-                try (var files = Files.walk(cacheRoot).sorted(Comparator.reverseOrder())) {
+            if (Files.exists(dir)) {
+                try (var files = Files.walk(dir).sorted(Comparator.reverseOrder())) {
                     files.forEach(p -> {
                         try {
                             Files.deleteIfExists(p);
@@ -301,11 +312,12 @@ public final class DiskCodeCache implements CodeCacheStore {
 
     private void cleanIfNeededInternal() {
         try {
-            if (!Files.exists(cacheRoot)) {
+            Path decompileDir = decompileRoot();
+            if (!Files.exists(decompileDir)) {
                 return;
             }
             long totalSize;
-            try (var stream = Files.walk(cacheRoot)) {
+            try (var stream = Files.walk(decompileDir)) {
                 totalSize = stream.filter(Files::isRegularFile)
                         .mapToLong(p -> {
                             try {
@@ -324,7 +336,7 @@ public final class DiskCodeCache implements CodeCacheStore {
                     totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
             List<Path> files;
-            try (var stream = Files.walk(cacheRoot)) {
+            try (var stream = Files.walk(decompileDir)) {
                 files = stream.filter(Files::isRegularFile)
                         .sorted(Comparator.comparingLong(p -> {
                             try {

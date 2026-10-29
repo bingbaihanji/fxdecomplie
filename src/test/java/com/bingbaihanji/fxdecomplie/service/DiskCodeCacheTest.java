@@ -6,7 +6,11 @@ import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -140,5 +144,46 @@ class DiskCodeCacheTest {
         cache.save(key("w", "fp", "com/example/A"), "source");
         cache.clearAll();
         assertNull(cache.load(key("w", "fp", "com/example/A")).orElse(null));
+    }
+
+    /** 清理只应作用于反编译缓存子树,不得删除缓存根目录下的姊妹缓存 */
+    @Test
+    void clearAllKeepsSiblingCaches() throws IOException {
+        Path indexCacheFile = tempDir.resolve("index-cache").resolve("x.idx.gz");
+        Path jadxRuntimeFile = tempDir.resolve("jadx").resolve("runtime").resolve("x");
+        Files.createDirectories(indexCacheFile.getParent());
+        Files.createDirectories(jadxRuntimeFile.getParent());
+        Files.writeString(indexCacheFile, "index");
+        Files.writeString(jadxRuntimeFile, "jadx");
+
+        DiskCodeCache cache = new DiskCodeCache(tempDir);
+        cache.save(key("w", "fp", "com/example/A"), "source");
+        cache.clearAll();
+
+        assertNull(cache.load(key("w", "fp", "com/example/A")).orElse(null));
+        assertTrue(Files.exists(indexCacheFile));
+        assertTrue(Files.exists(jadxRuntimeFile));
+    }
+
+    /** 读取命中应刷新文件 mtime,供容量清理按最近使用近似淘汰 */
+    @Test
+    void loadRefreshesFileAccessTime() throws IOException {
+        DiskCodeCache cache = new DiskCodeCache(tempDir);
+        CodeCacheKey key = key("w", "fp", "com/example/A");
+        cache.save(key, "source");
+
+        List<Path> files;
+        try (var stream = Files.walk(tempDir.resolve("v2"))) {
+            files = stream.filter(Files::isRegularFile).toList();
+        }
+        assertEquals(1, files.size());
+        Path cached = files.get(0);
+        Files.setLastModifiedTime(cached,
+                FileTime.fromMillis(System.currentTimeMillis() - 86_400_000L));
+        long before = Files.getLastModifiedTime(cached).toMillis();
+
+        assertEquals(Optional.of("source"), cache.load(key));
+
+        assertTrue(Files.getLastModifiedTime(cached).toMillis() > before);
     }
 }
