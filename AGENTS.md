@@ -167,7 +167,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 2. **L3 磁盘缓存**（`DiskCodeCache`）—— 异步写入，不阻塞 UI。
 3. **实际反编译** —— 多引擎统一入口。
 
-缓存键由 `service/cache/CacheKeys` 统一生成：workspaceId（绝对路径 + 内容戳）、SHA-256 类文件指纹（前 16 位十六进制）、内部名、引擎、选项 hash（JADX 反混淆时追加项目重命名状态版本）和键版本。磁盘布局由 `service/CacheLayout` 统一：`cache/decompile/v1/<workspaceId>/<engine>/<package>/<Simple>.<hash>.<optionsId>.<ver>.java`（500 MB 配额）与 `cache/index/v1/<fingerprint>.idx.gz`（200 MB 配额），按 mtime LRU 节流淘汰到 70%，不触碰 `cache/jadx/runtime/`。失败结果（超时/错误/取消/目标未找到）不进入任何一级缓存。
+缓存键由 `service/cache/CacheKeys` 统一生成：workspaceId（绝对路径 + 内容戳）、SHA-256 类文件指纹（前 16 位十六进制）、内部名、引擎、选项 hash（JADX 反混淆时追加项目重命名状态版本）和键版本。磁盘布局由 `service/CacheLayout` 统一：`cache/decompile/v1/<workspaceId>/<engine>/<package>/<Simple>.<hash>.<optionsId>.<ver>.java`（500 MB 配额）与 `cache/index/v1/<fingerprint>.idx.gz`（200 MB 配额），按 mtime LRU 节流淘汰到 70%，不触碰 `cache/jadx/runtime/`。失败结果（超时/错误/取消/目标未找到）不进入任何一级缓存。全文搜索快照由 `SourceSnapshotCache` 管理：全局 256 MB 加权 LRU，键为 workspaceId + 引擎 + 选项 + 代数，保存重命名后的显示源码；重命名/反混淆/工作区关闭递增代数并按工作区失效。导出通过 `WorkspaceExportCache`/`ExportSourceCache` 只读查询 L2/L3，命中跳过反编译且不回写。
 
 工作区索引由虚拟线程并行构建，图片等二进制资源不进入索引与缓存；打开工作区后延迟 500ms 预热（仅当仍为当前活动工作区），关闭中的工作区会丢弃构建/缓存命中结果，且不写缓存。索引持久化到 `<appDir>/cache/index/v1/<指纹>.idx.gz`（GZIP 二进制，带格式版本号，200 MB 配额与 mtime LRU，唯一临时文件 + 原子替换，指纹为「路径 + 大小 + mtime」（目录为汇总信息））。按节点导出通过 `WorkspaceClassBytecodeProvider` 懒加载依赖，不等待完整索引。索引构建使用独立单线程池，不占用共享 IO 池。
 
@@ -215,7 +215,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 ## 7. 测试
 
 - 测试框架：**JUnit 5**。
-- 当前全量测试 **468** 个，全部通过。
+- 当前全量测试 **477** 个，全部通过。
 - 新增功能优先补充单元测试；涉及索引、搜索、导出、项目文件解析、ClassGraph 适配、JADX 适配的变更必须覆盖异常路径。
 - ClassGraph 相关测试位于 `src/test/java/com/bingbaihanji/classgraph/` 与 `src/test/java/com/bingbaihanji/fxdecomplie/service/classscan/`、`service/reference/`。
 - JADX 相关测试位于 `src/test/java/com/bingbaihanji/fxdecomplie/decompiler/jadx/`。
