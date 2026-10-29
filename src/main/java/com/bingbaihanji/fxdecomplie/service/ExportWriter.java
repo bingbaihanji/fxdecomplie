@@ -1,19 +1,10 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * 导出写入器 — 负责将反编译内容写入目录或 ZIP 归档.
@@ -41,104 +32,6 @@ final class ExportWriter {
             return new ZipExportSink(config.outputPath(), config.conflictPolicy());
         }
         return new DirExportSink(config.outputPath(), config.conflictPolicy());
-    }
-
-    /** 将已反编译的内容写入目录(顺序写入,无并发) */
-    static void writeDecompiledToDir(List<FileTreeNode> items,
-                                     Map<FileTreeNode, ExportService.ExportContent> decompiled,
-                                     ExportConfig config, ExportService.ExportState state,
-                                     BooleanSupplier canceled) throws IOException {
-        Path outputDir = config.outputPath().toAbsolutePath().normalize();
-        Files.createDirectories(outputDir);
-        for (FileTreeNode data : items) {
-            if (canceled != null && canceled.getAsBoolean()) {
-                state.errors.add("导出已取消");
-                return;
-            }
-            try {
-                ExportService.ExportContent content = decompiled.get(data);
-                if (content == null) {
-                    continue;
-                }
-
-                Path target = resolveSafeOutputPath(outputDir, content.relativePath());
-                target = ExportConflictResolver.applyDirConflictPolicy(
-                        target, config.conflictPolicy());
-                if (target != null) {
-                    Files.createDirectories(target.getParent());
-                    try {
-                        Files.write(target, content.bytes());
-                    } catch (Exception e) {
-                        try {
-                            Files.deleteIfExists(target);
-                        } catch (IOException ignored) {
-                        }
-                        throw e;
-                    }
-                    state.successCount++;
-                }
-            } catch (Exception e) {
-                state.errors.add(data.getFullPath() + ": "
-                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-            } finally {
-                state.advance(data.getFullPath());
-            }
-        }
-    }
-
-    /** 将已反编译的内容写入 ZIP(顺序写入,ZipOutputStream 非线程安全) */
-    static void writeDecompiledToZip(List<FileTreeNode> items,
-                                     Map<FileTreeNode, ExportService.ExportContent> decompiled,
-                                     ExportConfig config, ExportService.ExportState state,
-                                     BooleanSupplier canceled) throws IOException {
-        Path zipPath = config.outputPath().toAbsolutePath().normalize();
-        if (zipPath.getParent() != null) {
-            Files.createDirectories(zipPath.getParent());
-        }
-        Set<String> writtenEntries = new HashSet<>();
-        try (ZipOutputStream zos = new ZipOutputStream(
-                new BufferedOutputStream(Files.newOutputStream(zipPath)))
-        ) {
-            for (FileTreeNode data : items) {
-                if (canceled != null && canceled.getAsBoolean()) {
-                    state.errors.add("导出已取消");
-                    return;
-                }
-                try {
-                    ExportService.ExportContent content = decompiled.get(data);
-                    if (content == null) {
-                        continue;
-                    }
-
-                    String entryName = sanitizeZipEntryName(content.relativePath());
-                    entryName = ExportConflictResolver.applyZipConflictPolicy(
-                            entryName, config.conflictPolicy(), writtenEntries);
-                    if (entryName != null) {
-                        writtenEntries.add(entryName);
-                        zos.putNextEntry(new ZipEntry(entryName));
-                        try {
-                            zos.write(content.bytes());
-                            state.successCount++;
-                        } catch (IOException e) {
-                            try {
-                                zos.closeEntry();
-                            } catch (IOException ignored) {
-                            }
-                            throw e;
-                        }
-                        zos.closeEntry();
-                    }
-                } catch (Exception e) {
-                    state.errors.add(data.getFullPath() + ": "
-                            + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-                    if (e instanceof IOException) {
-                        break;
-                    }
-                } finally {
-                    state.advance(data.getFullPath());
-                }
-            }
-        }
     }
 
     // ─── 路径安全 ───

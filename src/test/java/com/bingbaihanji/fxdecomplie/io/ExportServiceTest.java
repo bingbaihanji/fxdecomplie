@@ -16,12 +16,17 @@ import javax.tools.ToolProvider;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 //import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
@@ -57,6 +62,29 @@ class ExportServiceTest {
         FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.RESOURCE);
         node.setCachedBytes(content.getBytes(StandardCharsets.UTF_8));
         return new FileTreeModel(node);
+    }
+
+    private static FileTreeNode classNode(String simpleName) {
+        return new FileTreeNode(simpleName + ".class", "com/example/" + simpleName + ".class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+    }
+
+    private static FileTreeNode resourceNode(String path, String content) {
+        int slash = path.lastIndexOf('/');
+        String name = slash >= 0 ? path.substring(slash + 1) : path;
+        FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.RESOURCE);
+        node.setCachedBytes(content.getBytes(StandardCharsets.UTF_8));
+        return node;
+    }
+
+    private static void awaitFile(Path file, long timeoutMillis) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
+        while (System.currentTimeMillis() < deadline) {
+            if (Files.exists(file)) {
+                return;
+            }
+            Thread.sleep(20);
+        }
     }
 
     @Test
@@ -212,6 +240,81 @@ class ExportServiceTest {
             Path expectedFile = javaFiles.getFirst();
             Path actualFile = providerOut.resolve(indexOut.relativize(expectedFile));
             assertEquals(Files.readString(expectedFile), Files.readString(actualFile));
+        }
+    }
+
+    @Test
+    void incrementalWriteBeforeAllDecompiled() throws Exception {
+        byte[] aBytes = compileClass("com.example", "IncrementalA");
+        byte[] bBytes = compileClass("com.example", "IncrementalB");
+        FileTreeNode a = classNode("IncrementalA");
+        FileTreeNode b = classNode("IncrementalB");
+        CountDownLatch releaseB = new CountDownLatch(1);
+        ClassBytecodeProvider provider = name -> {
+            if ("com/example/IncrementalA".equals(name)) {
+                return aBytes;
+            }
+            if ("com/example/IncrementalB".equals(name)) {
+                try {
+                    releaseB.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+                return bBytes;
+            }
+            return null;
+        };
+
+        Path out = tempDir.resolve("incremental-out");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread exportThread = new Thread(() -> {
+            try {
+                ExportService.exportAll(List.of(a, b), config(out,
+                                ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.OVERWRITE, false),
+                        provider, null, null, null);
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        }, "incremental-export-test");
+        exportThread.start();
+
+        Path aFile = out.resolve("com/example/IncrementalA.java");
+        Path bFile = out.resolve("com/example/IncrementalB.java");
+        try {
+            awaitFile(aFile, 10_000);
+            assertTrue(Files.exists(aFile), "A should be written before B finishes");
+            assertFalse(Files.exists(bFile), "B should still be blocked");
+        } finally {
+            releaseB.countDown();
+            exportThread.join(30_000);
+        }
+
+        assertNull(failure.get(), "export failed: " + failure.get());
+        assertTrue(Files.exists(bFile));
+    }
+
+    @Test
+    void zipEntriesFollowInputOrder() throws Exception {
+        FileTreeNode first = resourceNode("z/last.txt", "last");
+        FileTreeNode second = resourceNode("a/first.txt", "first");
+        FileTreeNode third = resourceNode("m/mid.txt", "mid");
+        Path zip = tempDir.resolve("order.zip");
+        ClassBytecodeProvider provider = name -> null;
+
+        ExportResult result = ExportService.exportAll(List.of(first, second, third),
+                config(zip, ExportConfig.Format.ZIP,
+                        ExportConfig.ConflictPolicy.OVERWRITE, true),
+                provider, null, null, null);
+
+        assertEquals(3, result.successCount());
+        try (ZipFile zipFile = new ZipFile(zip.toFile())) {
+            List<String> names = new ArrayList<>();
+            var entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                names.add(entries.nextElement().getName());
+            }
+            assertEquals(List.of("z/last.txt", "a/first.txt", "m/mid.txt"), names);
         }
     }
 
