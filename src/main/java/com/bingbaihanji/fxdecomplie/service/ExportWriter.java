@@ -21,11 +21,6 @@ final class ExportWriter {
         throw new AssertionError("utility class");
     }
 
-    /** 导出源码到单个磁盘文件 */
-    static void exportCurrentCode(String code, Path outputPath) throws IOException {
-        Files.writeString(outputPath, code);
-    }
-
     /** 按导出格式创建增量写入器. */
     static ExportSink openSink(ExportConfig config) throws IOException {
         if (config.format() == ExportConfig.Format.ZIP) {

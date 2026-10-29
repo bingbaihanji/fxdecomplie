@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
@@ -44,9 +45,10 @@ final class ExportPipeline {
                     ExportService.ExportState state, BooleanSupplier canceled) throws IOException {
         // JADX 内核共享进程级临时目录，适配层用单许可信号量串行化；
         // 导出窗口必须为 1，否则等待信号量的时间会计入 30s 超时预算。
+        // 其他引擎为共享反编译池保留至少一个线程，避免导出占满池导致交互式反编译排队。
         int parallelism = config.engine() == DecompilerTypeEnum.JADX
                 ? 1
-                : DecompilerRunner.decompilerThreads();
+                : Math.max(1, DecompilerRunner.decompilerThreads() - 1);
         ExecutorService decompileExecutor = Executors.newFixedThreadPool(
                 parallelism, daemonFactory("export-decompile-"));
         try (ExportSink sink = ExportWriter.openSink(config)) {
@@ -77,11 +79,18 @@ final class ExportPipeline {
                     interruptedOrCanceled = true;
                     break;
                 } catch (ExecutionException e) {
-                    result = ItemResult.error(messageOf(e.getCause()));
+                    Throwable cause = e.getCause();
+                    if (cause instanceof VirtualMachineError error) {
+                        throw error;
+                    }
+                    result = ItemResult.error(messageOf(cause));
                 }
                 if (result.content() == null) {
                     if (result.error() != null) {
                         state.errors.add(item.getFullPath() + ": " + result.error());
+                    } else if (canceled != null && canceled.getAsBoolean()) {
+                        interruptedOrCanceled = true;
+                        break;
                     }
                     state.advance(item.getFullPath());
                     continue;
@@ -95,8 +104,7 @@ final class ExportPipeline {
                     state.advance(item.getFullPath());
                     // 路径校验/冲突策略失败由 sink 包装为 IOException,流本身仍可用;
                     // 只有真正的 ZIP 写入 IO 错误才中止整个归档.
-                    boolean unsafePath = e.getCause() instanceof IllegalArgumentException
-                            || e.getCause() instanceof IllegalStateException;
+                    boolean unsafePath = e instanceof UnsafeExportPathException;
                     if (config.format() == ExportConfig.Format.ZIP && !unsafePath) {
                         break;
                     }
@@ -104,7 +112,8 @@ final class ExportPipeline {
                 }
                 state.advance(item.getFullPath());
             }
-            if (interruptedOrCanceled) {
+            if (interruptedOrCanceled || (canceled != null && canceled.getAsBoolean()
+                    && nextWrite < items.size())) {
                 state.errors.add("导出已取消");
                 for (Future<ItemResult> future : inFlight) {
                     future.cancel(true);
@@ -112,6 +121,11 @@ final class ExportPipeline {
             }
         } finally {
             decompileExecutor.shutdownNow();
+            try {
+                decompileExecutor.awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

@@ -43,7 +43,7 @@ final class ZipExportSink implements ExportSink {
             entryName = ExportConflictResolver.applyZipConflictPolicy(
                     entryName, conflictPolicy, writtenEntries);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new IOException(e.getMessage(), e);
+            throw new UnsafeExportPathException(e.getMessage(), e);
         }
         if (entryName == null) {
             return false;

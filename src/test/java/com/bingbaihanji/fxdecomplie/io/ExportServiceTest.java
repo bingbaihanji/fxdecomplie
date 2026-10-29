@@ -16,13 +16,13 @@ import javax.tools.ToolProvider;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -309,12 +309,45 @@ class ExportServiceTest {
 
         assertEquals(3, result.successCount());
         try (ZipFile zipFile = new ZipFile(zip.toFile())) {
-            List<String> names = new ArrayList<>();
             var entries = zipFile.entries();
-            while (entries.hasMoreElements()) {
-                names.add(entries.nextElement().getName());
-            }
-            assertEquals(List.of("z/last.txt", "a/first.txt", "m/mid.txt"), names);
+            var firstEntry = entries.nextElement();
+            assertEquals("z/last.txt", firstEntry.getName());
+            assertArrayEquals("last".getBytes(StandardCharsets.UTF_8),
+                    zipFile.getInputStream(firstEntry).readAllBytes());
+            var secondEntry = entries.nextElement();
+            assertEquals("a/first.txt", secondEntry.getName());
+            assertArrayEquals("first".getBytes(StandardCharsets.UTF_8),
+                    zipFile.getInputStream(secondEntry).readAllBytes());
+            var thirdEntry = entries.nextElement();
+            assertEquals("m/mid.txt", thirdEntry.getName());
+            assertArrayEquals("mid".getBytes(StandardCharsets.UTF_8),
+                    zipFile.getInputStream(thirdEntry).readAllBytes());
+            assertFalse(entries.hasMoreElements());
+        }
+    }
+
+    @Test
+    void zipSkipsUnsafePathAndKeepsWriting() throws Exception {
+        FileTreeNode unsafe = resourceNode("../evil.properties", "bad");
+        FileTreeNode ok = resourceNode("ok.txt", "ok");
+        Path zip = tempDir.resolve("unsafe-continue.zip");
+        ClassBytecodeProvider provider = name -> null;
+
+        ExportResult result = ExportService.exportAll(List.of(unsafe, ok),
+                config(zip, ExportConfig.Format.ZIP,
+                        ExportConfig.ConflictPolicy.OVERWRITE, true),
+                provider, null, null, null);
+
+        assertEquals(1, result.errors().size());
+        assertTrue(result.errors().getFirst().contains("不安全"));
+        assertEquals(1, result.successCount());
+        try (ZipFile zipFile = new ZipFile(zip.toFile())) {
+            var entries = zipFile.entries();
+            var entry = entries.nextElement();
+            assertEquals("ok.txt", entry.getName());
+            assertEquals("ok", new String(zipFile.getInputStream(entry).readAllBytes(),
+                    StandardCharsets.UTF_8));
+            assertFalse(entries.hasMoreElements());
         }
     }
 

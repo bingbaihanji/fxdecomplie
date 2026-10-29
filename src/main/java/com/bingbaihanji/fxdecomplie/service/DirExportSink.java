@@ -31,7 +31,7 @@ final class DirExportSink implements ExportSink {
             target = ExportWriter.resolveSafeOutputPath(outputDir, content.relativePath());
             target = ExportConflictResolver.applyDirConflictPolicy(target, conflictPolicy);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new IOException(e.getMessage(), e);
+            throw new UnsafeExportPathException(e.getMessage(), e);
         }
         if (target == null) {
             return false;
