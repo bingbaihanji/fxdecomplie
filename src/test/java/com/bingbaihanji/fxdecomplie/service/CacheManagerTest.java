@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.service.cache.CacheKind;
 import com.bingbaihanji.fxdecomplie.service.cache.CacheManager;
+import com.bingbaihanji.fxdecomplie.service.cache.SourceSnapshotCache;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
 import com.bingbaihanji.fxdecomplie.service.decompile.DecompileCacheService;
 import org.junit.jupiter.api.AfterEach;
@@ -30,7 +31,8 @@ class CacheManagerTest {
         WorkspaceIndexCache.setCacheDirectoryForTesting(tempDir.resolve("index"));
         l2 = new DecompileCache();
         l3 = new DiskCodeCache(tempDir.resolve("decompile"), CacheLimits.L3_BYTES);
-        manager = new CacheManager(new DecompileCacheService(l2, l3, Runnable::run), l2, l3);
+        manager = new CacheManager(new DecompileCacheService(l2, l3, Runnable::run), l2, l3,
+                new SourceSnapshotCache());
     }
 
     @AfterEach
@@ -50,7 +52,7 @@ class CacheManagerTest {
         assertEquals(1, manager.l2Stats().entries());
         assertTrue(manager.l2Stats().bytes() > 0);
         assertTrue(manager.l3Stats().bytes() > 0);
-        assertEquals(3, manager.stats().size());
+        assertEquals(4, manager.stats().size());
     }
 
     @Test

@@ -1,14 +1,17 @@
 package com.bingbaihanji.fxdecomplie.controller;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.service.SearchService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.service.cache.CacheKeys;
+import com.bingbaihanji.fxdecomplie.service.cache.SourceSnapshotCache;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
@@ -154,8 +157,10 @@ public final class SearchController {
                                                     Map<String, String> openTabSourceCache) {
         Map<String, String> safeOpenTabs = openTabSourceCache == null ? Map.of() : openTabSourceCache;
         Map<String, String> engineOptions = DecompilerOptions.forEngine(owner.config(), owner.currentEngine());
-        String cacheKey = owner.currentEngine().name() + "|" + DecompilerOptions.hash(engineOptions);
-        Map<String, String> cached = view.workspace().getSourceSearchCache(cacheKey);
+        SourceSnapshotCache snapshots = owner.cacheManager().sourceSnapshots();
+        long snapshotGeneration = snapshots.generation(view.workspace());
+        Map<String, String> cached = snapshots.get(view.workspace(), owner.currentEngine(),
+                engineOptions, snapshotGeneration);
         if (cached != null) {
             Map<String, String> merged = new LinkedHashMap<>(cached);
             merged.putAll(safeOpenTabs);
@@ -163,10 +168,10 @@ public final class SearchController {
         }
 
         Map<String, String> fullSourceCache = new LinkedHashMap<>(safeOpenTabs);
+        String workspaceHash = CommentScope.workspaceHash(view.workspace());
         var index = awaitWorkspaceIndex(view.workspace());
         boolean indexReady = index != WorkspaceIndex.EMPTY;
-        var context = DecompilerContext.fromWorkspaceIndex(index, engineOptions,
-                com.bingbaihanji.fxdecomplie.model.CommentScope.workspaceHash(view.workspace()));
+        var context = DecompilerContext.fromWorkspaceIndex(index, engineOptions, workspaceHash);
         var classes = index.classes();
         int total = classes.size();
         int processed = 0;
@@ -209,13 +214,16 @@ public final class SearchController {
                             () -> !Thread.currentThread().isInterrupted());
                 }
                 if (!DecompilerRunner.isTransientFailureOutput(source)) {
-                    fullSourceCache.put(cls.fullPath(), source);
+                    // 快照保存与已打开标签一致的显示源码（重命名已应用）
+                    fullSourceCache.put(cls.fullPath(),
+                            RenameService.applyRenames(source, workspaceHash, cls.internalName()));
                 }
             }
         }
         fullSourceCache.values().removeIf(String::isEmpty);
         if (completed) {
-            view.workspace().putSourceSearchCache(cacheKey, fullSourceCache);
+            snapshots.putIfCurrent(view.workspace(), owner.currentEngine(),
+                    engineOptions, snapshotGeneration, fullSourceCache);
         }
         return fullSourceCache;
     }

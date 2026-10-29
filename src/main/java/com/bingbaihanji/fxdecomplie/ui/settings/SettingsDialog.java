@@ -388,6 +388,7 @@ public final class SettingsDialog {
         Label l2StatsLabel = new Label(I18nUtil.getString("settings.cache.loading"));
         Label l3StatsLabel = new Label(I18nUtil.getString("settings.cache.loading"));
         Label indexStatsLabel = new Label(I18nUtil.getString("settings.cache.loading"));
+        Label snapshotStatsLabel = new Label(I18nUtil.getString("settings.cache.loading"));
 
         Runnable refresh = () -> {
             try {
@@ -395,10 +396,12 @@ public final class SettingsDialog {
                     CacheStats l2Stats = cacheManager.l2Stats();
                     CacheStats l3Stats = cacheManager.l3Stats();
                     CacheStats indexStats = cacheManager.indexStats();
+                    CacheStats snapshotStats = cacheManager.sourceSnapshots().stats();
                     Platform.runLater(() -> {
                         l2StatsLabel.setText(memoryStats(l2Stats));
                         l3StatsLabel.setText(diskStats(l3Stats));
                         indexStatsLabel.setText(diskStats(indexStats));
+                        snapshotStatsLabel.setText(memoryStats(snapshotStats));
                     });
                 });
             } catch (RuntimeException e) {
@@ -416,6 +419,9 @@ public final class SettingsDialog {
         Button cleanIndex = new Button(I18nUtil.getString("settings.cache.clean.index"));
         cleanIndex.setOnAction(event ->
                 cleanCache(cacheManager, CacheKind.INDEX, owner, refresh));
+        Button cleanSnapshots = new Button(I18nUtil.getString("settings.cache.clean.snapshots"));
+        cleanSnapshots.setOnAction(event ->
+                cleanCache(cacheManager, CacheKind.SNAPSHOTS, owner, refresh));
         Button cleanAll = new Button(I18nUtil.getString("settings.cache.clean.all"));
         cleanAll.setOnAction(event ->
                 cleanCache(cacheManager, CacheKind.ALL_MANAGED, owner, refresh));
@@ -426,7 +432,8 @@ public final class SettingsDialog {
                 new Label(I18nUtil.getString("settings.cache.l2")), l2StatsLabel,
                 new Label(I18nUtil.getString("settings.cache.l3")), l3StatsLabel,
                 new Label(I18nUtil.getString("settings.cache.index")), indexStatsLabel,
-                new FlowPane(10, 10, cleanL2, cleanL3, cleanIndex, cleanAll)));
+                new Label(I18nUtil.getString("settings.cache.snapshots")), snapshotStatsLabel,
+                new FlowPane(10, 10, cleanL2, cleanL3, cleanIndex, cleanSnapshots, cleanAll)));
 
         // 语言标签页
         Tab langTab = new Tab(I18nUtil.getString("settings.language"));

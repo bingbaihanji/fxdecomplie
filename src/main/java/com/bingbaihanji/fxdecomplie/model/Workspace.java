@@ -9,8 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -20,9 +18,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2026-06-17
  */
 public class Workspace implements AutoCloseable {
-
-    /** 全源码搜索缓存单工作区内存上限(200MB) */
-    private static final long MAX_SOURCE_SEARCH_CACHE_BYTES = 200_000_000L;
 
     /** 工作区显示名称(如 demo.jar) */
     private final String name;
@@ -44,12 +39,6 @@ public class Workspace implements AutoCloseable {
 
     /** 工作区是否已关闭 */
     private volatile boolean closed;
-
-    /** 工作区级源码搜索缓存,按引擎和选项分组 */
-    private final ConcurrentMap<String, Map<String, String>> sourceSearchCaches = new ConcurrentHashMap<>();
-
-    /** 当前 sourceSearchCaches 中所有条目的估算字节数 */
-    private long sourceSearchCacheBytes;
 
     /** 工作区索引,用于全局搜索 字节码搜索和后续分析 */
     private volatile WorkspaceIndex index;
@@ -242,49 +231,10 @@ public class Workspace implements AutoCloseable {
         indexBuildStarted.set(false);
     }
 
-    public Map<String, String> getSourceSearchCache(String key) {
-        return sourceSearchCaches.get(key);
-    }
-
-    public void putSourceSearchCache(String key, Map<String, String> cache) {
-        if (key == null || cache == null) {
-            return;
-        }
-        LinkedHashMap<String, String> snapshot = new LinkedHashMap<>(cache);
-        synchronized (this) {
-            // 估算新缓存的大小(key + value 字符数 × 2 bytes/char)
-            long newBytes = 0;
-            for (Map.Entry<String, String> e : snapshot.entrySet()) {
-                newBytes += (e.getKey().length() + e.getValue().length()) * 2L;
-            }
-            // 超过上限时 LRU 淘汰最老的条目
-            while (sourceSearchCacheBytes + newBytes > MAX_SOURCE_SEARCH_CACHE_BYTES
-                    && !sourceSearchCaches.isEmpty()) {
-                String oldestKey = sourceSearchCaches.keySet().iterator().next();
-                Map<String, String> removed = sourceSearchCaches.remove(oldestKey);
-                if (removed != null) {
-                    for (Map.Entry<String, String> e : removed.entrySet()) {
-                        sourceSearchCacheBytes -= (e.getKey().length() + e.getValue().length()) * 2L;
-                    }
-                }
-            }
-            sourceSearchCaches.put(key, Collections.unmodifiableMap(snapshot));
-            sourceSearchCacheBytes += newBytes;
-        }
-    }
-
-    public void clearSourceSearchCaches() {
-        synchronized (this) {
-            sourceSearchCaches.clear();
-            sourceSearchCacheBytes = 0;
-        }
-    }
-
     @Override
     public void close() {
         closed = true;
         indexFuture.cancel(true);
-        clearSourceSearchCaches();
         if (treeRoot == null) {
             return;
         }

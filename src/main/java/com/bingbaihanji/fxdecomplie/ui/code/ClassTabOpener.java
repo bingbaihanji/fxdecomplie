@@ -17,6 +17,7 @@ import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceByteReader;
 import com.bingbaihanji.fxdecomplie.service.cache.CacheKeys;
+import com.bingbaihanji.fxdecomplie.service.cache.SourceSnapshotCache;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import com.bingbaihanji.fxdecomplie.service.decompile.DecompileCacheService;
@@ -91,6 +92,7 @@ public final class ClassTabOpener {
 
     /** L2/L3 反编译源码缓存,避免重复反编译已打开的类 */
     private final DecompileCacheService codeCache;
+    private final SourceSnapshotCache sourceSnapshots;
 
     /** 主导航(打开新类)请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
@@ -120,11 +122,12 @@ public final class ClassTabOpener {
     private volatile Consumer<Workspace> onRenameStateChanged;
 
     public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar,
-                          DecompileCacheService codeCache) {
+                          DecompileCacheService codeCache, SourceSnapshotCache sourceSnapshots) {
         this.config = config;
         this.editorTheme = editorTheme;
         this.statusBar = statusBar;
         this.codeCache = codeCache;
+        this.sourceSnapshots = sourceSnapshots;
     }
 
     /** 提取简短类名(去 .class 后缀) */
@@ -421,7 +424,7 @@ public final class ClassTabOpener {
                 int renameCountAfterDisplay = RenameService
                         .loadAll(wsHash).size();
                 if (renameCountAfterDisplay != renameCountBeforeDecompile && workspace != null) {
-                    workspace.clearSourceSearchCaches();
+                    sourceSnapshots.invalidateWorkspace(workspace);
                     notifyRenameStateChanged(workspace);
                 }
                 OpenFile openFile = new OpenFile(displayName, node.getFullPath(), sourceCode, usedEngine);
@@ -588,7 +591,7 @@ public final class ClassTabOpener {
                 int renameCountAfterDisplay = RenameService
                         .loadAll(wsHash).size();
                 if (renameCountAfterDisplay != renameCountBeforeDecompile) {
-                    workspace.clearSourceSearchCaches();
+                    sourceSnapshots.invalidateWorkspace(workspace);
                     notifyRenameStateChanged(workspace);
                 }
                 OpenFile openFile = new OpenFile(displayName, fullPath, sourceCode, usedEngine);

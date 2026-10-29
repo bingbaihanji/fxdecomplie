@@ -266,8 +266,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 config.recentFiles(),
                 this::openRecentFile));
         cacheManager = ApplicationServices.create().cacheManager();
+        tabManager.setCacheManager(cacheManager);
         classTabOpener = new ClassTabOpener(config, editorTheme, statusBar,
-                cacheManager.decompileCache());
+                cacheManager.decompileCache(), cacheManager.sourceSnapshots());
         classTabOpener.setCodeActionHandler(this);
         classTabOpener.setOnTabReady(this::refreshToolbarState);
         classTabOpener.setOnRenameStateChanged(this::refreshWorkspaceTree);

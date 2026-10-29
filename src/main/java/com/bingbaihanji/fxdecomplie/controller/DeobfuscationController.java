@@ -116,7 +116,7 @@ public final class DeobfuscationController {
             log.warn("反混淆批量保存未完全成功: selected={}, saved={}", selected.size(), saved);
         }
         if (workspace != null) {
-            workspace.clearSourceSearchCaches();
+            owner.cacheManager().sourceSnapshots().invalidateWorkspace(workspace);
         }
         int reloadTabs = reloadOpenTabsAfterDeobfuscate(workspace);
         owner.refreshWorkspaceTree(workspace);
@@ -216,7 +216,7 @@ public final class DeobfuscationController {
 
     /** 反混淆/重命名后统一刷新:清缓存 + 重载已开标签 + 刷新文件树@return 受影响的标签数 */
     private int reloadAndRefreshAfterRename(Workspace workspace) {
-        workspace.clearSourceSearchCaches();
+        owner.cacheManager().sourceSnapshots().invalidateWorkspace(workspace);
         int changed = reloadOpenTabsAfterDeobfuscate(workspace);
         owner.refreshWorkspaceTree(workspace);
         return changed;

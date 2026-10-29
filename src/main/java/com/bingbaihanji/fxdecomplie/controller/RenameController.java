@@ -164,7 +164,7 @@ public final class RenameController {
         }
 
         if (context.workspace() != null) {
-            context.workspace().clearSourceSearchCaches();
+            owner.cacheManager().sourceSnapshots().invalidateWorkspace(context.workspace());
         }
         int changedTabs = refreshOpenTabsAfterRename(context.workspace(), wsHash, visibleEntry, codeTab);
         owner.refreshWorkspaceTree(context.workspace());
@@ -217,7 +217,7 @@ public final class RenameController {
         codeTab.updateSourceCode(repairedDisplay, sourceCode);
         reinstallCodeContext(codeTab, sourceCode);
         if (context.workspace() != null) {
-            context.workspace().clearSourceSearchCaches();
+            owner.cacheManager().sourceSnapshots().invalidateWorkspace(context.workspace());
             owner.refreshWorkspaceTree(context.workspace());
         }
         log.info("修复类显示映射: class={}, visible={}, display={}",

@@ -7,6 +7,7 @@ import com.bingbaihanji.fxdecomplie.service.CacheLimits;
 import com.bingbaihanji.fxdecomplie.service.DecompileCache;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.service.cache.CacheManager;
+import com.bingbaihanji.fxdecomplie.service.cache.SourceSnapshotCache;
 import com.bingbaihanji.fxdecomplie.service.decompile.DecompileCacheService;
 import com.bingbaihanji.fxdecomplie.service.task.TaskExecutorService;
 import org.slf4j.Logger;
@@ -45,8 +46,9 @@ public final class ApplicationServices implements AutoCloseable {
         }
         DecompileCache l2 = new DecompileCache();
         DiskCodeCache l3 = new DiskCodeCache(CacheLayout.decompileDir(), CacheLimits.L3_BYTES);
+        SourceSnapshotCache snapshots = new SourceSnapshotCache();
         this.decompileCache = new DecompileCacheService(l2, l3);
-        this.cacheManager = new CacheManager(decompileCache, l2, l3);
+        this.cacheManager = new CacheManager(decompileCache, l2, l3, snapshots);
         log.info("应用服务已初始化: {}", appDir);
     }
 

@@ -10,5 +10,6 @@ public enum CacheKind {
     DECOMPILE_L2,
     DECOMPILE_L3,
     INDEX,
+    SNAPSHOTS,
     ALL_MANAGED
 }

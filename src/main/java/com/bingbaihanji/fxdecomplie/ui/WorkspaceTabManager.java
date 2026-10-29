@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
+import com.bingbaihanji.fxdecomplie.service.cache.CacheManager;
 import com.bingbaihanji.fxdecomplie.service.reference.InheritanceReferenceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
@@ -89,6 +90,9 @@ public final class WorkspaceTabManager {
 
     /** 工作区标签页 → 底部工具窗口状态 */
     private final Map<Tab, WorkspaceTools> workspaceTools = new HashMap<>();
+
+    /** 由 MainWindow 注入，用于工作区关闭时释放搜索快照 */
+    private volatile CacheManager cacheManager;
 
     /** 欢迎页动作 */
     private WelcomeActions welcomeActions = WelcomeActions.empty();
@@ -535,6 +539,11 @@ public final class WorkspaceTabManager {
     }
 
     /** 设置拖放配置,用于在 workspace 代码标签页面板安装跨窗口拖拽支持 */
+    /** 注入缓存入口；工作区关闭时释放该工作区搜索快照 */
+    public void setCacheManager(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+    }
+
     public void setDragDropConfig(AppConfig config, VsCodeThemeLoader.ThemeData theme) {
         this.dragDropConfig = config;
         this.dragDropTheme = theme;
@@ -1053,6 +1062,10 @@ public final class WorkspaceTabManager {
             }
             // 释放该工作区占用的 RenameService 内存缓存与锁条目
             RenameService.cleanupWorkspace(CommentScope.workspaceHash(view.workspace()));
+            CacheManager manager = cacheManager;
+            if (manager != null) {
+                manager.onWorkspaceClosed(view.workspace());
+            }
             view.workspace().close();
         }
 
