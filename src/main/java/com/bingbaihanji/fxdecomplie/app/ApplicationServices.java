@@ -2,6 +2,8 @@ package com.bingbaihanji.fxdecomplie.app;
 
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.service.CacheLayout;
+import com.bingbaihanji.fxdecomplie.service.CacheLimits;
 import com.bingbaihanji.fxdecomplie.service.DecompileCache;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.service.cache.CacheManager;
@@ -40,7 +42,7 @@ public final class ApplicationServices implements AutoCloseable {
     private ApplicationServices(Path appDir) {
         this.appDir = appDir;
         this.l2Cache = new DecompileCache();
-        this.l3Cache = DiskCodeCache.getDefault();
+        this.l3Cache = new DiskCodeCache(CacheLayout.decompileDir(), CacheLimits.L3_BYTES);
         this.decompileCache = new DecompileCacheService(l2Cache, l3Cache);
         this.cacheManager = new CacheManager(decompileCache);
         log.info("应用服务已初始化: {}", appDir);

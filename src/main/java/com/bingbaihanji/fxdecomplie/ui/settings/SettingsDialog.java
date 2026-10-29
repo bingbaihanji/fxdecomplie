@@ -6,6 +6,8 @@ import com.bingbaihanji.fxdecomplie.decompiler.EngineParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxAdapterOptions;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
+import com.bingbaihanji.fxdecomplie.service.CacheLayout;
+import com.bingbaihanji.fxdecomplie.service.CacheLimits;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.theme.ThemeManager;
@@ -377,11 +379,11 @@ public final class SettingsDialog {
         // 缓存标签页
         Tab cacheTab = new Tab(I18nUtil.getString("settings.cache"));
         cacheTab.setClosable(false);
-        Label cachePath = new Label(DiskCodeCache.cacheRoot().toString());
+        Label cachePath = new Label(CacheLayout.cacheRoot().toString());
         cachePath.setWrapText(true);
         Button cleanCacheButton = new Button(I18nUtil.getString("settings.cache.clean"));
         cleanCacheButton.setOnAction(event -> {
-            DiskCodeCache.cleanAll();
+            new DiskCodeCache(CacheLayout.decompileDir(), CacheLimits.L3_BYTES).clearAll();
             com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(
                     owner,
                     I18nUtil.getString("settings.cache"),

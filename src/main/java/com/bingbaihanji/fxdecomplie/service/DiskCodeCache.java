@@ -1,11 +1,9 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheStore;
 import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
-import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,12 +13,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Comparator;
-import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * L3 磁盘持久化缓存将反编译结果序列化到 {@code <appDir>/cache/} 下.
- * 实现 {@link CodeCacheStore} 以支持注入和测试替换.
+ * L3 磁盘持久化缓存 — 按 工作区/引擎/包 分层存放反编译源码,
+ * 写入后交由 {@link DiskQuotaGuard} 在后台按 mtime LRU 淘汰,并累计命中/未命中统计.
+ *
+ * <p>结构见 {@link CacheLayout};实现 {@link CodeCacheStore} 以支持注入和测试替换.</p>
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -29,105 +30,75 @@ public final class DiskCodeCache implements CodeCacheStore {
 
     private static final Logger log = LoggerFactory.getLogger(DiskCodeCache.class);
 
-    private static final long MAX_CACHE_SIZE_BYTES = 500L * 1024 * 1024;
+    /** 统计快照中的分类名 */
+    private static final String STATS_NAME = "decompile-l3";
 
-    private static final int CACHE_SCHEMA_VERSION = 2;
+    private final Path decompileRoot;
+    private final DiskQuotaGuard quotaGuard;
+    private final AtomicLong hits = new AtomicLong();
+    private final AtomicLong misses = new AtomicLong();
 
-    private static volatile DiskCodeCache defaultInstance;
-
-    private final Path cacheRoot;
-
-    private volatile boolean cleanupInProgress;
-
-    public DiskCodeCache(Path cacheRoot) {
-        this.cacheRoot = cacheRoot;
+    public DiskCodeCache(Path decompileRoot, long quotaBytes) {
+        this(decompileRoot, DiskQuotaGuard.background(decompileRoot, quotaBytes,
+                BackgroundTasks.PoolType.IO, "DiskQuota-check"));
     }
 
-    /** 获取默认实例(使用 AppPaths.cacheDir() 作为根目录) */
-    public static DiskCodeCache getDefault() {
-        if (defaultInstance == null) {
-            synchronized (DiskCodeCache.class) {
-                if (defaultInstance == null) {
-                    defaultInstance = new DiskCodeCache(AppPaths.cacheDir());
-                }
-            }
-        }
-        return defaultInstance;
-    }
-
-    /** @deprecated 使用 {@link #getDefault()} 获取实例后调用 {@link #load(CodeCacheKey)} */
-    @Deprecated
-    public static Path cacheRoot() {
-        return getDefault().cacheRoot;
+    DiskCodeCache(Path decompileRoot, DiskQuotaGuard quotaGuard) {
+        this.decompileRoot = Objects.requireNonNull(decompileRoot, "decompileRoot");
+        this.quotaGuard = Objects.requireNonNull(quotaGuard, "quotaGuard");
     }
 
     // ─── CodeCacheStore 实现 ───
 
-    public static void cleanAll() {
-        getDefault().cleanAllInternal();
-    }
-
-    private static String sanitizePathPart(String value) {
-        if (value == null || value.isBlank()) {
-            return "_";
-        }
-        return value.replace('/', '_').replace('\\', '_').replace(':', '_')
-                .replace('*', '_').replace('?', '_').replace('"', '_')
-                .replace('<', '_').replace('>', '_').replace('|', '_');
-    }
-
-    private static String optionsId(String optionsHash) {
-        if (optionsHash == null || optionsHash.isBlank() || "default".equals(optionsHash)) {
-            return "default";
-        }
-        return ByteUtils.sha256Hex(optionsHash).substring(0, 16);
-    }
-
-    public Path root() {
-        return cacheRoot;
-    }
-
-    /** 清空反编译缓存子树(不影响缓存根目录下的姊妹缓存；实例级，供测试与管理入口使用) */
-    public void clearAll() {
-        cleanAllInternal();
-    }
-
     @Override
     public Optional<String> load(CodeCacheKey key) {
-        return Optional.ofNullable(loadFile(cachePath(key)));
+        String content = loadFile(CacheLayout.decompilePath(decompileRoot, key));
+        if (content == null) {
+            misses.incrementAndGet();
+            return Optional.empty();
+        }
+        hits.incrementAndGet();
+        return Optional.of(content);
     }
 
     @Override
     public void save(CodeCacheKey key, String source) {
-        saveFile(cachePath(key), source);
+        if (saveFile(CacheLayout.decompilePath(decompileRoot, key), source)) {
+            quotaGuard.onWrite();
+        }
     }
 
     @Override
     public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
         switch (scope) {
-            case CLASS -> invalidateClassScope(key.workspaceId(), key.internalName());
-            case WORKSPACE -> {
-                // 清理该工作区下的所有缓存文件
-                String safeWs = sanitizePathPart(key.workspaceId());
-                Path wsDir = cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWs);
-                try {
-                    if (Files.exists(wsDir)) {
-                        try (var files = Files.walk(wsDir).sorted(Comparator.reverseOrder())) {
-                            files.forEach(p -> {
-                                try {
-                                    Files.deleteIfExists(p);
-                                } catch (IOException ignored) {
-                                }
-                            });
-                        }
-                    }
-                } catch (IOException ignored) {
-                }
-            }
-            case ALL -> cleanAllInternal();
+            case CLASS -> invalidateClass(key);
+            case WORKSPACE -> deleteTree(
+                    decompileRoot.resolve(CacheLayout.safeSegment(key.workspaceId())));
+            case ALL -> clearAll();
         }
     }
 
+    // ─── 诊断与管理 ───
+
+    /** 反编译缓存根目录(供诊断展示) */
+    public Path root() {
+        return decompileRoot;
+    }
+
+    /** 清空反编译缓存子树(不影响缓存根目录下的姊妹缓存),并重置配额守卫节流状态 */
+    public void clearAll() {
+        deleteTree(decompileRoot);
+        quotaGuard.reset();
+    }
+
+    /** 当前 L3 统计快照:文件数、字节数、命中与未命中次数 */
+    public CacheStats stats() {
+        return quotaGuard.stats(STATS_NAME, hits.get(), misses.get());
+    }
+
+    // ─── 内部实现 ───
+
+    /** 读取缓存文件；不存在、内容为空或 IO 异常均视为未命中 */
     private String loadFile(Path file) {
         String content;
         try {
@@ -142,7 +113,7 @@ public final class DiskCodeCache implements CodeCacheStore {
         if (content.isEmpty()) {
             return null;
         }
-        // 读取即视为使用,刷新 mtime 以便容量清理按 LRU 近似淘汰;
+        // 读取即视为使用,刷新 mtime 以便配额守卫按 LRU 近似淘汰;
         // 刷新失败不影响已成功读取的内容
         try {
             Files.setLastModifiedTime(file, FileTime.fromMillis(System.currentTimeMillis()));
@@ -152,13 +123,13 @@ public final class DiskCodeCache implements CodeCacheStore {
         return content;
     }
 
-    private void saveFile(Path file, String sourceCode) {
+    /** 原子写入缓存文件;null/空白源码或写入失败返回 false */
+    private boolean saveFile(Path file, String sourceCode) {
         if (sourceCode == null || sourceCode.isBlank()) {
-            return;
+            return false;
         }
         try {
             Files.createDirectories(file.getParent());
-            checkAndCleanLazy();
             AtomicFile af = new AtomicFile(file.toFile());
             af.write(os -> {
                 try {
@@ -167,78 +138,35 @@ public final class DiskCodeCache implements CodeCacheStore {
                     throw new RuntimeException(e);
                 }
             });
+            return true;
         } catch (IOException | RuntimeException e) {
             log.debug("保存磁盘代码缓存失败: {}", file, e);
+            return false;
         }
     }
 
-    private void checkAndCleanLazy() {
-        if (cleanupInProgress) {
+    /** 按类失效:删除该工作区下所有引擎目录中该类的全部指纹/选项/键版本变体 */
+    private void invalidateClass(CodeCacheKey key) {
+        Path workspaceDir = decompileRoot.resolve(CacheLayout.safeSegment(key.workspaceId()));
+        if (!Files.exists(workspaceDir)) {
             return;
         }
-        try {
-            // 仅统计反编译缓存子树,缓存根目录下还有 index-cache/ 与 jadx/runtime/ 等姊妹目录
-            Path decompileDir = decompileRoot();
-            if (!Files.exists(decompileDir)) {
-                return;
-            }
-            long totalSize;
-            try (var stream = Files.walk(decompileDir)) {
-                totalSize = stream.filter(Files::isRegularFile)
-                        .mapToLong(p -> {
-                            try {
-                                return Files.size(p);
-                            } catch (IOException e) {
-                                return 0L;
-                            }
-                        }).sum();
-            }
-            if (totalSize > MAX_CACHE_SIZE_BYTES) {
-                cleanupInProgress = true;
-                var cleanupTask = BackgroundTasks.run(BackgroundTasks.PoolType.IO,
-                        "DiskCache-Cleanup", () -> {
-                            try {
-                                cleanIfNeededInternal();
-                            } finally {
-                                cleanupInProgress = false;
-                            }
-                        });
-                if (cleanupTask.isDone()) {
-                    try {
-                        cleanupTask.get();
-                    } catch (Exception e) {
-                        cleanupInProgress = false;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            log.warn("磁盘缓存惰性检查失败", e);
-        }
-    }
-
-    /** 按类失效:删除该工作区下所有引擎目录中以该类名开头的缓存文件 */
-    private void invalidateClassScope(String workspaceHash, String internalName) {
-        if (workspaceHash == null || internalName == null) {
-            return;
-        }
-        String safeWorkspace = sanitizePathPart(workspaceHash);
-        String safeName = sanitizePathPart(internalName);
-        Path dir = cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWorkspace);
-        if (!Files.exists(dir)) {
-            return;
-        }
-        try (var engineDirs = Files.list(dir)) {
+        Path packageDir = CacheLayout.packagePath(CacheLayout.packageOf(key.internalName()));
+        String prefix = CacheLayout.filePrefix(key);
+        try (var engineDirs = Files.list(workspaceDir)) {
             engineDirs.filter(Files::isDirectory).forEach(engineDir -> {
-                try (var files = Files.list(engineDir)) {
-                    files.filter(f -> {
-                        String fname = f.getFileName().toString();
-                        return fname.startsWith(safeName + ".");
-                    }).forEach(f -> {
-                        try {
-                            Files.deleteIfExists(f);
-                        } catch (IOException ignored) {
-                        }
-                    });
+                Path classDir = engineDir.resolve(packageDir);
+                if (!Files.exists(classDir)) {
+                    return;
+                }
+                try (var files = Files.list(classDir)) {
+                    files.filter(f -> f.getFileName().toString().startsWith(prefix))
+                            .forEach(f -> {
+                                try {
+                                    Files.deleteIfExists(f);
+                                } catch (IOException ignored) {
+                                }
+                            });
                 } catch (IOException ignored) {
                 }
             });
@@ -246,15 +174,7 @@ public final class DiskCodeCache implements CodeCacheStore {
         }
     }
 
-    /** 反编译缓存子树 — 清理与容量统计都限定在此目录,避免影响缓存根下的其他数据 */
-    private Path decompileRoot() {
-        return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION);
-    }
-
-    private void cleanAllInternal() {
-        deleteTree(decompileRoot());
-    }
-
+    /** 删除目录树(不跟随链接),单条失败忽略 */
     private void deleteTree(Path dir) {
         try {
             if (Files.exists(dir)) {
@@ -269,75 +189,5 @@ public final class DiskCodeCache implements CodeCacheStore {
             }
         } catch (IOException ignored) {
         }
-    }
-
-    private void cleanIfNeededInternal() {
-        try {
-            Path decompileDir = decompileRoot();
-            if (!Files.exists(decompileDir)) {
-                return;
-            }
-            long totalSize;
-            try (var stream = Files.walk(decompileDir)) {
-                totalSize = stream.filter(Files::isRegularFile)
-                        .mapToLong(p -> {
-                            try {
-                                return Files.size(p);
-                            } catch (IOException e) {
-                                return 0L;
-                            }
-                        }).sum();
-            }
-            if (totalSize <= MAX_CACHE_SIZE_BYTES) {
-                log.debug("磁盘缓存大小: {} MB (阈值 {} MB), 无需清理",
-                        totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
-                return;
-            }
-            log.info("磁盘缓存超过阈值: {} MB > {} MB, 开始清理",
-                    totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
-            long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
-            List<Path> files;
-            try (var stream = Files.walk(decompileDir)) {
-                files = stream.filter(Files::isRegularFile)
-                        .sorted(Comparator.comparingLong(p -> {
-                            try {
-                                return Files.getLastModifiedTime(p).toMillis();
-                            } catch (IOException e) {
-                                return Long.MAX_VALUE;
-                            }
-                        })).toList();
-            }
-            int deleted = 0;
-            for (Path f : files) {
-                if (totalSize <= targetSize) {
-                    break;
-                }
-                try {
-                    long sz = Files.size(f);
-                    Files.deleteIfExists(f);
-                    totalSize -= sz;
-                    deleted++;
-                } catch (IOException ignored) {
-                }
-            }
-            log.info("磁盘缓存清理完成: 删除 {} 个文件, 剩余 {} MB",
-                    deleted, totalSize / (1024 * 1024));
-        } catch (IOException e) {
-            log.warn("磁盘缓存清理失败", e);
-        }
-    }
-
-    /**
-     * 按缓存键构造文件路径 — 文件名包含类指纹与键版本,
-     * 保证指纹或键版本不同的键不会互相覆盖.
-     */
-    private Path cachePath(CodeCacheKey key) {
-        String safeWorkspace = sanitizePathPart(key.workspaceId());
-        String safeInternalName = sanitizePathPart(key.internalName());
-        String safeEngine = key.engine().name().toLowerCase();
-        String fileName = safeInternalName + "." + sanitizePathPart(key.classFingerprint())
-                + "." + optionsId(key.optionsHash()) + "." + key.keyVersion() + ".java";
-        return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION)
-                .resolve(safeWorkspace).resolve(safeEngine).resolve(fileName);
     }
 }
