@@ -10,12 +10,14 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * L2 (内存) + L3 (磁盘) 两级缓存协调.
  *
  * <p>L3 写入是异步、尽力而为的: 提交被拒绝仅记录日志,不影响 L2 中已写入的结果.
- * 失效时先递增失效纪元,使已排队但尚未执行的旧写入成为空操作,避免其复活已失效条目.</p>
+ * 失效时先递增失效纪元,使已排队但尚未执行的旧写入成为空操作,避免其复活已失效条目.
+ * 失效与在途 L3 写入通过读写锁互斥: 失效为独占操作,多个 L3 写入之间可并发.</p>
  *
  * <p>{@link #invalidate(CodeCacheKey, CodeCacheScope)} 会同步执行 L3 磁盘 IO,
  * 必须从后台线程调用,禁止在 JavaFX Application Thread 上调用.</p>
@@ -35,6 +37,9 @@ public class DecompileCacheService implements CodeCacheStore {
 
     /** 失效纪元 — 递增后,早于该纪元提交的 L3 写入不再落盘 */
     private final AtomicLong invalidationEpoch = new AtomicLong();
+
+    /** L3 写入与失效互斥: 写入持读锁(可并发),失效持写锁(独占) */
+    private final ReentrantReadWriteLock l3Lock = new ReentrantReadWriteLock();
 
     public DecompileCacheService(DecompileCache l2, CodeCacheStore l3) {
         this(l2, l3, task -> BackgroundTasks.run(
@@ -63,26 +68,41 @@ public class DecompileCacheService implements CodeCacheStore {
 
     @Override
     public void save(CodeCacheKey key, String source) {
-        // L2 同步写入
-        l2.save(key, source);
-        // L3 异步写入: 若提交后发生失效,则丢弃本次旧写入
-        long epoch = invalidationEpoch.get();
+        l3Lock.readLock().lock();
         try {
-            l3Executor.execute(() -> {
-                if (invalidationEpoch.get() == epoch) {
-                    l3.save(key, source);
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            log.debug("L3 缓存写入任务被拒绝: {}", key, e);
+            long epoch = invalidationEpoch.get();
+            // L2 同步写入
+            l2.save(key, source);
+            // L3 异步写入: 若提交后发生失效,则丢弃本次旧写入
+            try {
+                l3Executor.execute(() -> {
+                    l3Lock.readLock().lock();
+                    try {
+                        if (invalidationEpoch.get() == epoch) {
+                            l3.save(key, source);
+                        }
+                    } finally {
+                        l3Lock.readLock().unlock();
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                log.debug("L3 缓存写入任务被拒绝: {}", key, e);
+            }
+        } finally {
+            l3Lock.readLock().unlock();
         }
     }
 
     @Override
     public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
-        // 先递增纪元,使已排队的旧写入失效
-        invalidationEpoch.incrementAndGet();
-        l2.invalidate(key, scope);
-        l3.invalidate(key, scope);
+        l3Lock.writeLock().lock();
+        try {
+            // 先递增纪元,使已排队的旧写入失效
+            invalidationEpoch.incrementAndGet();
+            l2.invalidate(key, scope);
+            l3.invalidate(key, scope);
+        } finally {
+            l3Lock.writeLock().unlock();
+        }
     }
 }

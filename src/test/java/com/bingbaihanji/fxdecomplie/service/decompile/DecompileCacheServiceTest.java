@@ -9,8 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,6 +62,37 @@ class DecompileCacheServiceTest {
             List<Runnable> pending = new ArrayList<>(tasks);
             tasks.clear();
             pending.forEach(Runnable::run);
+        }
+    }
+
+    /** 阻塞型 L3: 写入开始后暂停,用于验证失效与在途写入的互斥 */
+    static final class BlockingStore implements CodeCacheStore {
+        final Map<CodeCacheKey, String> data = new HashMap<>();
+        final CountDownLatch writeStarted = new CountDownLatch(1);
+        final CountDownLatch releaseWrite = new CountDownLatch(1);
+
+        @Override
+        public Optional<String> load(CodeCacheKey key) {
+            return Optional.ofNullable(data.get(key));
+        }
+
+        @Override
+        public void save(CodeCacheKey key, String source) {
+            writeStarted.countDown();
+            try {
+                if (!releaseWrite.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("写入未被释放");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("写入被中断", e);
+            }
+            data.put(key, source);
+        }
+
+        @Override
+        public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
+            data.remove(key);
         }
     }
 
@@ -152,6 +187,40 @@ class DecompileCacheServiceTest {
         assertDoesNotThrow(() -> service.save(key("w"), "source"));
         assertEquals("source", l2.load(key("w")).orElse(null));
         assertNull(l3.data.get(key("w")));
+    }
+
+    @Test
+    void inFlightWriteCannotLandAfterInvalidate() throws Exception {
+        DecompileCache l2 = new DecompileCache();
+        BlockingStore store = new BlockingStore();
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        try {
+            DecompileCacheService service = new DecompileCacheService(l2, store, pool);
+
+            service.save(key("w"), "old");
+            assertTrue(store.writeStarted.await(5, TimeUnit.SECONDS));
+
+            CountDownLatch invalidationDone = new CountDownLatch(1);
+            Thread invalidator = new Thread(() -> {
+                try {
+                    service.invalidate(key("w"), CodeCacheScope.CLASS);
+                } finally {
+                    invalidationDone.countDown();
+                }
+            });
+            invalidator.start();
+
+            // 失效必须等待在途写入持有的读锁,不能被提前完成
+            assertFalse(invalidationDone.await(200, TimeUnit.MILLISECONDS));
+
+            store.releaseWrite.countDown();
+            assertTrue(invalidationDone.await(5, TimeUnit.SECONDS));
+            // 写入先落盘,随后失效将其删除,不能出现“失效后陈旧写回”
+            assertNull(store.data.get(key("w")));
+        } finally {
+            store.releaseWrite.countDown();
+            pool.shutdownNow();
+        }
     }
 
     @Test
