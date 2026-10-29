@@ -3,7 +3,6 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxProjectRenameSynchronizer;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
@@ -14,11 +13,13 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
-import com.bingbaihanji.fxdecomplie.service.DecompileCache;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
-import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceByteReader;
+import com.bingbaihanji.fxdecomplie.service.cache.CacheKeys;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
+import com.bingbaihanji.fxdecomplie.service.decompile.DecompileCacheService;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
@@ -88,8 +89,8 @@ public final class ClassTabOpener {
     /** 状态栏引用 */
     private final StatusBar statusBar;
 
-    /** L2 反编译源码缓存,避免重复反编译已打开的类 */
-    private final DecompileCache decompileCache = new DecompileCache();
+    /** L2/L3 反编译源码缓存,避免重复反编译已打开的类 */
+    private final DecompileCacheService codeCache;
 
     /** 主导航(打开新类)请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
@@ -118,33 +119,18 @@ public final class ClassTabOpener {
     /** 项目级重命名状态变化回调,用于刷新文件树等派生 UI */
     private volatile Consumer<Workspace> onRenameStateChanged;
 
-    public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar) {
+    public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar,
+                          DecompileCacheService codeCache) {
         this.config = config;
         this.editorTheme = editorTheme;
         this.statusBar = statusBar;
+        this.codeCache = codeCache;
     }
 
     /** 提取简短类名(去 .class 后缀) */
     private static String className(FileTreeNode node) {
         String name = node.getName();
         return name.endsWith(".class") ? name.substring(0, name.length() - 6) : name;
-    }
-
-    /** 计算工作区缓存键:使用完整路径 + mtime + size,消除路径碰撞和同路径替换误命中 */
-    public static String computeWorkspaceKey(Workspace workspace) {
-        File source = workspace.getSourceFile();
-        return (source.getAbsolutePath() + "_" + workspace.getContentStamp())
-                .replace(':', '_').replace('\\', '_').replace('/', '_');
-    }
-
-    /** 计算 class 字节指纹(CRC32),用于缓存键防内容变更误命中 */
-    public static String computeClassFingerprint(byte[] bytes) {
-        if (bytes == null || bytes.length == 0) {
-            return "0";
-        }
-        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
-        crc.update(bytes);
-        return Long.toHexString(crc.getValue());
     }
 
     /**
@@ -270,25 +256,11 @@ public final class ClassTabOpener {
                 .findFirst().orElse(null);
     }
 
-    private static String cacheOptionsHash(DecompilerTypeEnum engine, Map<String, String> engineOptions) {
-        String optionsHash = DecompilerOptions.hash(engineOptions);
-        if (engine == DecompilerTypeEnum.JADX
-                && Boolean.parseBoolean(engineOptions.getOrDefault("deobfuscationOn", "false"))) {
-            return optionsHash + "_" + JadxProjectRenameSynchronizer.CACHE_STATE_VERSION;
-        }
-        return optionsHash;
-    }
-
     /** 创建代码编辑器标签页 */
 
     /** 更新编辑器主题,后续新打开的标签页将使用新主题 */
     public void setEditorTheme(VsCodeThemeLoader.ThemeData newTheme) {
         this.editorTheme = newTheme;
-    }
-
-    /** 暴露 L2 缓存给全文搜索等批量解编译场景复用已打开的标签页结果 */
-    public DecompileCache getDecompileCache() {
-        return decompileCache;
     }
 
     /** 设置代码操作回调,用于自动安装右键菜单 */
@@ -591,11 +563,6 @@ public final class ClassTabOpener {
                 }
 
                 String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
-                if (bypassCache) {
-                    String cacheWsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
-                    decompileCache.invalidate(cacheWsKey, internalName);
-                    DiskCodeCache.invalidate(cacheWsKey, internalName);
-                }
                 String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                         .of(workspace, "").workspaceHash();
                 int renameCountBeforeDecompile = RenameService
@@ -1203,59 +1170,37 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 共享的反编译+缓存逻辑:依次查询 L2 内存缓存 L3 磁盘缓存,最后执行反编译
-     * 命中 L3 时回填 L2,反编译结果同时写入 L2 和 L3
-     * workspaceKey 使用路径 + mtime + size,避免同路径文件替换后命中旧缓存
+     * 共享的反编译+缓存逻辑:通过 DecompileCacheService 查询 L2/L3,未命中时执行反编译
+     * 缓存键由 CacheKeys 统一构造,包含工作区身份 类指纹 引擎 选项与键版本
      */
     private DecompileResult decompileWithCache(String internalName, DecompilerTypeEnum engine,
                                                byte[] bytes, FileTreeNode node, Workspace workspace,
                                                BooleanSupplier active) {
         DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
-        String optionsHash = cacheOptionsHash(effectiveEngine, engineOptions);
+        CodeCacheKey cacheKey = CacheKeys.forClass(workspace, bytes, internalName,
+                effectiveEngine, engineOptions);
 
-        String cacheWsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
-
-        // ---- L2: 内存反编译缓存(最快路径) ----
-        String sourceCode = decompileCache.get(cacheWsKey, internalName, effectiveEngine, optionsHash);
+        String sourceCode = codeCache.load(cacheKey).orElse(null);
         if (sourceCode != null) {
-            log.debug("缓存 L2 命中: {} engine={}", internalName, effectiveEngine);
+            log.debug("缓存命中: {} engine={}", internalName, effectiveEngine);
         }
 
-        // ---- L2 未命中:尝试 L3 磁盘持久化缓存 ----
-        if (sourceCode == null) {
-            sourceCode = DiskCodeCache.load(cacheWsKey, internalName, effectiveEngine, optionsHash);
-            if (sourceCode != null) {
-                log.debug("缓存 L3 命中(回填L2): {} engine={}", internalName, effectiveEngine);
-                // ---- L3 命中:回填 L2,使下次查询即时完成 ----
-                decompileCache.put(cacheWsKey, internalName, effectiveEngine, optionsHash, sourceCode);
-            }
-        }
-
-        // ---- L2+L3 均未命中:执行实际反编译 ----
         if (sourceCode == null) {
             log.debug("缓存未命中,执行反编译: {} engine={}", internalName, effectiveEngine);
             if (!active.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
             Thread.interrupted();
-            String finalPath = node.getFullPath();
             DecompilerContext context = DecompilerRunner.contextForWorkspace(
                     workspace, engineOptions);
-            sourceCode = DecompilerRunner.decompileWithTimeout(finalPath, bytes,
+            sourceCode = DecompilerRunner.decompileWithTimeout(node.getFullPath(), bytes,
                     effectiveEngine, context, active, INTERACTIVE_TIMEOUT_SECONDS);
             if (!active.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
             if (!DecompilerRunner.isFailureOutput(sourceCode)) {
-                // ---- 保存反编译结果到 L2(即时) ----
-                decompileCache.put(cacheWsKey, internalName, effectiveEngine, optionsHash, sourceCode);
-
-                // ---- 异步保存到 L3 磁盘缓存(非阻塞) ----
-                final String finalSource = sourceCode;
-                BackgroundTasks.run(BackgroundTasks.PoolType.IO, "DiskCache-" + internalName, () -> {
-                    DiskCodeCache.save(cacheWsKey, internalName, effectiveEngine, optionsHash, finalSource);
-                });
+                codeCache.save(cacheKey, sourceCode);
             }
         }
 
@@ -1268,12 +1213,10 @@ public final class ClassTabOpener {
                                            BooleanSupplier active) {
         DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
-        String optionsHash = cacheOptionsHash(effectiveEngine, engineOptions);
+        CodeCacheKey cacheKey = CacheKeys.forClass(workspace, bytes, internalName,
+                effectiveEngine, engineOptions);
 
-        String cacheWsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
-
-        decompileCache.invalidate(cacheWsKey, internalName);
-        DiskCodeCache.invalidate(cacheWsKey, internalName);
+        codeCache.invalidate(cacheKey, CodeCacheScope.CLASS);
 
         if (!active.getAsBoolean()) {
             throw new CancellationException("反编译请求已被替换");
@@ -1286,10 +1229,7 @@ public final class ClassTabOpener {
             throw new CancellationException("反编译请求已被替换");
         }
         if (!DecompilerRunner.isFailureOutput(sourceCode)) {
-            decompileCache.put(cacheWsKey, internalName, effectiveEngine, optionsHash, sourceCode);
-            final String finalSource = sourceCode;
-            BackgroundTasks.run(BackgroundTasks.PoolType.IO, "DiskCache-" + internalName, () ->
-                    DiskCodeCache.save(cacheWsKey, internalName, effectiveEngine, optionsHash, finalSource));
+            codeCache.save(cacheKey, sourceCode);
         }
 
         return new DecompileResult(sourceCode, effectiveEngine);

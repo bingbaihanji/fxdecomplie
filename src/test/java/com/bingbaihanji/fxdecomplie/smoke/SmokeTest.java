@@ -8,6 +8,8 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.DecompileCache;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -94,23 +96,16 @@ final class SmokeTest {
     @DisplayName("L2 反编译缓存可读写和失效")
     void shouldReadWriteAndInvalidateCache() {
         DecompileCache cache = new DecompileCache();
-        String wsKey = "smoke-ws";
-        String internalName = "com/example/SmokeTest";
-        DecompilerTypeEnum engine = DecompilerTypeEnum.VINEFLOWER;
-        String optionsHash = "default";
+        CodeCacheKey key = new CodeCacheKey("smoke-ws", "fp",
+                "com/example/SmokeTest", DecompilerTypeEnum.VINEFLOWER, "default", 1);
         String source = "public class SmokeTest {}";
 
-        // 写入 → 读取
-        cache.put(wsKey, internalName, engine, optionsHash, source);
-        String result = cache.get(wsKey, internalName, engine, optionsHash);
-        assertEquals(source, result, "反编译缓存应能读取写入的内容");
+        cache.save(key, source);
+        assertEquals(source, cache.load(key).orElse(null), "反编译缓存应能读取写入的内容");
 
-        // 失效 → 读取为空
-        cache.invalidate(wsKey, internalName);
-        String afterInvalidate = cache.get(wsKey, internalName, engine, optionsHash);
-        assertNull(afterInvalidate, "失效后缓存应返回 null");
+        cache.invalidate(key, CodeCacheScope.CLASS);
+        assertNull(cache.load(key).orElse(null), "失效后缓存应返回空");
 
-        // 清空
         cache.clear();
         assertDoesNotThrow(cache::clear, "清空不应抛异常");
     }

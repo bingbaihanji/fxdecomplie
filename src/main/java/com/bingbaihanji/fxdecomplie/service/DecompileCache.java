@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheStore;
@@ -26,9 +25,6 @@ public class DecompileCache implements CodeCacheStore {
 
     /** 默认内存预算:50 MB */
     private static final int DEFAULT_MAX_BYTES = 50_000_000;
-
-    /** 旧版缓存键分隔符(null 字符不可能出现在 JVM 内部名称中),用于各组件之间的精确匹配,避免前缀碰撞 */
-    private static final String KEY_SEP = "\0";
 
     private final LruCache<String, String> cache;
 
@@ -99,47 +95,5 @@ public class DecompileCache implements CodeCacheStore {
     /** 清空所有内存条目 */
     public void clear() {
         cache.evictAll();
-    }
-
-    // TODO(Task 4): 接线完成后删除旧字符串键 API
-    // ─── 向后兼容方法(旧字符串键) ───
-
-    /** 构建旧版缓存键,组合工作区标识 类内部名 引擎类型和选项哈希 */
-    private static String cacheKey(String workspaceKey, String internalName,
-                                   DecompilerTypeEnum engine, String optionsHash) {
-        return workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP
-                + engine.name() + KEY_SEP + optionsHash;
-    }
-
-    /**
-     * 从 L2 内存缓存中获取已反编译的源码.
-     *
-     * @deprecated 使用 {@link #load(CodeCacheKey)} 代替;旧键格式与新键格式互不相通
-     */
-    @Deprecated(forRemoval = true)
-    public String get(String workspaceKey, String internalName,
-                      DecompilerTypeEnum engine, String optionsHash) {
-        return cache.get(cacheKey(workspaceKey, internalName, engine, optionsHash));
-    }
-
-    /**
-     * 将反编译源码存入 L2 内存缓存.
-     *
-     * @deprecated 使用 {@link #save(CodeCacheKey, String)} 代替;旧键格式与新键格式互不相通
-     */
-    @Deprecated(forRemoval = true)
-    public void put(String workspaceKey, String internalName,
-                    DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
-        cache.put(cacheKey(workspaceKey, internalName, engine, optionsHash), sourceCode);
-    }
-
-    /**
-     * 失效指定类的所有旧键缓存条目.
-     *
-     * @deprecated 使用 {@link #invalidate(CodeCacheKey, CodeCacheScope)} 代替
-     */
-    @Deprecated(forRemoval = true)
-    public void invalidate(String workspaceKey, String internalName) {
-        removeByPrefix(workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP);
     }
 }

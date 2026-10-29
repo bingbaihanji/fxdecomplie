@@ -4,7 +4,7 @@ import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.DecompileCache;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
-import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheStore;
+import com.bingbaihanji.fxdecomplie.service.cache.CacheManager;
 import com.bingbaihanji.fxdecomplie.service.decompile.DecompileCacheService;
 import com.bingbaihanji.fxdecomplie.service.task.TaskExecutorService;
 import org.slf4j.Logger;
@@ -33,13 +33,16 @@ public final class ApplicationServices implements AutoCloseable {
 
     private final DiskCodeCache l3Cache;
 
-    private final DecompileCacheService cacheService;
+    private final DecompileCacheService decompileCache;
+
+    private final CacheManager cacheManager;
 
     private ApplicationServices(Path appDir) {
         this.appDir = appDir;
         this.l2Cache = new DecompileCache();
         this.l3Cache = DiskCodeCache.getDefault();
-        this.cacheService = new DecompileCacheService(l2Cache, l3Cache);
+        this.decompileCache = new DecompileCacheService(l2Cache, l3Cache);
+        this.cacheManager = new CacheManager(decompileCache);
         log.info("应用服务已初始化: {}", appDir);
     }
 
@@ -84,19 +87,9 @@ public final class ApplicationServices implements AutoCloseable {
         return BackgroundTasks.getExecutor();
     }
 
-    /** 两级代码缓存(L2 内存 + L3 磁盘) */
-    public CodeCacheStore codeCache() {
-        return cacheService;
-    }
-
-    /** L2 内存缓存 */
-    public DecompileCache l2Cache() {
-        return l2Cache;
-    }
-
-    /** L3 磁盘缓存 */
-    public DiskCodeCache l3Cache() {
-        return l3Cache;
+    /** 应用缓存统一入口 */
+    public CacheManager cacheManager() {
+        return cacheManager;
     }
 
     // ─── 生命周期 ───
@@ -109,6 +102,7 @@ public final class ApplicationServices implements AutoCloseable {
     @Override
     public void close() {
         log.info("关闭应用服务");
+        shutdownQuietly("cache manager", cacheManager::close);
         shutdownQuietly("background tasks", BackgroundTasks::shutdown);
         instance = null;
     }

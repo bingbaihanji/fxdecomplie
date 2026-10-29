@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.controller;
 
 
+import com.bingbaihanji.fxdecomplie.app.ApplicationServices;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
@@ -15,6 +16,7 @@ import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.service.CommentManager;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
+import com.bingbaihanji.fxdecomplie.service.cache.CacheManager;
 import com.bingbaihanji.fxdecomplie.service.reference.InheritanceReferenceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
@@ -118,6 +120,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 类文件反编译及标签页打开器(含 L2 缓存) */
     private ClassTabOpener classTabOpener;
 
+    /** 应用缓存统一入口 */
+    private CacheManager cacheManager;
+
     /** 当前选择的反编译引擎 */
     private DecompilerTypeEnum currentEngine = DecompilerTypeEnum.JADX;
 
@@ -182,6 +187,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     ClassTabOpener classTabOpener() {
         return classTabOpener;
+    }
+
+    CacheManager cacheManager() {
+        return cacheManager;
     }
 
     StatusBar statusBar() {
@@ -256,7 +265,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 this::openProject,
                 config.recentFiles(),
                 this::openRecentFile));
-        classTabOpener = new ClassTabOpener(config, editorTheme, statusBar);
+        cacheManager = ApplicationServices.create().cacheManager();
+        classTabOpener = new ClassTabOpener(config, editorTheme, statusBar,
+                cacheManager.decompileCache());
         classTabOpener.setCodeActionHandler(this);
         classTabOpener.setOnTabReady(this::refreshToolbarState);
         classTabOpener.setOnRenameStateChanged(this::refreshWorkspaceTree);

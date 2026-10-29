@@ -8,8 +8,9 @@ import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.service.SearchService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
+import com.bingbaihanji.fxdecomplie.service.cache.CacheKeys;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
-import com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.search.BytecodeSearchProvider;
 import com.bingbaihanji.fxdecomplie.ui.search.ClassSearchProvider;
@@ -48,11 +49,6 @@ public final class SearchController {
 
     public SearchController(MainWindow owner) {
         this.owner = owner;
-    }
-
-    /** 委托 ClassTabOpener 计算 L2 缓存工作区键,确保跨组件缓存复用 */
-    private static String workspaceKey(Workspace workspace) {
-        return com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener.computeWorkspaceKey(workspace);
     }
 
     public void searchInWorkspace(String selectedText) {
@@ -202,10 +198,10 @@ public final class SearchController {
                     log.debug("全文搜索跳过不可读类: {}", cls.fullPath());
                     continue;
                 }
-                String fp = ClassTabOpener.computeClassFingerprint(classBytes);
-                String source = owner.classTabOpener().getDecompileCache().get(
-                        workspaceKey(view.workspace()) + "_" + fp, cls.internalName(),
-                        owner.currentEngine(), DecompilerOptions.hash(engineOptions));
+                CodeCacheKey classCacheKey = CacheKeys.forClass(view.workspace(), classBytes,
+                        cls.internalName(), owner.currentEngine(), engineOptions);
+                String source = owner.cacheManager().decompileCache()
+                        .load(classCacheKey).orElse(null);
                 if (source == null) {
                     // L2 miss: 带超时和 JD 回退的全量解编译
                     source = DecompilerRunner.decompileWithTimeout(

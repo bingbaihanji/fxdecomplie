@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheStore;
@@ -64,37 +63,8 @@ public final class DiskCodeCache implements CodeCacheStore {
 
     // ─── CodeCacheStore 实现 ───
 
-    public static String load(String workspaceHash, String internalName, DecompilerTypeEnum engine) {
-        return getDefault().loadInternal(workspaceHash, internalName, engine, "default");
-    }
-
-    public static String load(String workspaceHash, String internalName,
-                              DecompilerTypeEnum engine, String optionsHash) {
-        return getDefault().loadInternal(workspaceHash, internalName, engine, optionsHash);
-    }
-
-    public static void save(String workspaceHash, String internalName,
-                            DecompilerTypeEnum engine, String sourceCode) {
-        getDefault().saveInternal(workspaceHash, internalName, engine, "default", sourceCode);
-    }
-
-    // ─── 向后兼容: 静态方法 ───
-
-    public static void save(String workspaceHash, String internalName,
-                            DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
-        getDefault().saveInternal(workspaceHash, internalName, engine, optionsHash, sourceCode);
-    }
-
-    public static void invalidate(String workspaceHash, String internalName) {
-        getDefault().invalidateInternal(workspaceHash, internalName);
-    }
-
     public static void cleanAll() {
         getDefault().cleanAllInternal();
-    }
-
-    public static void cleanIfNeeded() {
-        getDefault().cleanIfNeededInternal();
     }
 
     private static String sanitizePathPart(String value) {
@@ -135,7 +105,7 @@ public final class DiskCodeCache implements CodeCacheStore {
     @Override
     public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
         switch (scope) {
-            case CLASS -> invalidateInternal(key.workspaceId(), key.internalName());
+            case CLASS -> invalidateClassScope(key.workspaceId(), key.internalName());
             case WORKSPACE -> {
                 // 清理该工作区下的所有缓存文件
                 String safeWs = sanitizePathPart(key.workspaceId());
@@ -156,16 +126,6 @@ public final class DiskCodeCache implements CodeCacheStore {
             }
             case ALL -> cleanAllInternal();
         }
-    }
-
-    private String loadInternal(String workspaceHash, String internalName,
-                                DecompilerTypeEnum engine, String optionsHash) {
-        return loadFile(cachePath(workspaceHash, internalName, engine, optionsHash));
-    }
-
-    private void saveInternal(String workspaceHash, String internalName,
-                              DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
-        saveFile(cachePath(workspaceHash, internalName, engine, optionsHash), sourceCode);
     }
 
     private String loadFile(Path file) {
@@ -256,7 +216,8 @@ public final class DiskCodeCache implements CodeCacheStore {
         }
     }
 
-    private void invalidateInternal(String workspaceHash, String internalName) {
+    /** 按类失效:删除该工作区下所有引擎目录中以该类名开头的缓存文件 */
+    private void invalidateClassScope(String workspaceHash, String internalName) {
         if (workspaceHash == null || internalName == null) {
             return;
         }
@@ -364,16 +325,6 @@ public final class DiskCodeCache implements CodeCacheStore {
         } catch (IOException e) {
             log.warn("磁盘缓存清理失败", e);
         }
-    }
-
-    private Path cachePath(String workspaceHash, String internalName,
-                           DecompilerTypeEnum engine, String optionsHash) {
-        String safeWorkspace = sanitizePathPart(workspaceHash);
-        String safeInternalName = sanitizePathPart(internalName);
-        String safeEngine = engine.name().toLowerCase();
-        return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION)
-                .resolve(safeWorkspace).resolve(safeEngine)
-                .resolve(safeInternalName + "." + optionsId(optionsHash) + ".java");
     }
 
     /**
