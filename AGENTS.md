@@ -171,9 +171,11 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 
 工作区索引由虚拟线程并行构建，图片等二进制资源不进入索引与缓存；打开工作区后延迟 500ms 预热（仅当仍为当前活动工作区），关闭中的工作区会丢弃构建/缓存命中结果，且不写缓存。索引持久化到 `<appDir>/cache/index-cache/<指纹>.idx.gz`（GZIP 二进制，带格式版本号，唯一临时文件 + 原子替换，指纹为「路径 + 大小 + mtime」（目录为汇总信息））。按节点导出通过 `WorkspaceClassBytecodeProvider` 懒加载依赖，不等待完整索引。索引构建使用独立单线程池，不占用共享 IO 池。
 
-导出采用有序有界流水线：按原始顺序提交反编译，在途窗口为 `max(1, 反编译并发数 - 1)`（JADX 为 1，保留一个共享池线程给交互式反编译），每项完成后立即写目录或 ZIP，不再把全部源码驻留内存。路径不安全/冲突策略失败按条目跳过（`UnsafeExportPathException`），真正的 ZIP 流 IO 错误才中止归档；30s 单类超时与引擎回退顺序不变。
+### 5.4 导出流水线
 
-### 5.4 配置与数据目录
+导出采用有序有界流水线：按原始顺序提交反编译，并按原始顺序写盘；在途窗口为 `max(1, 反编译并发数 - 1)`（反编译并发数 = `max(2, min(核数/2, 8))`），为交互式反编译保留一个共享池线程。JADX 恒为 1，因为适配层用单许可信号量串行化 JADX 调用，窗口大于 1 会让等待信号量的时间计入 30s 超时预算。每项轮到其顺序时立即写目录或 ZIP，不再把全部源码驻留内存；ZIP 条目顺序与 RENAME/SKIP 冲突策略保持原语义。路径不安全/冲突策略失败按条目跳过（ZIP 下以 `UnsafeExportPathException` 区分），真正的 ZIP 流 IO 错误才停止写入后续条目（已写出的部分保留）；30s 单类超时与引擎回退顺序不变。
+
+### 5.5 配置与数据目录
 
 应用数据默认写入 JAR 所在目录；开发期 classpath 在 `target/classes/` 时回退到项目根目录，避免 `mvn clean` 删除配置。
 
@@ -213,7 +215,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 ## 7. 测试
 
 - 测试框架：**JUnit 5**。
-- 当前全量测试约 **357** 个，全部通过。
+- 当前全量测试约 **404** 个，全部通过。
 - 新增功能优先补充单元测试；涉及索引、搜索、导出、项目文件解析、ClassGraph 适配、JADX 适配的变更必须覆盖异常路径。
 - ClassGraph 相关测试位于 `src/test/java/com/bingbaihanji/classgraph/` 与 `src/test/java/com/bingbaihanji/fxdecomplie/service/classscan/`、`service/reference/`。
 - JADX 相关测试位于 `src/test/java/com/bingbaihanji/fxdecomplie/decompiler/jadx/`。
