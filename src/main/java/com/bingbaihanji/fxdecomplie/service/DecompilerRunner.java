@@ -277,6 +277,7 @@ public final class DecompilerRunner {
         String normalized = source.toLowerCase(java.util.Locale.ROOT);
         return normalized.contains("decompiler is busy")
                 || normalized.contains("decompiler engine is busy")
+                || normalized.contains("decompile failed: busy")
                 || normalized.contains("反编译器正忙")
                 || normalized.contains("反编译引擎繁忙")
                 || normalized.contains("decompilation timed out")
@@ -306,6 +307,7 @@ public final class DecompilerRunner {
                 || trimmed.startsWith("// Procyon Error:")
                 || trimmed.startsWith("// jadx Error:")
                 || trimmed.startsWith("// jadx decompile failed")
+                || trimmed.startsWith("// Bdec Error:")
                 || trimmed.startsWith("// CFR decompile failed")
                 || trimmed.startsWith("// Procyon decompile failed")
                 || trimmed.startsWith("// Vineflower decompile failed")
@@ -432,6 +434,7 @@ public final class DecompilerRunner {
                 || trimmed.startsWith("// Procyon Error:")
                 || trimmed.startsWith("// jadx Error:")
                 || trimmed.startsWith("// jadx decompile failed")
+                || trimmed.startsWith("// Bdec Error:")
                 || trimmed.startsWith("// Decompile failed")
                 || trimmed.startsWith("// 反编译失败")
                 || isJdFailureOutput(source);

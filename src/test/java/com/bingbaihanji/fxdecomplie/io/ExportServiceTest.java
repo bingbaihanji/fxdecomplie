@@ -405,6 +405,9 @@ class ExportServiceTest {
 
         assertTrue(result.errors().stream().anyMatch(e -> e.contains("导出已取消")),
                 String.valueOf(result.errors()));
+        assertEquals(1, result.errors().size(), String.valueOf(result.errors()));
+        assertFalse(result.errors().getFirst().contains("反编译请求已被替换"));
+        assertFalse(Files.exists(tempDir.resolve("cancel-out/com/example/CancelA.java")));
     }
 
     private byte[] compileClass(String packageName, String className) throws Exception {

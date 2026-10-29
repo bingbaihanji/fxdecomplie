@@ -37,6 +37,15 @@ class DecompilerRunnerTest {
                 "// 反编译引擎繁忙,请稍候重试或切换其他引擎\n// 类: a"));
         assertTrue(DecompilerRunner.isTransientFailureOutput(
                 "// Decompiler engine is busy. Please wait and retry, or switch engine."));
+        assertTrue(DecompilerRunner.isTransientFailureOutput(
+                "// jadx decompile failed: busy\n// Class: com/example/Foo"));
+        assertTrue(DecompilerRunner.isFailureOutput(
+                "// jadx decompile failed: busy\n// Class: com/example/Foo"));
+    }
+
+    @Test
+    void recognizesBdecFailureAsFailure() {
+        assertTrue(DecompilerRunner.isFailureOutput("// Bdec Error: Foo\n// boom"));
     }
 
     @Test
