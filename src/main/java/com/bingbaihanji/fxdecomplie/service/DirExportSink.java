@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,13 +25,17 @@ final class DirExportSink implements ExportSink {
     }
 
     @Override
-    public boolean write(FileTreeNode item, ExportService.ExportContent content) throws IOException {
-        Path target = ExportWriter.resolveSafeOutputPath(outputDir, content.relativePath());
-        target = ExportConflictResolver.applyDirConflictPolicy(target, conflictPolicy);
+    public boolean write(ExportService.ExportContent content) throws IOException {
+        Path target;
+        try {
+            target = ExportWriter.resolveSafeOutputPath(outputDir, content.relativePath());
+            target = ExportConflictResolver.applyDirConflictPolicy(target, conflictPolicy);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new IOException(e.getMessage(), e);
+        }
         if (target == null) {
             return false;
         }
-        Files.createDirectories(target.getParent());
         try {
             Files.write(target, content.bytes());
         } catch (IOException e) {

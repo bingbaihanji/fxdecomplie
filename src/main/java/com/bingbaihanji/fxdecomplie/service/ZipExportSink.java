@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -37,15 +36,20 @@ final class ZipExportSink implements ExportSink {
     }
 
     @Override
-    public boolean write(FileTreeNode item, ExportService.ExportContent content) throws IOException {
-        String entryName = ExportWriter.sanitizeZipEntryName(content.relativePath());
-        entryName = ExportConflictResolver.applyZipConflictPolicy(
-                entryName, conflictPolicy, writtenEntries);
+    public boolean write(ExportService.ExportContent content) throws IOException {
+        String entryName;
+        try {
+            entryName = ExportWriter.sanitizeZipEntryName(content.relativePath());
+            entryName = ExportConflictResolver.applyZipConflictPolicy(
+                    entryName, conflictPolicy, writtenEntries);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new IOException(e.getMessage(), e);
+        }
         if (entryName == null) {
             return false;
         }
-        writtenEntries.add(entryName);
         zipStream.putNextEntry(new ZipEntry(entryName));
+        writtenEntries.add(entryName);
         try {
             zipStream.write(content.bytes());
         } catch (IOException e) {
