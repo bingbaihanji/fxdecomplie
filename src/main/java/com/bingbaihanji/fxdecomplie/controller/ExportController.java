@@ -171,6 +171,7 @@ public final class ExportController {
                     }
                 });
             } catch (Error error) {
+                log.error("导出失败", error);
                 Platform.runLater(() -> {
                     progressHandle.close();
                     owner.statusBar().clearTask();

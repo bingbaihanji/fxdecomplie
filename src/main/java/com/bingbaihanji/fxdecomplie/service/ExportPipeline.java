@@ -86,11 +86,12 @@ final class ExportPipeline {
                     result = ItemResult.error(messageOf(cause));
                 }
                 if (result.content() == null) {
-                    if (result.error() != null) {
-                        state.errors.add(item.getFullPath() + ": " + result.error());
-                    } else if (canceled != null && canceled.getAsBoolean()) {
+                    if (canceled != null && canceled.getAsBoolean()) {
                         interruptedOrCanceled = true;
                         break;
+                    }
+                    if (result.error() != null) {
+                        state.errors.add(item.getFullPath() + ": " + result.error());
                     }
                     state.advance(item.getFullPath());
                     continue;
@@ -106,6 +107,10 @@ final class ExportPipeline {
                     // 只有真正的 ZIP 写入 IO 错误才中止整个归档.
                     boolean unsafePath = e instanceof UnsafeExportPathException;
                     if (config.format() == ExportConfig.Format.ZIP && !unsafePath) {
+                        log.error("ZIP 写入失败,中止后续条目: {}", item.getFullPath(), e);
+                        for (Future<ItemResult> pending : inFlight) {
+                            pending.cancel(true);
+                        }
                         break;
                     }
                     continue;

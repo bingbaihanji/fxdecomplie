@@ -16,6 +16,7 @@ import javax.tools.ToolProvider;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -349,6 +350,61 @@ class ExportServiceTest {
                     StandardCharsets.UTF_8));
             assertFalse(entries.hasMoreElements());
         }
+    }
+
+    @Test
+    void zipEntriesFollowInputOrderBeyondWindow() throws Exception {
+        int count = 12;
+        List<FileTreeNode> nodes = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            String path = "p" + i + ".txt";
+            names.add(path);
+            nodes.add(resourceNode(path, "v" + i));
+        }
+        Path zip = tempDir.resolve("order-many.zip");
+        ClassBytecodeProvider provider = name -> null;
+
+        ExportResult result = ExportService.exportAll(nodes,
+                config(zip, ExportConfig.Format.ZIP,
+                        ExportConfig.ConflictPolicy.OVERWRITE, true),
+                provider, null, null, null);
+
+        assertEquals(count, result.successCount());
+        try (ZipFile zipFile = new ZipFile(zip.toFile())) {
+            var entries = zipFile.entries();
+            for (int i = 0; i < count; i++) {
+                var entry = entries.nextElement();
+                assertEquals(names.get(i), entry.getName());
+                assertEquals("v" + i, new String(zipFile.getInputStream(entry).readAllBytes(),
+                        StandardCharsets.UTF_8));
+            }
+            assertFalse(entries.hasMoreElements());
+        }
+    }
+
+    @Test
+    void cancellationStopsExportAndRecordsMarker() throws Exception {
+        byte[] bytes = compileClass("com.example", "CancelA");
+        FileTreeNode a = classNode("CancelA");
+        FileTreeNode b = classNode("CancelB");
+        java.util.concurrent.atomic.AtomicBoolean canceled =
+                new java.util.concurrent.atomic.AtomicBoolean();
+        ClassBytecodeProvider provider = name -> {
+            if ("com/example/CancelA".equals(name)) {
+                canceled.set(true);
+                return bytes;
+            }
+            return null;
+        };
+
+        ExportResult result = ExportService.exportAll(List.of(a, b),
+                config(tempDir.resolve("cancel-out"), ExportConfig.Format.DIR,
+                        ExportConfig.ConflictPolicy.OVERWRITE, false),
+                provider, null, null, canceled::get);
+
+        assertTrue(result.errors().stream().anyMatch(e -> e.contains("导出已取消")),
+                String.valueOf(result.errors()));
     }
 
     private byte[] compileClass(String packageName, String className) throws Exception {

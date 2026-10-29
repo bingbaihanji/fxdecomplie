@@ -29,7 +29,8 @@ public sealed interface DecompileOutcome {
         }
         // 瞬时失败
         String lower = source.toLowerCase(java.util.Locale.ROOT);
-        if (lower.contains("decompiler is busy") || lower.contains("反编译器正忙")) {
+        if (lower.contains("decompiler is busy") || lower.contains("反编译器正忙")
+                || lower.contains("decompile failed: busy")) {
             return new Failure(engine, FailureKind.BUSY, "反编译器正忙");
         }
         if (lower.contains("decompilation timed out") || lower.contains("反编译超时")) {
@@ -51,6 +52,7 @@ public sealed interface DecompileOutcome {
                 "// Vineflower Error:", "// CFR Error:", "// Procyon Error:",
                 "// JD-Core Error:", "// JD-Core decompile failed",
                 "// jadx Error:", "// jadx decompile failed",
+                "// Bdec Error:",
                 "// CFR decompile failed", "// Procyon decompile failed",
                 "// Vineflower decompile failed",
                 "// Decompile failed", "// 反编译失败"
