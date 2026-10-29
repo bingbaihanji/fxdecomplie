@@ -27,6 +27,9 @@ class DecompilerConcurrencyTest {
 
     @Test
     void decompilesClassesConcurrently() throws Exception {
+        assertEquals(Math.max(2, Math.min(8,
+                        Runtime.getRuntime().availableProcessors() / 2)),
+                DecompilerRunner.decompilerThreads());
         int count = 8;
         List<byte[]> classes = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
@@ -46,6 +49,32 @@ class DecompilerConcurrencyTest {
                 String source = futures.get(i).get(60, TimeUnit.SECONDS);
                 assertNotNull(source);
                 assertTrue(source.contains("class Concurrent" + i), source);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void decompilesJadxClassesConcurrentlyWithoutCorruption() throws Exception {
+        int count = 2;
+        List<byte[]> classes = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            classes.add(compileClass("JadxConcurrent" + i));
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        try {
+            List<Future<String>> futures = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                byte[] bytes = classes.get(i);
+                String path = "com/example/JadxConcurrent" + i + ".class";
+                futures.add(executor.submit(() -> DecompilerRunner.decompileWithTimeout(
+                        path, bytes, DecompilerTypeEnum.JADX, DecompilerContext.EMPTY)));
+            }
+            for (int i = 0; i < count; i++) {
+                String source = futures.get(i).get(60, TimeUnit.SECONDS);
+                assertNotNull(source);
+                assertTrue(source.contains("class JadxConcurrent" + i), source);
             }
         } finally {
             executor.shutdownNow();

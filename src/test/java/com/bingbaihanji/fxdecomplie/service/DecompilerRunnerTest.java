@@ -30,6 +30,16 @@ class DecompilerRunnerTest {
     }
 
     @Test
+    void recognizesBusyOutputAsFailure() {
+        assertTrue(DecompilerRunner.isFailureOutput(
+                "// Decompiler engine is busy. Please wait and retry, or switch engine.\n// Class: a"));
+        assertTrue(DecompilerRunner.isFailureOutput(
+                "// 反编译引擎繁忙,请稍候重试或切换其他引擎\n// 类: a"));
+        assertTrue(DecompilerRunner.isTransientFailureOutput(
+                "// Decompiler engine is busy. Please wait and retry, or switch engine."));
+    }
+
+    @Test
     void timeoutCounterResetDoesNotDeadlock() throws Exception {
         // 通过多线程并发调用同步方法来验证无死锁
         int threads = 10;

@@ -276,7 +276,9 @@ public final class DecompilerRunner {
         }
         String normalized = source.toLowerCase(java.util.Locale.ROOT);
         return normalized.contains("decompiler is busy")
+                || normalized.contains("decompiler engine is busy")
                 || normalized.contains("反编译器正忙")
+                || normalized.contains("反编译引擎繁忙")
                 || normalized.contains("decompilation timed out")
                 || normalized.contains("反编译超时");
     }

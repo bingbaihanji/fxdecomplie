@@ -3,6 +3,8 @@ package com.bingbaihanji.fxdecomplie.decompiler;
 import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxDecompilerFacade;
 import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxDecompilerRequest;
 
+import java.util.concurrent.Semaphore;
+
 /**
  * jadx 反编译引擎适配器
  * <p>
@@ -13,6 +15,9 @@ import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxDecompilerRequest;
  * @date 2026-07-11
  */
 public class JadxDecompiler implements Decompiler {
+
+    /** JADX 内核使用进程级共享临时目录,串行化以避免并发清理竞争 */
+    private static final Semaphore JADX_CONCURRENCY = new Semaphore(1);
 
     private final JadxDecompilerFacade facade = JadxDecompilerFacade.getInstance();
 
@@ -46,11 +51,23 @@ public class JadxDecompiler implements Decompiler {
      */
     @Override
     public String decompileType(String typeName, byte[] classBytes, DecompilerContext context) {
-        return facade.decompile(new JadxDecompilerRequest(
-                DecompilerContext.normalizeInternalName(typeName),
-                typeName,
-                classBytes,
-                context));
+        boolean acquired = false;
+        try {
+            JADX_CONCURRENCY.acquire();
+            acquired = true;
+            return facade.decompile(new JadxDecompilerRequest(
+                    DecompilerContext.normalizeInternalName(typeName),
+                    typeName,
+                    classBytes,
+                    context));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "// jadx decompile failed: interrupted\n// Class: " + typeName;
+        } finally {
+            if (acquired) {
+                JADX_CONCURRENCY.release();
+            }
+        }
     }
 
     @Override
