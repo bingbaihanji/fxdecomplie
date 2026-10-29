@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.util.Comparator;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -73,13 +75,14 @@ class DiskQuotaGuardTest {
         DiskQuotaGuard guard = new DiskQuotaGuard(root, 100, task -> {
             runs.incrementAndGet();
             task.run();
-        }, CacheLimits.QUOTA_CHECK_INTERVAL_NANOS, 100, clock);
+        }, CacheLimits.QUOTA_CHECK_INTERVAL_NANOS, 2, clock);
 
         guard.onWrite();
         assertEquals(0, runs.get());
         guard.reset();
+        // 未重置时本次写入计数会达到 2 并立即触发检查；重置后应从 1 重新开始
         guard.onWrite();
-        assertEquals(0, runs.get());
+        assertEquals(0, runs.get(), "reset 后写入计数应重新开始");
         now[0] = CacheLimits.QUOTA_CHECK_INTERVAL_NANOS;
         guard.onWrite();
         assertEquals(1, runs.get());
@@ -105,14 +108,19 @@ class DiskQuotaGuardTest {
                 CacheLimits.QUOTA_CHECK_INTERVAL_NANOS, 1, System::nanoTime);
 
         Thread first = new Thread(guard::onWrite, "quota-first");
-        first.start();
-        assertTrue(started.await(5, TimeUnit.SECONDS), "首次检查未启动");
-        for (int i = 0; i < 5; i++) {
-            guard.onWrite();
+        first.setDaemon(true);
+        try {
+            first.start();
+            assertTrue(started.await(5, TimeUnit.SECONDS), "首次检查未启动");
+            for (int i = 0; i < 5; i++) {
+                guard.onWrite();
+            }
+            assertEquals(1, runs.get(), "单飞期间不应启动新的检查");
+        } finally {
+            // 断言失败时也必须释放并回收线程，避免 surefire 挂起
+            release.countDown();
+            first.join(5_000);
         }
-        assertEquals(1, runs.get(), "单飞期间不应启动新的检查");
-        release.countDown();
-        first.join(5_000);
         assertFalse(first.isAlive(), "首次检查未结束");
 
         guard.onWrite();
@@ -164,6 +172,70 @@ class DiskQuotaGuardTest {
     }
 
     @Test
+    void nestedJunctionIsSkippedAndNotEvicted() throws Exception {
+        Assumptions.assumeTrue(
+                System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win"),
+                "仅 Windows 支持 junction");
+        Path outside = Files.createTempDirectory("fxdecomplie-quota-junction-");
+        Path junction = root.resolve("junction");
+        try {
+            Process process = new ProcessBuilder("cmd", "/c", "mklink", "/J",
+                    junction.toString(), outside.toString())
+                    .redirectErrorStream(true)
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .start();
+            boolean created = process.waitFor(10, TimeUnit.SECONDS)
+                    && process.exitValue() == 0;
+            if (!created) {
+                process.destroyForcibly();
+            }
+            Assumptions.assumeTrue(created, "无法创建 junction");
+
+            Path outsideFile = outside.resolve("outside.java");
+            Files.writeString(outsideFile, "x".repeat(50));
+            Path inside = file(root, "inside.java", 5, 1_000);
+            DiskQuotaGuard guard = new DiskQuotaGuard(root, 1, Runnable::run,
+                    CacheLimits.QUOTA_CHECK_INTERVAL_NANOS, 1, System::nanoTime);
+
+            CacheStats stats = guard.stats("t", 0, 0);
+            assertEquals(1, stats.entries(), "junction 目标不应被统计");
+            assertEquals(5L, stats.bytes());
+
+            guard.evictIfNeeded();
+            assertTrue(Files.exists(outsideFile), "junction 外的目标文件不能被删除");
+            assertFalse(Files.exists(inside), "根内文件应被淘汰");
+        } finally {
+            try {
+                Files.deleteIfExists(junction);
+            } catch (IOException ignored) {
+            }
+            deleteRecursively(outside);
+        }
+    }
+
+    @Test
+    void rootDirectorySymlinkIsTraversed() throws Exception {
+        Path realRoot = root.resolve("real-root");
+        Files.createDirectories(realRoot);
+        Files.writeString(realRoot.resolve("a.java"), "x".repeat(10));
+        Path linkRoot = root.resolve("link-root");
+        boolean linked = true;
+        try {
+            Files.createSymbolicLink(linkRoot, realRoot);
+        } catch (IOException | UnsupportedOperationException | SecurityException e) {
+            linked = false;
+        }
+        Assumptions.assumeTrue(linked, "当前环境不支持符号链接");
+
+        DiskQuotaGuard guard = new DiskQuotaGuard(linkRoot, 1_000, Runnable::run,
+                CacheLimits.QUOTA_CHECK_INTERVAL_NANOS, 1, System::nanoTime);
+
+        CacheStats stats = guard.stats("t", 0, 0);
+        assertEquals(1, stats.entries(), "根目录符号链接应解析到真实目录后遍历");
+        assertEquals(10L, stats.bytes());
+    }
+
+    @Test
     void statsCountsNestedRegularFiles() throws Exception {
         file(root, "a.java", 10, 1_000);
         file(root, "nested/b.java", 20, 2_000);
@@ -178,5 +250,21 @@ class DiskQuotaGuardTest {
         assertEquals(60L, stats.bytes());
         assertEquals(7, stats.hitCount());
         assertEquals(3, stats.missCount());
+    }
+
+    /** 递归删除测试临时目录，失败只忽略（不影响断言结论） */
+    private static void deleteRecursively(Path dir) {
+        if (!Files.exists(dir)) {
+            return;
+        }
+        try (var stream = Files.walk(dir)) {
+            for (Path path : stream.sorted(Comparator.reverseOrder()).toList()) {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException ignored) {
+                }
+            }
+        } catch (IOException ignored) {
+        }
     }
 }

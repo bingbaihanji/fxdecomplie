@@ -59,8 +59,14 @@ public final class DiskQuotaGuard {
     }
 
     /**
-     * 构造使用后台线程池的配额守卫；池拒绝任务时抛出 {@link RejectedExecutionException}，
-     * 由 {@link #onWrite()} 内部捕获并恢复单飞状态.
+     * 构造使用后台线程池的配额守卫.
+     *
+     * <p>契约：{@link BackgroundTasks#run} 的 onRejected 回调必须在任务队列拒绝时、
+     * 在返回失败的 Future 之前同步触发（默认 {@code ThreadPoolTaskExecutor} 满足该约定）；
+     * 若实现违反此约定，守卫会误判任务已提交而长期关闭配额检查.</p>
+     *
+     * <p>池拒绝任务时抛出 {@link RejectedExecutionException}，
+     * 由 {@link #onWrite()} 内部捕获并恢复单飞状态.</p>
      */
     public static DiskQuotaGuard background(Path root, long quotaBytes,
                                             BackgroundTasks.PoolType type, String taskName) {
@@ -155,19 +161,30 @@ public final class DiskQuotaGuard {
     /**
      * 单次遍历收集普通文件快照：不跟随符号链接/联接点，绝不向调用方抛异常.
      *
-     * <p>Windows 联接点在无跟随属性下报告为 other；根目录本身允许是合法的重定位联接点，
-     * 其余链接目录直接跳过子树.</p>
+     * <p>Windows 联接点在无跟随属性下报告为 other；根目录本身允许是合法的重定位路径，
+     * 其余链接目录直接跳过子树. 根目录为真实目录符号链接时先解析到目标再遍历；
+     * 联接点不报告为符号链接，因此保持原路径（依赖 preVisitDirectory 的 other 跳过）。
+     * 无法创建符号链接的环境不具备该路径的测试覆盖，但解析失败只记录并回退到原路径.</p>
      */
     private List<FileInfo> scanFiles() {
         List<FileInfo> files = new ArrayList<>();
         if (!Files.exists(root)) {
             return files;
         }
+        Path resolved = root;
+        if (Files.isSymbolicLink(root)) {
+            try {
+                resolved = root.toRealPath();
+            } catch (IOException e) {
+                log.debug("缓存根目录符号链接解析失败: {}", root, e);
+            }
+        }
+        final Path start = resolved;
         try {
-            Files.walkFileTree(root, new SimpleFileVisitor<>() {
+            Files.walkFileTree(start, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                    if (!dir.equals(root) && (attrs.isOther() || attrs.isSymbolicLink())) {
+                    if (!dir.equals(start) && (attrs.isOther() || attrs.isSymbolicLink())) {
                         return FileVisitResult.SKIP_SUBTREE;
                     }
                     return FileVisitResult.CONTINUE;
@@ -189,7 +206,7 @@ public final class DiskQuotaGuard {
                 }
             });
         } catch (IOException | RuntimeException e) {
-            log.debug("缓存配额遍历失败: {}", root, e);
+            log.debug("缓存配额遍历失败: {}", start, e);
         }
         return files;
     }
