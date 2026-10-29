@@ -182,7 +182,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 ```text
 <appDir>/
 ├── config/config.json        # 窗口/主题/引擎/导出/搜索/平台偏好
-├── cache/                    # decompile/v1 反编译缓存、index/v1 索引缓存、jadx/runtime 临时目录
+├── cache/                    # decompile/v1、index/v1、jadx/runtime、tmp、javafx 缓存
 ├── logs/                     # application.log / error.log / startup-error.log
 └── fxdecomplie/              # 工作区级数据
     ├── comments/             # 注释持久化
@@ -215,7 +215,8 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 ## 7. 测试
 
 - 测试框架：**JUnit 5**。
-- 当前全量测试 **477** 个，全部通过。
+- 当前全量测试 **479** 个，全部通过。
+- 运行期资源只允许落在 JAR 同级目录：启动期 `BootstrapPaths` 在日志/第三方库初始化前设置 `fxdecomplie.appDir`、`java.io.tmpdir`、`jna.tmpdir`、`javafx.cachedir`、`prism.cachedir`，临时文件统一到 `cache/tmp`，不写用户 temp/home/AppData。
 - 新增功能优先补充单元测试；涉及索引、搜索、导出、项目文件解析、ClassGraph 适配、JADX 适配的变更必须覆盖异常路径。
 - ClassGraph 相关测试位于 `src/test/java/com/bingbaihanji/classgraph/` 与 `src/test/java/com/bingbaihanji/fxdecomplie/service/classscan/`、`service/reference/`。
 - JADX 相关测试位于 `src/test/java/com/bingbaihanji/fxdecomplie/decompiler/jadx/`。

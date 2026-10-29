@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
+import com.bingbaihanji.fxdecomplie.constants.BootstrapPaths;
 import com.bingbaihanji.fxdecomplie.context.AppContext;
 import com.bingbaihanji.fxdecomplie.controller.MainWindow;
 import com.bingbaihanji.fxdecomplie.ui.IconHelper;
@@ -31,28 +32,24 @@ import java.util.Locale;
  */
 public final class FxDecompilerApp {
 
-    private static final Logger log = LoggerFactory.getLogger(FxDecompilerApp.class);
-
     /** JavaFX 预览属性名 */
     private static final String JAVAFX_PREVIEW_PROPERTY = "javafx.enablePreview";
 
     /** 抑制预览警告属性名 */
     private static final String JAVAFX_SUPPRESS_PREVIEW_WARNING_PROPERTY = "javafx.suppressPreviewWarning";
 
+    static {
+        // 必须先于 Logger 与任何第三方库初始化
+        BootstrapPaths.configure();
+    }
+
     /** 启动错误日志文件路径(位于应用根目录 logs 子目录下) */
     private static final Path STARTUP_ERROR_LOG = AppPaths.startupErrorLog();
 
-    static {
-        System.setProperty("fxdecomplie.appDir", resolveAppDirForLogging().toString());
-    }
+    private static final Logger log = LoggerFactory.getLogger(FxDecompilerApp.class);
 
     /** 工具类私有构造,防止实例化 */
     private FxDecompilerApp() {
-    }
-
-    /** 在 static 初始化块中解析应用根目录,用于配置 logback 日志路径 */
-    private static Path resolveAppDirForLogging() {
-        return AppConfig.resolveAppDir();
     }
 
     /**

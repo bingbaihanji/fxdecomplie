@@ -1,5 +1,7 @@
 package com.bingbaihanji.fxdecomplie;
 
+import com.bingbaihanji.fxdecomplie.constants.BootstrapPaths;
+
 /**
  * 应用启动器,委托到 FxDecompilerApp.main()
  *
@@ -12,8 +14,9 @@ public final class AppLauncher {
     private AppLauncher() {
     }
 
-    /** 程序入口,直接委托到 FxDecompilerApp.main() */
+    /** 程序入口,先收拢运行期目录再委托到 FxDecompilerApp.main() */
     public static void main(String[] args) {
+        BootstrapPaths.configure();
         FxDecompilerApp.main(args);
     }
 }

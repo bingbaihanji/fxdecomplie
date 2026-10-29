@@ -27,6 +27,11 @@ import java.util.Objects;
  */
 public class AppConfig {
 
+    static {
+        // 必须先于任何 Logger 初始化，保证 logback 的 appDir 指向 JAR 同级目录
+        com.bingbaihanji.fxdecomplie.constants.BootstrapPaths.configureAppDir();
+    }
+
     private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
 
     /** 应用根目录(JAR 所在目录,开发期回退到 user.dir) */
@@ -88,45 +93,7 @@ public class AppConfig {
      * @return 应用根目录的绝对路径
      */
     public static Path resolveAppDir() {
-        try {
-            var codeSource = AppConfig.class.getProtectionDomain().getCodeSource();
-            if (codeSource != null && codeSource.getLocation() != null) {
-                Path jarPath = Path.of(codeSource.getLocation().toURI());
-                if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
-                    Path parent = jarPath.getParent();
-                    if (parent != null) {
-                        return parent.toAbsolutePath().normalize();
-                    }
-                } else if (Files.isDirectory(jarPath)) {
-                    return appRoot(jarPath);
-                }
-            }
-        } catch (Exception ignored) {
-            log.debug("解析应用目录失败,回退到 user.dir", ignored);
-        }
-        return Path.of(System.getProperty("user.dir"));
-    }
-
-    /**
-     * 开发期智能解析:classpath 在 target/classes/ 时返回项目根目录,
-     * 避免 mvn clean 删除 config 目录
-     *
-     * @param codeSourceDir 代码源目录(classpath 中的 classes 目录)
-     * @return 项目根目录或原始 codeSourceDir
-     */
-    private static Path appRoot(Path codeSourceDir) {
-        Path normalized = codeSourceDir.toAbsolutePath().normalize();
-        Path name = normalized.getFileName();
-        // 开发期 classpath 在 target/classes/,config 存项目根避免被 mvn clean 删除
-        if (name != null && "classes".equalsIgnoreCase(name.toString())) {
-            Path target = normalized.getParent();
-            if (target != null && target.getFileName() != null
-                    && "target".equalsIgnoreCase(target.getFileName().toString())
-                    && target.getParent() != null) {
-                return target.getParent();
-            }
-        }
-        return normalized;
+        return com.bingbaihanji.fxdecomplie.constants.BootstrapPaths.resolveAppDir();
     }
 
     /** @return 应用进程内唯一配置实例,首次调用时从磁盘加载 */
