@@ -47,8 +47,8 @@ import java.util.zip.ZipFile;
  * </ol>
  *
  * <h3>线程模型</h3>
- * 使用独立线程池(1-2 核,队列 2-4),与 BackgroundTasks 主线程池隔离,
- * 避免反编译任务(CPU/IO 密集)阻塞索引和搜索等短任务
+ * 使用独立线程池(并发数为 CPU 核数的一半,限制在 2-8,队列容量为并发数的 4 倍),
+ * 与 BackgroundTasks 主线程池隔离,避免反编译任务(CPU/IO 密集)阻塞索引和搜索等短任务
  */
 public final class DecompilerRunner {
 
@@ -68,8 +68,8 @@ public final class DecompilerRunner {
     /** 连续超时阈值:超过后重建线程池以丢弃可能僵死的线程 */
     private static final int CONSECUTIVE_TIMEOUT_THRESHOLD = 3;
 
-    private static final int MAX_DECOMPILER_THREADS = Math.clamp(
-            Runtime.getRuntime().availableProcessors() / 2, 1, 2);
+    private static final int MAX_DECOMPILER_THREADS = Math.max(2, Math.min(8,
+            Runtime.getRuntime().availableProcessors() / 2));
 
     private static final AtomicInteger THREAD_ID = new AtomicInteger();
 
@@ -87,7 +87,7 @@ public final class DecompilerRunner {
                 MAX_DECOMPILER_THREADS,
                 60L,
                 TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(MAX_DECOMPILER_THREADS * 2),
+                new LinkedBlockingQueue<>(MAX_DECOMPILER_THREADS * 4),
                 r -> {
                     Thread t = new Thread(r,
                             "decompiler-" + THREAD_ID.incrementAndGet());
@@ -96,6 +96,11 @@ public final class DecompilerRunner {
                 });
         ex.allowCoreThreadTimeOut(true);
         return ex;
+    }
+
+    /** @return 当前反编译线程池的并发数 */
+    public static int decompilerThreads() {
+        return MAX_DECOMPILER_THREADS;
     }
 
     /** 反编译成功时重置超时计数器(与 maybeRebuildExecutor 互斥) */
