@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
@@ -23,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.CRC32;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -40,7 +40,6 @@ public final class WorkspaceIndexCache {
 
     private static final Logger log = LoggerFactory.getLogger(WorkspaceIndexCache.class);
 
-    private static final String CACHE_DIR_NAME = "index-cache";
     private static final String CACHE_FILE_SUFFIX = ".idx.gz";
     private static final String LEGACY_FILE_SUFFIX = ".idx.json";
     private static final int MAGIC = 0x46584944;
@@ -52,6 +51,10 @@ public final class WorkspaceIndexCache {
 
     /** 测试专用缓存目录覆盖；生产环境为 null */
     private static volatile Path cacheDirectoryOverride;
+    private static volatile DiskQuotaGuard quotaGuard;
+    private static volatile long quotaBytes = CacheLimits.INDEX_BYTES;
+    private static final AtomicLong HITS = new AtomicLong();
+    private static final AtomicLong MISSES = new AtomicLong();
 
     private WorkspaceIndexCache() {
         throw new AssertionError("utility class");
@@ -59,6 +62,36 @@ public final class WorkspaceIndexCache {
 
     static void setCacheDirectoryForTesting(Path dir) {
         cacheDirectoryOverride = dir;
+        quotaGuard = null;
+    }
+
+    static void setQuotaForTesting(long bytes) {
+        quotaBytes = bytes;
+        quotaGuard = null;
+    }
+
+    static void checkQuotaForTesting() {
+        quotaGuard().evictIfNeeded();
+    }
+
+    /** 当前索引缓存统计（设置页打开时计算，非热路径） */
+    public static CacheStats stats() {
+        return quotaGuard().stats("index", HITS.get(), MISSES.get());
+    }
+
+    private static DiskQuotaGuard quotaGuard() {
+        DiskQuotaGuard guard = quotaGuard;
+        if (guard == null) {
+            synchronized (WorkspaceIndexCache.class) {
+                guard = quotaGuard;
+                if (guard == null) {
+                    guard = DiskQuotaGuard.background(cacheDirectory(), quotaBytes,
+                            BackgroundTasks.PoolType.IO, "IndexQuota-check");
+                    quotaGuard = guard;
+                }
+            }
+        }
+        return guard;
     }
 
     /**
@@ -85,23 +118,29 @@ public final class WorkspaceIndexCache {
      */
     public static CachedIndex load(String fingerprint) {
         if (fingerprint == null || fingerprint.isBlank()) {
+            MISSES.incrementAndGet();
             return null;
         }
         Path cacheFile = cacheFilePath(fingerprint);
         if (!Files.exists(cacheFile)) {
+            MISSES.incrementAndGet();
             deleteLegacyCache(fingerprint);
             return null;
         }
         try {
             CachedIndex cached = readFrom(cacheFile);
             if (cached.classes == null || cached.classes.isEmpty()) {
+                MISSES.incrementAndGet();
                 return null;
             }
+            HITS.incrementAndGet();
+            touch(cacheFile);
             log.info("索引缓存命中: {} ({} classes, {} resources)",
                     fingerprint, cached.classes.size(),
                     cached.resources == null ? 0 : cached.resources.size());
             return cached;
         } catch (Exception e) {
+            MISSES.incrementAndGet();
             log.warn("加载索引缓存失败: {}", fingerprint, e);
             try {
                 Files.deleteIfExists(cacheFile);
@@ -109,6 +148,16 @@ public final class WorkspaceIndexCache {
             }
             deleteLegacyCache(fingerprint);
             return null;
+        }
+    }
+
+    /** 读取即刷新 mtime，供配额守卫按 LRU 淘汰；失败不影响命中 */
+    private static void touch(Path file) {
+        try {
+            Files.setLastModifiedTime(file,
+                    java.nio.file.attribute.FileTime.fromMillis(System.currentTimeMillis()));
+        } catch (IOException e) {
+            log.debug("刷新索引缓存访问时间失败: {}", file, e);
         }
     }
 
@@ -122,12 +171,16 @@ public final class WorkspaceIndexCache {
         Path target = cacheFilePath(fingerprint);
         Path tmp = null;
         try {
-            Files.createDirectories(cacheDirectory());
-            tmp = Files.createTempFile(cacheDirectory(), fingerprint + "-",
+            Path cacheDir = cacheDirectory();
+            Files.createDirectories(cacheDir);
+            // 临时文件放在受管目录之外，避免配额淘汰在写入过程中删除半成品
+            Path tempDir = cacheDir.getParent() == null ? cacheDir : cacheDir.getParent();
+            tmp = Files.createTempFile(tempDir, fingerprint + "-",
                     CACHE_FILE_SUFFIX + ".tmp");
             writeTo(tmp, CachedIndex.from(index));
             moveAtomically(tmp, target);
             deleteLegacyCache(fingerprint);
+            quotaGuard().onWrite();
             log.info("索引缓存已保存: {} ({} classes, {} resources)",
                     fingerprint, index.classes().size(), index.resources().size());
         } catch (Exception e) {
@@ -166,8 +219,9 @@ public final class WorkspaceIndexCache {
                     }
                 });
             }
+            quotaGuard().reset();
             log.info("索引缓存已清除");
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             log.debug("清除索引缓存失败", e);
         }
     }
@@ -340,7 +394,7 @@ public final class WorkspaceIndexCache {
 
     private static Path cacheDirectory() {
         Path override = cacheDirectoryOverride;
-        return override != null ? override : AppPaths.cacheDir().resolve(CACHE_DIR_NAME);
+        return override != null ? override : CacheLayout.indexDir();
     }
 
     private static Path cacheFilePath(String fingerprint) {

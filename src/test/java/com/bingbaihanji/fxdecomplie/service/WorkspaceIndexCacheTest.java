@@ -323,6 +323,31 @@ class WorkspaceIndexCacheTest {
     }
 
     @Test
+    void statsAndQuotaEvictionUseIndexDirectory() throws Exception {
+        String fp1 = "stats-a";
+        String fp2 = "stats-b";
+        WorkspaceIndex empty = WorkspaceIndex.buildFromCache(List.of());
+        WorkspaceIndexCache.save(fp1, empty);
+        WorkspaceIndexCache.save(fp2, empty);
+        CacheStats stats = WorkspaceIndexCache.stats();
+        assertTrue(stats.entries() >= 2);
+        assertTrue(stats.bytes() > 0);
+
+        Path file1 = cacheDir.resolve(fp1 + ".idx.gz");
+        Path file2 = cacheDir.resolve(fp2 + ".idx.gz");
+        long total = Files.size(file1) + Files.size(file2);
+        WorkspaceIndexCache.setQuotaForTesting(total - 1);
+        Files.setLastModifiedTime(file1,
+                java.nio.file.attribute.FileTime.fromMillis(1_000L));
+        Files.setLastModifiedTime(file2,
+                java.nio.file.attribute.FileTime.fromMillis(2_000L));
+        WorkspaceIndexCache.checkQuotaForTesting();
+        assertFalse(Files.exists(file1));
+        assertTrue(Files.exists(file2));
+        WorkspaceIndexCache.setQuotaForTesting(CacheLimits.INDEX_BYTES);
+    }
+
+    @Test
     void clearAllRemovesLegacyAndCurrentCacheFiles() throws IOException {
         Files.createDirectories(cacheDir);
         Path legacy = cacheDir.resolve("clear-both-test.idx.json");
