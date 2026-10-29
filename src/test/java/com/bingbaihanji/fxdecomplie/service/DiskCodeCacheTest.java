@@ -123,6 +123,17 @@ class DiskCodeCacheTest {
         assertNull(cache.load(key("w", "fp", "com/example/A")).orElse(null));
     }
 
+    /** 回归: 刷新访问时间不应影响已读取内容的返回(重复读取走 touch 成功路径) */
+    @Test
+    void repeatedLoadsReturnContent() {
+        DiskCodeCache cache = cache();
+        CodeCacheKey key = key("com/example/Foo", "aaaaaaaaaaaaaaaa", 1);
+        cache.save(key, "source");
+
+        assertEquals(Optional.of("source"), cache.load(key));
+        assertEquals(Optional.of("source"), cache.load(key));
+    }
+
     @Test
     void clearAllRemovesEverything() {
         DiskCodeCache cache = new DiskCodeCache(tempDir.resolve("cache"));

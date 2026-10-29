@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -168,22 +169,27 @@ public final class DiskCodeCache implements CodeCacheStore {
     }
 
     private String loadFile(Path file) {
+        String content;
         try {
             if (!Files.exists(file)) {
                 return null;
             }
-            String content = Files.readString(file, StandardCharsets.UTF_8);
-            if (content.isEmpty()) {
-                return null;
-            }
-            // 读取即视为使用,刷新 mtime 以便容量清理按 LRU 近似淘汰
-            Files.setLastModifiedTime(file, java.nio.file.attribute.FileTime.fromMillis(
-                    System.currentTimeMillis()));
-            return content;
+            content = Files.readString(file, StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.debug("加载磁盘代码缓存失败: {}", file, e);
             return null;
         }
+        if (content.isEmpty()) {
+            return null;
+        }
+        // 读取即视为使用,刷新 mtime 以便容量清理按 LRU 近似淘汰;
+        // 刷新失败不影响已成功读取的内容
+        try {
+            Files.setLastModifiedTime(file, FileTime.fromMillis(System.currentTimeMillis()));
+        } catch (IOException e) {
+            log.debug("刷新磁盘缓存访问时间失败: {}", file, e);
+        }
+        return content;
     }
 
     private void saveFile(Path file, String sourceCode) {
