@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -28,6 +29,36 @@ public final class WorkspaceLoader {
 
     private WorkspaceLoader() {
         throw new AssertionError("utility class");
+    }
+
+    /**
+     * 同步加载文件并创建工作区。
+     *
+     * <p>调用方负责在后台线程执行；本方法不做线程切换。</p>
+     *
+     * @param file 输入文件/目录
+     * @return 已创建但索引为空的工作区
+     * @throws IOException 文件不存在、不可读或扫描失败
+     */
+    public static Workspace load(File file) throws IOException {
+        Objects.requireNonNull(file, "file");
+        if (!file.exists()) {
+            throw new IOException("File not found: " + file.getAbsolutePath());
+        }
+        if (!file.canRead()) {
+            throw new IOException("File is not readable: " + file.getAbsolutePath());
+        }
+        String name = file.getName();
+        long loadStart = System.currentTimeMillis();
+        var entries = ClassDiscoverer.discover(file);
+        FileTreeModel treeRoot = FileTreeBuilder.build(name, entries);
+        boolean isArchive = isArchiveFile(file);
+        String contentStamp = computeContentStamp(file);
+        Workspace workspace = new Workspace(name, file, treeRoot, isArchive,
+                WorkspaceIndex.EMPTY, contentStamp);
+        log.info("工作区创建完成: {} (archive={}, entries={}, {}ms)", name, isArchive,
+                entries.size(), System.currentTimeMillis() - loadStart);
+        return workspace;
     }
 
     /**
@@ -60,21 +91,11 @@ public final class WorkspaceLoader {
         long loadStart = System.currentTimeMillis();
         BackgroundTasks.run(BackgroundTasks.PoolType.IO, "FileLoader-" + name, () -> {
             try {
-                // ---- 步骤 1: 扫描 JAR/ZIP/目录中的所有 .class 和资源条目 ----
-                long t1 = System.currentTimeMillis();
-                var entries = ClassDiscoverer.discover(file);
-                log.info("文件扫描完成: {} -> {} 个条目 ({}ms)", name, entries.size(),
-                        System.currentTimeMillis() - t1);
-                // ---- 步骤 2: 构建带字节码缓存的层级文件树 ----
-                FileTreeModel treeRoot = FileTreeBuilder.build(name, entries);
-                // ---- 步骤 3: 创建带空索引的工作区模型 ----
-                boolean isArchive = isArchiveFile(file);
-                String contentStamp = computeContentStamp(file);
-                Workspace workspace = new Workspace(name, file, treeRoot, isArchive,
-                        WorkspaceIndex.EMPTY, contentStamp);
+                // ---- 扫描、建树、创建工作区 ----
+                Workspace workspace = load(file);
                 long totalElapsed = System.currentTimeMillis() - loadStart;
-                log.info("工作区创建完成: {} (archive={}, {}ms)", name, isArchive, totalElapsed);
-                // ---- 步骤 4: 在 UI 线程上通知 UI(完整索引由控制器在打开后预热) ----
+                log.info("文件加载完成: {} ({}ms)", name, totalElapsed);
+                // ---- 在 UI 线程上通知 UI(完整索引由控制器在打开后预热) ----
                 uiExecutor.execute(() -> {
                     try {
                         if (onSuccess != null) {

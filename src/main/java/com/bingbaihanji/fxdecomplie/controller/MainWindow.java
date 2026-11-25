@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.controller;
 
 import com.bingbaihanji.fxdecomplie.app.ApplicationServices;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.context.AppContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.CommentData;
@@ -135,6 +136,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 主菜单栏 */
     private MainMenuBar menuBar;
 
+    /** UI 与 MCP 共享的工作区会话注册表 */
+    private com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry workspaceSessions;
+
     /** 使用全局配置构造主窗口 */
     public MainWindow(AppConfig config) {
         this(config, false, null);
@@ -233,6 +237,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return exportController;
     }
 
+    com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry workspaceSessions() {
+        return workspaceSessions;
+    }
+
     TabPane outerTabPane() {
         return outerTabPane;
     }
@@ -265,7 +273,18 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 this::openProject,
                 config.recentFiles(),
                 this::openRecentFile));
+        workspaceSessions = AppContext.getInstance().workspaceSessions();
+        tabManager.setWorkspaceSessions(workspaceSessions);
+        workspaceSessions.setOnOpened(session ->
+                Platform.runLater(() -> workspaceController.attachWorkspaceTab(session.workspace())));
+        workspaceSessions.setOnActiveChanged(session ->
+                Platform.runLater(() -> selectWorkspaceTab(session.workspace())));
+        workspaceSessions.setOnEngineChangeRequested(engine ->
+                Platform.runLater(() -> engineController.selectEngine(engine)));
+        workspaceSessions.setOnClosed(session -> {
+        });
         cacheManager = ApplicationServices.create().cacheManager();
+        AppContext.getInstance().mcpServer().setDecompileCache(cacheManager.decompileCache());
         tabManager.setCacheManager(cacheManager);
         classTabOpener = new ClassTabOpener(config, editorTheme, statusBar,
                 cacheManager.decompileCache(), cacheManager.sourceSnapshots());
@@ -278,6 +297,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         outerTabPane.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldTab, newTab) -> {
                     tabManager.updateStatusForWorkspace(newTab);
+                    WorkspaceView activeView = tabManager.getWorkspaceViews().get(newTab);
+                    workspaceSessions.markActive(activeView == null ? null : activeView.workspace());
                     refreshToolbarState();
                 }
         );
@@ -364,6 +385,24 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         stage.setTitle("FxDecompiler");
         stage.setScene(scene);
         stage.show();
+        Thread.ofVirtual().name("mcp-start").start(() ->
+                AppContext.getInstance().mcpServer().startIfEnabled());
+    }
+
+    /** 选中指定工作区对应的外层标签页（FX 线程） */
+    private void selectWorkspaceTab(Workspace workspace) {
+        if (workspace == null || tabManager == null) {
+            return;
+        }
+        tabManager.getWorkspaceViews().entrySet().stream()
+                .filter(e -> e.getValue() != null && workspace.equals(e.getValue().workspace()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .ifPresent(tab -> {
+                    if (outerTabPane.getSelectionModel().getSelectedItem() != tab) {
+                        outerTabPane.getSelectionModel().select(tab);
+                    }
+                });
     }
 
     /** 根据当前工作区和代码标签页状态刷新工具栏按钮的启用/禁用状态 */
@@ -442,6 +481,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         tabManager.getWorkspaceViews().values().forEach(view -> {
             if (view != null && view.workspace() != null) {
                 InheritanceReferenceIndexService.invalidate(view.workspace());
+                if (workspaceSessions != null) {
+                    workspaceSessions.unregister(view.workspace());
+                }
                 view.workspace().close();
             }
         });

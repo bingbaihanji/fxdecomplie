@@ -24,7 +24,9 @@ public final class SettingsController {
     /** 打开设置对话框 */
     public void openSettings() {
         String oldEditorTheme = owner.config().theme().editorTheme();
-        SettingsDialog.show(owner.stage(), owner.config(), owner.cacheManager(), updated -> {
+        SettingsDialog.show(owner.stage(), owner.config(), owner.cacheManager(),
+                com.bingbaihanji.fxdecomplie.context.AppContext.getInstance().mcpServer(),
+                updated -> {
             boolean engineSwitched = applySettings(updated);
 
             // 检测编辑器主题变更 — 必须在 refreshCurrentTab 之前更新 ClassTabOpener,
@@ -66,6 +68,10 @@ public final class SettingsController {
                     tab.applyFontSettings(newFontSize, newFontFamily);
                 })
         );
+
+        Thread.ofVirtual().name("mcp-apply").start(() ->
+                com.bingbaihanji.fxdecomplie.context.AppContext.getInstance()
+                        .mcpServer().applyConfig());
 
         return engineSwitched;
     }

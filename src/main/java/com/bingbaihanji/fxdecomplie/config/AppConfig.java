@@ -76,6 +76,9 @@ public class AppConfig {
     /** 平台原生窗口配置 */
     private Platform platform = new Platform();
 
+    /** MCP 服务配置 */
+    private Mcp mcp = new Mcp();
+
     /** 最近打开的文件列表(路径字符串) */
     private List<String> recentFiles = new ArrayList<>();
 
@@ -238,6 +241,21 @@ public class AppConfig {
         return copy;
     }
 
+    private static Mcp copyMcp(Mcp source) {
+        Mcp copy = new Mcp();
+        if (source != null) {
+            copy.enabled = source.enabled;
+            copy.bindHost = source.bindHost;
+            copy.port = source.port;
+            copy.streamableHttpEnabled = source.streamableHttpEnabled;
+            copy.legacySseEnabled = source.legacySseEnabled;
+            copy.authToken = source.authToken;
+            copy.advertisedHost = source.advertisedHost;
+            copy.exportEnabled = source.exportEnabled;
+        }
+        return copy;
+    }
+
     private static Map<String, Map<String, String>> deepCopyEngineOptions(
             Map<String, Map<String, String>> source) {
         Map<String, Map<String, String>> copy = new LinkedHashMap<>();
@@ -272,6 +290,7 @@ public class AppConfig {
             copy.export = copyExport(export);
             copy.search = copySearch(search);
             copy.platform = copyPlatform(platform);
+            copy.mcp = copyMcp(mcp);
             copy.recentFiles = recentFiles == null ? new ArrayList<>() : new ArrayList<>(recentFiles);
             copy.normalize();
             return copy;
@@ -294,6 +313,7 @@ public class AppConfig {
             export = copy.export;
             search = copy.search;
             platform = copy.platform;
+            mcp = copy.mcp;
             recentFiles = copy.recentFiles;
             normalize();
         }
@@ -353,6 +373,14 @@ public class AppConfig {
 
     public void platform(Platform v) {
         platform = v;
+    }
+
+    public Mcp mcp() {
+        return mcp;
+    }
+
+    public void mcp(Mcp v) {
+        mcp = v;
     }
 
     /** 获取最近文件列表的不可变副本(线程安全) */
@@ -439,6 +467,19 @@ public class AppConfig {
         }
         if (platform == null) {
             platform = new Platform();
+        }
+        if (mcp == null) {
+            mcp = new Mcp();
+        }
+        if (mcp.bindHost == null || mcp.bindHost.isBlank()) {
+            mcp.bindHost = "127.0.0.1";
+        }
+        if (mcp.advertisedHost == null || mcp.advertisedHost.isBlank()) {
+            mcp.advertisedHost = mcp.bindHost.equals("0.0.0.0") ? "127.0.0.1" : mcp.bindHost;
+        }
+        mcp.port = Math.clamp(mcp.port, 1024, 65535);
+        if (mcp.authToken == null) {
+            mcp.authToken = "";
         }
         if (recentFiles == null) {
             recentFiles = new ArrayList<>();
@@ -806,6 +847,110 @@ public class AppConfig {
             return "Platform{" +
                     "windowBorderColor=" + windowBorderColor +
                     ", cornerPreference='" + cornerPreference + '\'' +
+                    '}';
+        }
+    }
+
+    /** MCP 服务配置 */
+    public static class Mcp {
+
+        /** 是否启用 MCP 服务 */
+        private boolean enabled;
+
+        /** 监听地址：127.0.0.1 / 0.0.0.0 / 指定网卡 IP */
+        private String bindHost = "127.0.0.1";
+
+        /** 监听端口 */
+        private int port = 8765;
+
+        /** 是否启用 Streamable HTTP（推荐） */
+        private boolean streamableHttpEnabled = true;
+
+        /** 是否启用旧版 HTTP+SSE */
+        private boolean legacySseEnabled;
+
+        /** Bearer Token；为空时首次启用自动生成 */
+        private String authToken = "";
+
+        /** 生成客户端 JSON 时使用的对外地址 */
+        private String advertisedHost = "127.0.0.1";
+
+        /** 是否允许 MCP 导出工具写文件 */
+        private boolean exportEnabled;
+
+        public boolean enabled() {
+            return enabled;
+        }
+
+        public void enabled(boolean v) {
+            enabled = v;
+        }
+
+        public String bindHost() {
+            return bindHost;
+        }
+
+        public void bindHost(String v) {
+            bindHost = v;
+        }
+
+        public int port() {
+            return port;
+        }
+
+        public void port(int v) {
+            port = v;
+        }
+
+        public boolean streamableHttpEnabled() {
+            return streamableHttpEnabled;
+        }
+
+        public void streamableHttpEnabled(boolean v) {
+            streamableHttpEnabled = v;
+        }
+
+        public boolean legacySseEnabled() {
+            return legacySseEnabled;
+        }
+
+        public void legacySseEnabled(boolean v) {
+            legacySseEnabled = v;
+        }
+
+        public String authToken() {
+            return authToken;
+        }
+
+        public void authToken(String v) {
+            authToken = v;
+        }
+
+        public String advertisedHost() {
+            return advertisedHost;
+        }
+
+        public void advertisedHost(String v) {
+            advertisedHost = v;
+        }
+
+        public boolean exportEnabled() {
+            return exportEnabled;
+        }
+
+        public void exportEnabled(boolean v) {
+            exportEnabled = v;
+        }
+
+        @Override
+        public String toString() {
+            return "Mcp{" +
+                    "enabled=" + enabled +
+                    ", bindHost='" + bindHost + '\'' +
+                    ", port=" + port +
+                    ", streamableHttpEnabled=" + streamableHttpEnabled +
+                    ", legacySseEnabled=" + legacySseEnabled +
+                    ", exportEnabled=" + exportEnabled +
                     '}';
         }
     }

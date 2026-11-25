@@ -94,6 +94,9 @@ public final class WorkspaceTabManager {
     /** 由 MainWindow 注入，用于工作区关闭时释放搜索快照 */
     private volatile CacheManager cacheManager;
 
+    /** UI 与 MCP 共享的工作区会话注册表 */
+    private volatile com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry workspaceSessions;
+
     /** 欢迎页动作 */
     private WelcomeActions welcomeActions = WelcomeActions.empty();
 
@@ -536,6 +539,12 @@ public final class WorkspaceTabManager {
     /** 设置内层代码标签页切换回调(用于工具栏状态刷新等) */
     public void setOnActiveTabChange(Runnable callback) {
         this.onActiveTabChange = callback;
+    }
+
+    /** 注入共享工作区会话注册表 */
+    public void setWorkspaceSessions(
+            com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry registry) {
+        this.workspaceSessions = registry;
     }
 
     /** 设置拖放配置,用于在 workspace 代码标签页面板安装跨窗口拖拽支持 */
@@ -1065,6 +1074,9 @@ public final class WorkspaceTabManager {
             CacheManager manager = cacheManager;
             if (manager != null) {
                 manager.onWorkspaceClosed(view.workspace());
+            }
+            if (workspaceSessions != null) {
+                workspaceSessions.unregister(view.workspace());
             }
             view.workspace().close();
         }

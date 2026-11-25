@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.CommentScope;
@@ -16,10 +15,7 @@ import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceByteReader;
-import com.bingbaihanji.fxdecomplie.service.cache.CacheKeys;
 import com.bingbaihanji.fxdecomplie.service.cache.SourceSnapshotCache;
-import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
-import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
 import com.bingbaihanji.fxdecomplie.service.decompile.DecompileCacheService;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
@@ -82,7 +78,6 @@ public final class ClassTabOpener {
     private static final int INTERACTIVE_TIMEOUT_SECONDS = 15;
 
     /** Java 21 class major version. JD-Core is unstable on this version and newer. */
-    private static final int MIN_UNSUPPORTED_JD_CLASS_VERSION = 65;
 
     /** 应用配置 */
     private final AppConfig config;
@@ -90,9 +85,10 @@ public final class ClassTabOpener {
     /** 状态栏引用 */
     private final StatusBar statusBar;
 
-    /** L2/L3 反编译源码缓存,避免重复反编译已打开的类 */
-    private final DecompileCacheService codeCache;
     private final SourceSnapshotCache sourceSnapshots;
+
+    /** UI 与 MCP 共享的类源码加载服务 */
+    private final com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceService sourceService;
 
     /** 主导航(打开新类)请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
@@ -126,8 +122,9 @@ public final class ClassTabOpener {
         this.config = config;
         this.editorTheme = editorTheme;
         this.statusBar = statusBar;
-        this.codeCache = codeCache;
         this.sourceSnapshots = sourceSnapshots;
+        this.sourceService = new com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceService(
+                config, codeCache);
     }
 
     /** 提取简短类名(去 .class 后缀) */
@@ -198,12 +195,6 @@ public final class ClassTabOpener {
         });
     }
 
-    private static int classMajorVersion(byte[] bytes) {
-        if (bytes == null || bytes.length < 8) {
-            return 0;
-        }
-        return ((bytes[6] & 0xff) << 8) | (bytes[7] & 0xff);
-    }
 
     private static CodeMetadata emptyMetadata() {
         return new CodeMetadata(Map.of());
@@ -381,7 +372,9 @@ public final class ClassTabOpener {
 
                 String fullPath = node.getFullPath();
                 String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
-                DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
+                DecompilerTypeEnum effectiveEngine =
+                        com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceService
+                                .effectiveEngine(bytes, engine);
                 CodeMetadata emptyMetadata = emptyMetadata();
                 Consumer<CodeMetadata.Reference> pendingNavigate = createNavigationHandler(
                         workspace, codeTabPane, effectiveEngine, lineNumbersEnabled);
@@ -410,8 +403,6 @@ public final class ClassTabOpener {
                     return;
                 }
                 String sourceCode = result.sourceCode();
-                sourceCode = RenameService
-                        .applyRenames(sourceCode, wsHash, internalName);
                 // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致
                 CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                         ? OutlineParser.extractMetadata(sourceCode, bytes)
@@ -579,8 +570,6 @@ public final class ClassTabOpener {
                     return;
                 }
                 String sourceCode = result.sourceCode();
-                sourceCode = RenameService
-                        .applyRenames(sourceCode, wsHash, internalName);
                 // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致
                 CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                         ? OutlineParser.extractMetadata(sourceCode, bytes)
@@ -1173,87 +1162,27 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 共享的反编译+缓存逻辑:通过 DecompileCacheService 查询 L2/L3,未命中时执行反编译
-     * 缓存键由 CacheKeys 统一构造,包含工作区身份 类指纹 引擎 选项与键版本
+     * 共享的反编译+缓存逻辑：委托给 ClassSourceService，与 MCP 使用同一套缓存与重命名语义。
      */
     private DecompileResult decompileWithCache(String internalName, DecompilerTypeEnum engine,
                                                byte[] bytes, FileTreeNode node, Workspace workspace,
                                                BooleanSupplier active) {
-        DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
-        var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
-        CodeCacheKey cacheKey = CacheKeys.forClass(workspace, bytes, internalName,
-                effectiveEngine, engineOptions);
-
-        String sourceCode = codeCache.load(cacheKey).orElse(null);
-        if (sourceCode != null) {
-            if (!active.getAsBoolean()) {
-                throw new CancellationException("反编译请求已被替换");
-            }
-            log.debug("缓存命中: {} engine={}", internalName, effectiveEngine);
-        }
-
-        if (sourceCode == null) {
-            log.debug("缓存未命中,执行反编译: {} engine={}", internalName, effectiveEngine);
-            if (!active.getAsBoolean()) {
-                throw new CancellationException("反编译请求已被替换");
-            }
-            Thread.interrupted();
-            DecompilerContext context = DecompilerRunner.contextForWorkspace(
-                    workspace, engineOptions);
-            sourceCode = DecompilerRunner.decompileWithTimeout(node.getFullPath(), bytes,
-                    effectiveEngine, context, active, INTERACTIVE_TIMEOUT_SECONDS);
-            if (!active.getAsBoolean()) {
-                throw new CancellationException("反编译请求已被替换");
-            }
-            if (!DecompilerRunner.isFailureOutput(sourceCode)) {
-                codeCache.save(cacheKey, sourceCode);
-            }
-        }
-
-        return new DecompileResult(sourceCode, effectiveEngine);
+        var result = sourceService.load(
+                new com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceRequest(
+                        workspace, node.getFullPath(), bytes, engine, Map.of(), false,
+                        INTERACTIVE_TIMEOUT_SECONDS, active));
+        return new DecompileResult(result.sourceCode(), result.engine());
     }
 
     /** 强制重新反编译当前类,跳过 L2/L3 读取 成功后用新结果回填缓存 */
     private DecompileResult decompileFresh(String internalName, DecompilerTypeEnum engine,
                                            byte[] bytes, FileTreeNode node, Workspace workspace,
                                            BooleanSupplier active) {
-        DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
-        var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
-        CodeCacheKey cacheKey = CacheKeys.forClass(workspace, bytes, internalName,
-                effectiveEngine, engineOptions);
-
-        if (!active.getAsBoolean()) {
-            throw new CancellationException("反编译请求已被替换");
-        }
-        codeCache.invalidate(cacheKey, CodeCacheScope.CLASS);
-
-        Thread.interrupted();
-        DecompilerContext context = DecompilerRunner.contextForWorkspace(workspace, engineOptions);
-        String sourceCode = DecompilerRunner.decompileWithTimeout(node.getFullPath(), bytes,
-                effectiveEngine, context, active, INTERACTIVE_TIMEOUT_SECONDS);
-        if (!active.getAsBoolean()) {
-            throw new CancellationException("反编译请求已被替换");
-        }
-        if (!DecompilerRunner.isFailureOutput(sourceCode)) {
-            codeCache.save(cacheKey, sourceCode);
-        }
-
-        return new DecompileResult(sourceCode, effectiveEngine);
-    }
-
-    private DecompilerTypeEnum effectiveEngineFor(byte[] bytes, DecompilerTypeEnum requestedEngine) {
-        if (requestedEngine == null) {
-            return DecompilerTypeEnum.VINEFLOWER;
-        }
-        if (requestedEngine != DecompilerTypeEnum.JD) {
-            return requestedEngine;
-        }
-        int major = classMajorVersion(bytes);
-        if (major >= MIN_UNSUPPORTED_JD_CLASS_VERSION) {
-            log.debug("类版本 {} (Java 21+), JD-Core 不支持, 切换为 Vineflower", major);
-            return DecompilerTypeEnum.VINEFLOWER;
-        }
-        return requestedEngine;
+        var result = sourceService.reload(
+                new com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceRequest(
+                        workspace, node.getFullPath(), bytes, engine, Map.of(), false,
+                        INTERACTIVE_TIMEOUT_SECONDS, active));
+        return new DecompileResult(result.sourceCode(), result.engine());
     }
 
     private void notifyRenameStateChanged(Workspace workspace) {

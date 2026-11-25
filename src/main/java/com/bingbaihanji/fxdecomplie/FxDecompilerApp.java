@@ -232,6 +232,8 @@ public final class FxDecompilerApp {
                 }
                 config.save();
             }
+            // 先停止 MCP，避免关闭工作区/缓存时仍有工具调用进入
+            AppContext.getInstance().mcpServer().stop();
             if (window != null) {
                 window.shutdownResources();
             }

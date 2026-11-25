@@ -71,11 +71,11 @@
             <artifactId>jfx-incubator-richtext</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <!-- JSON: Jackson -->
+        <!-- JSON: Jackson (2.22.x is required by the MCP SDK's Jackson 3 bridge annotations) -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.19.4</version>
+            <version>2.22.4</version>
         </dependency>
 
         <!-- Error Prone annotations (previously transitively from Gson) -->
@@ -176,6 +176,27 @@
             <version>${commons-lang3.version}</version>
         </dependency>
 
+        <!-- MCP Java SDK: protocol server, Streamable HTTP + legacy SSE transports -->
+        <dependency>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+
+        <!-- Servlet container for MCP HTTP transports -->
+        <dependency>
+            <groupId>org.eclipse.jetty.ee11</groupId>
+            <artifactId>jetty-ee11-servlet</artifactId>
+            <version>12.1.15</version>
+        </dependency>
+
+        <!-- MCP engine comparison unified diffs -->
+        <dependency>
+            <groupId>io.github.java-diff-utils</groupId>
+            <artifactId>java-diff-utils</artifactId>
+            <version>4.18</version>
+        </dependency>
+
         <!-- JetBrains Annotations (used by jadx) -->
         <dependency>
             <groupId>org.jetbrains</groupId>
@@ -256,6 +277,8 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.bingbaihanji.fxdecomplie.AppLauncher</mainClass>
                                 </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
@@ -368,6 +391,7 @@
                                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                             <mainClass>com.bingbaihanji.fxdecomplie.AppLauncher</mainClass>
                                         </transformer>
+                                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                     </transformers>
                                 </configuration>
                             </execution>

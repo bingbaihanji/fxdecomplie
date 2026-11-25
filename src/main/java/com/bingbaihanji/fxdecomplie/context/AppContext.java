@@ -27,11 +27,17 @@ public final class AppContext {
 
     private final Object lifecycleLock = new Object();
 
+    /** UI 与 MCP 共享的工作区会话注册表 */
+    private final com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry
+            workspaceSessions = new com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry();
+
     private volatile boolean started;
 
     private volatile boolean shutdown;
 
     private AppConfig config;
+
+    private volatile com.bingbaihanji.fxdecomplie.mcp.McpServerManager mcpServer;
 
     private AppContext() {
     }
@@ -58,6 +64,8 @@ public final class AppContext {
             config = AppConfig.getInstance();
             CommentManager.setRootDir(AppPaths.commentsDir());
             RenameService.setRootDir(AppPaths.renamesDir());
+            mcpServer = new com.bingbaihanji.fxdecomplie.mcp.McpServerManager(
+                    config, workspaceSessions);
             started = true;
             shutdown = false;
             return config;
@@ -70,6 +78,21 @@ public final class AppContext {
         return current != null ? current : start();
     }
 
+    /** @return UI 与 MCP 共享的工作区会话注册表 */
+    public com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry workspaceSessions() {
+        return workspaceSessions;
+    }
+
+    /** @return MCP 服务管理器；尚未初始化时先初始化应用上下文 */
+    public com.bingbaihanji.fxdecomplie.mcp.McpServerManager mcpServer() {
+        com.bingbaihanji.fxdecomplie.mcp.McpServerManager current = mcpServer;
+        if (current == null) {
+            start();
+            current = mcpServer;
+        }
+        return current;
+    }
+
     /** 统一关闭应用级资源,幂等 */
     public void shutdown() {
         synchronized (lifecycleLock) {
@@ -79,6 +102,10 @@ public final class AppContext {
             shutdown = true;
         }
         log.info("关闭应用上下文");
+        com.bingbaihanji.fxdecomplie.mcp.McpServerManager server = mcpServer;
+        if (server != null) {
+            shutdownQuietly("mcp server", server::stop);
+        }
         shutdownQuietly("application services", ApplicationServices::closeIfCreated);
         shutdownQuietly("background tasks", BackgroundTasks::shutdown);
         shutdownQuietly("class tab opener", ClassTabOpener::shutdown);

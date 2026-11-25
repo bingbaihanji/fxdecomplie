@@ -4,10 +4,10 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.DecompilerProject;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.service.ExportService;
 import com.bingbaihanji.fxdecomplie.service.ProjectFileManager;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
-import com.bingbaihanji.fxdecomplie.service.WorkspaceLoader;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
@@ -26,8 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 工作区/文件/项目生命周期控制器:打开文件/目录/项目 保存项目 
@@ -41,9 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class WorkspaceController {
 
     private static final Logger log = LoggerFactory.getLogger(WorkspaceController.class);
-
-    /** 正在加载中的文件路径集合,防止重复提交加载任务 */
-    private final Set<String> loadingPaths = ConcurrentHashMap.newKeySet();
 
     private final MainWindow owner;
 
@@ -284,49 +279,59 @@ public final class WorkspaceController {
     /** 异步加载并打开文件(JAR/ZIP/Class/目录),在工作区标签页中展示文件树和反编译内容 */
     void loadFile(File file) {
         String absPath = file.getAbsolutePath();
-        if (!loadingPaths.add(absPath)) {
-            log.debug("重复加载请求,忽略: {}", absPath);
-            return;
-        }
         log.info("loadFile: {} (size={}, isDir={})", absPath,
                 file.length(), file.isDirectory());
         owner.statusBar().setFilePath(I18nUtil.getString("status.loading", absPath));
         owner.statusBar().setTask(I18nUtil.getString("task.loading"));
 
-        WorkspaceLoader.loadAsync(file, owner.config(), Platform::runLater,
-                workspace -> {
-                    loadingPaths.remove(absPath);
+        owner.workspaceSessions().open(file.toPath()).whenComplete((session, error) ->
+                Platform.runLater(() -> {
                     owner.statusBar().clearTask();
-                    owner.tabManager().addWorkspaceTab(workspace,
-                            (node, codeTabPane) -> owner.classTabOpener().openClassTab(
-                                    node, workspace, codeTabPane, owner.currentEngine(), owner.lineNumbersEnabled()),
-                            (node, codeTabPane) -> owner.classTabOpener().openTextFileTab(
-                                    node, workspace, codeTabPane),
-                            owner.exportController()::exportTreeItem,
-                            node -> owner.searchController().openFindUsagesForNode(workspace, node),
-                            owner.searchController()::openSearchForPackage,
-                            (node, codeTabPane) -> owner.classTabOpener().openFileInHexView(
-                                    node, workspace, codeTabPane));
-                    // 打开后后台预热索引：延迟 500ms，仅当该工作区仍为当前活动工作区时启动，
-                    // 避免为已切走的工作区占用独立索引线程
-                    PauseTransition preheatDelay = new PauseTransition(Duration.millis(500));
-                    preheatDelay.setOnFinished(event -> {
-                        WorkspaceView current = owner.tabManager().currentWorkspaceView();
-                        if (current != null && workspace.equals(current.workspace())
-                                && !workspace.isClosed()) {
-                            WorkspaceIndexService.ensureIndexingStarted(workspace);
-                        }
-                    });
-                    preheatDelay.play();
-                    owner.refreshToolbarState();
-                },
-                errorMsg -> {
-                    loadingPaths.remove(absPath);
-                    owner.statusBar().clearTask();
-                    owner.showErrorWithActions(
-                            I18nUtil.getString("dialog.load.error"),
-                            errorMsg,
-                            () -> loadFile(file));
-                });
+                    if (error != null) {
+                        Throwable cause = error.getCause() == null ? error : error.getCause();
+                        String msg = cause.getMessage() == null
+                                ? cause.getClass().getSimpleName() : cause.getMessage();
+                        owner.showErrorWithActions(
+                                I18nUtil.getString("dialog.load.error"),
+                                msg,
+                                () -> loadFile(file));
+                        return;
+                    }
+                    owner.statusBar().setFilePath(
+                            session.workspace().getSourceFile().getAbsolutePath());
+                }));
+    }
+
+    /** 由 WorkspaceSessionRegistry 的 onOpened 回调调用（FX 线程）。 */
+    void attachWorkspaceTab(Workspace workspace) {
+        if (workspace == null || owner.tabManager() == null) {
+            return;
+        }
+        owner.config().addRecentFile(workspace.getSourceFile().getAbsolutePath());
+        owner.tabManager().addWorkspaceTab(workspace,
+                (node, codeTabPane) -> owner.classTabOpener().openClassTab(
+                        node, workspace, codeTabPane, owner.currentEngine(), owner.lineNumbersEnabled()),
+                (node, codeTabPane) -> owner.classTabOpener().openTextFileTab(
+                        node, workspace, codeTabPane),
+                owner.exportController()::exportTreeItem,
+                node -> owner.searchController().openFindUsagesForNode(workspace, node),
+                owner.searchController()::openSearchForPackage,
+                (node, codeTabPane) -> owner.classTabOpener().openFileInHexView(
+                        node, workspace, codeTabPane));
+
+        // 打开后后台预热索引：延迟 500ms，仅当该工作区仍为当前活动工作区时启动，
+        // 避免为已切走的工作区占用独立索引线程
+        PauseTransition preheatDelay = new PauseTransition(Duration.millis(500));
+        preheatDelay.setOnFinished(event -> {
+            WorkspaceView current = owner.tabManager().currentWorkspaceView();
+            if (current != null && workspace.equals(current.workspace())
+                    && !workspace.isClosed()) {
+                WorkspaceIndexService.ensureIndexingStarted(workspace);
+            }
+        });
+        preheatDelay.play();
+        owner.refreshToolbarState();
+        log.info("工作区标签页已附加: {} ({})", workspace.getName(),
+                workspace.getSourceFile().getAbsolutePath());
     }
 }

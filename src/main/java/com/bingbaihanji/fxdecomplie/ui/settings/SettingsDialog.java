@@ -90,6 +90,7 @@ public final class SettingsDialog {
     }
 
     public static void show(Stage owner, AppConfig config, CacheManager cacheManager,
+                            com.bingbaihanji.fxdecomplie.mcp.McpServerManager mcpManager,
                             Consumer<AppConfig> onApply) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
@@ -107,7 +108,7 @@ public final class SettingsDialog {
 
         // 默认引擎选择(现有控件,保持不变)
         ComboBox<String> engineCombo = new ComboBox<>();
-        engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD", "JADX");
+        engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD", "JADX", "BDEC");
         engineCombo.setValue(draft.decompiler().defaultEngine().name());
 
         // 引擎选项 JSON 编辑器(移到独立面板中,给足可读空间)
@@ -444,7 +445,14 @@ public final class SettingsDialog {
                 ? "English" : "简体中文");
         langTab.setContent(new VBox(10, new Label(I18nUtil.getString("settings.uiLang")), langCombo));
 
-        tabPane.getTabs().addAll(decompilerTab, engineOptionsTab, uiTab, searchTab, exportTab, cacheTab, langTab);
+        var mcpPane = new com.bingbaihanji.fxdecomplie.ui.settings.mcp.McpSettingsPane(
+                draft, mcpManager);
+        Tab mcpTab = new Tab(I18nUtil.getStringOrDefault("settings.mcp", "MCP 服务"));
+        mcpTab.setClosable(false);
+        mcpTab.setContent(mcpPane);
+
+        tabPane.getTabs().addAll(decompilerTab, engineOptionsTab, uiTab, searchTab,
+                exportTab, cacheTab, mcpTab, langTab);
 
         Button restoreDefaultsBtn = new Button(I18nUtil.getString("settings.restoreDefaults"));
         restoreDefaultsBtn.setStyle("-fx-font-size: 12px; -fx-text-fill: #f44747;");
@@ -474,6 +482,7 @@ public final class SettingsDialog {
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         var result = dialog.showAndWait();
+        mcpPane.stopPolling();
         if (result.isPresent() && result.get() == ButtonType.APPLY) {
             draft.decompiler().defaultEngine(DecompilerTypeEnum.valueOf(engineCombo.getValue()));
             draft.decompiler().lineNumbersEnabled(lineNumCheck.isSelected());
@@ -533,6 +542,15 @@ public final class SettingsDialog {
             draft.language(langIdx == 1 ? "en" : "zh-CN");
             I18nUtil.switchLocale(newLocale);
 
+            try {
+                mcpPane.applyTo(draft);
+            } catch (RuntimeException ex) {
+                log.warn("MCP 设置校验失败", ex);
+                DialogHelper.showError(owner, "MCP",
+                        ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
+                // MCP 校验失败时保留原 MCP 配置，但其余已确认设置仍应保存。
+            }
+
             config.copyFrom(draft);
             config.save();
             onApply.accept(config);
@@ -547,6 +565,8 @@ public final class SettingsDialog {
         options.add("CFR");
         options.add("VINEFLOWER");
         options.add("JD");
+        options.add("JADX");
+        options.add("BDEC");
         return options;
     }
 

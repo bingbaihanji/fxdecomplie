@@ -40,6 +40,9 @@ docs/
 rules/
 -1/
 CLAUDE.md
+# 仓库只保留 README.md 一个 Markdown 文档
+*.md
+!README.md
 
 ### Project runtime data ###
 /cache/
