@@ -105,7 +105,7 @@ final class ComparisonUtils {
                         && expressionsEquivalent(aa.value(), ab.value());
             }
             case CastExpr ca when b instanceof CastExpr cb -> {
-                return java.util.Objects.equals(ca.targetType(), cb.targetType())
+                return Objects.equals(ca.targetType(), cb.targetType())
                         && expressionsEquivalent(ca.operand(), cb.operand());
             }
             case ArrayAccessExpr aa when b instanceof ArrayAccessExpr ab -> {

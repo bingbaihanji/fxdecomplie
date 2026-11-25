@@ -82,7 +82,7 @@ public final class AnnotationRenderer {
             case AnnotationEntry.EnumValue ev -> simpleName.apply(ev.typeName()) + "." + ev.constName();
             case AnnotationEntry.ClassValue cv -> simpleName.apply(cv.internalName()) + ".class";
             case AnnotationEntry nested -> render(nested, simpleName);
-            case java.util.List<?> list -> {
+            case List<?> list -> {
                 StringBuilder sb = new StringBuilder("{");
                 for (int i = 0; i < list.size(); i++) {
                     if (i > 0) {

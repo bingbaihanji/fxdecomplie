@@ -98,8 +98,8 @@ public final class ClassFileReader {
             // (如 @Target(RECORD_COMPONENT))不会复制到 backing 字段声明,
             // 须以本条目为准.
             String signature = "";
-            List<com.bingbaihanji.bdec.bytecode.model.AnnotationEntry> annotations = List.of();
-            List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry> typeAnnotations = List.of();
+            List<AnnotationEntry> annotations = List.of();
+            List<TypeAnnotationEntry> typeAnnotations = List.of();
             int compAttrCount = in.readUnsignedShort();
             for (int j = 0; j < compAttrCount; j++) {
                 int attrNameIdx = in.readUnsignedShort();

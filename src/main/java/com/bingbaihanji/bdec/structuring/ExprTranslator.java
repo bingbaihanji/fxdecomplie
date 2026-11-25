@@ -72,7 +72,7 @@ public final class ExprTranslator {
                     }
                     yield new ReturnStatement(null);
                 } else {
-                    com.bingbaihanji.bdec.ir.Value retValue = insn.operands().getFirst();
+                    Value retValue = insn.operands().getFirst();
                     Expression retVal = ops.valueToExpr(retValue);
                     // 目标类型绑定的菱形推断(return 场景):方法返回类型带泛型实参
                     // 时置菱形标志(如 return new HashMap<>();)
@@ -87,9 +87,9 @@ public final class ExprTranslator {
                     // 对 boolean 返回方法,将整数字面量转为布尔值
                     //(PHI 解析后的值可能跳过了注解)
                     if (ops.currentMethodReturnsBoolean()
-                            && retVal instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lit
+                            && retVal instanceof LitExpr lit
                             && lit.value() instanceof Integer i) {
-                        retVal = new com.bingbaihanji.bdec.ast.expr.LitExpr(
+                        retVal = new LitExpr(
                                 i != 0, JavaType.BOOLEAN);
                     }
                     yield new ReturnStatement(retVal);
@@ -154,9 +154,9 @@ public final class ExprTranslator {
                             declType = JavaType.BOOLEAN;
                             // 收窄后初始化常量须转布尔字面量(int 0/1 → false/true),
                             // 否则 "boolean x = 0" 无法编译.
-                            if (rhs instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lit
+                            if (rhs instanceof LitExpr lit
                                     && lit.value() instanceof Integer iv) {
-                                rhs = new com.bingbaihanji.bdec.ast.expr.LitExpr(
+                                rhs = new LitExpr(
                                         iv != 0, JavaType.BOOLEAN);
                             }
                         }
@@ -224,14 +224,13 @@ public final class ExprTranslator {
                     assignRhs = bin.right(); // 剥离重复的左操作数
                 }
                 // x += 1 → x++  /  x -= 1 → x--
-                if (compoundOp != null && assignRhs instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lr
-                        && lr.value() instanceof Integer i && i == 1) {
+                if (compoundOp != null && StatementUtils.isOneLiteral(assignRhs)) {
                     if (compoundOp == BinaryOperator.ADD) {
-                        yield new com.bingbaihanji.bdec.ast.expr.UnExpr(
-                                com.bingbaihanji.bdec.ast.expr.UnaryOperator.POST_INC, lhs);
+                        yield new UnExpr(
+                                UnaryOperator.POST_INC, lhs);
                     } else if (compoundOp == BinaryOperator.SUB) {
-                        yield new com.bingbaihanji.bdec.ast.expr.UnExpr(
-                                com.bingbaihanji.bdec.ast.expr.UnaryOperator.POST_DEC, lhs);
+                        yield new UnExpr(
+                                UnaryOperator.POST_DEC, lhs);
                     }
                 }
                 // 自增/自减检测:x = x + 1 → x++, x = x - 1 → x--
@@ -239,7 +238,7 @@ public final class ExprTranslator {
                         && ExprCleanup.expressionsMatch(lhs, bin.left())) {
                     UnaryOperator incOp = StatementUtils.detectIncrement(bin);
                     if (incOp != null) {
-                        yield new com.bingbaihanji.bdec.ast.expr.UnExpr(incOp, lhs);
+                        yield new UnExpr(incOp, lhs);
                     }
                 }
                 yield new AssignExpr(lhs, assignRhs, compoundOp);
@@ -307,21 +306,20 @@ public final class ExprTranslator {
                     assignRhs = bin.right();
                 }
                 // += 1 → ++, -= 1 → --
-                if (compoundOp != null && assignRhs instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lr
-                        && lr.value() instanceof Integer i && i == 1) {
+                if (compoundOp != null && StatementUtils.isOneLiteral(assignRhs)) {
                     if (compoundOp == BinaryOperator.ADD) {
-                        yield new com.bingbaihanji.bdec.ast.expr.UnExpr(
-                                com.bingbaihanji.bdec.ast.expr.UnaryOperator.POST_INC, lhs);
+                        yield new UnExpr(
+                                UnaryOperator.POST_INC, lhs);
                     } else if (compoundOp == BinaryOperator.SUB) {
-                        yield new com.bingbaihanji.bdec.ast.expr.UnExpr(
-                                com.bingbaihanji.bdec.ast.expr.UnaryOperator.POST_DEC, lhs);
+                        yield new UnExpr(
+                                UnaryOperator.POST_DEC, lhs);
                     }
                 }
                 if (compoundOp == null && rhs instanceof BinExpr bin
                         && ExprCleanup.expressionsMatch(lhs, bin.left())) {
                     UnaryOperator incOp = StatementUtils.detectIncrement(bin);
                     if (incOp != null) {
-                        yield new com.bingbaihanji.bdec.ast.expr.UnExpr(incOp, lhs);
+                        yield new UnExpr(incOp, lhs);
                     }
                 }
                 yield new AssignExpr(lhs, assignRhs, compoundOp);
@@ -635,7 +633,24 @@ public final class ExprTranslator {
                         ? ops.valueToExpr(insn.operands().get(1)) : new VarExpr("i");
                 Expression val = insn.operands().size() > 2
                         ? ops.valueToExpr(insn.operands().get(2)) : new VarExpr("varUnresolved");
-                yield new AssignExpr(new ArrayAccessExpr(arr, idx), val);
+                Expression lhs = new ArrayAccessExpr(arr, idx);
+                // 数组元素复合赋值/自增检测:a[i] = a[i] + y → a[i] += y,
+                // 数值 1 的加减转 a[i]++/a[i]--.需 ArrayAccess 结构相等匹配.
+                BinaryOperator compoundOp = ExprCleanup.detectCompoundOp(lhs, val);
+                Expression assignRhs = val;
+                if (compoundOp != null && val instanceof BinExpr bin) {
+                    assignRhs = bin.right();
+                }
+                if (compoundOp != null && StatementUtils.isOneLiteral(assignRhs)) {
+                    if (compoundOp == BinaryOperator.ADD) {
+                        yield new UnExpr(
+                                UnaryOperator.POST_INC, lhs);
+                    } else if (compoundOp == BinaryOperator.SUB) {
+                        yield new UnExpr(
+                                UnaryOperator.POST_DEC, lhs);
+                    }
+                }
+                yield new AssignExpr(lhs, assignRhs, compoundOp);
             }
 
             // 数组长度
@@ -652,15 +667,15 @@ public final class ExprTranslator {
                     VarExpr var = ops.varToExpr(v);
                     Expression rhs = ops.valueToExpr(incr);
                     // x += c → 若 c == 1 则转为 x++,c == -1 转为 x--
-                    if (rhs instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lr
+                    if (rhs instanceof LitExpr lr
                             && lr.value() instanceof Integer i) {
                         if (i == 1) {
-                            yield new com.bingbaihanji.bdec.ast.expr.UnExpr(
-                                    com.bingbaihanji.bdec.ast.expr.UnaryOperator.POST_INC, var);
+                            yield new UnExpr(
+                                    UnaryOperator.POST_INC, var);
                         }
                         if (i == -1) {
-                            yield new com.bingbaihanji.bdec.ast.expr.UnExpr(
-                                    com.bingbaihanji.bdec.ast.expr.UnaryOperator.POST_DEC, var);
+                            yield new UnExpr(
+                                    UnaryOperator.POST_DEC, var);
                         }
                     }
                     yield new AssignExpr(var, new BinExpr(BinaryOperator.ADD, var, rhs));

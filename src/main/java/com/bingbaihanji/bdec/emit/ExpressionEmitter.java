@@ -158,10 +158,10 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
     }
 
     /** 在类型路径末尾追加一个元素(不可变列表). */
-    private static java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> appendPath(
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
+    private static List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> appendPath(
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
             int kind, int index) {
-        java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> next
+        List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> next
                 = new java.util.ArrayList<>(path);
         next.add(new com.bingbaihanji.bdec.bytecode.model.TypePathElement(kind, index));
         return next;
@@ -253,20 +253,20 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
      * @return 含类型注解的类型名
      */
     String typeNameAnnotated(JavaType type,
-                             java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                                     java.util.List<String>> anns) {
+                             java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                                     List<String>> anns) {
         if (anns == null || anns.isEmpty()) {
             return typeName(type);
         }
-        return renderAnnotatedType(type, java.util.List.of(), anns);
+        return renderAnnotatedType(type, List.of(), anns);
     }
 
     /** 递归渲染类型树,沿途在对应路径处插入注解. */
     private String renderAnnotatedType(
             JavaType type,
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
-            java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                    java.util.List<String>> anns) {
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
+            java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                    List<String>> anns) {
         // 数组:元素类型递归渲染(路径沿每个维度深入).
         // 各层数组本身的注解输出在对应 "[]" 之前,与 javac 的 type_path 编码一致:
         //   @A String[]  → 元素类型注解,路径 [ARRAY]
@@ -281,16 +281,16 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
             int outerDims = (elem != null && elem.kind() == TypeKind.ARRAY)
                     ? Math.max(1, type.arrayDimensions() - elem.arrayDimensions())
                     : type.arrayDimensions();
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> elemPath = path;
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> elemPath = path;
             for (int d = 0; d < type.arrayDimensions(); d++) {
                 elemPath = appendPath(elemPath,
                         com.bingbaihanji.bdec.bytecode.model.TypePathElement.KIND_ARRAY, d);
             }
             sb.append(renderAnnotatedType(elem, elemPath, anns));
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> cur = path;
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> cur = path;
             for (int d = 0; d < outerDims; d++) {
                 boolean annotated = false;
-                for (String a : anns.getOrDefault(cur, java.util.List.of())) {
+                for (String a : anns.getOrDefault(cur, List.of())) {
                     sb.append(' ').append(a);
                     annotated = true;
                 }
@@ -310,11 +310,11 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
      */
     private String renderAnnotatedBase(
             JavaType type,
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
-            java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                    java.util.List<String>> anns) {
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
+            java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                    List<String>> anns) {
         StringBuilder sb = new StringBuilder();
-        for (String a : anns.getOrDefault(path, java.util.List.of())) {
+        for (String a : anns.getOrDefault(path, List.of())) {
             sb.append(a).append(' ');
         }
         sb.append(typeBaseName(type));
@@ -326,7 +326,7 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> argPath
+                List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> argPath
                         = appendPath(path,
                         com.bingbaihanji.bdec.bytecode.model.TypePathElement.KIND_TYPE_ARGUMENT, i);
                 sb.append(renderAnnotatedType(type.typeArguments().get(i), argPath, anns));
@@ -337,11 +337,11 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
     }
 
     /** path 处的注解渲染行列表(无则空). */
-    private java.util.List<String> annotationsAt(
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
-            java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                    java.util.List<String>> anns) {
-        return anns.getOrDefault(path, java.util.List.of());
+    private List<String> annotationsAt(
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path,
+            java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                    List<String>> anns) {
+        return anns.getOrDefault(path, List.of());
     }
 
     /** 渲染不带泛型参数的基础类型名 */
@@ -474,11 +474,11 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
                 w.write(String.valueOf(d));
             }
         } else if (v instanceof Number n && lit.type() != null
-                && (lit.type().kind() == com.bingbaihanji.bdec.type.TypeKind.BYTE
-                || lit.type().kind() == com.bingbaihanji.bdec.type.TypeKind.SHORT)) {
+                && (lit.type().kind() == TypeKind.BYTE
+                || lit.type().kind() == TypeKind.SHORT)) {
             // byte/short 无字面量后缀:常量实参传给 byte/short 参数时
             //(如 calc((byte)10))须显式强转,否则重编译报"有损转换".
-            w.write(lit.type().kind() == com.bingbaihanji.bdec.type.TypeKind.BYTE
+            w.write(lit.type().kind() == TypeKind.BYTE
                     ? "(byte) " : "(short) ");
             w.write(String.valueOf(n));
         } else {
@@ -779,17 +779,17 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
             // JSR-308 注解数组创建:new @A String[3](元素注解,路径 [ARRAY])
             // 或 new String @A [3](数组本身注解,路径为空).
             // 维度连同注解在此发射,直接返回避免走下方 dims 分支重复输出.
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> elemPath
-                    = java.util.List.of();
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> elemPath
+                    = List.of();
             for (int d = 0; d < type.arrayDimensions(); d++) {
                 elemPath = appendPath(elemPath,
                         com.bingbaihanji.bdec.bytecode.model.TypePathElement.KIND_ARRAY, d);
             }
             w.write("new ").write(renderAnnotatedBase(elementOfArray(type), elemPath, anns));
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> cur
-                    = java.util.List.of();
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> cur
+                    = List.of();
             for (int d = 0; d < n.dimensions().size(); d++) {
-                java.util.List<String> dimAnns = annotationsAt(cur, anns);
+                List<String> dimAnns = annotationsAt(cur, anns);
                 for (String a : dimAnns) {
                     w.write(' ').write(a);
                 }
@@ -803,7 +803,7 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
             return;
         } else {
             // JSR-308 注解对象创建:new @A ArrayList<>()(含泛型参数递归)
-            w.write("new ").write(renderAnnotatedBase(type, java.util.List.of(), anns));
+            w.write("new ").write(renderAnnotatedBase(type, List.of(), anns));
         }
         // 菱形推断:类型实参可被构造器实参或目标类型推断时发射 new ArrayList<>(...).
         // 匿名类不可用菱形(Java 语法限制).
@@ -852,7 +852,7 @@ public class ExpressionEmitter implements AstVisitor<Void, Void> {
             w.space().write("{").newLine();
             w.indent();
             for (com.bingbaihanji.bdec.ast.AstNode member : n.anonymousBody()) {
-                if (member instanceof com.bingbaihanji.bdec.ast.stmt.Statement st) {
+                if (member instanceof Statement st) {
                     stmtEmitter.emit(st);
                 }
             }

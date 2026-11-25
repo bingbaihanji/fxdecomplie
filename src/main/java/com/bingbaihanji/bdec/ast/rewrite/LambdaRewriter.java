@@ -115,13 +115,13 @@ public class LambdaRewriter implements RewriteRule {
 
     /** 孤立的纯表达式语句(裸 VarExpr/字面量,如 lambda 参数 e; 的孤儿 LOAD). */
     private static boolean isOrphanPureExpr(Statement s) {
-        if (!(s instanceof com.bingbaihanji.bdec.ast.stmt.ExpressionStatement es)) {
+        if (!(s instanceof ExpressionStatement es)) {
             return false;
         }
         Expression e = es.expression();
         return e instanceof VarExpr
-                || e instanceof com.bingbaihanji.bdec.ast.expr.LitExpr
-                || e instanceof com.bingbaihanji.bdec.ast.expr.CastExpr ce
+                || e instanceof LitExpr
+                || e instanceof CastExpr ce
                 && ce.operand() instanceof VarExpr;
     }
 
@@ -190,7 +190,7 @@ public class LambdaRewriter implements RewriteRule {
         }
         // if (cond) { return false; } → !cond
         if (isBooleanLiteral(thenRet.value(), false)) {
-            return new com.bingbaihanji.bdec.ast.expr.UnExpr(
+            return new UnExpr(
                     com.bingbaihanji.bdec.ast.expr.UnaryOperator.NOT,
                     ifStmt.condition());
         }
@@ -218,7 +218,7 @@ public class LambdaRewriter implements RewriteRule {
         }
         // then=false, other=true → !cond
         if (thenIsFalse && otherIsTrue) {
-            return new com.bingbaihanji.bdec.ast.expr.UnExpr(
+            return new UnExpr(
                     com.bingbaihanji.bdec.ast.expr.UnaryOperator.NOT, cond);
         }
         return null;
@@ -350,10 +350,11 @@ public class LambdaRewriter implements RewriteRule {
                                        ClassFileModel cfm,
                                        DecompileContext ctx) {
         if (s instanceof BlockStatement bs) {
-            return new BlockStatement(bs.statements().stream()
-                    .map(st -> rewriteStatement(st, bootstrapMethods, cfm, ctx))
-                    .filter(st -> st != null)
-                    .toList());
+            return Statement.inheritSourceOffset(bs,
+                    new BlockStatement(bs.statements().stream()
+                            .map(st -> rewriteStatement(st, bootstrapMethods, cfm, ctx))
+                            .filter(st -> st != null)
+                            .toList()));
         }
         if (s instanceof ExpressionStatement es) {
             // 过滤孤立的 LambdaExpr 占位符
@@ -361,24 +362,27 @@ public class LambdaRewriter implements RewriteRule {
             if (isOrphanLambda(rewritten)) {
                 return null;
             }
-            return new ExpressionStatement(rewritten);
+            return Statement.inheritSourceOffset(es, new ExpressionStatement(rewritten));
         }
         if (s instanceof ReturnStatement rs) {
-            return new ReturnStatement(rs.value() != null
-                    ? rewriteExpr(rs.value(), bootstrapMethods, cfm, ctx) : null);
+            return Statement.inheritSourceOffset(rs,
+                    new ReturnStatement(rs.value() != null
+                            ? rewriteExpr(rs.value(), bootstrapMethods, cfm, ctx) : null));
         }
         if (s instanceof IfStatement i) {
-            return new IfStatement(
-                    rewriteExpr(i.condition(), bootstrapMethods, cfm, ctx),
-                    rewriteStatement(i.thenBranch(), bootstrapMethods, cfm, ctx),
-                    i.elseBranch() != null
-                            ? rewriteStatement(i.elseBranch(), bootstrapMethods, cfm, ctx)
-                            : null);
+            return Statement.inheritSourceOffset(i,
+                    new IfStatement(
+                            rewriteExpr(i.condition(), bootstrapMethods, cfm, ctx),
+                            rewriteStatement(i.thenBranch(), bootstrapMethods, cfm, ctx),
+                            i.elseBranch() != null
+                                    ? rewriteStatement(i.elseBranch(), bootstrapMethods, cfm, ctx)
+                                    : null));
         }
         if (s instanceof VariableDeclaration vd && vd.initializer() != null) {
             Expression newInit = rewriteExpr(vd.initializer(), bootstrapMethods, cfm, ctx);
             if (newInit != vd.initializer()) {
-                return new VariableDeclaration(vd.type(), vd.name(), newInit, vd.typeAnnotations());
+                return Statement.inheritSourceOffset(vd,
+                        new VariableDeclaration(vd.type(), vd.name(), newInit, vd.typeAnnotations()));
             }
         }
         return s;

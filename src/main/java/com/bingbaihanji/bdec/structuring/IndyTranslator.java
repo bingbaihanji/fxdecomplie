@@ -332,7 +332,7 @@ public final class IndyTranslator {
                 String[] subParts = part.split("", -1);
                 for (String sp : subParts) {
                     if (!sp.isEmpty()) {
-                        concatArgs.add(new com.bingbaihanji.bdec.ast.expr.LitExpr(
+                        concatArgs.add(new LitExpr(
                                 sp, JavaType.classType("java/lang/String")));
                     }
                 }
@@ -350,12 +350,12 @@ public final class IndyTranslator {
         // 补齐 "" 前缀,否则纯返回 int 而方法返回 String(类型错误).
         if (concatArgs.size() == 1) {
             Expression single = concatArgs.getFirst();
-            boolean isStringVal = single instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lit
+            boolean isStringVal = single instanceof LitExpr lit
                     && lit.value() instanceof String;
             boolean isToString = single instanceof InvocationExpr inv
                     && "toString".equals(inv.methodName());
             if (!isStringVal && !isToString) {
-                concatArgs.add(0, new com.bingbaihanji.bdec.ast.expr.LitExpr(
+                concatArgs.add(0, new LitExpr(
                         "", JavaType.classType("java/lang/String")));
             }
         }

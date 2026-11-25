@@ -548,7 +548,7 @@ public final class TryTranslator {
                         continue;
                     }
                     if (s instanceof ExpressionStatement es
-                            && es.expression() instanceof com.bingbaihanji.bdec.ast.expr.VarExpr v
+                            && es.expression() instanceof VarExpr v
                             && "/* throw */".equals(v.name())) {
                         continue;
                     }
@@ -582,7 +582,7 @@ public final class TryTranslator {
         if (StatementUtils.containsNewInstruction(handlerInsns)) {
             // 编译器生成的 record 模式匹配处理器——用简单的 throw e 保持可编译
             handlerBody = new BlockStatement(List.of(
-                    new com.bingbaihanji.bdec.ast.stmt.ThrowStatement(
+                    new ThrowStatement(
                             new VarExpr("e"))));
         } else {
             // 用户编写的 catch 子句——沿处理器链翻译(而非仅翻译首块):

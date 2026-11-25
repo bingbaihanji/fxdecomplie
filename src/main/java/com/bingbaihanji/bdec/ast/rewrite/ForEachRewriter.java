@@ -315,10 +315,10 @@ public class ForEachRewriter implements RewriteRule {
         if (st instanceof ExpressionStatement es) {
             return findCastTypeInExpr(es.expression(), elemName);
         }
-        if (st instanceof com.bingbaihanji.bdec.ast.stmt.ReturnStatement rs && rs.value() != null) {
+        if (st instanceof ReturnStatement rs && rs.value() != null) {
             return findCastTypeInExpr(rs.value(), elemName);
         }
-        if (st instanceof com.bingbaihanji.bdec.ast.stmt.VariableDeclaration vd && vd.initializer() != null) {
+        if (st instanceof VariableDeclaration vd && vd.initializer() != null) {
             return findCastTypeInExpr(vd.initializer(), elemName);
         }
         return null;
@@ -328,16 +328,16 @@ public class ForEachRewriter implements RewriteRule {
         if (e == null) {
             return null;
         }
-        if (e instanceof com.bingbaihanji.bdec.ast.expr.CastExpr cast
-                && cast.operand() instanceof com.bingbaihanji.bdec.ast.expr.VarExpr v
+        if (e instanceof CastExpr cast
+                && cast.operand() instanceof VarExpr v
                 && elemName.equals(v.name())) {
             return cast.targetType();
         }
-        if (e instanceof com.bingbaihanji.bdec.ast.expr.VarExpr v
+        if (e instanceof VarExpr v
                 && elemName.equals(v.name())) {
             return UNCAST_MARKER;
         }
-        if (e instanceof com.bingbaihanji.bdec.ast.expr.BinExpr b) {
+        if (e instanceof BinExpr b) {
             com.bingbaihanji.bdec.type.JavaType l = findCastTypeInExpr(b.left(), elemName);
             if (l == UNCAST_MARKER) {
                 return UNCAST_MARKER;
@@ -351,7 +351,7 @@ public class ForEachRewriter implements RewriteRule {
             }
             return l != null ? l : r;
         }
-        if (e instanceof com.bingbaihanji.bdec.ast.expr.InvocationExpr inv) {
+        if (e instanceof InvocationExpr inv) {
             com.bingbaihanji.bdec.type.JavaType acc = null;
             if (inv.target() != null) {
                 acc = findCastTypeInExpr(inv.target(), elemName);
@@ -388,16 +388,16 @@ public class ForEachRewriter implements RewriteRule {
         if (s instanceof ExpressionStatement es) {
             return new ExpressionStatement(stripCastsInExpr(es.expression(), elemName));
         }
-        if (s instanceof com.bingbaihanji.bdec.ast.stmt.ReturnStatement rs && rs.value() != null) {
-            return new com.bingbaihanji.bdec.ast.stmt.ReturnStatement(
+        if (s instanceof ReturnStatement rs && rs.value() != null) {
+            return new ReturnStatement(
                     stripCastsInExpr(rs.value(), elemName));
         }
-        if (s instanceof com.bingbaihanji.bdec.ast.stmt.VariableDeclaration vd && vd.initializer() != null) {
-            return new com.bingbaihanji.bdec.ast.stmt.VariableDeclaration(vd.type(), vd.name(),
+        if (s instanceof VariableDeclaration vd && vd.initializer() != null) {
+            return new VariableDeclaration(vd.type(), vd.name(),
                     stripCastsInExpr(vd.initializer(), elemName));
         }
-        if (s instanceof com.bingbaihanji.bdec.ast.stmt.IfStatement i) {
-            return new com.bingbaihanji.bdec.ast.stmt.IfStatement(
+        if (s instanceof IfStatement i) {
+            return new IfStatement(
                     stripCastsInExpr(i.condition(), elemName),
                     stripCasts(i.thenBranch(), elemName),
                     i.elseBranch() != null ? stripCasts(i.elseBranch(), elemName) : null);
@@ -409,22 +409,22 @@ public class ForEachRewriter implements RewriteRule {
         if (e == null) {
             return null;
         }
-        if (e instanceof com.bingbaihanji.bdec.ast.expr.CastExpr cast
-                && cast.operand() instanceof com.bingbaihanji.bdec.ast.expr.VarExpr v
+        if (e instanceof CastExpr cast
+                && cast.operand() instanceof VarExpr v
                 && elemName.equals(v.name())) {
             return v;
         }
-        if (e instanceof com.bingbaihanji.bdec.ast.expr.BinExpr b) {
-            return new com.bingbaihanji.bdec.ast.expr.BinExpr(b.operator(),
+        if (e instanceof BinExpr b) {
+            return new BinExpr(b.operator(),
                     stripCastsInExpr(b.left(), elemName),
                     stripCastsInExpr(b.right(), elemName));
         }
-        if (e instanceof com.bingbaihanji.bdec.ast.expr.InvocationExpr inv) {
+        if (e instanceof InvocationExpr inv) {
             List<Expression> args = new ArrayList<>();
             for (Expression a : inv.arguments()) {
                 args.add(stripCastsInExpr(a, elemName));
             }
-            return new com.bingbaihanji.bdec.ast.expr.InvocationExpr(
+            return new InvocationExpr(
                     inv.target() != null ? stripCastsInExpr(inv.target(), elemName) : null,
                     inv.methodName(), args, inv.returnType());
         }

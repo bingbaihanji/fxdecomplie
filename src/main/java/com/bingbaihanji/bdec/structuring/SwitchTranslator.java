@@ -218,7 +218,7 @@ public final class SwitchTranslator {
                         for (IrInstruction ci : ir.instructionsOf(b)) {
                             if (ci.opcode() == IrOpcode.CONST && !ci.operands().isEmpty()) {
                                 Expression constExpr = ops.valueToExpr(ci.operands().getFirst());
-                                if (constExpr instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lit
+                                if (constExpr instanceof LitExpr lit
                                         && lit.value() instanceof String) {
                                     body.add(new com.bingbaihanji.bdec.ast.stmt.ReturnStatement(lit));
                                 }
@@ -281,7 +281,7 @@ public final class SwitchTranslator {
                         for (IrInstruction ci : ir.instructionsOf(b)) {
                             if (ci.opcode() == IrOpcode.CONST && !ci.operands().isEmpty()) {
                                 Expression constExpr = ops.valueToExpr(ci.operands().getFirst());
-                                if (constExpr instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lit
+                                if (constExpr instanceof LitExpr lit
                                         && lit.value() instanceof String) {
                                     defBody.add(new com.bingbaihanji.bdec.ast.stmt.ReturnStatement(lit));
                                     break;
@@ -581,7 +581,7 @@ public final class SwitchTranslator {
                 for (IrInstruction ci : ir.instructionsOf(b)) {
                     if (ci.opcode() == IrOpcode.CONST && !ci.operands().isEmpty()) {
                         Expression constExpr = ops.valueToExpr(ci.operands().getFirst());
-                        if (constExpr instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lit
+                        if (constExpr instanceof LitExpr lit
                                 && lit.value() instanceof String
                                 && bs.stream()
                                 .noneMatch(x -> x instanceof com.bingbaihanji.bdec.ast.stmt.ReturnStatement)) {
@@ -637,7 +637,7 @@ public final class SwitchTranslator {
                 for (IrInstruction ci : ir.instructionsOf(b)) {
                     if (ci.opcode() == IrOpcode.CONST && !ci.operands().isEmpty()) {
                         Expression constExpr = ops.valueToExpr(ci.operands().getFirst());
-                        if (constExpr instanceof com.bingbaihanji.bdec.ast.expr.LitExpr lit
+                        if (constExpr instanceof LitExpr lit
                                 && lit.value() instanceof String) {
                             bs.add(new com.bingbaihanji.bdec.ast.stmt.ReturnStatement(lit));
                         }

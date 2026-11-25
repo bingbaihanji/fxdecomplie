@@ -41,7 +41,7 @@ final class AstCleanup {
 
     /** 语句是否为简单终止语句(单条 throw/return 或仅含一条的块) */
     static boolean isSimpleTerminal(Statement s) {
-        if (s instanceof com.bingbaihanji.bdec.ast.stmt.ReturnStatement
+        if (s instanceof ReturnStatement
                 || s instanceof com.bingbaihanji.bdec.ast.stmt.ThrowStatement) {
             return true;
         }
@@ -69,7 +69,7 @@ final class AstCleanup {
     /** 条件取反并简化 */
     static Expression negateCond(Expression cond) {
         if (cond == null) {
-            return new com.bingbaihanji.bdec.ast.expr.LitExpr(true, JavaType.BOOLEAN);
+            return new LitExpr(true, JavaType.BOOLEAN);
         }
         return simplifyCondition(new UnExpr(UnaryOperator.NOT, cond));
     }
@@ -101,7 +101,7 @@ final class AstCleanup {
             return false;
         }
         Statement last = body.getLast();
-        if (last instanceof com.bingbaihanji.bdec.ast.stmt.ReturnStatement
+        if (last instanceof ReturnStatement
                 || last instanceof com.bingbaihanji.bdec.ast.stmt.ThrowStatement
                 || last instanceof com.bingbaihanji.bdec.ast.stmt.BreakStatement
                 || last.kind() == com.bingbaihanji.bdec.ast.AstKind.CONTINUE) {
@@ -119,7 +119,7 @@ final class AstCleanup {
         if (s == null) {
             return false;
         }
-        if (s instanceof com.bingbaihanji.bdec.ast.stmt.ReturnStatement
+        if (s instanceof ReturnStatement
                 || s instanceof com.bingbaihanji.bdec.ast.stmt.ThrowStatement
                 || s instanceof com.bingbaihanji.bdec.ast.stmt.BreakStatement
                 || s.kind() == com.bingbaihanji.bdec.ast.AstKind.CONTINUE) {
@@ -216,7 +216,7 @@ final class AstCleanup {
                     continue;
                 }
                 // 剥离仅为 varN 的 ExpressionStatement(未消费的加载)
-                if (s instanceof com.bingbaihanji.bdec.ast.stmt.ExpressionStatement es
+                if (s instanceof ExpressionStatement es
                         && es.expression() instanceof VarExpr v
                         && v.name().equals(monObj)) {
                     continue;
@@ -268,7 +268,7 @@ final class AstCleanup {
                     }
                 }
                 // 剥离不可达代码之后的 "return;"(synchronized 体清理)
-                if (s instanceof com.bingbaihanji.bdec.ast.stmt.ReturnStatement r
+                if (s instanceof ReturnStatement r
                         && r.value() == null) {
                     continue;
                 }
@@ -295,8 +295,8 @@ final class AstCleanup {
     }
 
     /** Recursively remove catch-duplicate statements from a block. */
-    static boolean stripFromBlock(java.util.List<Statement> stmts, int idx,
-                                  java.util.Set<String> catchTexts) {
+    static boolean stripFromBlock(List<Statement> stmts, int idx,
+                                  Set<String> catchTexts) {
         if (idx >= stmts.size()) {
             return false;
         }
@@ -311,7 +311,7 @@ final class AstCleanup {
         }
         // Recurse into nested blocks: check their first statement
         if (s instanceof BlockStatement bs) {
-            java.util.List<Statement> inner = new java.util.ArrayList<>(bs.statements());
+            List<Statement> inner = new ArrayList<>(bs.statements());
             boolean changed = false;
             for (int k = 0; k < inner.size(); k++) {
                 changed |= stripFromBlock(inner, k, catchTexts);
@@ -329,7 +329,7 @@ final class AstCleanup {
      * the parent method body, recursively checking nested blocks.
      */
     static BlockStatement stripLeakedCatchStmts(BlockStatement root) {
-        java.util.List<Statement> stmts = new java.util.ArrayList<>(root.statements());
+        List<Statement> stmts = new ArrayList<>(root.statements());
         boolean changed = false;
         // First, recursively process nested blocks
         for (int i = 0; i < stmts.size(); i++) {
@@ -341,7 +341,7 @@ final class AstCleanup {
         // Then strip duplicates at this level
         for (int i = 0; i < stmts.size(); i++) {
             if (stmts.get(i) instanceof TryStatement ts && ts.catchClauses() != null) {
-                java.util.Set<String> catchTexts = new java.util.HashSet<>();
+                Set<String> catchTexts = new java.util.HashSet<>();
                 for (var cc : ts.catchClauses()) {
                     if (cc.body() instanceof BlockStatement cb) {
                         for (Statement cs : cb.statements()) {
@@ -375,7 +375,7 @@ final class AstCleanup {
                     i--; // 重新检查此索引处的新元素
                 }
                 // 剥离 ExpressionStatement "varN"(未消费的加载)
-                if (i >= 0 && stmts.get(i) instanceof com.bingbaihanji.bdec.ast.stmt.ExpressionStatement es
+                if (i >= 0 && stmts.get(i) instanceof ExpressionStatement es
                         && es.expression() instanceof VarExpr v
                         && v.name().startsWith("var")) {
                     stmts.remove(i);

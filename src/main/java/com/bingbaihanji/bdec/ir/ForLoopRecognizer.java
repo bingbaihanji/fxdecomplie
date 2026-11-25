@@ -176,7 +176,7 @@ public final class ForLoopRecognizer {
         if (s instanceof com.bingbaihanji.bdec.ast.stmt.VariableDeclaration vd) {
             // int i = 0 → for 的 init 用 i = 0(声明语句保留在 for 之前,
             // 冗余但语义正确;continue 时 for 会执行增量).
-            return new AssignExpr(new com.bingbaihanji.bdec.ast.expr.VarExpr(vd.name()),
+            return new AssignExpr(new VarExpr(vd.name()),
                     vd.initializer() != null ? vd.initializer()
                             : new com.bingbaihanji.bdec.ast.expr.LitExpr(0, JavaType.INT));
         }

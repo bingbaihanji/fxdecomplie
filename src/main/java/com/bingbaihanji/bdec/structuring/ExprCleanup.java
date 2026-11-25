@@ -1,6 +1,7 @@
 package com.bingbaihanji.bdec.structuring;
 
 import com.bingbaihanji.bdec.ast.AnnotationRenderer;
+import com.bingbaihanji.bdec.ast.expr.ArrayAccessExpr;
 import com.bingbaihanji.bdec.ast.expr.BinExpr;
 import com.bingbaihanji.bdec.ast.expr.BinaryOperator;
 import com.bingbaihanji.bdec.ast.expr.CondExpr;
@@ -32,7 +33,7 @@ public final class ExprCleanup {
      * 按类型路径分组为渲染行映射.
      * 注解类型名取简单名(与声明点同包/已导入假设一致).
      */
-    public static java.util.Map<java.util.List<TypePathElement>,
+    public static java.util.Map<List<TypePathElement>,
             List<String>> renderVarTypeAnnotations(Variable v) {
         if (v.typeAnnotations() == null || v.typeAnnotations().isEmpty()) {
             return java.util.Map.of();
@@ -103,6 +104,13 @@ public final class ExprCleanup {
     public static boolean expressionsMatch(Expression a, Expression b) {
         if (a instanceof VarExpr va && b instanceof VarExpr vb) {
             return va.name().equals(vb.name());
+        }
+        if (a instanceof LitExpr la && b instanceof LitExpr lb) {
+            return java.util.Objects.equals(la.value(), lb.value());
+        }
+        if (a instanceof ArrayAccessExpr aa && b instanceof ArrayAccessExpr ab) {
+            return expressionsMatch(aa.array(), ab.array())
+                    && expressionsMatch(aa.index(), ab.index());
         }
         if (a instanceof FieldAccessExpr fa && b instanceof FieldAccessExpr fb) {
             return fa.fieldName().equals(fb.fieldName())

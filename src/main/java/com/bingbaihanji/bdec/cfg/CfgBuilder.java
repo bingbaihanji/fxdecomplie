@@ -157,7 +157,7 @@ public final class CfgBuilder {
                 if ("tableswitch".equals(last.mnemonic()) || "lookupswitch".equals(last.mnemonic())) {
                     boolean isTable = "tableswitch".equals(last.mnemonic());
                     int[] targets = last.jumpTargets();
-                    java.util.List<Integer> operands = last.rawOperands();
+                    List<Integer> operands = last.rawOperands();
                     // switch跳转目标数组的第一个元素是默认分支
                     if (targets.length > 0) {
                         BasicBlock defaultBlock = offsetToBlock.get(targets[0]);

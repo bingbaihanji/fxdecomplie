@@ -132,7 +132,7 @@ public class IrInstruction {
     public static IrInstruction invoke(int id, Value target, List<Value> args,
                                        JavaType returnType, int offset, int blockId,
                                        String methodName) {
-        List<Value> operands = new java.util.ArrayList<>();
+        List<Value> operands = new ArrayList<>();
         if (target != null) {
             operands.add(target);
         }

@@ -82,8 +82,8 @@ public class AstBuilder {
      *                     或 {@code TypeText.render})
      */
     public static void collectIrTypeImports(
-            java.util.List<com.bingbaihanji.bdec.ir.IrInstruction> instructions,
-            java.util.function.Consumer<com.bingbaihanji.bdec.type.JavaType> collector) {
+            List<com.bingbaihanji.bdec.ir.IrInstruction> instructions,
+            java.util.function.Consumer<JavaType> collector) {
         if (instructions == null) {
             return;
         }
@@ -94,7 +94,7 @@ public class AstBuilder {
                     String declClass = ann.getString(
                             com.bingbaihanji.bdec.semantic.SemanticAnnotation.KEY_DECLARING_CLASS);
                     if (declClass != null) {
-                        collector.accept(com.bingbaihanji.bdec.type.JavaType.classType(declClass));
+                        collector.accept(JavaType.classType(declClass));
                     }
                 }
                 if (ann.is(com.bingbaihanji.bdec.semantic.SemanticTag.INDY)) {
@@ -104,7 +104,7 @@ public class AstBuilder {
                     collector.accept(insn.resultType());
                     String implOwner = ann.getString("implOwner");
                     if (implOwner != null) {
-                        collector.accept(com.bingbaihanji.bdec.type.JavaType.classType(implOwner));
+                        collector.accept(JavaType.classType(implOwner));
                     }
                 }
             }
@@ -119,7 +119,7 @@ public class AstBuilder {
             // INSTANCE_OF指令:从nameHint提取目标类型
             if (insn.opcode() == com.bingbaihanji.bdec.ir.IrOpcode.INSTANCE_OF
                     && insn.nameHint() != null) {
-                collector.accept(com.bingbaihanji.bdec.type.JavaType.classType(insn.nameHint()));
+                collector.accept(JavaType.classType(insn.nameHint()));
             }
             // Iterator模式:当调用iterator()/hasNext()/next()时,添加Iterator导入
             if (insn.opcode() == com.bingbaihanji.bdec.ir.IrOpcode.INVOKE
@@ -127,13 +127,13 @@ public class AstBuilder {
                 String mName = insn.nameHint();
                 if ("iterator".equals(mName) || "hasNext".equals(mName)
                         || "next".equals(mName)) {
-                    collector.accept(com.bingbaihanji.bdec.type.JavaType.classType("java/util/Iterator"));
+                    collector.accept(JavaType.classType("java/util/Iterator"));
                 }
                 // Map.entry() 调用需要 Map.Entry 的导入
                 if ("entry".equals(mName) && insn.resultType() != null
                         && insn.resultType().internalName() != null
                         && insn.resultType().internalName().contains("Map$Entry")) {
-                    collector.accept(com.bingbaihanji.bdec.type.JavaType.classType("java/util/Map$Entry"));
+                    collector.accept(JavaType.classType("java/util/Map$Entry"));
                 }
             }
         }
@@ -149,11 +149,11 @@ public class AstBuilder {
      * 的数组自身注解落 {@code []}(数组本身).按元素根路径匹配才能只剔除
      * 声明副本,保留 {@code int @A []} 这类有意双写的数组注解.</p>
      */
-    private static java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>
-    elementRootPath(com.bingbaihanji.bdec.type.JavaType type) {
+    private static List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>
+    elementRootPath(JavaType type) {
         int dims = type != null && type.kind() == com.bingbaihanji.bdec.type.TypeKind.ARRAY
                 ? type.arrayDimensions() : 0;
-        java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path
+        List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> path
                 = new ArrayList<>(dims);
         for (int d = 0; d < dims; d++) {
             path.add(new com.bingbaihanji.bdec.bytecode.model.TypePathElement(
@@ -178,17 +178,17 @@ public class AstBuilder {
      * @param elementRoot 该成员类型元素根路径
      * @return 剔除重复后的类型注解条目列表
      */
-    private static java.util.List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry>
+    private static List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry>
     stripDeclarationDupes(
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry> entries,
+            List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry> entries,
             int targetType, int targetIdx,
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.AnnotationEntry> declAnns,
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> elementRoot) {
+            List<com.bingbaihanji.bdec.bytecode.model.AnnotationEntry> declAnns,
+            List<com.bingbaihanji.bdec.bytecode.model.TypePathElement> elementRoot) {
         if (entries == null || entries.isEmpty()
                 || declAnns == null || declAnns.isEmpty()) {
             return entries;
         }
-        java.util.List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry> result
+        List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry> result
                 = new ArrayList<>(entries.size());
         for (var e : entries) {
             if (e.targetType() == targetType
@@ -200,7 +200,7 @@ public class AstBuilder {
             }
             result.add(e);
         }
-        return result.isEmpty() ? java.util.List.of() : result;
+        return result.isEmpty() ? List.of() : result;
     }
 
     /** 桥接方法是否冗余:ACC_BRIDGE 且存在同名的非桥接真实实现(同擦除参数). */
@@ -304,11 +304,11 @@ public class AstBuilder {
         java.util.Map<Integer, String> classTypeParamAnns = new java.util.HashMap<>();
         List<String> superAnns = new ArrayList<>();
         java.util.Map<Integer, String> interfaceAnnsByIndex = new java.util.HashMap<>();
-        java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                java.util.List<String>> superTypeArgAnns = new java.util.LinkedHashMap<>();
+        java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                List<String>> superTypeArgAnns = new java.util.LinkedHashMap<>();
         java.util.Map<Integer,
-                java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                        java.util.List<String>>> interfaceTypeArgAnnsByIndex =
+                java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                        List<String>>> interfaceTypeArgAnnsByIndex =
                 new java.util.HashMap<>();
         for (var ta : classFile.typeAnnotations()) {
             if (ta.targetType() == 0x00 && ta.targetInfo().length > 0
@@ -339,8 +339,8 @@ public class AstBuilder {
                 // 按完整路径缓存.其他 kind 的路径维持现状丢弃.
                 String rendered = renderAnnotation(ta.annotation());
                 collectAnnotationImports(ta.annotation(), imports, simpleName);
-                java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                        java.util.List<String>> target;
+                java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                        List<String>> target;
                 if (ta.targetInfo().length == 0 || ta.targetInfo()[0] == 65535) {
                     target = superTypeArgAnns;
                 } else if (ta.targetInfo()[0] < classFile.interfaceInternalNames().size()) {
@@ -349,7 +349,7 @@ public class AstBuilder {
                 } else {
                     continue;
                 }
-                target.computeIfAbsent(ta.typePath(), k -> new java.util.ArrayList<>())
+                target.computeIfAbsent(ta.typePath(), k -> new ArrayList<>())
                         .add(rendered);
             }
         }
@@ -392,7 +392,7 @@ public class AstBuilder {
             // $assertionsDisabled是JVM合成的断言标志字段,给它一个默认值false,
             // 因为其静态初始化器赋值已被移除(JVM内部机制)
             if (init == null && "$assertionsDisabled".equals(field.name())) {
-                init = new com.bingbaihanji.bdec.ast.expr.LitExpr(false, JavaType.BOOLEAN);
+                init = new LitExpr(false, JavaType.BOOLEAN);
             }
             // 字段上的注解(RuntimeVisibleAnnotations).record 组件字段以 Record
             // 属性组件的注解为准(权威源);其余字段用 backing 字段注解.
@@ -409,7 +409,7 @@ public class AstBuilder {
             }
             // 字段类型上的 JSR-308 类型注解(RuntimeVisibleTypeAnnotations).
             // stripDeclarationDupes:剔除 javac 对"声明目标+TYPE_USE"双发射的类型副本
-            java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+            java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
                     List<String>> fieldTypeAnns = buildTypeAnnotationMap(
                     stripDeclarationDupes(field.typeAnnotations(),
                             com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry.TARGET_FIELD,
@@ -556,14 +556,14 @@ public class AstBuilder {
             // JSR-308 类型注解(RuntimeVisibleTypeAnnotations):
             // 返回类型(0x14),形式参数类型(0x16,按参数下标对齐),throws 类型(0x17)
             var typeAnns = method.typeAnnotations();
-            java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+            java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
                     List<String>> retTypeAnns = buildTypeAnnotationMap(
                     stripDeclarationDupes(typeAnns,
                             com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry.TARGET_METHOD_RETURN,
                             -1, method.annotations(), elementRootPath(returnType)),
                     com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry.TARGET_METHOD_RETURN,
                     -1, imports, simpleName);
-            java.util.List<java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+            List<java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
                     List<String>>> paramTypeAnns = new ArrayList<>();
             for (int pi = 0; pi < paramTypes.length; pi++) {
                 // 参数声明注解按尾部对齐(枚举构造器前导合成参数,内部类 this$0),
@@ -584,15 +584,15 @@ public class AstBuilder {
                         com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry.TARGET_FORMAL_PARAMETER,
                         pi, imports, simpleName));
             }
-            java.util.List<java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+            List<java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
                     List<String>>> throwsTypeAnns = new ArrayList<>();
             for (int ti = 0; ti < throwsTypes.size(); ti++) {
                 throwsTypeAnns.add(buildTypeAnnotationMap(typeAnns,
                         com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry.TARGET_THROWS,
                         ti, imports, simpleName));
             }
-            com.bingbaihanji.bdec.ast.TypeAnnotationSet tas =
-                    new com.bingbaihanji.bdec.ast.TypeAnnotationSet(
+            TypeAnnotationSet tas =
+                    new TypeAnnotationSet(
                             retTypeAnns, List.copyOf(paramTypeAnns), List.copyOf(throwsTypeAnns));
 
             // 类型参数声明注解(0x01)在签名替换完成后预置
@@ -680,21 +680,29 @@ public class AstBuilder {
         List<String> interfaceAnns = new ArrayList<>();
         int rawInterfaceIdx = 0;
         int sigInterfaceIdx = 0;
+        // 类签名格式恒为 [父类][接口...](JVMS 4.7.9.1),接口类型同样以
+        // Ljava/lang/Object; 父类签名为第 0 项,故接口从 index 1 起.
+        // 仅当非标准接口签名省略父类占位时,接口才从 index 0 起.
+        int sigBase = superAndInterfaces != null && superAndInterfaces.length > 0
+                && (!isInterfaceType || isJavaLangObject(superAndInterfaces[0])) ? 1 : 0;
         for (String ifName : classFile.interfaceInternalNames()) {
             String ifAnn = interfaceAnnsByIndex.get(rawInterfaceIdx);
-            java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
-                    java.util.List<String>> ifTypeArgAnns =
+            java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+                    List<String>> ifTypeArgAnns =
                     interfaceTypeArgAnnsByIndex.get(rawInterfaceIdx);
             rawInterfaceIdx++;
             if (isAnnotationType && "java/lang/annotation/Annotation".equals(ifName)) {
                 continue;
             }
-            // 类签名中接口紧跟父类之后(类:父类占 index 0;接口:无父类,接口从 0 起).
-            // 父类若为隐式 java/lang/Object,javac 仍会在签名中占位 Ljava/lang/Object;,
-            // 因此偏移量取决于是否为接口,而非显式父类是否存在.
-            int sigPos = (isInterfaceType ? 0 : 1) + sigInterfaceIdx;
+            // 优先按内部名称在签名接口区段定位,避免签名与原始接口表顺序错位;
+            // 定位失败时按 sigBase 偏移回退,再无签名则用原始接口简单名.
+            int sigPos = sigBase + sigInterfaceIdx;
+            JavaType sigInterface = findSignatureInterface(superAndInterfaces, sigBase, ifName);
             String simple;
-            if (superAndInterfaces != null && sigPos < superAndInterfaces.length) {
+            if (sigInterface != null) {
+                simple = TypeReferenceUtil.renderClassRef(
+                        sigInterface, ifTypeArgAnns, imports, simpleName);
+            } else if (superAndInterfaces != null && sigPos < superAndInterfaces.length) {
                 simple = TypeReferenceUtil.renderClassRef(
                         superAndInterfaces[sigPos], ifTypeArgAnns, imports, simpleName);
             } else {
@@ -758,7 +766,7 @@ public class AstBuilder {
                 innerNames.put(rawSimple, rawSimple);
             }
         }
-        java.util.Set<String> innerFriendly = new java.util.HashSet<>(innerNames.values());
+        Set<String> innerFriendly = new java.util.HashSet<>(innerNames.values());
 
         // 构建import列表(过滤java.lang.*,同包类型和自身嵌套类)
         List<String> importList = new ArrayList<>();
@@ -837,6 +845,26 @@ public class AstBuilder {
         return idx > 0 ? internalName.substring(0, idx).replace('/', '.') : "";
     }
 
+    // 判断签名类型是否为隐式父类 java/lang/Object
+    private static boolean isJavaLangObject(JavaType type) {
+        return type != null && "java/lang/Object".equals(type.internalName());
+    }
+
+    // 在类签名的接口区段按内部名称定位接口类型,保留其泛型实参
+    private static JavaType findSignatureInterface(JavaType[] signatures, int from,
+                                                   String internalName) {
+        if (signatures == null || internalName == null) {
+            return null;
+        }
+        for (int i = Math.max(from, 0); i < signatures.length; i++) {
+            JavaType candidate = signatures[i];
+            if (candidate != null && internalName.equals(candidate.internalName())) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
     /**
      * 解析字段的常量初始值,将其包装为字面量表达式.
      *
@@ -865,14 +893,14 @@ public class AstBuilder {
      * @param targetIdx  带下标目标的索引(参数下标,throws 下标),无下标目标传 -1
      * @return 类型路径 → 渲染后注解行列表的映射
      */
-    private java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+    private java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
             List<String>> buildTypeAnnotationMap(
-            java.util.List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry> entries,
-            int targetType, int targetIdx, java.util.Set<String> imports, String simpleName) {
+            List<com.bingbaihanji.bdec.bytecode.model.TypeAnnotationEntry> entries,
+            int targetType, int targetIdx, Set<String> imports, String simpleName) {
         if (entries == null || entries.isEmpty()) {
             return java.util.Map.of();
         }
-        java.util.Map<java.util.List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
+        java.util.Map<List<com.bingbaihanji.bdec.bytecode.model.TypePathElement>,
                 List<String>> map = new java.util.LinkedHashMap<>();
         for (var e : entries) {
             if (e.targetType() != targetType) {
@@ -903,14 +931,14 @@ public class AstBuilder {
     /** 收集注解引用的类型以生成 import */
     private void collectAnnotationImports(
             com.bingbaihanji.bdec.bytecode.model.AnnotationEntry ann,
-            java.util.Set<String> imports, String simpleName) {
+            Set<String> imports, String simpleName) {
         TypeReferenceUtil.collectImport(JavaType.classType(ann.typeName()), imports, simpleName);
         for (var pair : ann.pairs()) {
             collectAnnotationValueImports(pair.value(), imports, simpleName);
         }
     }
 
-    private void collectAnnotationValueImports(Object v, java.util.Set<String> imports,
+    private void collectAnnotationValueImports(Object v, Set<String> imports,
                                                String simpleName) {
         switch (v) {
             case com.bingbaihanji.bdec.bytecode.model.AnnotationEntry.EnumValue ev ->
@@ -919,7 +947,7 @@ public class AstBuilder {
                     TypeReferenceUtil.collectImport(JavaType.classType(cv.internalName()), imports, simpleName);
             case com.bingbaihanji.bdec.bytecode.model.AnnotationEntry nested ->
                     collectAnnotationImports(nested, imports, simpleName);
-            case java.util.List<?> list -> list.forEach(
+            case List<?> list -> list.forEach(
                     e -> collectAnnotationValueImports(e, imports, simpleName));
             default -> {
             }

@@ -425,7 +425,8 @@ public class EnumRewriter implements RewriteRule {
                 unit.packageName(), unit.imports(), List.of(synthetic),
                 unit.innerClassNames());
         DecompileContext innerCtx = new DecompileContext(
-                ctx.config(), ctx::loadClassBytes, inner.bootstrapMethods(), inner);
+                ctx.config(), ctx::loadClassBytes, inner.bootstrapMethods(), inner,
+                ctx::reportWarning);
         try {
             CompilationUnit rewritten =
                     ENUM_BODY_REWRITER.rewrite(syntheticUnit, ctx.config(), innerCtx);
@@ -634,7 +635,7 @@ public class EnumRewriter implements RewriteRule {
             String constList = String.join(",\n    ", enumConstants)
                     + (enumConstants.size() == 1 ? ";" : "\n    ;");
             members.add(new FieldDeclaration(0, "$enumConstants$",
-                    com.bingbaihanji.bdec.type.JavaType.VOID,
+                    JavaType.VOID,
                     new com.bingbaihanji.bdec.ast.expr.VarExpr(constList)));
         }
         members.addAll(regularMembers);
@@ -840,7 +841,7 @@ public class EnumRewriter implements RewriteRule {
         }
         int newLen = origLen - 2;
         String[] newNames = new String[newLen];
-        com.bingbaihanji.bdec.type.JavaType[] newTypes = new com.bingbaihanji.bdec.type.JavaType[newLen];
+        JavaType[] newTypes = new JavaType[newLen];
         System.arraycopy(md.parameterNames(), 2, newNames, 0, newLen);
         System.arraycopy(md.parameterTypes(), 2, newTypes, 0, newLen);
         // 参数注解同步丢弃前 2 个合成参数(name, ordinal)
