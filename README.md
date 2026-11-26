@@ -140,7 +140,7 @@ src/main/java/
 
 ### MCP 服务
 
-设置页可启用 MCP 服务：默认只绑定 `127.0.0.1`，可切换局域网地址；强制 Bearer Token，支持 Streamable HTTP（`/mcp`）和旧版 HTTP+SSE（`/sse`+`/message`）。`mcp/` 层只依赖 service/model/config/decompiler/util/rename，不直接操作 JavaFX；AI 打开的工作区通过 `WorkspaceSessionRegistry` 同步到 GUI 标签页。工具覆盖工作区、类信息/源码/字节码/资源、继承、用法、搜索，以及 GUI 类标签页（源码可指定引擎，或打开 Hex 视图）、异步的引擎对比、反混淆建议和导出；导出工具需在设置页单独启用。
+设置页可启用 MCP 服务：默认只绑定 `127.0.0.1`，可切换局域网地址；强制 Bearer Token，支持 Streamable HTTP（`/mcp`）和旧版 HTTP+SSE（`/sse`+`/message`）。`mcp/` 层只依赖 service/model/config/decompiler/util/rename，不直接操作 JavaFX；AI 打开的工作区通过 `WorkspaceSessionRegistry` 同步到 GUI 标签页。工具覆盖工作区、包/资源列表、类信息/方法级源码/字节码/资源、继承、用法、搜索、重命名映射读取，以及 GUI 类标签页（源码可指定引擎，或打开 Hex 视图）、异步的引擎对比、反混淆建议和导出；导出工具需在设置页单独启用。
 
 ### Ctrl+Click 导航
 

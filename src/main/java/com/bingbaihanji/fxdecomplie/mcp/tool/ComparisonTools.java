@@ -42,6 +42,8 @@ public final class ComparisonTools {
                 "engines", Map.of("type", "array",
                         "items", Map.of("type", "string",
                                 "enum", List.of("PROCYON", "CFR", "VINEFLOWER", "JD", "JADX", "BDEC"))),
+                "options", Map.of("type", "object",
+                        "description", "Optional engine option overrides"),
                 "diffContext", Map.of("type", "integer", "minimum", 0, "maximum", 10),
                 "maxDiffLines", Map.of("type", "integer", "minimum", 1, "maximum", 1000)));
         schema.put("required", List.of("class"));
@@ -60,6 +62,7 @@ public final class ComparisonTools {
                         throw new McpToolException("INVALID_ARGUMENT",
                                 "At least one engine is required", Map.of());
                     }
+                    Map<String, String> options = McpArgs.stringMap(args, "options");
                     int diffContext = McpArgs.intValue(args, "diffContext", 3, 0, 10);
                     int maxDiffLines = McpArgs.intValue(args, "maxDiffLines", 400, 1, 1000);
                     byte[] bytes = readBytes(resolved);
@@ -73,7 +76,7 @@ public final class ComparisonTools {
                             List<CompletableFuture<EngineResult>> futures = new ArrayList<>();
                             for (DecompilerTypeEnum engine : engines) {
                                 futures.add(CompletableFuture.supplyAsync(() ->
-                                        decompileOne(context, resolved, bytes, engine,
+                                        decompileOne(context, resolved, bytes, engine, options,
                                                 running), executor));
                             }
                             for (int i = 0; i < futures.size(); i++) {
@@ -116,15 +119,16 @@ public final class ComparisonTools {
                 });
     }
 
+    // 单引擎反编译并生成对比结果
     private static EngineResult decompileOne(McpToolContext context,
                                              ClassResolver.ResolvedClass resolved,
                                              byte[] bytes, DecompilerTypeEnum engine,
-                                             McpJob job) {
+                                             Map<String, String> options, McpJob job) {
         long start = System.currentTimeMillis();
         try {
             ClassSourceResult result = context.classSource().load(new ClassSourceRequest(
-                    resolved.workspace(), resolved.fullPath(), bytes, engine, Map.of(),
-                    false, 30, () -> !job.isCancelled()));
+                    resolved.workspace(), resolved.fullPath(), bytes, engine, options,
+                    false, true, 30, () -> !job.isCancelled()));
             String source = result.sourceCode() == null ? "" : result.sourceCode();
             return new EngineResult(engine, result, result.failure(),
                     System.currentTimeMillis() - start,

@@ -124,7 +124,9 @@ public final class ClassSourceService {
         }
         boolean failure = DecompilerRunner.isFailureOutput(rawSource);
         String workspaceHash = CommentScope.workspaceHash(workspace);
-        String source = RenameService.applyRenames(rawSource, workspaceHash, internalName);
+        String source = request.applyRenames()
+                ? RenameService.applyRenames(rawSource, workspaceHash, internalName)
+                : rawSource;
         if (request.includeComments() && !failure) {
             CommentScope scope = new CommentScope(workspaceHash,
                     DecompilerOptions.hash(options));

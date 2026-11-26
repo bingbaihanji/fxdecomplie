@@ -1,6 +1,9 @@
 package com.bingbaihanji.fxdecomplie.mcp.tool;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.rename.RenameEntry;
+import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSession;
 
 import java.nio.file.Path;
@@ -24,7 +27,8 @@ public final class WorkspaceTools {
 
     public static List<McpToolDefinition> definitions() {
         return List.of(serverInfo(), listWorkspaces(), openWorkspace(),
-                selectWorkspace(), workspaceSummary(), setEngine());
+                selectWorkspace(), workspaceSummary(), setEngine(), listPackages(),
+                listResources(), renameMapping());
     }
 
     private static McpToolDefinition serverInfo() {
@@ -206,6 +210,223 @@ public final class WorkspaceTools {
                             "previous", previous.name(),
                             "engine", engine.name()));
                 });
+    }
+
+    // 列出包及类/资源数量,支持前缀和分页
+    private static McpToolDefinition listPackages() {
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", Map.of(
+                "workspaceId", Map.of("type", "string"),
+                "prefix", Map.of("type", "string"),
+                "offset", Map.of("type", "integer", "minimum", 0),
+                "limit", Map.of("type", "integer", "minimum", 1, "maximum", 500)));
+        schema.put("additionalProperties", false);
+        return new McpToolDefinition(
+                "list_packages",
+                "List packages with class/resource counts, filtered by package prefix.",
+                schema,
+                (context, args) -> {
+                    WorkspaceSession session = ClassResolver.session(context, args);
+                    var workspace = session.workspace();
+                    String prefix = McpArgs.optionalString(args, "prefix", "")
+                            .replace('\\', '/').replace('.', '/');
+                    int offset = McpArgs.intValue(args, "offset", 0, 0, Integer.MAX_VALUE - 1);
+                    int limit = McpArgs.intValue(args, "limit", 100, 1, 500);
+                    Map<String, int[]> counts = new LinkedHashMap<>();
+                    for (var node : allNodes(workspace)) {
+                        String path = node.getFullPath().replace('\\', '/');
+                        String pkg;
+                        if (node.isClassFile()) {
+                            String internal = com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil
+                                    .normalizeInternalName(path);
+                            pkg = internal.lastIndexOf('/') < 0
+                                    ? "" : internal.substring(0, internal.lastIndexOf('/'));
+                        } else if (node.getNodeType().name().equals("PACKAGE")) {
+                            continue;
+                        } else {
+                            pkg = path.lastIndexOf('/') < 0
+                                    ? "" : path.substring(0, path.lastIndexOf('/'));
+                        }
+                        counts.computeIfAbsent(pkg, key -> new int[2])
+                                [node.isClassFile() ? 0 : 1]++;
+                    }
+                    List<Map<String, Object>> all = new ArrayList<>();
+                    for (var entry : counts.entrySet()) {
+                        String pkg = entry.getKey();
+                        if (!prefix.isBlank() && !pkg.equals(prefix)
+                                && !pkg.startsWith(prefix + "/")) {
+                            continue;
+                        }
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("package", pkg);
+                        item.put("classCount", entry.getValue()[0]);
+                        item.put("resourceCount", entry.getValue()[1]);
+                        all.add(item);
+                    }
+                    all.sort(java.util.Comparator.comparing(
+                            item -> ((String) item.get("package"))));
+                    int total = all.size();
+                    int end = Math.min(total, offset + limit);
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("items", offset >= total ? List.of() : all.subList(offset, end));
+                    data.put("total", total);
+                    data.put("offset", offset);
+                    data.put("limit", limit);
+                    data.put("hasMore", end < total);
+                    data.put("nextOffset", end < total ? end : null);
+                    return McpToolResult.ok(data);
+                });
+    }
+
+    // 列出非 class 资源,支持文本/二进制筛选和分页
+    private static McpToolDefinition listResources() {
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", Map.of(
+                "workspaceId", Map.of("type", "string"),
+                "prefix", Map.of("type", "string"),
+                "query", Map.of("type", "string"),
+                "type", Map.of("type", "string", "enum", List.of("all", "text", "binary")),
+                "offset", Map.of("type", "integer", "minimum", 0),
+                "limit", Map.of("type", "integer", "minimum", 1, "maximum", 500)));
+        schema.put("additionalProperties", false);
+        return new McpToolDefinition(
+                "list_resources",
+                "List non-class resources with text/binary type, size and path filters.",
+                schema,
+                (context, args) -> {
+                    WorkspaceSession session = ClassResolver.session(context, args);
+                    var workspace = session.workspace();
+                    String prefix = McpArgs.optionalString(args, "prefix", "")
+                            .replace('\\', '/').replace('.', '/');
+                    String query = McpArgs.optionalString(args, "query", "")
+                            .toLowerCase(java.util.Locale.ROOT);
+                    String type = McpArgs.optionalString(args, "type", "all")
+                            .toLowerCase(java.util.Locale.ROOT);
+                    if (!List.of("all", "text", "binary").contains(type)) {
+                        throw new McpToolException("INVALID_ARGUMENT",
+                                "type must be all, text or binary", Map.of("type", type));
+                    }
+                    int offset = McpArgs.intValue(args, "offset", 0, 0, Integer.MAX_VALUE - 1);
+                    int limit = McpArgs.intValue(args, "limit", 100, 1, 500);
+                    List<Map<String, Object>> all = new ArrayList<>();
+                    for (var node : allNodes(workspace)) {
+                        if (node.isClassFile() || node.getNodeType().name().equals("PACKAGE")) {
+                            continue;
+                        }
+                        String path = node.getFullPath().replace('\\', '/');
+                        if (!prefix.isBlank() && !path.startsWith(prefix)) {
+                            continue;
+                        }
+                        if (!query.isBlank()
+                                && !path.toLowerCase(java.util.Locale.ROOT).contains(query)) {
+                            continue;
+                        }
+                        boolean text = node.isTextFile();
+                        if ("text".equals(type) && !text) {
+                            continue;
+                        }
+                        if ("binary".equals(type) && text) {
+                            continue;
+                        }
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("path", path);
+                        item.put("name", node.getName());
+                        item.put("text", text);
+                        item.put("size", node.getSize());
+                        item.put("extension", extensionOf(path));
+                        all.add(item);
+                    }
+                    all.sort(java.util.Comparator.comparing(
+                            item -> ((String) item.get("path"))));
+                    int total = all.size();
+                    int end = Math.min(total, offset + limit);
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("items", offset >= total ? List.of() : all.subList(offset, end));
+                    data.put("total", total);
+                    data.put("offset", offset);
+                    data.put("limit", limit);
+                    data.put("hasMore", end < total);
+                    data.put("nextOffset", end < total ? end : null);
+                    return McpToolResult.ok(data);
+                });
+    }
+
+    // 只读读取当前重命名映射
+    private static McpToolDefinition renameMapping() {
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", Map.of(
+                "workspaceId", Map.of("type", "string"),
+                "format", Map.of("type", "string", "enum", List.of("json", "proguard")),
+                "offset", Map.of("type", "integer", "minimum", 0),
+                "limit", Map.of("type", "integer", "minimum", 1, "maximum", 500),
+                "maxChars", Map.of("type", "integer", "minimum", 1000, "maximum", 500_000)));
+        schema.put("additionalProperties", false);
+        return new McpToolDefinition(
+                "get_rename_mapping",
+                "Read the current project rename mapping as paged JSON entries or ProGuard text. Read-only.",
+                schema,
+                (context, args) -> {
+                    WorkspaceSession session = ClassResolver.session(context, args);
+                    String workspaceHash = CommentScope.workspaceHash(session.workspace());
+                    String format = McpArgs.optionalString(args, "format", "json")
+                            .toLowerCase(java.util.Locale.ROOT);
+                    if (format.equals("proguard")) {
+                        int maxChars = McpArgs.intValue(args, "maxChars", 100_000, 1000,
+                                500_000);
+                        String mapping = RenameService.exportProGuard(workspaceHash);
+                        int totalChars = mapping.length();
+                        boolean truncated = totalChars > maxChars;
+                        if (truncated) {
+                            mapping = mapping.substring(0, maxChars);
+                        }
+                        Map<String, Object> data = new LinkedHashMap<>();
+                        data.put("workspaceId", session.id());
+                        data.put("format", "proguard");
+                        data.put("content", mapping);
+                        data.put("truncated", truncated);
+                        data.put("totalChars", totalChars);
+                        return McpToolResult.ok(data);
+                    }
+                    if (!format.equals("json")) {
+                        throw new McpToolException("INVALID_ARGUMENT",
+                                "format must be json or proguard", Map.of("format", format));
+                    }
+                    int offset = McpArgs.intValue(args, "offset", 0, 0, Integer.MAX_VALUE - 1);
+                    int limit = McpArgs.intValue(args, "limit", 100, 1, 500);
+                    List<RenameEntry> entries = RenameService.loadAll(workspaceHash);
+                    int total = entries.size();
+                    int end = Math.min(total, offset + limit);
+                    List<Map<String, Object>> items = new ArrayList<>();
+                    for (RenameEntry entry : entries.subList(Math.min(offset, total), end)) {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("type", entry.type());
+                        item.put("className", entry.className());
+                        item.put("oldName", entry.oldName());
+                        item.put("newName", entry.newName());
+                        item.put("descriptor", entry.desc());
+                        items.add(item);
+                    }
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("workspaceId", session.id());
+                    data.put("format", "json");
+                    data.put("items", items);
+                    data.put("total", total);
+                    data.put("offset", offset);
+                    data.put("limit", limit);
+                    data.put("hasMore", end < total);
+                    data.put("nextOffset", end < total ? end : null);
+                    return McpToolResult.ok(data);
+                });
+    }
+
+    // 提取路径扩展名
+    private static String extensionOf(String path) {
+        int dot = path.lastIndexOf('.');
+        int slash = path.lastIndexOf('/');
+        return dot > slash ? path.substring(dot + 1) : "";
     }
 
     private static DecompilerTypeEnum parseEngine(String value) {

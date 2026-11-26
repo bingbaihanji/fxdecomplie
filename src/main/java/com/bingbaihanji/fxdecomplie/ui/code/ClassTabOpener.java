@@ -1169,7 +1169,7 @@ public final class ClassTabOpener {
                                                BooleanSupplier active) {
         var result = sourceService.load(
                 new com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceRequest(
-                        workspace, node.getFullPath(), bytes, engine, Map.of(), false,
+                        workspace, node.getFullPath(), bytes, engine, Map.of(), false, true,
                         INTERACTIVE_TIMEOUT_SECONDS, active));
         return new DecompileResult(result.sourceCode(), result.engine());
     }
@@ -1180,7 +1180,7 @@ public final class ClassTabOpener {
                                            BooleanSupplier active) {
         var result = sourceService.reload(
                 new com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceRequest(
-                        workspace, node.getFullPath(), bytes, engine, Map.of(), false,
+                        workspace, node.getFullPath(), bytes, engine, Map.of(), false, true,
                         INTERACTIVE_TIMEOUT_SECONDS, active));
         return new DecompileResult(result.sourceCode(), result.engine());
     }

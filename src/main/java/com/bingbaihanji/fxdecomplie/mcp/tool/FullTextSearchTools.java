@@ -100,7 +100,7 @@ public final class FullTextSearchTools {
                                 running.updateProgress(processed, total, cls.fullPath());
                                 ClassSourceResult result = context.classSource().load(
                                         new ClassSourceRequest(workspace, cls.fullPath(), null,
-                                                engine, Map.of(), false, 30,
+                                                engine, Map.of(), false, true, 30,
                                                 () -> !running.isCancelled()));
                                 if (!result.failure()) {
                                     searchLines(cls.fullPath(), result.sourceCode(), query, options,

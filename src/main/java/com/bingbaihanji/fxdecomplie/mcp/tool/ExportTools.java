@@ -39,21 +39,28 @@ public final class ExportTools {
     private static McpToolDefinition startExport() {
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
-        schema.put("properties", Map.of(
-                "workspaceId", Map.of("type", "string"),
-                "outputPath", Map.of("type", "string",
-                        "description", "Absolute output directory or ZIP path"),
-                "format", Map.of("type", "string", "enum", List.of("DIR", "ZIP")),
-                "engine", Map.of("type", "string",
-                        "description", "PROCYON, CFR, VINEFLOWER, JD, JADX or BDEC"),
-                "scope", Map.of("type", "string", "enum", List.of("all", "package", "class")),
-                "target", Map.of("type", "string",
-                        "description", "Package prefix or class selector when scope is not all"),
-                "exportResources", Map.of("type", "boolean"),
-                "conflictPolicy", Map.of("type", "string",
-                        "enum", List.of("SKIP", "OVERWRITE", "RENAME")),
-                "overwriteOutput", Map.of("type", "boolean"),
-                "includeComments", Map.of("type", "boolean")));
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("workspaceId", Map.of("type", "string"));
+        properties.put("outputPath", Map.of("type", "string",
+                "description", "Absolute output directory or ZIP path"));
+        properties.put("format", Map.of("type", "string", "enum", List.of("DIR", "ZIP")));
+        properties.put("engine", Map.of("type", "string",
+                "description", "PROCYON, CFR, VINEFLOWER, JD, JADX or BDEC"));
+        properties.put("options", Map.of("type", "object",
+                "description", "Optional engine option overrides"));
+        properties.put("scope", Map.of("type", "string",
+                "enum", List.of("all", "package", "class", "classes")));
+        properties.put("target", Map.of("type", "string",
+                "description", "Package prefix or class selector when scope is not all"));
+        properties.put("targets", Map.of("type", "array",
+                "items", Map.of("type", "string"),
+                "description", "Class selectors for scope=classes"));
+        properties.put("exportResources", Map.of("type", "boolean"));
+        properties.put("conflictPolicy", Map.of("type", "string",
+                "enum", List.of("SKIP", "OVERWRITE", "RENAME")));
+        properties.put("overwriteOutput", Map.of("type", "boolean"));
+        properties.put("includeComments", Map.of("type", "boolean"));
+        schema.put("properties", properties);
         schema.put("required", List.of("outputPath"));
         schema.put("additionalProperties", false);
         return new McpToolDefinition(
@@ -87,18 +94,20 @@ public final class ExportTools {
                     boolean includeComments = McpArgs.booleanValue(args, "includeComments", false);
                     String scope = McpArgs.optionalString(args, "scope", "all")
                             .toLowerCase(Locale.ROOT);
-                    if (!List.of("all", "package", "class").contains(scope)) {
+                    if (!List.of("all", "package", "class", "classes").contains(scope)) {
                         throw new McpToolException("INVALID_ARGUMENT",
-                                "scope must be all, package or class", Map.of("scope", scope));
+                                "scope must be all, package, class or classes",
+                                Map.of("scope", scope));
                     }
                     String target = McpArgs.optionalString(args, "target", "");
-                    List<FileTreeNode> nodes = selectNodes(workspace, scope, target);
+                    List<String> targets = McpArgs.stringList(args, "targets");
+                    List<FileTreeNode> nodes = selectNodes(workspace, scope, target, targets);
                     if (nodes.isEmpty()) {
                         throw new McpToolException("INVALID_ARGUMENT",
                                 "No exportable entries matched the scope", Map.of("scope", scope));
                     }
-                    Map<String, String> options = DecompilerOptions.forEngine(
-                            context.config(), engine);
+                    Map<String, String> options = McpEngineOptions.merge(
+                            context.config(), engine, McpArgs.stringMap(args, "options"));
                     CommentScope commentScope = includeComments
                             ? CommentScope.of(workspace, DecompilerOptions.hash(options)) : null;
                     ExportConfig config = new ExportConfig(output, engine,
@@ -135,13 +144,29 @@ public final class ExportTools {
                 });
     }
 
+    // 按导出范围选择文件树节点
     private static List<FileTreeNode> selectNodes(Workspace workspace, String scope,
-                                                  String target) {
+                                                  String target, List<String> targets) {
         List<FileTreeNode> all = new ArrayList<>();
         collect(workspace.getTreeRoot(), all);
         if ("class".equals(scope)) {
             ClassResolver.ResolvedClass resolved = ClassResolver.resolve(workspace, target);
             return List.of(resolved.node());
+        }
+        if ("classes".equals(scope)) {
+            if (targets.isEmpty()) {
+                throw new McpToolException("INVALID_ARGUMENT",
+                        "targets is required for classes scope", Map.of());
+            }
+            List<FileTreeNode> selected = new ArrayList<>();
+            java.util.Set<String> paths = new java.util.LinkedHashSet<>();
+            for (String item : targets) {
+                ClassResolver.ResolvedClass resolved = ClassResolver.resolve(workspace, item);
+                if (paths.add(resolved.fullPath())) {
+                    selected.add(resolved.node());
+                }
+            }
+            return selected;
         }
         if ("package".equals(scope)) {
             String prefix = target.replace('\\', '/').replace('.', '/');

@@ -16,14 +16,15 @@ import java.util.function.BooleanSupplier;
  * @param engine          请求的引擎
  * @param optionOverrides 单次调用的引擎选项覆盖
  * @param includeComments 是否插入持久化注释
+ * @param applyRenames    是否应用项目级重命名
  * @param timeoutSeconds  反编译超时
  * @param active          请求是否仍然有效
  * @author bingbaihanji
  */
 public record ClassSourceRequest(Workspace workspace, String fullPath, byte[] classBytes,
                                  DecompilerTypeEnum engine, Map<String, String> optionOverrides,
-                                 boolean includeComments, int timeoutSeconds,
-                                 BooleanSupplier active) {
+                                 boolean includeComments, boolean applyRenames,
+                                 int timeoutSeconds, BooleanSupplier active) {
 
     public ClassSourceRequest {
         Objects.requireNonNull(workspace, "workspace");
@@ -36,6 +37,6 @@ public record ClassSourceRequest(Workspace workspace, String fullPath, byte[] cl
     public static ClassSourceRequest of(Workspace workspace, String fullPath,
                                         DecompilerTypeEnum engine) {
         return new ClassSourceRequest(workspace, fullPath, null, engine, Map.of(),
-                false, 30, () -> true);
+                false, true, 30, () -> true);
     }
 }

@@ -51,6 +51,7 @@ public final class ClassTools {
                 openClassView());
     }
 
+    // 在 GUI 打开类源码或 Hex 标签页
     private static McpToolDefinition openClassView() {
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
@@ -269,7 +270,10 @@ public final class ClassTools {
                         "description", "PROCYON, CFR, VINEFLOWER, JD, JADX or BDEC"),
                 "options", Map.of("type", "object",
                         "description", "Optional engine option overrides"),
+                "method", Map.of("type", "string",
+                        "description", "Optional method name, name+descriptor, or JVM descriptor"),
                 "includeComments", Map.of("type", "boolean"),
+                "applyRenames", Map.of("type", "boolean"),
                 "startLine", Map.of("type", "integer", "minimum", 1),
                 "lineCount", Map.of("type", "integer", "minimum", 1, "maximum", 1000),
                 "maxChars", Map.of("type", "integer", "minimum", 1000, "maximum", MAX_SOURCE_CHARS)));
@@ -285,28 +289,64 @@ public final class ClassTools {
                     DecompilerTypeEnum engine = parseEngine(args,
                             context.config().decompiler().defaultEngine());
                     Map<String, String> options = McpArgs.stringMap(args, "options");
+                    String method = McpArgs.optionalString(args, "method", "");
                     boolean includeComments = McpArgs.booleanValue(args, "includeComments", true);
+                    boolean applyRenames = McpArgs.booleanValue(args, "applyRenames", true);
                     int startLine = McpArgs.intValue(args, "startLine", 1, 1, Integer.MAX_VALUE);
                     int lineCount = McpArgs.intValue(args, "lineCount", 200, 1, 1000);
                     int maxChars = McpArgs.intValue(args, "maxChars", 100_000, 1000,
                             MAX_SOURCE_CHARS);
                     ClassSourceResult result = context.classSource().load(
                             new ClassSourceRequest(resolved.workspace(), resolved.fullPath(), bytes,
-                                    engine, options, includeComments, 30, () -> true));
+                                    engine, options, includeComments, applyRenames,
+                                    30, () -> true));
                     if (result.failure()) {
                         return McpToolResult.error("DECOMPILE_FAILED",
                                 "Decompiler returned failure output",
                                 Map.of("engine", result.engine().name(),
                                         "output", truncate(result.sourceCode(), 20_000)));
                     }
-                    Map<String, Object> slice = sourceSlice(result.sourceCode(), startLine,
-                            lineCount, maxChars);
-                    Map<String, Object> data = new LinkedHashMap<>(slice);
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    if (!method.isBlank()) {
+                        ClassFileMetadata metadata = ClassFileParser.tryParse(bytes)
+                                .orElseThrow(() -> new McpToolException("CLASS_NOT_FOUND",
+                                        "Unable to parse class metadata", Map.of()));
+                        JavaMethodExtractor.MethodMatch match =
+                                JavaMethodExtractor.resolve(metadata, method);
+                        String visibleName = null;
+                        if (applyRenames) {
+                            visibleName = match.name().equals("<init>")
+                                    ? result.displayName()
+                                    : RenameService.findNewName(result.workspaceHash(),
+                                            resolved.internalName(), match.name());
+                        }
+                        JavaMethodExtractor.SourceSlice methodSlice =
+                                JavaMethodExtractor.extractSource(result.sourceCode(),
+                                        metadata, match, visibleName);
+                        String content = methodSlice.content();
+                        boolean truncated = content.length() > maxChars;
+                        if (truncated) {
+                            content = content.substring(0, maxChars);
+                        }
+                        data.put("content", content);
+                        data.put("startLine", methodSlice.startLine());
+                        data.put("endLine", methodSlice.endLine());
+                        data.put("totalLines", lineCount(result.sourceCode()));
+                        data.put("truncated", truncated);
+                        data.put("hasMore", false);
+                        data.put("nextStartLine", null);
+                        data.put("method", match.name());
+                        data.put("methodDescriptor", match.descriptor());
+                    } else {
+                        data.putAll(sourceSlice(result.sourceCode(), startLine,
+                                lineCount, maxChars));
+                    }
                     data.put("fullPath", resolved.fullPath());
                     data.put("internalName", resolved.internalName());
                     data.put("displayName", result.displayName());
                     data.put("engine", result.engine().name());
                     data.put("cacheHit", result.cacheHit());
+                    data.put("applyRenames", applyRenames);
                     return McpToolResult.ok(data);
                 });
     }
@@ -317,6 +357,8 @@ public final class ClassTools {
         schema.put("properties", Map.of(
                 "workspaceId", Map.of("type", "string"),
                 "class", Map.of("type", "string"),
+                "method", Map.of("type", "string",
+                        "description", "Optional method name, name+descriptor, or JVM descriptor"),
                 "format", Map.of("type", "string", "enum", List.of("asm", "hex")),
                 "offset", Map.of("type", "integer", "minimum", 0),
                 "length", Map.of("type", "integer", "minimum", 1, "maximum", MAX_HEX_BYTES),
@@ -339,7 +381,13 @@ public final class ClassTools {
                         throw new McpToolException("INVALID_ARGUMENT",
                                 "format must be asm or hex", Map.of("format", format));
                     }
+                    String method = McpArgs.optionalString(args, "method", "");
                     if ("hex".equals(format)) {
+                        if (!method.isBlank()) {
+                            throw new McpToolException("INVALID_ARGUMENT",
+                                    "method is only supported for format=asm",
+                                    Map.of("format", "hex"));
+                        }
                         int offset = McpArgs.intValue(args, "offset", 0, 0,
                                 Math.max(0, bytes.length));
                         int length = McpArgs.intValue(args, "length", 8192, 1, MAX_HEX_BYTES);
@@ -360,15 +408,30 @@ public final class ClassTools {
                     int lineCount = McpArgs.intValue(args, "lineCount", 200, 1, 1000);
                     int maxChars = McpArgs.intValue(args, "maxChars", 100_000, 1000,
                             MAX_BYTECODE_CHARS);
-                    ClassIndexEntry entry = new ClassIndexEntry(resolved.fullPath(),
-                            resolved.internalName(),
-                            resolved.internalName().substring(
-                                    resolved.internalName().lastIndexOf('/') + 1),
-                            bytes, List.of(), List.of());
+                    String text;
+                    JavaMethodExtractor.MethodMatch match = null;
+                    if (!method.isBlank()) {
+                        ClassFileMetadata metadata = ClassFileParser.tryParse(bytes)
+                                .orElseThrow(() -> new McpToolException("CLASS_NOT_FOUND",
+                                        "Unable to parse class metadata", Map.of()));
+                        match = JavaMethodExtractor.resolve(metadata, method);
+                        text = JavaMethodExtractor.extractBytecode(bytes, match);
+                    } else {
+                        ClassIndexEntry entry = new ClassIndexEntry(resolved.fullPath(),
+                                resolved.internalName(),
+                                resolved.internalName().substring(
+                                        resolved.internalName().lastIndexOf('/') + 1),
+                                bytes, List.of(), List.of());
+                        text = entry.bytecodeText();
+                    }
                     Map<String, Object> data = new LinkedHashMap<>(
-                            sourceSlice(entry.bytecodeText(), startLine, lineCount, maxChars));
+                            sourceSlice(text, startLine, lineCount, maxChars));
                     data.put("fullPath", resolved.fullPath());
                     data.put("format", "asm");
+                    if (match != null) {
+                        data.put("method", match.name());
+                        data.put("methodDescriptor", match.descriptor());
+                    }
                     return McpToolResult.ok(data);
                 });
     }
@@ -497,6 +560,14 @@ public final class ClassTools {
             result.add(item);
         }
         return result;
+    }
+
+    // 统计源码行数
+    private static int lineCount(String source) {
+        if (source == null || source.isEmpty()) {
+            return 0;
+        }
+        return source.replace("\r\n", "\n").replace("\r", "\n").split("\n", -1).length;
     }
 
     private static Map<String, Object> sourceSlice(String source, int startLine,
