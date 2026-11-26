@@ -2,7 +2,6 @@ package com.bingbaihanji.fxdecomplie.mcp.tool;
 
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.CommentScope;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
@@ -30,7 +29,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * 分析类 MCP 工具：继承、用法、符号/字节码/资源搜索。
+ * 分析类 MCP 工具:继承,用法,符号/字节码/资源搜索.
  *
  * @author bingbaihanji
  */
@@ -280,8 +279,8 @@ public final class AnalysisTools {
     }
 
     private static void searchResources(WorkspaceIndex index, String query,
-                                       SearchOptions options, List<Map<String, Object>> out,
-                                       int maxCollect) {
+                                        SearchOptions options, List<Map<String, Object>> out,
+                                        int maxCollect) {
         for (var resource : index.resources()) {
             if (out.size() >= maxCollect) {
                 return;

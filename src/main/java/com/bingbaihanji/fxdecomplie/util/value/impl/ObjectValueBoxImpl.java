@@ -8,7 +8,6 @@ import com.bingbaihanji.fxdecomplie.util.value.ReValue;
 import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 import org.objectweb.asm.Type;
 
-
 import java.util.Objects;
 import java.util.Optional;
 

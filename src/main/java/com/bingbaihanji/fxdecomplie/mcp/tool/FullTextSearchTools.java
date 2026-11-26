@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * 异步全文搜索：源码、注释与文本资源。
+ * 异步全文搜索:源码,注释与文本资源.
  *
  * @author bingbaihanji
  */
@@ -210,7 +210,7 @@ public final class FullTextSearchTools {
             return value.contains(needle);
         }
         return Pattern.compile("(?<![\\p{javaJavaIdentifierPart}])"
-                + Pattern.quote(needle) + "(?![\\p{javaJavaIdentifierPart}])")
+                        + Pattern.quote(needle) + "(?![\\p{javaJavaIdentifierPart}])")
                 .matcher(value).find();
     }
 

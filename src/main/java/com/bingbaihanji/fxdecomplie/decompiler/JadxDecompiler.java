@@ -41,6 +41,46 @@ public class JadxDecompiler implements Decompiler {
 
     private final JadxDecompilerFacade facade = JadxDecompilerFacade.getInstance();
 
+    private static boolean acquireJadxPermit() {
+        long deadline = System.nanoTime() + ACQUIRE_BUDGET_NANOS;
+        try {
+            while (System.nanoTime() < deadline) {
+                if (JADX_CONCURRENCY.tryAcquire(ACQUIRE_ROUND_SECONDS, TimeUnit.SECONDS)) {
+                    JADX_OWNER.set(Thread.currentThread());
+                    JADX_LEASE_START_NANOS.set(System.nanoTime());
+                    return true;
+                }
+                forceReleaseExpiredLease();
+            }
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    private static void forceReleaseExpiredLease() {
+        Thread holder = JADX_OWNER.get();
+        long leaseStart = JADX_LEASE_START_NANOS.get();
+        if (holder == null || leaseStart <= 0
+                || System.nanoTime() - leaseStart <= LEASE_TIMEOUT_NANOS) {
+            return;
+        }
+        if (JADX_OWNER.compareAndSet(holder, null)) {
+            log.warn("JADX 单许可持有超过 {}s,强制释放",
+                    TimeUnit.NANOSECONDS.toSeconds(LEASE_TIMEOUT_NANOS));
+            JADX_LEASE_START_NANOS.set(0);
+            JADX_CONCURRENCY.release();
+        }
+    }
+
+    private static void releaseJadxPermit() {
+        if (JADX_OWNER.compareAndSet(Thread.currentThread(), null)) {
+            JADX_LEASE_START_NANOS.set(0);
+            JADX_CONCURRENCY.release();
+        }
+    }
+
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
         return decompileType(DecompilerContext.normalizeInternalName(classFilePath),
@@ -82,46 +122,6 @@ public class JadxDecompiler implements Decompiler {
                     context));
         } finally {
             releaseJadxPermit();
-        }
-    }
-
-    private static boolean acquireJadxPermit() {
-        long deadline = System.nanoTime() + ACQUIRE_BUDGET_NANOS;
-        try {
-            while (System.nanoTime() < deadline) {
-                if (JADX_CONCURRENCY.tryAcquire(ACQUIRE_ROUND_SECONDS, TimeUnit.SECONDS)) {
-                    JADX_OWNER.set(Thread.currentThread());
-                    JADX_LEASE_START_NANOS.set(System.nanoTime());
-                    return true;
-                }
-                forceReleaseExpiredLease();
-            }
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
-    }
-
-    private static void forceReleaseExpiredLease() {
-        Thread holder = JADX_OWNER.get();
-        long leaseStart = JADX_LEASE_START_NANOS.get();
-        if (holder == null || leaseStart <= 0
-                || System.nanoTime() - leaseStart <= LEASE_TIMEOUT_NANOS) {
-            return;
-        }
-        if (JADX_OWNER.compareAndSet(holder, null)) {
-            log.warn("JADX 单许可持有超过 {}s,强制释放",
-                    TimeUnit.NANOSECONDS.toSeconds(LEASE_TIMEOUT_NANOS));
-            JADX_LEASE_START_NANOS.set(0);
-            JADX_CONCURRENCY.release();
-        }
-    }
-
-    private static void releaseJadxPermit() {
-        if (JADX_OWNER.compareAndSet(Thread.currentThread(), null)) {
-            JADX_LEASE_START_NANOS.set(0);
-            JADX_CONCURRENCY.release();
         }
     }
 

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 异步任务查询与取消工具。
+ * 异步任务查询与取消工具.
  *
  * @author bingbaihanji
  */
@@ -134,7 +134,7 @@ public final class JobTools {
                 });
     }
 
-    /** 结果本身是列表，或 Map 中的 items 列表。 */
+    /** 结果本身是列表,或 Map 中的 items 列表. */
     private static List<?> resultItems(Object result) {
         if (result instanceof List<?> list) {
             return list;
@@ -145,7 +145,7 @@ public final class JobTools {
         return null;
     }
 
-    /** 预览只保留少量条目并截断长字符串，避免把 diff 全量塞回上下文。 */
+    /** 预览只保留少量条目并截断长字符串,避免把 diff 全量塞回上下文. */
     private static List<?> boundedPreview(List<?> items, int limit) {
         List<Object> preview = new ArrayList<>();
         int max = Math.min(limit, items.size());

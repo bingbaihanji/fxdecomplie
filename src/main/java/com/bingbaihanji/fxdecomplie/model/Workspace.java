@@ -146,11 +146,6 @@ public class Workspace implements AutoCloseable {
         return index;
     }
 
-    /** @return 工作区是否已关闭 */
-    public boolean isClosed() {
-        return closed;
-    }
-
     /** 更新工作区索引(用于异步构建完成后替换) */
     public synchronized void setIndex(WorkspaceIndex index) {
         WorkspaceIndex next = index == null ? WorkspaceIndex.EMPTY : index;
@@ -163,6 +158,11 @@ public class Workspace implements AutoCloseable {
             }
             indexBuildStarted.set(false);
         }
+    }
+
+    /** @return 工作区是否已关闭 */
+    public boolean isClosed() {
+        return closed;
     }
 
     public CompletableFuture<WorkspaceIndex> getIndexFuture() {

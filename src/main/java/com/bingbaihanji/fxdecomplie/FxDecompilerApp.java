@@ -38,15 +38,15 @@ public final class FxDecompilerApp {
     /** 抑制预览警告属性名 */
     private static final String JAVAFX_SUPPRESS_PREVIEW_WARNING_PROPERTY = "javafx.suppressPreviewWarning";
 
-    static {
-        // 必须先于 Logger 与任何第三方库初始化
-        BootstrapPaths.configure();
-    }
-
     /** 启动错误日志文件路径(位于应用根目录 logs 子目录下) */
     private static final Path STARTUP_ERROR_LOG = AppPaths.startupErrorLog();
 
     private static final Logger log = LoggerFactory.getLogger(FxDecompilerApp.class);
+
+    static {
+        // 必须先于 Logger 与任何第三方库初始化
+        BootstrapPaths.configure();
+    }
 
     /** 工具类私有构造,防止实例化 */
     private FxDecompilerApp() {
@@ -232,7 +232,7 @@ public final class FxDecompilerApp {
                 }
                 config.save();
             }
-            // 先停止 MCP，避免关闭工作区/缓存时仍有工具调用进入
+            // 先停止 MCP,避免关闭工作区/缓存时仍有工具调用进入
             AppContext.getInstance().mcpServer().stop();
             if (window != null) {
                 window.shutdownResources();

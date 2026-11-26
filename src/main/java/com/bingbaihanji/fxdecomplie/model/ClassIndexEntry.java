@@ -4,7 +4,6 @@ import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

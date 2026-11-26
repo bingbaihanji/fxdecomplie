@@ -5,15 +5,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 一个 MCP 异步任务的状态与结果。
+ * 一个 MCP 异步任务的状态与结果.
  *
  * @author bingbaihanji
  */
 public final class McpJob {
-
-    public enum State {
-        PENDING, RUNNING, SUCCEEDED, FAILED, CANCELLED
-    }
 
     private final String id;
 
@@ -138,5 +134,13 @@ public final class McpJob {
             currentFuture.cancel(true);
         }
         updatedAt = Instant.now();
+    }
+
+    public enum State {
+        PENDING,
+        RUNNING,
+        SUCCEEDED,
+        FAILED,
+        CANCELLED
     }
 }

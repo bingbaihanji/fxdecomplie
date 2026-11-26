@@ -281,6 +281,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 Platform.runLater(() -> selectWorkspaceTab(session.workspace())));
         workspaceSessions.setOnEngineChangeRequested(engine ->
                 Platform.runLater(() -> engineController.selectEngine(engine)));
+        workspaceSessions.setOnClassViewRequested(this::openClassViewFromMcp);
         workspaceSessions.setOnClosed(session -> {
         });
         cacheManager = ApplicationServices.create().cacheManager();
@@ -389,7 +390,49 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 AppContext.getInstance().mcpServer().startIfEnabled());
     }
 
-    /** 选中指定工作区对应的外层标签页（FX 线程） */
+    /**
+     * MCP 请求打开类视图:切回 FX 线程,定位工作区/类节点并复用现有 ClassTabOpener 打开标签页.
+     */
+    private void openClassViewFromMcp(
+            com.bingbaihanji.fxdecomplie.service.workspace.ClassViewRequest request,
+            java.util.function.Consumer<Boolean> completion) {
+        Platform.runLater(() -> {
+            WorkspaceView view = workspaceViewFor(request.workspace());
+            if (view == null || request.workspace().isClosed()) {
+                completion.accept(false);
+                return;
+            }
+            FileTreeNode node = request.workspace().findNodeByPath(request.fullPath());
+            if (node == null || !node.isClassFile()) {
+                completion.accept(false);
+                return;
+            }
+            if (outerTabPane.getSelectionModel().getSelectedItem() != view.workspaceTab()) {
+                outerTabPane.getSelectionModel().select(view.workspaceTab());
+            }
+            try {
+                if (request.mode()
+                        == com.bingbaihanji.fxdecomplie.service.workspace.ClassViewMode.HEX) {
+                    classTabOpener.openFileInHexView(node, request.workspace(),
+                            view.codeTabPane());
+                } else {
+                    DecompilerTypeEnum engine = request.engine() == null
+                            ? currentEngine : request.engine();
+                    classTabOpener.openClassTab(node, request.workspace(), view.codeTabPane(),
+                            engine, lineNumbersEnabled);
+                }
+            } catch (RuntimeException e) {
+                log.error("MCP 请求打开类视图失败: {}", request.fullPath(), e);
+                completion.accept(false);
+                return;
+            }
+            log.info("MCP 请求打开类视图: view={}, engine={}, path={}",
+                    request.mode(), request.engine(), request.fullPath());
+            completion.accept(true);
+        });
+    }
+
+    /** 选中指定工作区对应的外层标签页(FX 线程) */
     private void selectWorkspaceTab(Workspace workspace) {
         if (workspace == null || tabManager == null) {
             return;

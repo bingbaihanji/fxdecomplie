@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.mcp.tool;
 import java.util.Map;
 
 /**
- * MCP 工具错误，返回给模型时只包含可读信息，不包含 Java 堆栈。
+ * MCP 工具错误,返回给模型时只包含可读信息,不包含 Java 堆栈.
  *
  * @author bingbaihanji
  */

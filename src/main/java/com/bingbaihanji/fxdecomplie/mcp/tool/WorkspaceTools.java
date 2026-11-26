@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 工作区相关 MCP 工具。
+ * 工作区相关 MCP 工具.
  *
  * @author bingbaihanji
  */

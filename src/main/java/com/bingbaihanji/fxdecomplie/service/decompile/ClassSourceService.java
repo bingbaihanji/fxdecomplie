@@ -22,10 +22,10 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 类源码加载服务：读取字节、选择引擎、查询 L2/L3、反编译、应用重命名与注释。
+ * 类源码加载服务:读取字节,选择引擎,查询 L2/L3,反编译,应用重命名与注释.
  *
- * <p>UI 的 {@code ClassTabOpener} 与 MCP 的源码工具共用此服务，
- * 保证缓存键、引擎回退和展示语义一致。</p>
+ * <p>UI 的 {@code ClassTabOpener} 与 MCP 的源码工具共用此服务,
+ * 保证缓存键,引擎回退和展示语义一致.</p>
  *
  * @author bingbaihanji
  */
@@ -33,7 +33,7 @@ public final class ClassSourceService {
 
     private static final Logger log = LoggerFactory.getLogger(ClassSourceService.class);
 
-    /** JD-Core 不支持的最低 class 主版本（Java 21） */
+    /** JD-Core 不支持的最低 class 主版本(Java 21) */
     private static final int MIN_UNSUPPORTED_JD_CLASS_VERSION = 65;
 
     private final AppConfig config;
@@ -45,12 +45,41 @@ public final class ClassSourceService {
         this.cache = Objects.requireNonNull(cache, "cache");
     }
 
-    /** 命中缓存时直接返回；未命中时反编译并回填缓存。 */
+    /**
+     * 选择实际引擎;JD-Core 对 Java 21+ 的 class 回退到 Vineflower.
+     *
+     * @param classBytes    类字节
+     * @param requestedEngine 请求引擎
+     * @return 实际引擎
+     */
+    public static DecompilerTypeEnum effectiveEngine(byte[] classBytes,
+                                                     DecompilerTypeEnum requestedEngine) {
+        if (requestedEngine == null) {
+            return DecompilerTypeEnum.VINEFLOWER;
+        }
+        if (requestedEngine != DecompilerTypeEnum.JD || classBytes == null) {
+            return requestedEngine;
+        }
+        int major = classMajorVersion(classBytes);
+        if (major >= MIN_UNSUPPORTED_JD_CLASS_VERSION) {
+            return DecompilerTypeEnum.VINEFLOWER;
+        }
+        return requestedEngine;
+    }
+
+    private static int classMajorVersion(byte[] bytes) {
+        if (bytes == null || bytes.length < 8) {
+            return -1;
+        }
+        return ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
+    }
+
+    /** 命中缓存时直接返回;未命中时反编译并回填缓存. */
     public ClassSourceResult load(ClassSourceRequest request) {
         return loadInternal(request, false);
     }
 
-    /** 跳过 L2/L3 读取，反编译成功后回填缓存。 */
+    /** 跳过 L2/L3 读取,反编译成功后回填缓存. */
     public ClassSourceResult reload(ClassSourceRequest request) {
         return loadInternal(request, true);
     }
@@ -130,34 +159,5 @@ public final class ClassSourceService {
         Map<String, String> merged = new LinkedHashMap<>(base);
         merged.putAll(overrides);
         return Map.copyOf(merged);
-    }
-
-    /**
-     * 选择实际引擎；JD-Core 对 Java 21+ 的 class 回退到 Vineflower。
-     *
-     * @param classBytes    类字节
-     * @param requestedEngine 请求引擎
-     * @return 实际引擎
-     */
-    public static DecompilerTypeEnum effectiveEngine(byte[] classBytes,
-                                                     DecompilerTypeEnum requestedEngine) {
-        if (requestedEngine == null) {
-            return DecompilerTypeEnum.VINEFLOWER;
-        }
-        if (requestedEngine != DecompilerTypeEnum.JD || classBytes == null) {
-            return requestedEngine;
-        }
-        int major = classMajorVersion(classBytes);
-        if (major >= MIN_UNSUPPORTED_JD_CLASS_VERSION) {
-            return DecompilerTypeEnum.VINEFLOWER;
-        }
-        return requestedEngine;
-    }
-
-    private static int classMajorVersion(byte[] bytes) {
-        if (bytes == null || bytes.length < 8) {
-            return -1;
-        }
-        return ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
     }
 }

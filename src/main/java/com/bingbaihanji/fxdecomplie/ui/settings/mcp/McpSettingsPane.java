@@ -42,32 +42,49 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 设置页 MCP 面板：服务开关、监听地址/端口、协议、Token、导出开关、
- * 运行状态、健康检查和客户端 JSON。
+ * 设置页 MCP 面板:服务开关,监听地址/端口,协议,Token,导出开关,
+ * 运行状态,健康检查和客户端 JSON.
  *
  * @author bingbaihanji
  */
 public final class McpSettingsPane extends ScrollPane {
 
     private final AppConfig draft;
+
     private final McpServerManager manager;
 
     private final CheckBox enableCheck = new CheckBox();
+
     private final ComboBox<String> bindHostCombo = new ComboBox<>();
+
     private final Spinner<Integer> portSpinner = new Spinner<>();
+
     private final CheckBox streamableHttpCheck = new CheckBox();
+
     private final CheckBox legacySseCheck = new CheckBox();
+
     private final PasswordField tokenPassword = new PasswordField();
+
     private final TextField tokenPlain = new TextField();
+
     private final CheckBox showTokenCheck = new CheckBox();
+
     private final Button copyTokenButton = new Button();
+
     private final Button regenerateTokenButton = new Button();
+
     private final CheckBox exportEnabledCheck = new CheckBox();
+
     private final TextField advertisedHostField = new TextField();
+
     private final Label statusLabel = new Label();
+
     private final Button testButton = new Button();
+
     private final ComboBox<String> clientProtocolCombo = new ComboBox<>();
+
     private final TextArea clientJsonArea = new TextArea();
+
     private final Button copyJsonButton = new Button();
 
     private final Timeline statusTimeline;
@@ -83,6 +100,60 @@ public final class McpSettingsPane extends ScrollPane {
         statusTimeline.setCycleCount(Animation.INDEFINITE);
         statusTimeline.play();
         refreshStatus();
+    }
+
+    private static Label warning(String text) {
+        Label label = new Label(text);
+        label.setWrapText(true);
+        label.setStyle("-fx-text-fill: #f44747;");
+        return label;
+    }
+
+    private static String newToken() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return "fxd_" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static void copyText(String text) {
+        ClipboardContent content = new ClipboardContent();
+        content.putString(text == null ? "" : text);
+        Clipboard.getSystemClipboard().setContent(content);
+    }
+
+    private static String firstLanAddress() {
+        for (String value : localAddressOptions()) {
+            if (!value.equals("127.0.0.1") && !value.equals("0.0.0.0")) {
+                return value;
+            }
+        }
+        return "127.0.0.1";
+    }
+
+    private static List<String> localAddressOptions() {
+        List<String> values = new ArrayList<>();
+        values.add("127.0.0.1");
+        values.add("0.0.0.0");
+        try {
+            for (NetworkInterface networkInterface : Collections.list(
+                    NetworkInterface.getNetworkInterfaces())) {
+                if (!networkInterface.isUp() || networkInterface.isLoopback()) {
+                    continue;
+                }
+                for (InetAddress address : Collections.list(networkInterface.getInetAddresses())) {
+                    if (address.isLoopbackAddress() || !address.getHostAddress()
+                            .matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                        continue;
+                    }
+                    if (!values.contains(address.getHostAddress())) {
+                        values.add(address.getHostAddress());
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // 无法枚举网卡时只保留本地回环与 0.0.0.0
+        }
+        return values;
     }
 
     private VBox buildContent() {
@@ -190,13 +261,6 @@ public final class McpSettingsPane extends ScrollPane {
         return root;
     }
 
-    private static Label warning(String text) {
-        Label label = new Label(text);
-        label.setWrapText(true);
-        label.setStyle("-fx-text-fill: #f44747;");
-        return label;
-    }
-
     private void bindValues() {
         var mcp = draft.mcp();
         enableCheck.setSelected(mcp.enabled());
@@ -271,53 +335,6 @@ public final class McpSettingsPane extends ScrollPane {
         portSpinner.valueProperty().addListener((obs, old, value) -> refreshClientJson());
         advertisedHostField.textProperty().addListener((obs, old, value) -> refreshClientJson());
         tokenPassword.textProperty().addListener((obs, old, value) -> refreshClientJson());
-    }
-
-    private static String newToken() {
-        byte[] bytes = new byte[32];
-        new SecureRandom().nextBytes(bytes);
-        return "fxd_" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    private static void copyText(String text) {
-        ClipboardContent content = new ClipboardContent();
-        content.putString(text == null ? "" : text);
-        Clipboard.getSystemClipboard().setContent(content);
-    }
-
-    private static String firstLanAddress() {
-        for (String value : localAddressOptions()) {
-            if (!value.equals("127.0.0.1") && !value.equals("0.0.0.0")) {
-                return value;
-            }
-        }
-        return "127.0.0.1";
-    }
-
-    private static List<String> localAddressOptions() {
-        List<String> values = new ArrayList<>();
-        values.add("127.0.0.1");
-        values.add("0.0.0.0");
-        try {
-            for (NetworkInterface networkInterface : Collections.list(
-                    NetworkInterface.getNetworkInterfaces())) {
-                if (!networkInterface.isUp() || networkInterface.isLoopback()) {
-                    continue;
-                }
-                for (InetAddress address : Collections.list(networkInterface.getInetAddresses())) {
-                    if (address.isLoopbackAddress() || !address.getHostAddress()
-                            .matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
-                        continue;
-                    }
-                    if (!values.contains(address.getHostAddress())) {
-                        values.add(address.getHostAddress());
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-            // 无法枚举网卡时只保留本地回环与 0.0.0.0
-        }
-        return values;
     }
 
     private void refreshClientJson() {

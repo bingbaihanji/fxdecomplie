@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.mcp.tool;
 import java.util.Map;
 
 /**
- * 可映射为 MCP 错误信封的业务异常。
+ * 可映射为 MCP 错误信封的业务异常.
  *
  * @author bingbaihanji
  */

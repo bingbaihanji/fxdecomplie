@@ -411,52 +411,6 @@ public final class WorkspaceIndex {
         }
     }
 
-    private static final class ProgressReporter {
-
-        private final Consumer<BuildProgress> listener;
-        private final int total;
-        private final AtomicInteger processed = new AtomicInteger();
-        private final AtomicLong lastReportNanos = new AtomicLong(System.nanoTime());
-        private int lastEmitted = -1;
-
-        private ProgressReporter(Consumer<BuildProgress> listener, int total) {
-            this.listener = listener;
-            this.total = total;
-        }
-
-        private int processed() {
-            return processed.get();
-        }
-
-        private void advance(String phase) {
-            int done = processed.incrementAndGet();
-            if (done >= total) {
-                return;
-            }
-            long now = System.nanoTime();
-            long last = lastReportNanos.get();
-            if (now - last >= PROGRESS_REPORT_INTERVAL_NANOS
-                    && lastReportNanos.compareAndSet(last, now)) {
-                emit(done, phase);
-            }
-        }
-
-        private synchronized void emit(int done, String phase) {
-            if (done <= lastEmitted) {
-                return;
-            }
-            lastEmitted = done;
-            notifyProgress(listener, done, total, phase);
-        }
-
-        private void finish() {
-            synchronized (this) {
-                lastEmitted = total;
-                notifyProgress(listener, total, total, "done");
-            }
-        }
-    }
-
     /** @return 该工作区中所有类的索引条目(不可变列表) */
     public List<ClassIndexEntry> classes() {
         return classes;
@@ -562,6 +516,56 @@ public final class WorkspaceIndex {
             map.put(cls.fullPath(), cls.bytecodeText());
         }
         return map;
+    }
+
+    private static final class ProgressReporter {
+
+        private final Consumer<BuildProgress> listener;
+
+        private final int total;
+
+        private final AtomicInteger processed = new AtomicInteger();
+
+        private final AtomicLong lastReportNanos = new AtomicLong(System.nanoTime());
+
+        private int lastEmitted = -1;
+
+        private ProgressReporter(Consumer<BuildProgress> listener, int total) {
+            this.listener = listener;
+            this.total = total;
+        }
+
+        private int processed() {
+            return processed.get();
+        }
+
+        private void advance(String phase) {
+            int done = processed.incrementAndGet();
+            if (done >= total) {
+                return;
+            }
+            long now = System.nanoTime();
+            long last = lastReportNanos.get();
+            if (now - last >= PROGRESS_REPORT_INTERVAL_NANOS
+                    && lastReportNanos.compareAndSet(last, now)) {
+                emit(done, phase);
+            }
+        }
+
+        private synchronized void emit(int done, String phase) {
+            if (done <= lastEmitted) {
+                return;
+            }
+            lastEmitted = done;
+            notifyProgress(listener, done, total, phase);
+        }
+
+        private void finish() {
+            synchronized (this) {
+                lastEmitted = total;
+                notifyProgress(listener, total, total, "done");
+            }
+        }
     }
 
     public record BuildProgress(int processed, int total, String phase) {

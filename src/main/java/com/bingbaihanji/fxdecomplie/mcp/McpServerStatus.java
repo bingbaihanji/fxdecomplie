@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.mcp;
 
 /**
- * MCP 服务运行状态快照。
+ * MCP 服务运行状态快照.
  *
  * @param running  是否运行
  * @param bindHost 监听地址

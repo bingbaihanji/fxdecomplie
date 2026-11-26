@@ -227,6 +227,28 @@ public class AstBuilder {
         return close < 0 ? descriptor : descriptor.substring(1, close);
     }
 
+    // 判断签名类型是否为隐式父类 java/lang/Object
+    private static boolean isJavaLangObject(JavaType type) {
+        return type != null && "java/lang/Object".equals(type.internalName());
+    }
+
+    // 在类签名的接口区段按内部名称定位接口类型,保留其泛型实参
+    private static JavaType findSignatureInterface(JavaType[] signatures, int from,
+                                                   String internalName) {
+        if (signatures == null || internalName == null) {
+            return null;
+        }
+        for (int i = Math.max(from, 0); i < signatures.length; i++) {
+            JavaType candidate = signatures[i];
+            if (candidate != null && internalName.equals(candidate.internalName())) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    // ── 注解渲染 ──
+
     /**
      * 从方法体的IR指令中收集类型引用,用于生成import语句.
      * 扫描静态方法调用的DECLARING_CLASS注解,new表达式,new数组和instanceof
@@ -799,8 +821,6 @@ public class AstBuilder {
         return new CompilationUnit(pkg, importList, List.of(td), innerNames);
     }
 
-    // ── 注解渲染 ──
-
     /**
      * 构建方法的参数名列表.
      * 优先从局部变量表(LocalVariableTable)中获取参数名,
@@ -843,26 +863,6 @@ public class AstBuilder {
     private String packageName(String internalName) {
         int idx = internalName.lastIndexOf('/');
         return idx > 0 ? internalName.substring(0, idx).replace('/', '.') : "";
-    }
-
-    // 判断签名类型是否为隐式父类 java/lang/Object
-    private static boolean isJavaLangObject(JavaType type) {
-        return type != null && "java/lang/Object".equals(type.internalName());
-    }
-
-    // 在类签名的接口区段按内部名称定位接口类型,保留其泛型实参
-    private static JavaType findSignatureInterface(JavaType[] signatures, int from,
-                                                   String internalName) {
-        if (signatures == null || internalName == null) {
-            return null;
-        }
-        for (int i = Math.max(from, 0); i < signatures.length; i++) {
-            JavaType candidate = signatures[i];
-            if (candidate != null && internalName.equals(candidate.internalName())) {
-                return candidate;
-            }
-        }
-        return null;
     }
 
     /**

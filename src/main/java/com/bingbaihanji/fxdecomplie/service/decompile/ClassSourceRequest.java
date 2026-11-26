@@ -8,11 +8,11 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
 /**
- * 一次类源码加载请求。
+ * 一次类源码加载请求.
  *
  * @param workspace       工作区
  * @param fullPath        类文件完整路径
- * @param classBytes      类字节；为 null 时由服务从工作区读取
+ * @param classBytes      类字节;为 null 时由服务从工作区读取
  * @param engine          请求的引擎
  * @param optionOverrides 单次调用的引擎选项覆盖
  * @param includeComments 是否插入持久化注释

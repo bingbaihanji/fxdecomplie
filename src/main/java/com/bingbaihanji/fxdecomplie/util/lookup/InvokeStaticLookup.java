@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.util.lookup;
 
 import com.bingbaihanji.fxdecomplie.util.value.ReValue;
-
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import java.util.List;

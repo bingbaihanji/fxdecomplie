@@ -146,9 +146,9 @@ public class BdecEngine implements Decompiler {
             // 使不可归约 CFG 与 SourceCleanup 兜底产生的警告可见.
             context = new DecompileContext(context.config(), context::loadClassBytes,
                     classFile.bootstrapMethods(), classFile, message -> {
-                        warnings.add(message);
-                        callerContext.reportWarning(message);
-                    });
+                warnings.add(message);
+                callerContext.reportWarning(message);
+            });
 
             // module-info.class(ACC_MODULE = 0x8000):无字段与方法,
             // 直接从 Module 属性构建模块声明,跳过方法级反编译管线.

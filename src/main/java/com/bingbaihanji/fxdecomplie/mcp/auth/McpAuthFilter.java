@@ -13,10 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
- * MCP HTTP Bearer Token 鉴权。
+ * MCP HTTP Bearer Token 鉴权.
  *
- * <p>/health 不需要鉴权；其余请求必须带 Authorization: Bearer &lt;token&gt;。
- * token 使用常量时间比较，不记录到日志。</p>
+ * <p>/health 不需要鉴权;其余请求必须带 Authorization: Bearer &lt;token&gt;.
+ * token 使用常量时间比较,不记录到日志.</p>
  *
  * @author bingbaihanji
  */
@@ -28,6 +28,12 @@ public final class McpAuthFilter implements Filter {
 
     public McpAuthFilter(String expectedToken) {
         this.expectedToken = expectedToken == null ? "" : expectedToken;
+    }
+
+    private static boolean constantTimeEquals(String expected, String actual) {
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                actual.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -51,11 +57,5 @@ public final class McpAuthFilter implements Filter {
             return;
         }
         chain.doFilter(request, response);
-    }
-
-    private static boolean constantTimeEquals(String expected, String actual) {
-        return MessageDigest.isEqual(
-                expected.getBytes(StandardCharsets.UTF_8),
-                actual.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -12,6 +12,7 @@ import java.util.Objects;
  * @param missCount 未命中次数
  */
 public record CacheStats(String name, long entries, long bytes, long hitCount, long missCount) {
+
     public CacheStats {
         Objects.requireNonNull(name, "name");
     }

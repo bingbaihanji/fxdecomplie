@@ -9,7 +9,7 @@ import com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSessionRegistry;
 import java.util.Objects;
 
 /**
- * 单次 MCP 工具调用的共享依赖。
+ * 单次 MCP 工具调用的共享依赖.
  *
  * @author bingbaihanji
  */

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MCP 类/工作区解析：把工具参数中的类名解析为工作区中的具体 class。
+ * MCP 类/工作区解析:把工具参数中的类名解析为工作区中的具体 class.
  *
  * @author bingbaihanji
  */
@@ -115,7 +115,7 @@ public final class ClassResolver {
         return new ResolvedClass(workspace, node, node.getFullPath(), internal, display);
     }
 
-    /** 遍历文件树收集 class 节点；不读取字节。 */
+    /** 遍历文件树收集 class 节点;不读取字节. */
     public static List<FileTreeNode> classNodes(Workspace workspace) {
         List<FileTreeNode> result = new ArrayList<>();
         collect(workspace.getTreeRoot(), result);
@@ -135,7 +135,7 @@ public final class ClassResolver {
         }
     }
 
-    /** 类路径候选（用于错误信息与列表过滤）。 */
+    /** 类路径候选(用于错误信息与列表过滤). */
     public static List<Map<String, Object>> toItems(List<FileTreeNode> nodes, Workspace workspace) {
         List<Map<String, Object>> items = new ArrayList<>();
         String hash = CommentScope.workspaceHash(workspace);

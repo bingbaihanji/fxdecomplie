@@ -83,7 +83,7 @@ public final class AppContext {
         return workspaceSessions;
     }
 
-    /** @return MCP 服务管理器；尚未初始化时先初始化应用上下文 */
+    /** @return MCP 服务管理器;尚未初始化时先初始化应用上下文 */
     public com.bingbaihanji.fxdecomplie.mcp.McpServerManager mcpServer() {
         com.bingbaihanji.fxdecomplie.mcp.McpServerManager current = mcpServer;
         if (current == null) {

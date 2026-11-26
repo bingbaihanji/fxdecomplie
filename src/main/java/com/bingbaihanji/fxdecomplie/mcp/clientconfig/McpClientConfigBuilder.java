@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 生成 Claude Code / Cursor 可用的 mcpServers JSON。
+ * 生成 Claude Code / Cursor 可用的 mcpServers JSON.
  *
  * @author bingbaihanji
  */

@@ -27,11 +27,6 @@ import java.util.Objects;
  */
 public class AppConfig {
 
-    static {
-        // 必须先于任何 Logger 初始化，保证 logback 的 appDir 指向 JAR 同级目录
-        com.bingbaihanji.fxdecomplie.constants.BootstrapPaths.configureAppDir();
-    }
-
     private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
 
     /** 应用根目录(JAR 所在目录,开发期回退到 user.dir) */
@@ -51,6 +46,11 @@ public class AppConfig {
 
     /** 应用进程内唯一配置实例 */
     private static volatile AppConfig instance;
+
+    static {
+        // 必须先于任何 Logger 初始化,保证 logback 的 appDir 指向 JAR 同级目录
+        com.bingbaihanji.fxdecomplie.constants.BootstrapPaths.configureAppDir();
+    }
 
     /** 配置结构版本,用于后续迁移旧配置 */
     private int schemaVersion = 1;
@@ -857,19 +857,19 @@ public class AppConfig {
         /** 是否启用 MCP 服务 */
         private boolean enabled;
 
-        /** 监听地址：127.0.0.1 / 0.0.0.0 / 指定网卡 IP */
+        /** 监听地址:127.0.0.1 / 0.0.0.0 / 指定网卡 IP */
         private String bindHost = "127.0.0.1";
 
         /** 监听端口 */
         private int port = 8765;
 
-        /** 是否启用 Streamable HTTP（推荐） */
+        /** 是否启用 Streamable HTTP(推荐) */
         private boolean streamableHttpEnabled = true;
 
         /** 是否启用旧版 HTTP+SSE */
         private boolean legacySseEnabled;
 
-        /** Bearer Token；为空时首次启用自动生成 */
+        /** Bearer Token;为空时首次启用自动生成 */
         private String authToken = "";
 
         /** 生成客户端 JSON 时使用的对外地址 */

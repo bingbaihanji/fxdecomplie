@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 无鉴权健康检查，只返回服务名、版本和状态。
+ * 无鉴权健康检查,只返回服务名,版本和状态.
  *
  * @author bingbaihanji
  */

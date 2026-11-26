@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MCP 工具参数读取与校验辅助方法。
+ * MCP 工具参数读取与校验辅助方法.
  *
  * @author bingbaihanji
  */

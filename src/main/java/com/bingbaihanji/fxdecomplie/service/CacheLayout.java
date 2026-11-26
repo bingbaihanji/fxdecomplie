@@ -33,15 +33,21 @@ public final class CacheLayout {
     private static final Logger log = LoggerFactory.getLogger(CacheLayout.class);
 
     private static final String DECOMPILE_DIR = "decompile";
+
     private static final String INDEX_DIR = "index";
+
     private static final String VERSION = "v1";
+
     private static final String LEGACY_DECOMPILE_DIR = "v2";
+
     private static final String LEGACY_INDEX_DIR = "index-cache";
 
     /** 单个路径段最大长度（留出扩展名余量） */
     private static final int MAX_SEGMENT_LENGTH = 120;
+
     /** 超长段截断后追加的摘要长度 */
     private static final int SEGMENT_DIGEST_LENGTH = 16;
+
     /** 超长段保留的原始前缀长度 */
     private static final int SEGMENT_PREFIX_LENGTH = MAX_SEGMENT_LENGTH - SEGMENT_DIGEST_LENGTH - 1;
 
@@ -204,6 +210,7 @@ public final class CacheLayout {
         CleanupCounter counter = new CleanupCounter();
         try {
             Files.walkFileTree(dir, new SimpleFileVisitor<>() {
+
                 @Override
                 public FileVisitResult preVisitDirectory(Path directory, BasicFileAttributes attrs) {
                     if (attrs.isSymbolicLink() || attrs.isOther()) {
@@ -264,7 +271,9 @@ public final class CacheLayout {
 
     /** 清理计数 */
     private static final class CleanupCounter {
+
         private int deleted;
+
         private int failed;
     }
 }

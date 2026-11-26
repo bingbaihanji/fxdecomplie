@@ -14,6 +14,11 @@ import java.util.Map;
 @FunctionalInterface
 public interface ExportSourceCache {
 
+    /** 空实现：永不命中 */
+    static ExportSourceCache none() {
+        return (node, classBytes, engine, options) -> null;
+    }
+
     /**
      * 查询类源码.
      *
@@ -25,9 +30,4 @@ public interface ExportSourceCache {
      */
     String load(FileTreeNode node, byte[] classBytes,
                 DecompilerTypeEnum engine, Map<String, String> options);
-
-    /** 空实现：永不命中 */
-    static ExportSourceCache none() {
-        return (node, classBytes, engine, options) -> null;
-    }
 }

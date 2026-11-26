@@ -1162,7 +1162,7 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 共享的反编译+缓存逻辑：委托给 ClassSourceService，与 MCP 使用同一套缓存与重命名语义。
+     * 共享的反编译+缓存逻辑:委托给 ClassSourceService,与 MCP 使用同一套缓存与重命名语义.
      */
     private DecompileResult decompileWithCache(String internalName, DecompilerTypeEnum engine,
                                                byte[] bytes, FileTreeNode node, Workspace workspace,

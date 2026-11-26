@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 反混淆建议扫描（只读，不应用重命名）。
+ * 反混淆建议扫描(只读,不应用重命名).
  *
  * @author bingbaihanji
  */

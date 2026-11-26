@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
- * MCP 异步任务管理器：有界并发、状态查询、取消与结果保留。
+ * MCP 异步任务管理器:有界并发,状态查询,取消与结果保留.
  *
  * @author bingbaihanji
  */

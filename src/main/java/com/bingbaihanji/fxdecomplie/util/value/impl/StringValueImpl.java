@@ -5,7 +5,6 @@ import com.bingbaihanji.fxdecomplie.model.Nullness;
 import com.bingbaihanji.fxdecomplie.util.reflect.asm.Types;
 import com.bingbaihanji.fxdecomplie.util.value.StringValue;
 
-
 import java.util.Optional;
 
 /**

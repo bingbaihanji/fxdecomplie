@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 
 /**
- * 工具定义：SDK 元数据 + 本地处理器。
+ * 工具定义:SDK 元数据 + 本地处理器.
  *
  * @author bingbaihanji
  */

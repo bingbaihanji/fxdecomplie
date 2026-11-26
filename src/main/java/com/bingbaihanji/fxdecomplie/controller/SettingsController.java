@@ -27,27 +27,27 @@ public final class SettingsController {
         SettingsDialog.show(owner.stage(), owner.config(), owner.cacheManager(),
                 com.bingbaihanji.fxdecomplie.context.AppContext.getInstance().mcpServer(),
                 updated -> {
-            boolean engineSwitched = applySettings(updated);
+                    boolean engineSwitched = applySettings(updated);
 
-            // 检测编辑器主题变更 — 必须在 refreshCurrentTab 之前更新 ClassTabOpener,
-            // 否则异步反编译任务会用旧主题创建新标签页覆盖掉 reapplyTheme 的结果
-            String newEditorTheme = owner.config().theme().editorTheme();
-            if (!newEditorTheme.equals(oldEditorTheme)) {
-                VsCodeThemeLoader.ThemeData theme = AppTheme.loadEditorTheme(owner.config());
-                owner.setEditorTheme(theme);
-                owner.classTabOpener().setEditorTheme(theme);
-                owner.tabManager().getWorkspaceViews().values().forEach(view ->
-                        view.splitEditorPane().forEachTab(tab ->
-                                tab.reapplyTheme(theme))
-                );
-            }
+                    // 检测编辑器主题变更 — 必须在 refreshCurrentTab 之前更新 ClassTabOpener,
+                    // 否则异步反编译任务会用旧主题创建新标签页覆盖掉 reapplyTheme 的结果
+                    String newEditorTheme = owner.config().theme().editorTheme();
+                    if (!newEditorTheme.equals(oldEditorTheme)) {
+                        VsCodeThemeLoader.ThemeData theme = AppTheme.loadEditorTheme(owner.config());
+                        owner.setEditorTheme(theme);
+                        owner.classTabOpener().setEditorTheme(theme);
+                        owner.tabManager().getWorkspaceViews().values().forEach(view ->
+                                view.splitEditorPane().forEachTab(tab ->
+                                        tab.reapplyTheme(theme))
+                        );
+                    }
 
-            DecompilerTypeEnum activeTabEngine = owner.engineController().activeCodeTabEngine();
-            if (!engineSwitched && owner.tabManager() != null
-                    && owner.tabManager().currentCodeTab() != null) {
-                owner.engineController().refreshCurrentTab(activeTabEngine);
-            }
-        });
+                    DecompilerTypeEnum activeTabEngine = owner.engineController().activeCodeTabEngine();
+                    if (!engineSwitched && owner.tabManager() != null
+                            && owner.tabManager().currentCodeTab() != null) {
+                        owner.engineController().refreshCurrentTab(activeTabEngine);
+                    }
+                });
     }
 
     /** 应用设置对话框确认后的配置变更:切换引擎 更新行号显示和字体设置,返回是否切换了引擎 */

@@ -6,9 +6,9 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * 一次已打开工作区的会话标识。
+ * 一次已打开工作区的会话标识.
  *
- * @param id        会话 ID（绝对路径 + 内容戳的短哈希）
+ * @param id        会话 ID(绝对路径 + 内容戳的短哈希)
  * @param workspace 工作区
  * @param openedAt  打开时间
  * @param active    是否为当前活动工作区

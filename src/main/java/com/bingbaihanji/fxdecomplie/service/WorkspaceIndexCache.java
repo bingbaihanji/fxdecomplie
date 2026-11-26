@@ -41,20 +41,31 @@ public final class WorkspaceIndexCache {
     private static final Logger log = LoggerFactory.getLogger(WorkspaceIndexCache.class);
 
     private static final String CACHE_FILE_SUFFIX = ".idx.gz";
+
     private static final String LEGACY_FILE_SUFFIX = ".idx.json";
+
     private static final int MAGIC = 0x46584944;
+
     private static final int FORMAT_VERSION = 1;
+
     private static final int MAX_ENTRY_COUNT = 5_000_000;
+
     private static final int MAX_MEMBER_COUNT = 65_535;
+
     private static final int MAX_RESOURCE_BYTES = 16 * 1024 * 1024;
+
     private static final int GZIP_BUFFER_SIZE = 64 * 1024;
+
+    private static final AtomicLong HITS = new AtomicLong();
+
+    private static final AtomicLong MISSES = new AtomicLong();
 
     /** 测试专用缓存目录覆盖；生产环境为 null */
     private static volatile Path cacheDirectoryOverride;
+
     private static volatile DiskQuotaGuard quotaGuard;
+
     private static volatile long quotaBytes = CacheLimits.INDEX_BYTES;
-    private static final AtomicLong HITS = new AtomicLong();
-    private static final AtomicLong MISSES = new AtomicLong();
 
     private WorkspaceIndexCache() {
         throw new AssertionError("utility class");
@@ -239,7 +250,8 @@ public final class WorkspaceIndexCache {
                 cached.resources == null ? List.of() : cached.resources;
         try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(target), GZIP_BUFFER_SIZE),
-                GZIP_BUFFER_SIZE))) {
+                GZIP_BUFFER_SIZE))
+        ) {
             out.writeInt(MAGIC);
             out.writeInt(FORMAT_VERSION);
             out.writeInt(classes.size());
@@ -283,7 +295,8 @@ public final class WorkspaceIndexCache {
 
     private static CachedIndex readFrom(Path file) throws IOException {
         try (DataInputStream in = new DataInputStream(new GZIPInputStream(
-                new BufferedInputStream(Files.newInputStream(file)), GZIP_BUFFER_SIZE))) {
+                new BufferedInputStream(Files.newInputStream(file)), GZIP_BUFFER_SIZE))
+        ) {
             int magic = in.readInt();
             if (magic != MAGIC) {
                 throw new IOException("无效的索引缓存魔数: " + magic);

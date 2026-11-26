@@ -21,8 +21,11 @@ import java.util.Objects;
 public final class CacheManager implements AutoCloseable {
 
     private final DecompileCacheService decompileCache;
+
     private final DecompileCache l2;
+
     private final DiskCodeCache l3;
+
     private final SourceSnapshotCache snapshots;
 
     public CacheManager(DecompileCacheService decompileCache,

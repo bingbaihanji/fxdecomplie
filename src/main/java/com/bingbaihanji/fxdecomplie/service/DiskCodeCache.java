@@ -35,8 +35,11 @@ public final class DiskCodeCache implements CodeCacheStore {
     private static final String STATS_NAME = "decompile-l3";
 
     private final Path decompileRoot;
+
     private final DiskQuotaGuard quotaGuard;
+
     private final AtomicLong hits = new AtomicLong();
+
     private final AtomicLong misses = new AtomicLong();
 
     public DiskCodeCache(Path decompileRoot, long quotaBytes) {

@@ -15,24 +15,6 @@ public abstract class Statement implements AstNode {
     private int sourceOffset = -1;
 
     /**
-     * 获取语句起始字节码偏移.
-     *
-     * @return 字节码偏移,未知返回 -1
-     */
-    public int sourceOffset() {
-        return sourceOffset;
-    }
-
-    /**
-     * 设置语句起始字节码偏移.
-     *
-     * @param sourceOffset 字节码偏移,未知传 -1
-     */
-    public void setSourceOffset(int sourceOffset) {
-        this.sourceOffset = sourceOffset;
-    }
-
-    /**
      * 把旧语句的起始偏移继承到重建的新语句.
      *
      * <p>重写器以不可变方式重建语句时,新节点默认偏移为 -1;调用本方法
@@ -49,5 +31,23 @@ public abstract class Statement implements AstNode {
             newStmt.setSourceOffset(oldStmt.sourceOffset());
         }
         return newStmt;
+    }
+
+    /**
+     * 获取语句起始字节码偏移.
+     *
+     * @return 字节码偏移,未知返回 -1
+     */
+    public int sourceOffset() {
+        return sourceOffset;
+    }
+
+    /**
+     * 设置语句起始字节码偏移.
+     *
+     * @param sourceOffset 字节码偏移,未知传 -1
+     */
+    public void setSourceOffset(int sourceOffset) {
+        this.sourceOffset = sourceOffset;
     }
 }

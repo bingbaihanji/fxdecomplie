@@ -22,7 +22,9 @@ public final class BootstrapPaths {
     public static final String TEMP_DIR_NAME = "tmp";
 
     private static volatile Path appDir;
+
     private static volatile Path tempDir;
+
     private static volatile boolean configured;
 
     private BootstrapPaths() {

@@ -121,7 +121,7 @@ public final class ExportController {
         com.bingbaihanji.fxdecomplie.service.ExportSourceCache sourceCache = workspace == null
                 ? com.bingbaihanji.fxdecomplie.service.ExportSourceCache.none()
                 : new com.bingbaihanji.fxdecomplie.service.WorkspaceExportCache(
-                        workspace, owner.cacheManager().decompileCache());
+                workspace, owner.cacheManager().decompileCache());
         exportTaskRef.set(BackgroundTasks.run(BackgroundTasks.PoolType.EXPORT, "Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(

@@ -14,8 +14,9 @@ import com.bingbaihanji.fxdecomplie.service.CommentManager;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceByteReader;
 import com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceRequest;
 import com.bingbaihanji.fxdecomplie.service.decompile.ClassSourceResult;
+import com.bingbaihanji.fxdecomplie.service.workspace.ClassViewMode;
+import com.bingbaihanji.fxdecomplie.service.workspace.ClassViewRequest;
 import com.bingbaihanji.fxdecomplie.service.workspace.WorkspaceSession;
-import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
 import java.io.IOException;
@@ -26,16 +27,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
- * 类读取相关 MCP 工具：列表、元数据、源码、字节码/十六进制、资源。
+ * 类读取相关 MCP 工具:列表,元数据,源码,字节码/十六进制,资源.
  *
  * @author bingbaihanji
  */
 public final class ClassTools {
 
     private static final int MAX_SOURCE_CHARS = 200_000;
+
     private static final int MAX_BYTECODE_CHARS = 200_000;
+
     private static final int MAX_HEX_BYTES = 65_536;
 
     private ClassTools() {
@@ -43,7 +47,74 @@ public final class ClassTools {
     }
 
     public static List<McpToolDefinition> definitions() {
-        return List.of(listClasses(), classInfo(), classSource(), classBytecode(), resource());
+        return List.of(listClasses(), classInfo(), classSource(), classBytecode(), resource(),
+                openClassView());
+    }
+
+    private static McpToolDefinition openClassView() {
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", Map.of(
+                "workspaceId", Map.of("type", "string"),
+                "class", Map.of("type", "string"),
+                "view", Map.of("type", "string", "enum", List.of("source", "hex")),
+                "engine", Map.of("type", "string",
+                        "description", "PROCYON, CFR, VINEFLOWER, JD, JADX or BDEC")));
+        schema.put("required", List.of("class"));
+        schema.put("additionalProperties", false);
+        return new McpToolDefinition(
+                "open_class_view",
+                "Open a class in the GUI: a source tab with an optional engine, or a hex/bytecode tab. "
+                        + "Use open_workspace first if the JAR is not open.",
+                schema,
+                (context, args) -> {
+                    WorkspaceSession session = ClassResolver.session(context, args);
+                    ClassResolver.ResolvedClass resolved = ClassResolver.resolve(context, args);
+                    String viewValue = McpArgs.optionalString(args, "view", "source")
+                            .toLowerCase(Locale.ROOT);
+                    if (!viewValue.equals("source") && !viewValue.equals("hex")) {
+                        throw new McpToolException("INVALID_ARGUMENT",
+                                "view must be source or hex", Map.of("view", viewValue));
+                    }
+                    ClassViewMode mode = viewValue.equals("hex")
+                            ? ClassViewMode.HEX : ClassViewMode.SOURCE;
+                    DecompilerTypeEnum engine = null;
+                    if (mode == ClassViewMode.SOURCE) {
+                        engine = parseEngine(args, context.config().decompiler().defaultEngine());
+                    }
+                    boolean opened;
+                    try {
+                        opened = Boolean.TRUE.equals(context.sessions().requestClassView(
+                                new ClassViewRequest(resolved.workspace(), resolved.fullPath(),
+                                        engine, mode)).get(5, TimeUnit.SECONDS));
+                    } catch (java.util.concurrent.TimeoutException e) {
+                        throw new McpToolException("VIEW_OPEN_TIMEOUT",
+                                "GUI did not acknowledge the class view request in time",
+                                Map.of("class", resolved.fullPath()));
+                    } catch (Exception e) {
+                        throw new McpToolException("VIEW_OPEN_FAILED",
+                                e.getMessage() == null
+                                        ? e.getClass().getSimpleName() : e.getMessage(),
+                                Map.of("class", resolved.fullPath()));
+                    }
+                    if (!opened) {
+                        throw new McpToolException("VIEW_OPEN_FAILED",
+                                "Workspace tab or class node is not available in the GUI",
+                                Map.of("class", resolved.fullPath(),
+                                        "workspaceId", session.id()));
+                    }
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("workspaceId", session.id());
+                    data.put("fullPath", resolved.fullPath());
+                    data.put("internalName", resolved.internalName());
+                    data.put("displayName", resolved.displayName());
+                    data.put("view", viewValue);
+                    if (engine != null) {
+                        data.put("engine", engine.name());
+                    }
+                    data.put("opened", true);
+                    return McpToolResult.ok(data);
+                });
     }
 
     private static McpToolDefinition listClasses() {
@@ -371,7 +442,7 @@ public final class ClassTools {
     }
 
     private static DecompilerTypeEnum parseEngine(Map<String, Object> args,
-                                                   DecompilerTypeEnum fallback) {
+                                                  DecompilerTypeEnum fallback) {
         String value = McpArgs.optionalString(args, "engine", "");
         if (value.isBlank()) {
             return fallback == null ? DecompilerTypeEnum.JADX : fallback;
@@ -399,7 +470,7 @@ public final class ClassTools {
     }
 
     private static List<Map<String, Object>> dependencies(Workspace workspace,
-                                                         List<String> referenced, int maxItems) {
+                                                          List<String> referenced, int maxItems) {
         List<Map<String, Object>> result = new ArrayList<>();
         WorkspaceIndex index = workspace.getIndex();
         for (String internalName : referenced.subList(0, Math.min(maxItems, referenced.size()))) {

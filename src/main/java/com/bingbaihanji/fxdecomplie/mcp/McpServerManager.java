@@ -38,8 +38,8 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * MCP 服务生命周期：配置校验、Jetty 绑定、Streamable HTTP / legacy SSE、
- * Bearer Token 鉴权、健康检查和工具注册。
+ * MCP 服务生命周期:配置校验,Jetty 绑定,Streamable HTTP / legacy SSE,
+ * Bearer Token 鉴权,健康检查和工具注册.
  *
  * @author bingbaihanji
  */
@@ -76,17 +76,35 @@ public final class McpServerManager {
                 "stopped");
     }
 
+    @SafeVarargs
+    private static List<McpToolDefinition> concatenate(List<McpToolDefinition>... groups) {
+        List<McpToolDefinition> result = new ArrayList<>();
+        for (List<McpToolDefinition> group : groups) {
+            result.addAll(group);
+        }
+        return List.copyOf(result);
+    }
+
+    private static String instructions() {
+        return "FxDecompiler exposes Java bytecode analysis tools. "
+                + "Start with list_workspaces or open_workspace. "
+                + "Use get_server_info for capabilities. "
+                + "Prefer metadata before full source; source tools are paginated. "
+                + "Use open_class_view to show a source tab with a chosen engine or a hex tab. "
+                + "Long export/comparison/search tasks return a job id.";
+    }
+
     public McpServerStatus status() {
         return status;
     }
 
-    /** 由应用装配层注入共享反编译缓存；MCP 不反向依赖 app 包。 */
+    /** 由应用装配层注入共享反编译缓存;MCP 不反向依赖 app 包. */
     public void setDecompileCache(
             com.bingbaihanji.fxdecomplie.service.decompile.DecompileCacheService cache) {
         this.decompileCache = cache;
     }
 
-    /** 配置变化后调用；相同配置不重启。 */
+    /** 配置变化后调用;相同配置不重启. */
     public void applyConfig() {
         synchronized (lifecycleLock) {
             if (!config.mcp().enabled()) {
@@ -104,7 +122,7 @@ public final class McpServerManager {
         }
     }
 
-    /** 幂等启动；已运行且配置未变化则直接返回。 */
+    /** 幂等启动;已运行且配置未变化则直接返回. */
     public void startIfEnabled() {
         synchronized (lifecycleLock) {
             if (!config.mcp().enabled()) {
@@ -281,24 +299,7 @@ public final class McpServerManager {
                 .build();
     }
 
-    @SafeVarargs
-    private static List<McpToolDefinition> concatenate(List<McpToolDefinition>... groups) {
-        List<McpToolDefinition> result = new ArrayList<>();
-        for (List<McpToolDefinition> group : groups) {
-            result.addAll(group);
-        }
-        return List.copyOf(result);
-    }
-
-    private static String instructions() {
-        return "FxDecompiler exposes Java bytecode analysis tools. "
-                + "Start with list_workspaces or open_workspace. "
-                + "Use get_server_info for capabilities. "
-                + "Prefer metadata before full source; source tools are paginated. "
-                + "Long export/comparison/search tasks return a job id.";
-    }
-
-    /** 优雅停止；可重复调用。 */
+    /** 优雅停止;可重复调用. */
     public void stop() {
         List<McpSyncServer> servers;
         Server server;

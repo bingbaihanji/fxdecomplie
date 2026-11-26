@@ -32,14 +32,21 @@ public final class DiskQuotaGuard {
     private static final Logger log = LoggerFactory.getLogger(DiskQuotaGuard.class);
 
     private final Path root;
+
     private final long quotaBytes;
+
     private final Executor executor;
+
     private final long checkIntervalNanos;
+
     private final int writeThreshold;
+
     private final LongSupplier nanoClock;
 
     private final AtomicBoolean running = new AtomicBoolean();
+
     private final AtomicInteger writes = new AtomicInteger();
+
     private volatile long lastCheckNanos;
 
     public DiskQuotaGuard(Path root, long quotaBytes, Executor executor) {
@@ -182,6 +189,7 @@ public final class DiskQuotaGuard {
         final Path start = resolved;
         try {
             Files.walkFileTree(start, new SimpleFileVisitor<>() {
+
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     if (!dir.equals(start) && (attrs.isOther() || attrs.isSymbolicLink())) {

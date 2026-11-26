@@ -17,13 +17,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * UI 与 MCP 共享的工作区会话注册表。
+ * UI 与 MCP 共享的工作区会话注册表.
  *
- * <p>工作区加载、活动切换、关闭都从这里经过；UI 通过回调同步标签页，
- * MCP 通过会话 ID 访问工作区。本类不依赖 JavaFX。</p>
+ * <p>工作区加载,活动切换,关闭都从这里经过;UI 通过回调同步标签页,
+ * MCP 通过会话 ID 访问工作区.本类不依赖 JavaFX.</p>
  *
  * @author bingbaihanji
  */
@@ -41,14 +42,19 @@ public final class WorkspaceSessionRegistry {
 
     private volatile Consumer<WorkspaceSession> onOpened = session -> {
     };
+
     private volatile Consumer<WorkspaceSession> onClosed = session -> {
     };
+
     private volatile Consumer<WorkspaceSession> onActiveChanged = session -> {
     };
 
     private volatile Consumer<com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum>
             onEngineChangeRequested = engine -> {
-            };
+    };
+
+    private volatile BiConsumer<ClassViewRequest, Consumer<Boolean>> onClassViewRequested =
+            (request, completion) -> completion.accept(false);
 
     public void setOnOpened(Consumer<WorkspaceSession> listener) {
         onOpened = listener == null ? session -> {
@@ -71,7 +77,17 @@ public final class WorkspaceSessionRegistry {
         } : listener;
     }
 
-    /** MCP 请求切换引擎时调用；由 UI 回调执行实际切换。 */
+    /**
+     * 注册 GUI 的类视图打开回调.回调在调用线程执行,UI 实现需自行切回 JavaFX 线程;
+     * completion 必须且只能调用一次.
+     */
+    public void setOnClassViewRequested(
+            BiConsumer<ClassViewRequest, Consumer<Boolean>> listener) {
+        onClassViewRequested = listener == null
+                ? (request, completion) -> completion.accept(false) : listener;
+    }
+
+    /** MCP 请求切换引擎时调用;由 UI 回调执行实际切换. */
     public void requestEngine(com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum engine) {
         if (engine != null) {
             onEngineChangeRequested.accept(engine);
@@ -79,7 +95,29 @@ public final class WorkspaceSessionRegistry {
     }
 
     /**
-     * 按路径打开工作区；相同路径且相同内容戳会复用已有会话。
+     * 请求 GUI 打开类视图;返回是否成功入队/打开.
+     *
+     * @param request 类视图请求
+     * @return 异步结果
+     */
+    public CompletableFuture<Boolean> requestClassView(ClassViewRequest request) {
+        Objects.requireNonNull(request, "request");
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        Consumer<Boolean> completion = opened -> {
+            if (!result.isDone()) {
+                result.complete(Boolean.TRUE.equals(opened));
+            }
+        };
+        try {
+            onClassViewRequested.accept(request, completion);
+        } catch (RuntimeException e) {
+            result.completeExceptionally(e);
+        }
+        return result;
+    }
+
+    /**
+     * 按路径打开工作区;相同路径且相同内容戳会复用已有会话.
      *
      * @param path 本地 JAR/ZIP/目录/class 路径
      * @return 异步会话结果
@@ -147,14 +185,14 @@ public final class WorkspaceSessionRegistry {
     }
 
     /**
-     * UI 标签页选中时调用；欢迎页等临时空选中传 null 不会清空活动工作区，
-     * 工作区关闭由 {@link #unregister(Workspace)} 清理。
+     * UI 标签页选中时调用;欢迎页等临时空选中传 null 不会清空活动工作区,
+     * 工作区关闭由 {@link #unregister(Workspace)} 清理.
      *
      * @param workspace 当前活动工作区
      */
     public void markActive(Workspace workspace) {
         if (workspace == null) {
-            // 欢迎页/临时空选中不应清空真正的活动工作区；关闭工作区由 unregister 清理。
+            // 欢迎页/临时空选中不应清空真正的活动工作区;关闭工作区由 unregister 清理.
             return;
         }
         WorkspaceSession target = findByWorkspace(workspace);
@@ -178,7 +216,7 @@ public final class WorkspaceSessionRegistry {
     }
 
     /**
-     * 工作区关闭时移除会话。
+     * 工作区关闭时移除会话.
      *
      * @param workspace 已关闭的工作区
      */

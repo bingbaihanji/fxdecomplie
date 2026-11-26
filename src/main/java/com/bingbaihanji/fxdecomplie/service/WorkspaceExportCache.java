@@ -20,6 +20,7 @@ import java.util.Objects;
 public final class WorkspaceExportCache implements ExportSourceCache {
 
     private final Workspace workspace;
+
     private final DecompileCacheService cache;
 
     public WorkspaceExportCache(Workspace workspace, DecompileCacheService cache) {

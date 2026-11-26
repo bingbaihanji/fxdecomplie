@@ -26,6 +26,7 @@ public final class SourceSnapshotCache {
     private static final String STATS_NAME = "source-snapshots";
 
     private final LruCache<String, Map<String, String>> cache;
+
     private final ConcurrentHashMap<String, AtomicLong> generations = new ConcurrentHashMap<>();
 
     public SourceSnapshotCache() {
@@ -34,6 +35,7 @@ public final class SourceSnapshotCache {
 
     public SourceSnapshotCache(int maxBytes) {
         this.cache = new LruCache<String, Map<String, String>>(maxBytes) {
+
             @Override
             protected int sizeOf(String key, Map<String, String> value) {
                 long bytes = 0L;

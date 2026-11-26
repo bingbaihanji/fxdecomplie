@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MCP 工具注册表；按名称分发，未知工具返回 INVALID_ARGUMENT。
+ * MCP 工具注册表;按名称分发,未知工具返回 INVALID_ARGUMENT.
  *
  * @author bingbaihanji
  */

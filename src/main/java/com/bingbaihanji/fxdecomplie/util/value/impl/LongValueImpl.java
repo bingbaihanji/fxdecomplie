@@ -6,7 +6,6 @@ import com.bingbaihanji.fxdecomplie.util.value.LongValue;
 import com.bingbaihanji.fxdecomplie.util.value.ReValue;
 import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 
-
 import java.util.OptionalLong;
 
 /**

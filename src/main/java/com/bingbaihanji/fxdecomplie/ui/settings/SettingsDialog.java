@@ -548,7 +548,7 @@ public final class SettingsDialog {
                 log.warn("MCP 设置校验失败", ex);
                 DialogHelper.showError(owner, "MCP",
                         ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
-                // MCP 校验失败时保留原 MCP 配置，但其余已确认设置仍应保存。
+                // MCP 校验失败时保留原 MCP 配置,但其余已确认设置仍应保存.
             }
 
             config.copyFrom(draft);

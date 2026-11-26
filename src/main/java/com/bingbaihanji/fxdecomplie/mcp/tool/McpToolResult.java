@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * MCP 工具统一返回信封。
+ * MCP 工具统一返回信封.
  *
  * @author bingbaihanji
  */

@@ -35,6 +35,7 @@ public class DecompileCache implements CodeCacheStore {
      */
     public DecompileCache(int maxBytes) {
         this.cache = new LruCache<String, String>(maxBytes) {
+
             @Override
             protected int sizeOf(String key, String value) {
                 return value.length() * 2;
